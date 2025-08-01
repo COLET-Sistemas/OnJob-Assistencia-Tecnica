@@ -8,9 +8,12 @@ const CadastroMotivosPendencia = () => {
     const [motivos, setMotivos] = useState<MotivoPendencia[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Primeiro carrega da API
     useEffect(() => {
         carregarMotivos();
     }, []);
+
+
 
     const carregarMotivos = async () => {
         setLoading(true);
@@ -32,7 +35,18 @@ const CadastroMotivosPendencia = () => {
                 throw new Error('Erro ao buscar motivos de pendência');
             }
 
-            const dados: MotivoPendencia[] = await response.json();
+            let dados: MotivoPendencia[] = await response.json();
+
+            // Verificar se os dados são um array. Se não for, criar um array a partir dos dados
+            if (!Array.isArray(dados)) {
+                console.warn('Resposta da API não é um array, convertendo...', dados);
+                if (typeof dados === 'object' && dados !== null) {
+                    dados = Object.values(dados);
+                } else {
+                    dados = [];
+                }
+            }
+
             setMotivos(dados);
         } catch (error) {
             console.error('Erro ao carregar motivos de pendência:', error);
@@ -66,7 +80,7 @@ const CadastroMotivosPendencia = () => {
                             className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm hover:shadow transform hover:-translate-y-0.5"
                         >
                             <Plus size={18} />
-                            Novo Motivossss
+                            Novo Motivo
                         </a>
                     </div>
 
@@ -74,7 +88,6 @@ const CadastroMotivosPendencia = () => {
                         <table className="w-full">
                             <thead className="bg-[var(--neutral-light-gray)] border-b border-gray-100">
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--dark-navy)] uppercase tracking-wider">ID</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--dark-navy)] uppercase tracking-wider">Descrição</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--dark-navy)] uppercase tracking-wider">Status</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--dark-navy)] uppercase tracking-wider">Ações</th>
@@ -84,17 +97,16 @@ const CadastroMotivosPendencia = () => {
                                 {motivos.map((motivo) => (
                                     <tr key={motivo.id} className="hover:bg-[var(--primary)]/5 transition-colors duration-150">
                                         <td className="px-6 py-4.5 whitespace-nowrap">
-                                            <div className="text-sm font-semibold text-gray-900">#{motivo.id}</div>
+                                            <div className="text-sm font-medium text-gray-900">
+                                                {typeof motivo.descricao === 'string' ? motivo.descricao : JSON.stringify(motivo.descricao)}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4.5 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">{motivo.descricao}</div>
-                                        </td>
-                                        <td className="px-6 py-4.5 whitespace-nowrap">
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium ${motivo.situacao === 'A'
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium ${motivo.situacao === 'A' || motivo.situacao === 'a'
                                                 ? 'bg-[var(--secondary-green)]/20 text-[var(--dark-navy)] border border-[var(--secondary-green)]/30'
                                                 : 'bg-red-50 text-red-700 border border-red-100'
                                                 }`}>
-                                                {motivo.situacao === 'A' ? 'Ativo' : 'Inativo'}
+                                                {motivo.situacao === 'A' || motivo.situacao === 'a' ? 'Ativo' : 'Inativo'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4.5 whitespace-nowrap text-sm font-medium">

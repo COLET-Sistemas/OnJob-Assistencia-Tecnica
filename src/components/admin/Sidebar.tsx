@@ -81,6 +81,15 @@ const menuItems: MenuItem[] = [
             { key: 'pecas', label: 'Peças', icon: Package, path: '/admin/cadastro/pecas' }
         ]
     },
+    {
+        key: 'motivos',
+        label: 'Motivos',
+        icon: Package,
+        submenu: [
+            { key: 'motivos_atendimentos', label: 'Motivos Atendimentos', icon: Package, path: '/admin/cadastro/motivos_atendimentos' },
+            { key: 'motivos_pendencias', label: 'Motivos Pendências', icon: Package, path: '/admin/cadastro/motivos_pendencias' }
+        ]
+    },
 ];
 
 export default function Sidebar({ isOpen }: SidebarProps) {
