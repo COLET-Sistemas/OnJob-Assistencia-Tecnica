@@ -66,7 +66,7 @@ const CadastroMotivosPendencia = () => {
                             className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm hover:shadow transform hover:-translate-y-0.5"
                         >
                             <Plus size={18} />
-                            Novo Motivo
+                            Novo Motivossss
                         </a>
                     </div>
 
@@ -91,8 +91,8 @@ const CadastroMotivosPendencia = () => {
                                         </td>
                                         <td className="px-6 py-4.5 whitespace-nowrap">
                                             <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium ${motivo.situacao === 'A'
-                                                    ? 'bg-[var(--secondary-green)]/20 text-[var(--dark-navy)] border border-[var(--secondary-green)]/30'
-                                                    : 'bg-red-50 text-red-700 border border-red-100'
+                                                ? 'bg-[var(--secondary-green)]/20 text-[var(--dark-navy)] border border-[var(--secondary-green)]/30'
+                                                : 'bg-red-50 text-red-700 border border-red-100'
                                                 }`}>
                                                 {motivo.situacao === 'A' ? 'Ativo' : 'Inativo'}
                                             </span>
