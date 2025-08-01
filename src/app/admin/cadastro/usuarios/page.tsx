@@ -76,7 +76,7 @@ function CadastroUsuarios() {
         return (
             <Loading
                 fullScreen
-                text="Carregando cadastro de usuários..."
+                text="Carregando usuários..."
                 size="large"
             />
         );
