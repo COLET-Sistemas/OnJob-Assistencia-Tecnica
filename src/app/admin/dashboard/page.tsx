@@ -1,10 +1,12 @@
 'use client'
+import { Loading } from '@/components/loading';
 import {
     BarChart3,
     Cog,
     Plus,
     UserPlus
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 
 interface StatsCard {
@@ -24,6 +26,27 @@ const statsCards: StatsCard[] = [
 ];
 
 export default function DashboardPage() {
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Simulate data loading
+        const timer = setTimeout(() => {
+            setLoading(false);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (loading) {
+        return (
+            <Loading
+                fullScreen
+                text="Carregando dashboard..."
+                size="large"
+            />
+        );
+    }
+
     return (
         <div className="flex h-screen bg-gray-50">
             <main className="flex-1 p-6 overflow-auto">
