@@ -1,11 +1,13 @@
 'use client'
 import { maquinasAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
+import { useTitle } from '@/context/TitleContext';
 import type { FormData, Maquina } from '@/types/admin/cadastro/maquinas';
 import { Edit2, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function CadastroMaquinas() {
+    const { setTitle } = useTitle();
     const [maquinas, setMaquinas] = useState<Maquina[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -25,6 +27,11 @@ export default function CadastroMaquinas() {
     useEffect(() => {
         carregarMaquinas();
     }, []);
+
+    // Configurar o título da página
+    useEffect(() => {
+        setTitle('Máquinas');
+    }, [setTitle]);
 
     const carregarMaquinas = async () => {
         setLoading(true);

@@ -5,10 +5,10 @@ export interface Regiao {
 
 export interface Cliente {
     id: number;
-    nome: string;
+    nome_fantasia: string;
     razao_social: string;
     cnpj: string;
-    logradouro: string;
+    endereco: string;
     numero: string;
     bairro: string;
     cep: string;
@@ -21,10 +21,10 @@ export interface Cliente {
 }
 
 export interface FormData {
-    nome: string;
+    nome_fantasia: string;
     razao_social: string;
     cnpj: string;
-    logradouro: string;
+    endereco: string;
     numero: string;
     bairro: string;
     cep: string;

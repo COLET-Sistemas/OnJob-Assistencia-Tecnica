@@ -9,16 +9,31 @@ import {
     StatusBadge
 } from '@/components/admin/common';
 import { Loading } from '@/components/loading';
+import { useTitle } from '@/context/TitleContext';
 import type { Cliente as ClienteBase } from '@/types/admin/cadastro/clientes';
 import { formatDocumento } from '@/utils/formatters';
 import { Edit2, MapPin, User } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+// Interface para os parâmetros de filtro da API
+interface FiltroParams {
+    nome?: string;
+    situacao?: string;
+    [key: string]: string | undefined;
+}
+
+// Interface para os filtros do componente
+interface Filtros {
+    texto: string;
+    status: string;
+    [key: string]: string;
+}
 
 // Extend the base Cliente interface to include additional properties used in this component
-interface Cliente extends ClienteBase {
+interface Cliente extends Omit<ClienteBase, 'endereco'> {
     id_cliente?: number;
-    nome_fantasia?: string;
-    endereco?: string;
+    // All properties from ClienteBase remain required, plus these additional properties
+    endereco: string; // Keep endereco required as in the base interface
     qtd_contatos?: number;
     contatos?: Array<{
         id_contato: number;
@@ -33,15 +48,24 @@ interface Cliente extends ClienteBase {
 }
 
 const CadastroCliente = () => {
+    const { setTitle } = useTitle();
     const [clientes, setClientes] = useState<Cliente[]>([]);
     const [clientesFiltrados, setClientesFiltrados] = useState<Cliente[]>([]);
     const [expandedClienteId, setExpandedClienteId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [showFilters, setShowFilters] = useState(false);
-    const [filtros, setFiltros] = useState({
+    const [filtros, setFiltros] = useState<Filtros>({
         texto: '',
         status: ''
     });
+
+    // Ref para controlar se os dados já foram carregados
+    const dadosCarregados = useRef(false);
+
+    // Configurar o título da página
+    useEffect(() => {
+        setTitle('Clientes');
+    }, [setTitle]);
 
     // Memoize handlers for better performance
     const toggleExpand = useCallback((id: number | string) => {
@@ -51,39 +75,33 @@ const CadastroCliente = () => {
         });
     }, []);
 
-    // Memoize filter function for performance
-    const aplicarFiltros = useCallback(() => {
-        // Use a single pass to filter data for better performance
-        const filteredClientes = clientes.filter(cliente => {
-            // Apply text filter if exists
-            if (filtros.texto) {
-                const textoLowerCase = filtros.texto.toLowerCase();
-                const matchesText = (
-                    (cliente.nome_fantasia?.toLowerCase() || '').includes(textoLowerCase) ||
-                    (cliente.nome?.toLowerCase() || '').includes(textoLowerCase) ||
-                    (cliente.razao_social?.toLowerCase() || '').includes(textoLowerCase) ||
-                    (cliente.cnpj || '').includes(filtros.texto)
-                );
+    // Função para aplicar todos os filtros quando o usuário clica no botão "Aplicar"
+    const aplicarTodosFiltros = useCallback(() => {
+        // Mostrar estado de carregamento enquanto a API processa
+        setLoading(true);
+        // Aplica todos os filtros (texto e status)
+        carregarClientes(filtros);
+        // Indica que já carregamos os dados pelo menos uma vez
+        dadosCarregados.current = true;
+    }, [filtros]);
 
-                if (!matchesText) return false;
-            }
-
-            // Apply status filter if exists
-            if (filtros.status && cliente.situacao !== filtros.status) {
-                return false;
-            }
-
-            // If we got here, all filters passed
-            return true;
-        });
-
-        setClientesFiltrados(filteredClientes);
-    }, [clientes, filtros]);
-
-    const carregarClientes = useCallback(async () => {
+    // Carrega todos os clientes ou clientes com filtros específicos
+    const carregarClientes = async (filtrosParam: Partial<Filtros> = {}) => {
         setLoading(true);
         try {
-            const dados: Cliente[] = await clientesAPI.getAll();
+            const params: FiltroParams = {};
+
+            // Adicionar parâmetros de filtro à requisição
+            if (filtrosParam.texto) {
+                // Adiciona o texto entre aspas duplas conforme solicitado
+                params.nome = `"${filtrosParam.texto}"`;
+            }
+
+            if (filtrosParam.status) {
+                params.situacao = filtrosParam.status;
+            }
+
+            const dados: Cliente[] = await clientesAPI.getAll(params);
             setClientes(dados);
             setClientesFiltrados(dados);
         } catch (error) {
@@ -91,34 +109,54 @@ const CadastroCliente = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    };
 
+    // Função para busca em tempo real ao digitar no campo de texto
     useEffect(() => {
         const handler = setTimeout(() => {
-            aplicarFiltros();
-        }, 300);
+            if (filtros.texto) {
+                // Se houver texto, faz a busca com o parâmetro
+                carregarClientes({ texto: filtros.texto } as Partial<Filtros>);
+            } else if (filtros.texto === '' && dadosCarregados.current) {
+                // Se o texto foi limpo, recarrega todos os clientes
+                carregarClientes({});
+            }
+        }, 500); // Um tempo maior para evitar muitas requisições enquanto o usuário digita
 
         return () => {
             clearTimeout(handler);
         };
-    }, [aplicarFiltros]);
+    }, [filtros.texto]);
 
+    // Usando useRef para garantir que a API só seja chamada uma vez, mesmo com rerenderizações do StrictMode
     useEffect(() => {
-        carregarClientes();
-    }, [carregarClientes]);
+        if (!dadosCarregados.current) {
+            // Inicialmente carrega sem filtros
+            carregarClientes({});
+            dadosCarregados.current = true;
+        }
+    }, []);
 
     const handleFiltroChange = useCallback((campo: string, valor: string) => {
         setFiltros(prev => ({
             ...prev,
             [campo]: valor
         }));
+
+        // O filtro de texto já está sendo processado pelo useEffect
+        // Para os outros filtros, vamos esperar o usuário clicar em "Aplicar"
     }, []);
 
     const limparFiltros = useCallback(() => {
+        // Limpa os filtros no estado
         setFiltros({
             texto: '',
             status: ''
         });
+        // Recarregar todos os clientes sem filtros
+        carregarClientes({});
+        // Indica que já carregamos os dados pelo menos uma vez
+        dadosCarregados.current = true;
     }, []);
 
     if (loading) {
@@ -158,7 +196,7 @@ const CadastroCliente = () => {
             header: 'Cliente',
             accessor: (cliente: Cliente) => (
                 <div>
-                    <div className="text-md font-semibold text-gray-900">{cliente.nome_fantasia || cliente.nome}</div>
+                    <div className="text-md font-semibold text-gray-900">{cliente.nome_fantasia}</div>
                     <div className="text-xs text-gray-500 mt-0.5">{cliente.razao_social}</div>
                 </div>
             )
@@ -178,7 +216,7 @@ const CadastroCliente = () => {
                         {cliente.cidade}, {cliente.uf}
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">
-                        {cliente.endereco || cliente.logradouro}, {cliente.numero}
+                        {cliente.endereco}, {cliente.numero}
                     </div>
                 </>
             )
@@ -259,9 +297,9 @@ const CadastroCliente = () => {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (confirm(`Deseja realmente excluir o cliente "${cliente.nome_fantasia || cliente.nome || cliente.razao_social}"?`)) {
+                            if (confirm(`Deseja realmente excluir o cliente "${cliente.nome_fantasia || cliente.razao_social}"?`)) {
                                 // Aqui você pode adicionar a lógica de exclusão
-                                // Por exemplo: clientesAPI.delete(cliente.id_cliente || cliente.id).then(() => carregarClientes());
+                                // Por exemplo: clientesAPI.delete(cliente.id_cliente || cliente.id).then(() => carregarClientes(filtros as Partial<Filtros>));
                                 alert('Funcionalidade de exclusão será implementada em breve.');
                             }
                         }}
@@ -302,6 +340,7 @@ const CadastroCliente = () => {
                     filterValues={filtros}
                     onFilterChange={handleFiltroChange}
                     onClearFilters={limparFiltros}
+                    onApplyFilters={aplicarTodosFiltros}
                     onClose={() => setShowFilters(false)}
                     itemCount={clientesFiltrados.length}
                     totalCount={clientes.length}

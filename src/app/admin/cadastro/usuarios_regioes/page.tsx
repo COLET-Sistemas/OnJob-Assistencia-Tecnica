@@ -1,6 +1,7 @@
 'use client'
 import { usuariosRegioesAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
+import { useTitle } from '@/context/TitleContext';
 import { UsuarioRegiao } from '@/types/admin/cadastro/usuarios';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -8,6 +9,7 @@ import { Calendar, Edit2, MapPin, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 function CadastroUsuarios() {
+    const { setTitle } = useTitle();
     const [usuariosRegioes, setUsuariosRegioes] = useState<UsuarioRegiao[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -15,6 +17,11 @@ function CadastroUsuarios() {
     useEffect(() => {
         carregarUsuariosRegioes();
     }, []);
+
+    // Configurar o título da página
+    useEffect(() => {
+        setTitle('Usuários Regiões');
+    }, [setTitle]);
 
     const carregarUsuariosRegioes = async () => {
         setLoading(true);

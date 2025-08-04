@@ -1,11 +1,13 @@
 'use client'
 import { regioesAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
+import { useTitle } from '@/context/TitleContext';
 import type { FormData, Regiao } from '@/types/admin/cadastro/regioes';
 import { Edit2, MapPin, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const CadastroRegioes = () => {
+    const { setTitle } = useTitle();
     const [regioes, setRegioes] = useState<Regiao[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -22,6 +24,11 @@ const CadastroRegioes = () => {
     useEffect(() => {
         carregarRegioes();
     }, []);
+
+    // Configurar o título da página
+    useEffect(() => {
+        setTitle('Regiões');
+    }, [setTitle]);
 
     const carregarRegioes = async () => {
         setLoading(true);
@@ -118,8 +125,8 @@ const CadastroRegioes = () => {
     }
 
     return (
-        <div className="bg-[#F9F7F7] p-1">
-            <div className="max-w-8xl mx-auto">
+        <div className="bg-[#F9F7F7] p-1 ">
+            <div className="max-w-8xl mx-auto ">
                 <div className="bg-[var(--neutral-white)] rounded-xl shadow-md overflow-hidden border border-gray-100">
                     <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/10">
                         <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center">

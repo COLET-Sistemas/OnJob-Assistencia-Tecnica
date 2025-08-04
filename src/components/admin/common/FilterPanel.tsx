@@ -18,6 +18,7 @@ interface FilterPanelProps {
     onFilterChange: (key: string, value: string) => void;
     onClearFilters: () => void;
     onClose: () => void;
+    onApplyFilters?: () => void; // Nova propriedade para aplicar os filtros
     itemCount: number;
     totalCount: number;
 }
@@ -29,6 +30,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     onFilterChange,
     onClearFilters,
     onClose,
+    onApplyFilters,
     itemCount,
     totalCount
 }) => {
@@ -127,7 +129,12 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                                 </button>
                             )}
                             <button
-                                onClick={onClose}
+                                onClick={() => {
+                                    if (onApplyFilters) {
+                                        onApplyFilters();
+                                    }
+                                    onClose();
+                                }}
                                 className="px-4 py-2 text-sm font-medium text-white bg-[var(--primary)] hover:bg-[var(--primary)]/90 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
                             >
                                 Aplicar

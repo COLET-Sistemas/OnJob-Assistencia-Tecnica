@@ -1,3 +1,4 @@
+import { useTitle } from '@/context/TitleContext';
 import { Bell, ChevronDown, ChevronLeft, LogOut, Maximize, Menu, Minimize, UserCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -7,7 +8,10 @@ interface NavbarProps {
     title?: string;
 }
 
-export default function Navbar({ sidebarOpen, setSidebarOpen, title = "Dashboard" }: NavbarProps) {
+export default function Navbar({ sidebarOpen, setSidebarOpen, title }: NavbarProps) {
+    // Use the title from context if provided, otherwise use the prop or default to Dashboard
+    const titleContext = useTitle();
+    const displayTitle = titleContext.title || title || "Dashboard";
     // Recupera os dados do localStorage
     const nomeUsuario = typeof window !== 'undefined' ? localStorage.getItem('nome_usuario') || 'Usuário' : 'Usuário';
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -87,7 +91,7 @@ export default function Navbar({ sidebarOpen, setSidebarOpen, title = "Dashboard
                     >
                         {sidebarOpen ? <ChevronLeft size={18} /> : <Menu size={18} />}
                     </button>
-                    <h1 className="text-xl font-semibold text-gray-800 hidden md:block">{title}</h1>
+                    <h1 className="text-xl font-semibold text-gray-800 hidden md:block">{displayTitle}</h1>
                 </div>
 
                 <div className="flex-1">

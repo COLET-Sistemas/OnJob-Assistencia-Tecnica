@@ -1,6 +1,7 @@
 'use client'
 import { usuariosAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
+import { useTitle } from '@/context/TitleContext';
 import { Edit2, Mail, Plus, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -21,12 +22,18 @@ interface Usuario {
 }
 
 const CadastroUsuario = () => {
+    const { setTitle } = useTitle();
     const [usuarios, setUsuarios] = useState<Usuario[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         carregarUsuarios();
     }, []);
+
+    // Configurar o título da página
+    useEffect(() => {
+        setTitle('Usuários');
+    }, [setTitle]);
 
     const carregarUsuarios = async () => {
         setLoading(true);

@@ -1,17 +1,24 @@
 'use client'
 import { pecasAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
+import { useTitle } from '@/context/TitleContext';
 import type { Peca } from '@/types/admin/cadastro/pecas';
 import { Edit2, Package, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const CadastroPecas = () => {
+    const { setTitle } = useTitle();
     const [pecas, setPecas] = useState<Peca[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         carregarPecas();
     }, []);
+
+    // Configurar o título da página
+    useEffect(() => {
+        setTitle('Peças');
+    }, [setTitle]);
 
     const carregarPecas = async () => {
         setLoading(true);

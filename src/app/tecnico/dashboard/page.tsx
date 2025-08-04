@@ -1,8 +1,10 @@
 'use client'
 import { Loading } from '@/components/loading';
+import { useTitle } from '@/context/TitleContext';
 import { useEffect, useState } from 'react';
 
 export default function TecnicoDashboard() {
+    const { setTitle } = useTitle();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -13,6 +15,11 @@ export default function TecnicoDashboard() {
 
         return () => clearTimeout(timer);
     }, []);
+
+    // Configurar o título da página
+    useEffect(() => {
+        setTitle('Dashboard do Técnico');
+    }, [setTitle]);
 
     if (loading) {
         return (

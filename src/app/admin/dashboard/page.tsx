@@ -1,5 +1,6 @@
 'use client'
 import { Loading } from '@/components/loading';
+import { useTitle } from '@/context/TitleContext';
 import {
     BarChart3,
     Cog,
@@ -24,6 +25,7 @@ const statsCards: StatsCard[] = [
 ];
 
 export default function DashboardPage() {
+    const { setTitle } = useTitle();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -34,6 +36,11 @@ export default function DashboardPage() {
 
         return () => clearTimeout(timer);
     }, []);
+
+    // Configurar o título da página
+    useEffect(() => {
+        setTitle('Dashboard');
+    }, [setTitle]);
 
     if (loading) {
         return (

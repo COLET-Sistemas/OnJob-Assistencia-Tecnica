@@ -1,17 +1,24 @@
 'use client'
 import { motivosAtendimentoAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
+import { useTitle } from '@/context/TitleContext';
 import type { MotivoAtendimento } from '@/types/admin/cadastro/motivos_atendimento';
 import { Edit2, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const CadastroMotivosAtendimento = () => {
+    const { setTitle } = useTitle();
     const [motivosAtendimento, setMotivosAtendimento] = useState<MotivoAtendimento[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         carregarMotivosAtendimento();
     }, []);
+
+    // Configurar o título da página
+    useEffect(() => {
+        setTitle('Motivos de Atendimento');
+    }, [setTitle]);
 
     const carregarMotivosAtendimento = async () => {
         setLoading(true);
@@ -43,7 +50,7 @@ const CadastroMotivosAtendimento = () => {
                     <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/10">
                         <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center">
                             <span className="bg-[var(--primary)] h-6 w-1 rounded-full mr-3"></span>
-                            Motivos de Atendimento
+                            Lista Motivos de Atendimento
                             <span className="ml-2 bg-[var(--primary)]/10 text-[var(--primary)] text-sm px-3 py-0.5 rounded-full font-medium">{motivosAtendimento.length}</span>
                         </h2>
                         <a
