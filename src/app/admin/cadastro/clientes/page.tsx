@@ -1,9 +1,10 @@
 
 'use client'
+import { clientesAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
 import type { Cliente as ClienteBase } from '@/types/admin/cadastro/clientes';
-import { Edit2, MapPin, Plus, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Edit2, Filter, MapPin, Plus, Search, User, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 // Extend the base Cliente interface to include additional properties used in this component
 interface Cliente extends ClienteBase {
@@ -25,34 +26,63 @@ interface Cliente extends ClienteBase {
 
 const CadastroCliente = () => {
     const [clientes, setClientes] = useState<Cliente[]>([]);
+    const [clientesFiltrados, setClientesFiltrados] = useState<Cliente[]>([]);
     const [expandedClienteId, setExpandedClienteId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
+    const [showFilters, setShowFilters] = useState(false);
+    const [filtros, setFiltros] = useState({
+        texto: '',
+        status: ''
+    });
+
+    const aplicarFiltros = useCallback(() => {
+        let clientesFiltrados = [...clientes];
+
+        // Filtro por texto (nome, razão social, CNPJ)
+        if (filtros.texto) {
+            const textoLowerCase = filtros.texto.toLowerCase();
+            clientesFiltrados = clientesFiltrados.filter(cliente =>
+            (cliente.nome_fantasia?.toLowerCase().includes(textoLowerCase) ||
+                cliente.nome?.toLowerCase().includes(textoLowerCase) ||
+                cliente.razao_social?.toLowerCase().includes(textoLowerCase) ||
+                cliente.cnpj?.includes(filtros.texto))
+            );
+        }
+
+        // Filtro por status
+        if (filtros.status) {
+            clientesFiltrados = clientesFiltrados.filter(cliente => cliente.situacao === filtros.status);
+        }
+
+        setClientesFiltrados(clientesFiltrados);
+    }, [clientes, filtros]);
 
     useEffect(() => {
         carregarClientes();
     }, []);
 
+    useEffect(() => {
+        aplicarFiltros();
+    }, [aplicarFiltros]);
+
+    const handleFiltroChange = (campo: string, valor: string) => {
+        setFiltros(prev => ({
+            ...prev,
+            [campo]: valor
+        }));
+    };
+
+    const limparFiltros = () => {
+        setFiltros({
+            texto: '',
+            status: ''
+        });
+    };
+
     const carregarClientes = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Token não encontrado');
-            }
-
-            const response = await fetch('http://localhost:8080/clientes', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Token': `${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao buscar clientes');
-            }
-
-            const dados: Cliente[] = await response.json();
+            const dados: Cliente[] = await clientesAPI.getAll();
             setClientes(dados);
         } catch (error) {
             console.error('Erro ao carregar clientes:', error);
@@ -69,7 +99,8 @@ const CadastroCliente = () => {
     if (loading) {
         return (
             <Loading
-                fullScreen
+                fullScreen={true}
+                preventScroll={false}
                 text="Carregando clientes..."
                 size="large"
             />
@@ -80,19 +111,144 @@ const CadastroCliente = () => {
         <div className="bg-[#F9F7F7] p-1">
             <div className="max-w-8xl mx-auto">
                 <div className="bg-[var(--neutral-white)] rounded-xl shadow-md overflow-hidden border border-gray-100">
-                    <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/10">
-                        <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center">
-                            <span className="bg-[var(--primary)] h-6 w-1 rounded-full mr-3"></span>
-                            Lista de Clientes
-                            <span className="ml-2 bg-[var(--primary)]/10 text-[var(--primary)] text-sm px-3 py-0.5 rounded-full font-medium">{clientes.length}</span>
-                        </h2>
-                        <a
-                            href="/admin/cadastro/clientes/novo"
-                            className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm hover:shadow transform hover:-translate-y-0.5"
-                        >
-                            <Plus size={18} />
-                            Novo Cliente
-                        </a>
+                    <div className="px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/10">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center">
+                                <span className="bg-[var(--primary)] h-6 w-1 rounded-full mr-3"></span>
+                                Lista de Clientes
+                                <span className="ml-2 bg-[var(--primary)]/10 text-[var(--primary)] text-sm px-3 py-0.5 rounded-full font-medium">{clientesFiltrados.length}</span>
+                            </h2>
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowFilters(!showFilters)}
+                                        className={`relative px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border ${showFilters
+                                            ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/25'
+                                            : 'bg-white hover:bg-gray-50 text-[var(--neutral-graphite)] border-gray-200 hover:border-gray-300 hover:shadow-md'
+                                            }`}
+                                    >
+                                        <Filter size={18} />
+                                        <span className="font-medium">Filtros</span>
+                                        {(filtros.texto || filtros.status) && (
+                                            <div className="absolute -top-1 -right-1 flex items-center justify-center">
+                                                <span className="w-5 h-5 bg-[#F6C647] text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg">
+                                                    {[filtros.texto, filtros.status].filter(Boolean).length}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </button>
+                                </div>
+                                <a
+                                    href="/admin/cadastro/clientes/novo"
+                                    className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm hover:shadow transform hover:-translate-y-0.5"
+                                >
+                                    <Plus size={18} />
+                                    Novo Cliente
+                                </a>
+                            </div>
+                        </div>
+
+                        {/* Painel de Filtros Expansível */}
+                        {showFilters && (
+                            <div className="mt-6 overflow-hidden rounded-xl border border-gray-200/80 bg-white shadow-lg backdrop-blur-sm animate-in slide-in-from-top-2 duration-300">
+                                <div className="bg-gradient-to-r from-[var(--primary)]/5 to-[var(--secondary-green)]/5 px-6 py-4 border-b border-gray-100">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
+                                                <Filter size={16} className="text-[var(--primary)]" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-semibold text-[var(--neutral-graphite)]">Filtros Avançados</h3>
+                                                <p className="text-xs text-gray-500">Refine sua busca pelos critérios abaixo</p>
+                                            </div>
+                                        </div>
+                                        {(filtros.texto || filtros.status) && (
+                                            <div className="flex items-center gap-2 text-xs text-[var(--primary)] bg-[var(--primary)]/10 px-3 py-1.5 rounded-full">
+                                                <div className="w-2 h-2 bg-[var(--primary)] rounded-full animate-pulse"></div>
+                                                Filtros ativos
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="p-6">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        {/* Filtro por Texto */}
+                                        <div className="space-y-3">
+                                            <label className="block text-sm font-semibold text-[var(--neutral-graphite)] mb-3">
+                                                Busca Textual
+                                            </label>
+                                            <div className="relative group">
+                                                <input
+                                                    type="text"
+                                                    value={filtros.texto}
+                                                    onChange={(e) => handleFiltroChange('texto', e.target.value)}
+                                                    placeholder="Digite o nome, razão social ou CNPJ..."
+                                                    className="w-full px-4 py-3 pl-11 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-[var(--neutral-graphite)] placeholder-[var(--neutral-graphite)]/60 transition-all duration-200 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/10 focus:outline-none group-hover:border-gray-300"
+                                                />
+                                                <Search size={16} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-[var(--primary)]" />
+                                            </div>
+                                        </div>
+
+                                        {/* Filtro por Status */}
+                                        <div className="space-y-3">
+                                            <label className="block text-sm font-semibold text-[var(--neutral-graphite)] mb-3">
+                                                Status do Cliente
+                                            </label>
+                                            <div className="relative group">
+                                                <select
+                                                    value={filtros.status}
+                                                    onChange={(e) => handleFiltroChange('status', e.target.value)}
+                                                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-800 appearance-none cursor-pointer transition-all duration-200 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/10 focus:outline-none group-hover:border-gray-300"
+                                                >
+                                                    <option value="" className="text-gray-500">Todos os status</option>
+                                                    <option value="A" className="text-gray-800">Ativo</option>
+                                                    <option value="I" className="text-gray-800">Inativo</option>
+                                                </select>
+                                                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                                                    <svg className="w-4 h-4 text-gray-400 transition-colors group-focus-within:text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Seção de Resultados e Ações */}
+                                    <div className="mt-6 pt-6 border-t border-gray-100">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="text-sm text-[var(--neutral-graphite)]">
+                                                    <span className="font-medium">{clientesFiltrados.length}</span>
+                                                    <span className="text-gray-500"> de {clientes.length} clientes encontrados</span>
+                                                </div>
+                                                {clientesFiltrados.length !== clientes.length && (
+                                                    <div className="h-4 w-px bg-gray-300"></div>
+                                                )}
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                {(filtros.texto || filtros.status) && (
+                                                    <button
+                                                        onClick={limparFiltros}
+                                                        className="px-4 py-2 text-sm font-medium text-[var(--neutral-graphite)] hover:text-[var(--primary)] bg-gray-50 hover:bg-gray-100 rounded-lg flex items-center gap-2 transition-all duration-200 border border-gray-200 hover:border-gray-300"
+                                                    >
+                                                        <X size={16} />
+                                                        Limpar Filtros
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => setShowFilters(false)}
+                                                    className="px-4 py-2 text-sm font-medium text-white bg-[var(--primary)] hover:bg-[var(--primary)]/90 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
+                                                >
+                                                    Aplicar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="overflow-x-auto">
@@ -109,7 +265,7 @@ const CadastroCliente = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-100">
-                                {clientes.map((cliente: Cliente) => (
+                                {clientesFiltrados.map((cliente: Cliente) => (
                                     <>
                                         <tr key={cliente.id_cliente || cliente.id} className="hover:bg-[var(--primary)]/5 transition-colors duration-150">
 

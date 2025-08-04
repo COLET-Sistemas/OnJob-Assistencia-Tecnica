@@ -76,7 +76,8 @@ function CadastroUsuarios() {
     if (loading) {
         return (
             <Loading
-                fullScreen
+                fullScreen={true}
+                preventScroll={false}
                 text="Carregando usuários..."
                 size="large"
             />

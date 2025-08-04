@@ -61,7 +61,8 @@ const CadastroUsuario = () => {
     if (loading) {
         return (
             <Loading
-                fullScreen
+                fullScreen={true}
+                preventScroll={false}
                 text="Carregando usuários..."
                 size="large"
             />
@@ -144,8 +145,8 @@ const CadastroUsuario = () => {
                                         </td>
                                         <td className="px-6 py-4.5 whitespace-nowrap">
                                             <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium ${usuario.situacao === 'A'
-                                                    ? 'bg-[var(--secondary-green)]/20 text-[var(--dark-navy)] border border-[var(--secondary-green)]/30'
-                                                    : 'bg-red-50 text-red-700 border border-red-100'
+                                                ? 'bg-[var(--secondary-green)]/20 text-[var(--dark-navy)] border border-[var(--secondary-green)]/30'
+                                                : 'bg-red-50 text-red-700 border border-red-100'
                                                 }`}>
                                                 {usuario.situacao === 'A' ? 'Ativo' : 'Inativo'}
                                             </span>

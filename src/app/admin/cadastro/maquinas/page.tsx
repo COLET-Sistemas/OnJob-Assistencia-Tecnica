@@ -184,7 +184,8 @@ export default function CadastroMaquinas() {
     if (loading) {
         return (
             <Loading
-                fullScreen
+                fullScreen={true}
+                preventScroll={false}
                 text="Carregando máquinas..."
                 size="large"
             />

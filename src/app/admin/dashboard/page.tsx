@@ -38,7 +38,8 @@ export default function DashboardPage() {
     if (loading) {
         return (
             <Loading
-                fullScreen
+                fullScreen={true}
+                preventScroll={false}
                 text="Carregando dashboard..."
                 size="large"
             />
@@ -52,7 +53,7 @@ export default function DashboardPage() {
                     <h2 className="text-3xl font-bold text-gray-800 mb-2">Bem-vindo ao Dashboard!</h2>
                     <p className="text-gray-600">Gerencie todas as operações da sua assistência técnica de forma eficiente.</p>
                 </div>
-           
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     {statsCards.map((card, index) => (
                         <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">

@@ -61,7 +61,8 @@ const CadastroPecas = () => {
     if (loading) {
         return (
             <Loading
-                fullScreen
+                fullScreen={true}
+                preventScroll={false}
                 text="Carregando peças..."
                 size="large"
             />

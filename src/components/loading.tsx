@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { forwardRef, useEffect } from "react";
 
 type LoadingSize = "small" | "medium" | "large";
@@ -13,7 +13,26 @@ interface LoadingSpinnerProps {
     fullScreen?: boolean;
     showText?: boolean;
     className?: string;
+    preventScroll?: boolean; // Controls whether to prevent scrolling when fullScreen is true
 }
+
+const sizeMap: Record<LoadingSize, string> = {
+    small: "h-8 w-8",
+    medium: "h-12 w-12",
+    large: "h-16 w-16",
+};
+
+const colorMap: Record<
+    LoadingColor,
+    { outer: string; inner: string; dot: string; text: string }
+> = {
+    primary: {
+        outer: "border-t-[#75FABD]",
+        inner: "border-t-[#7C54BD]",
+        dot: "bg-[#75FABD]",
+        text: "text-[#7C54BD]",
+    },
+};
 
 export const LoadingSpinner = forwardRef<HTMLDivElement, LoadingSpinnerProps>(
     (
@@ -24,43 +43,51 @@ export const LoadingSpinner = forwardRef<HTMLDivElement, LoadingSpinnerProps>(
             fullScreen = false,
             showText = true,
             className = "",
+            preventScroll = true, // By default, prevent scroll when fullScreen is true
         },
         ref
     ) => {
+        const prefersReducedMotion = useReducedMotion();
+
         // Bloqueia scroll do body quando em fullscreen
         useEffect(() => {
-            if (fullScreen) {
-                const previous = document.body.style.overflow;
-                document.body.style.overflow = "hidden";
-                return () => {
-                    document.body.style.overflow = previous;
-                };
-            }
-        }, [fullScreen]);
+            if (!fullScreen || !preventScroll) return;
+            if (typeof document === "undefined") return;
 
-        // Size mappings
-        const sizeMap: Record<LoadingSize, string> = {
-            small: "h-8 w-8",
-            medium: "h-12 w-12",
-            large: "h-16 w-16",
-        };
+            const previous = document.body.style.overflow;
+            document.body.style.overflow = "hidden";
 
-        // Apenas a cor primary
-        const colorMap: Record<
-            LoadingColor,
-            { outer: string; inner: string; dot: string; text: string }
-        > = {
-            primary: {
-                outer: "border-t-[#75FABD]",
-                inner: "border-t-[#7C54BD]",
-                dot: "bg-[#75FABD]",
-                text: "text-[#7C54BD]",
-            },
-        };
+            return () => {
+                document.body.style.overflow = previous;
+            };
+        }, [fullScreen, preventScroll]);
 
+        // Use position absolute instead of fixed when we want to allow scrolling
         const containerClasses = fullScreen
-            ? "fixed inset-0 flex items-center justify-center bg-[#F9F7F7] overflow-hidden w-full h-full"
+            ? `${preventScroll ? 'fixed' : 'absolute'} inset-0 flex items-center justify-center bg-[#F9F7F7] overflow-hidden w-full h-full`
             : "flex items-center justify-center py-8";
+
+        // Animações condicionais
+        const outerRotate = prefersReducedMotion
+            ? {}
+            : { rotate: 360 };
+        const innerRotate = prefersReducedMotion
+            ? {}
+            : { rotate: -360 };
+        const rotateTransitionOuter = prefersReducedMotion
+            ? {}
+            : {
+                duration: 1,
+                ease: "linear" as const,
+                repeat: Infinity,
+            };
+        const rotateTransitionInner = prefersReducedMotion
+            ? {}
+            : {
+                duration: 1.5,
+                ease: "linear" as const,
+                repeat: Infinity,
+            };
 
         return (
             <div
@@ -68,6 +95,7 @@ export const LoadingSpinner = forwardRef<HTMLDivElement, LoadingSpinnerProps>(
                 ref={ref}
                 role="status"
                 aria-busy="true"
+                aria-live="polite"
             >
                 <motion.div
                     className="flex flex-col items-center"
@@ -75,25 +103,17 @@ export const LoadingSpinner = forwardRef<HTMLDivElement, LoadingSpinnerProps>(
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <div className={`relative ${sizeMap[size]}`}>
+                    <div className={`relative ${sizeMap[size]}`} aria-hidden="true">
                         <motion.div
                             className={`absolute inset-0 border-4 border-transparent ${colorMap[color].outer} rounded-full`}
-                            animate={{ rotate: 360 }}
-                            transition={{
-                                duration: 1,
-                                ease: "linear",
-                                repeat: Infinity,
-                            }}
+                            animate={outerRotate}
+                            transition={rotateTransitionOuter}
                         />
 
                         <motion.div
                             className={`absolute inset-2 border-4 border-transparent ${colorMap[color].inner} rounded-full`}
-                            animate={{ rotate: -360 }}
-                            transition={{
-                                duration: 1.5,
-                                ease: "linear",
-                                repeat: Infinity,
-                            }}
+                            animate={innerRotate}
+                            transition={rotateTransitionInner}
                         />
 
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -110,6 +130,7 @@ export const LoadingSpinner = forwardRef<HTMLDivElement, LoadingSpinnerProps>(
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.3, duration: 0.5 }}
+                            aria-live="polite"
                         >
                             {text}
                         </motion.p>

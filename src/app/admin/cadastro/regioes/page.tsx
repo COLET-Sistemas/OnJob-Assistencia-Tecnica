@@ -175,7 +175,8 @@ const CadastroRegioes = () => {
     if (loading) {
         return (
             <Loading
-                fullScreen
+                fullScreen={true}
+                preventScroll={false}
                 text="Carregando regiões..."
                 size="large"
             />

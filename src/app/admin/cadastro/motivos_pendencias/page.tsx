@@ -58,7 +58,8 @@ const CadastroMotivosPendencia = () => {
     if (loading) {
         return (
             <Loading
-                fullScreen
+                fullScreen={true}
+                preventScroll={false}
                 text="Carregando motivos de pendência..."
                 size="large"
             />
