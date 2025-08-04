@@ -10,6 +10,7 @@ import {
 } from '@/components/admin/common';
 import { Loading } from '@/components/loading';
 import type { Cliente as ClienteBase } from '@/types/admin/cadastro/clientes';
+import { formatDocumento } from '@/utils/formatters';
 import { Edit2, MapPin, User } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -120,11 +121,6 @@ const CadastroCliente = () => {
         });
     }, []);
 
-    const formatCNPJ = useCallback((cnpj: string) => {
-        if (!cnpj) return '';
-        return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
-    }, []);
-
     if (loading) {
         return (
             <Loading
@@ -168,9 +164,9 @@ const CadastroCliente = () => {
             )
         },
         {
-            header: 'CNPJ',
+            header: 'CNPJ / CPF',
             accessor: (cliente: Cliente) => (
-                <span className="text-md text-gray-500">{formatCNPJ(cliente.cnpj)}</span>
+                <span className="text-md text-gray-500">{formatDocumento(cliente.cnpj)}</span>
             )
         },
         {
