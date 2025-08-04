@@ -213,35 +213,69 @@ const CadastroCliente = () => {
         },
         {
             header: 'Contatos',
-            accessor: (cliente: Cliente) => (
-                <button
-                    className="px-2 py-1.5 bg-[var(--neutral-light-gray)] border border-gray-100 rounded-lg text-xs font-medium text-[var(--neutral-graphite)] hover:bg-[var(--neutral-light-gray)]/80 flex items-center gap-2 transition-colors"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        toggleExpand(cliente.id_cliente || cliente.id);
-                    }}
-                    type="button"
-                >
-                    <User size={16} className="text-[var(--neutral-graphite)]" />
-                    <span className="text-[var(--primary)]">
-                        ({cliente.qtd_contatos || (cliente.contatos ? cliente.contatos.length : 0)})
-                    </span>
-                    <span className="text-[var(--primary)]">
-                        {expandedClienteId === (cliente.id_cliente || cliente.id) ? "▲" : "▼"}
-                    </span>
-                </button>
-            )
+            accessor: (cliente: Cliente) => {
+                const contatosCount = cliente.qtd_contatos || (cliente.contatos ? cliente.contatos.length : 0);
+                const hasContatos = contatosCount > 0;
+
+                return (
+                    <button
+                        className={`px-2 py-1.5 border border-gray-100 rounded-lg text-xs font-medium flex items-center gap-2 transition-colors ${hasContatos
+                            ? "bg-[var(--neutral-light-gray)] text-[var(--neutral-graphite)] hover:bg-[var(--neutral-light-gray)]/80"
+                            : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                            }`}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (hasContatos) {
+                                toggleExpand(cliente.id_cliente || cliente.id);
+                            }
+                        }}
+                        type="button"
+                        disabled={!hasContatos}
+                    >
+                        <User size={16} className={hasContatos ? "text-[var(--neutral-graphite)]" : "text-gray-400"} />
+                        <span className={hasContatos ? "text-[var(--primary)]" : "text-gray-400"}>
+                            ({contatosCount})
+                        </span>
+                        {hasContatos && (
+                            <span className="text-[var(--primary)]">
+                                {expandedClienteId === (cliente.id_cliente || cliente.id) ? "▲" : "▼"}
+                            </span>
+                        )}
+                    </button>
+                );
+            }
         },
         {
             header: 'Ações',
             accessor: (cliente: Cliente) => (
-                <a
-                    href={`/admin/cadastro/clientes/editar/${cliente.id_cliente || cliente.id}`}
-                    className="inline-flex items-center px-3 py-1.5 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] rounded-lg transition-colors gap-1.5"
-                >
-                    <Edit2 size={14} />
-                    Editar
-                </a>
+                <div className="flex items-center gap-2">
+                    <a
+                        href={`/admin/cadastro/clientes/editar/${cliente.id_cliente || cliente.id}`}
+                        className="inline-flex items-center p-1.5 text-[var(--primary)] rounded transition-colors hover:bg-[var(--primary)]/10"
+                        title="Editar cliente"
+                    >
+                        <Edit2 size={16} />
+                    </a>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Deseja realmente excluir o cliente "${cliente.nome_fantasia || cliente.nome || cliente.razao_social}"?`)) {
+                                // Aqui você pode adicionar a lógica de exclusão
+                                // Por exemplo: clientesAPI.delete(cliente.id_cliente || cliente.id).then(() => carregarClientes());
+                                alert('Funcionalidade de exclusão será implementada em breve.');
+                            }
+                        }}
+                        className="inline-flex items-center p-1.5 text-red-500 rounded transition-colors hover:bg-red-50"
+                        title="Excluir cliente"
+                        type="button"
+                    >
+                        <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 6h18"></path>
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
             )
         }
     ];
