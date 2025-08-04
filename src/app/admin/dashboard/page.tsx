@@ -16,8 +16,6 @@ interface StatsCard {
     color: string;
 }
 
-
-
 const statsCards: StatsCard[] = [
     { title: 'Total de OSs', value: '245', change: '+12%', color: 'bg-[#1ABC9C]' },
     { title: 'OSs Abertas', value: '89', change: '+5%', color: 'bg-blue-500' },
@@ -48,13 +46,13 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="flex h-screen bg-gray-50">
-            <main className="flex-1 p-6 overflow-auto">
+        <div className="bg-[#F9F7F7] p-1">
+            <main className="flex-1 overflow-auto">
                 <div className="mb-8">
                     <h2 className="text-3xl font-bold text-gray-800 mb-2">Bem-vindo ao Dashboard!</h2>
                     <p className="text-gray-600">Gerencie todas as operações da sua assistência técnica de forma eficiente.</p>
                 </div>
-                {/* Stats Cards */}
+           
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     {statsCards.map((card, index) => (
                         <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">

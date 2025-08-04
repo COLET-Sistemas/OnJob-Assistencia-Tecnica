@@ -220,9 +220,6 @@ const CadastroRegioes = () => {
                                         <tr key={regiao.id} className="hover:bg-[var(--primary)]/5 transition-colors duration-150 group">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm font-medium text-gray-900 flex items-center gap-2.5">
-                                                    <div className="bg-[var(--primary)]/10 p-1.5 rounded-md inline-flex">
-                                                        <MapPin size={16} className="text-[var(--primary)]" />
-                                                    </div>
                                                     {regiao.nome}
                                                 </div>
                                             </td>
@@ -277,15 +274,8 @@ const CadastroRegioes = () => {
                                                 </div>
                                                 <p className="text-lg text-gray-700 font-medium">Nenhuma região cadastrada</p>
                                                 <p className="text-sm text-gray-500 mt-2 mb-5 max-w-md">
-                                                    Você ainda não possui regiões cadastradas no sistema. Clique no botão abaixo para adicionar sua primeira região.
+                                                    Você ainda não possui regiões cadastradas no sistema.
                                                 </p>
-                                                <button
-                                                    onClick={() => abrirModal()}
-                                                    className="mt-2 bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/20 px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 hover:scale-105 border border-[var(--primary)]/20"
-                                                >
-                                                    <Plus size={18} />
-                                                    Adicionar Primeira Região
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
