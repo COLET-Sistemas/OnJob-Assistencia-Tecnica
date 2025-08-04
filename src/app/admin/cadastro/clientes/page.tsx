@@ -44,7 +44,10 @@ const CadastroCliente = () => {
 
     // Memoize handlers for better performance
     const toggleExpand = useCallback((id: number | string) => {
-        setExpandedClienteId(prevId => prevId === id ? null : id as number);
+        setExpandedClienteId(prevId => {
+            const result = prevId === id ? null : Number(id);
+            return result;
+        });
     }, []);
 
     // Memoize filter function for performance
@@ -81,7 +84,7 @@ const CadastroCliente = () => {
         try {
             const dados: Cliente[] = await clientesAPI.getAll();
             setClientes(dados);
-            setClientesFiltrados(dados); // Initialize filtered clients with all clients
+            setClientesFiltrados(dados);
         } catch (error) {
             console.error('Erro ao carregar clientes:', error);
         } finally {
@@ -89,11 +92,10 @@ const CadastroCliente = () => {
         }
     }, []);
 
-    // Debounced filter application
     useEffect(() => {
         const handler = setTimeout(() => {
             aplicarFiltros();
-        }, 300); // 300ms debounce
+        }, 300); 
 
         return () => {
             clearTimeout(handler);
@@ -167,7 +169,9 @@ const CadastroCliente = () => {
         },
         {
             header: 'CNPJ',
-            accessor: (cliente: Cliente) => formatCNPJ(cliente.cnpj)
+            accessor: (cliente: Cliente) => (
+                <span className="text-md text-gray-500">{formatCNPJ(cliente.cnpj)}</span>
+            )
         },
         {
             header: 'Localização',
@@ -216,10 +220,16 @@ const CadastroCliente = () => {
             accessor: (cliente: Cliente) => (
                 <button
                     className="px-2 py-1.5 bg-[var(--neutral-light-gray)] border border-gray-100 rounded-lg text-xs font-medium text-[var(--neutral-graphite)] hover:bg-[var(--neutral-light-gray)]/80 flex items-center gap-2 transition-colors"
-                    onClick={() => toggleExpand(cliente.id_cliente || cliente.id)}
+                    onClick={(e) => {
+                        e.stopPropagation(); 
+                        toggleExpand(cliente.id_cliente || cliente.id);
+                    }}
+                    type="button"
                 >
                     <User size={16} className="text-[var(--neutral-graphite)]" />
-                    ({cliente.qtd_contatos || (cliente.contatos ? cliente.contatos.length : 0)})
+                    <span className="text-[var(--primary)]">
+                        ({cliente.qtd_contatos || (cliente.contatos ? cliente.contatos.length : 0)})
+                    </span>
                     <span className="text-[var(--primary)]">
                         {expandedClienteId === (cliente.id_cliente || cliente.id) ? "▲" : "▼"}
                     </span>
@@ -271,7 +281,7 @@ const CadastroCliente = () => {
             <DataTable
                 columns={columns}
                 data={clientesFiltrados}
-                keyField="id"
+                keyField="id_cliente"
                 expandedRowId={expandedClienteId}
                 onRowExpand={toggleExpand}
                 emptyStateProps={{

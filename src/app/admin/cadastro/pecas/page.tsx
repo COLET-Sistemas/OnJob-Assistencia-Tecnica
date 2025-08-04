@@ -87,7 +87,7 @@ const CadastroPecas = () => {
                                 {pecas.map((peca) => (
                                     <tr key={peca.id} className="hover:bg-[var(--primary)]/5 transition-colors duration-150">
                                         <td className="px-6 py-4.5 whitespace-nowrap">
-                                            <div className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                            <div className="text-sm text-gray-900 flex items-center gap-2">
                                                 <Package size={16} className="text-[var(--primary)]" />
                                                 {peca.codigo_peca}
                                             </div>
