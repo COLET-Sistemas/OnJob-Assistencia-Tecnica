@@ -122,7 +122,7 @@ const CadastroCliente = () => {
                                 <div className="relative">
                                     <button
                                         onClick={() => setShowFilters(!showFilters)}
-                                        className={`relative px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border ${showFilters
+                                        className={`relative px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border cursor-pointer ${showFilters
                                             ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/25'
                                             : 'bg-white hover:bg-gray-50 text-[var(--neutral-graphite)] border-gray-200 hover:border-gray-300 hover:shadow-md'
                                             }`}
@@ -140,7 +140,7 @@ const CadastroCliente = () => {
                                 </div>
                                 <a
                                     href="/admin/cadastro/clientes/novo"
-                                    className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm hover:shadow transform hover:-translate-y-0.5"
+                                    className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
                                 >
                                     <Plus size={18} />
                                     Novo Cliente
@@ -231,7 +231,7 @@ const CadastroCliente = () => {
                                                 {(filtros.texto || filtros.status) && (
                                                     <button
                                                         onClick={limparFiltros}
-                                                        className="px-4 py-2 text-sm font-medium text-[var(--neutral-graphite)] hover:text-[var(--primary)] bg-gray-50 hover:bg-gray-100 rounded-lg flex items-center gap-2 transition-all duration-200 border border-gray-200 hover:border-gray-300"
+                                                        className="px-4 py-2 text-sm font-medium text-[var(--neutral-graphite)] hover:text-[var(--primary)] bg-gray-50 hover:bg-gray-100 rounded-lg flex items-center gap-2 transition-all duration-200 border border-gray-200 hover:border-gray-300 cursor-pointer"
                                                     >
                                                         <X size={16} />
                                                         Limpar Filtros
@@ -239,7 +239,7 @@ const CadastroCliente = () => {
                                                 )}
                                                 <button
                                                     onClick={() => setShowFilters(false)}
-                                                    className="px-4 py-2 text-sm font-medium text-white bg-[var(--primary)] hover:bg-[var(--primary)]/90 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
+                                                    className="px-4 py-2 text-sm font-medium text-white bg-[var(--primary)] hover:bg-[var(--primary)]/90 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
                                                 >
                                                     Aplicar
                                                 </button>
