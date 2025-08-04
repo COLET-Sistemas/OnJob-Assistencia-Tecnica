@@ -1,4 +1,5 @@
 'use client'
+import { usuariosAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
 import { Edit2, Mail, Plus, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -30,24 +31,7 @@ const CadastroUsuario = () => {
     const carregarUsuarios = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Token não encontrado');
-            }
-
-            const response = await fetch('http://localhost:8080/usuarios', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Token': `${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao buscar usuários');
-            }
-
-            const dados: Usuario[] = await response.json();
+            const dados: Usuario[] = await usuariosAPI.getAll();
             setUsuarios(dados);
         } catch (error) {
             console.error('Erro ao carregar usuários:', error);

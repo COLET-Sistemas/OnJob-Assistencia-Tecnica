@@ -1,4 +1,5 @@
 'use client'
+import { motivosPendenciaAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
 import type { MotivoPendencia } from '@/types/admin/cadastro/motivos_pendencia';
 import { Edit2, Plus } from 'lucide-react';
@@ -18,24 +19,7 @@ const CadastroMotivosPendencia = () => {
     const carregarMotivos = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Token não encontrado');
-            }
-
-            const response = await fetch('http://localhost:8080/motivos_pendencia_os?incluir_inativos=S', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Token': `${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao buscar motivos de pendência');
-            }
-
-            let dados: MotivoPendencia[] = await response.json();
+            let dados: MotivoPendencia[] = await motivosPendenciaAPI.getAllWithInactive();
 
             // Verificar se os dados são um array. Se não for, criar um array a partir dos dados
             if (!Array.isArray(dados)) {

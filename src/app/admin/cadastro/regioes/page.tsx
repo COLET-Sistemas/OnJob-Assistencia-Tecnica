@@ -1,4 +1,5 @@
 'use client'
+import { regioesAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
 import type { FormData, Regiao } from '@/types/admin/cadastro/regioes';
 import { Edit2, MapPin, Plus } from 'lucide-react';
@@ -25,24 +26,7 @@ const CadastroRegioes = () => {
     const carregarRegioes = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Token não encontrado');
-            }
-
-            const response = await fetch('http://localhost:8080/regioes?incluir_inativos=S', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Token': `${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao buscar regiões');
-            }
-
-            const dados: Regiao[] = await response.json();
+            const dados: Regiao[] = await regioesAPI.getAllWithInactive();
             setRegioes(dados);
         } catch (error) {
             console.error('Erro ao carregar regiões:', error);
@@ -53,71 +37,21 @@ const CadastroRegioes = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const token = localStorage.getItem('token');
-
-        if (!token) {
-            alert('Sessão expirada! Por favor, faça login novamente.');
-            return;
-        }
 
         try {
             if (regiaoEditando) {
-                // Em uma implementação completa, aqui seria feito o PUT para a API
-                // const response = await fetch(`http://localhost:8080/regioes/${regiaoEditando.id}`, {
-                //     method: 'PUT',
-                //     headers: {
-                //         'Content-Type': 'application/json',
-                //         'X-Token': token
-                //     },
-                //     body: JSON.stringify(formData)
-                // });
+                // Utilizando o método update da API de regiões
+                await regioesAPI.update(regiaoEditando.id, formData);
 
-                // if (!response.ok) throw new Error('Falha ao atualizar região');
-
-                // Atualizando localmente (simulação)
-                const regioesAtualizadas = regioes.map(regiao =>
-                    regiao.id === regiaoEditando.id
-                        ? {
-                            ...regiao,
-                            nome: formData.nome,
-                            uf: formData.uf,
-                            atendida_empresa: formData.atendida_empresa
-                        }
-                        : regiao
-                );
-                setRegioes(regioesAtualizadas);
+                // Atualiza a lista de regiões após a atualização
+                await carregarRegioes();
                 alert('Região atualizada com sucesso!');
             } else {
-                // Em uma implementação completa, aqui seria feito o POST para a API
-                // const response = await fetch('http://localhost:8080/regioes', {
-                //     method: 'POST',
-                //     headers: {
-                //         'Content-Type': 'application/json',
-                //         'X-Token': token
-                //     },
-                //     body: JSON.stringify(formData)
-                // });
+                // Utilizando o método create da API de regiões
+                await regioesAPI.create(formData);
 
-                // if (!response.ok) throw new Error('Falha ao criar região');
-                // const dadosNovos = await response.json();
-
-                // Criando localmente (simulação)
-                const hoje = new Date();
-                const dataFormatada = hoje.toLocaleDateString('pt-BR') + ' ' +
-                    hoje.getHours().toString().padStart(2, '0') + ':' +
-                    hoje.getMinutes().toString().padStart(2, '0');
-
-                const novaRegiao: Regiao = {
-                    id: regioes.length + 1,
-                    nome: formData.nome,
-                    descricao: formData.descricao,
-                    uf: formData.uf,
-                    atendida_empresa: formData.atendida_empresa,
-                    situacao: formData.situacao,
-                    data_cadastro: dataFormatada,
-                    id_usuario_cadastro: 0 // Valor padrão, normalmente seria obtido do contexto de autenticação
-                };
-                setRegioes([...regioes, novaRegiao]);
+                // Atualiza a lista de regiões após a criação
+                await carregarRegioes();
                 alert('Região cadastrada com sucesso!');
             }
 

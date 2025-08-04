@@ -1,4 +1,5 @@
 'use client'
+import { pecasAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
 import type { Peca } from '@/types/admin/cadastro/pecas';
 import { Edit2, Package, Plus } from 'lucide-react';
@@ -15,24 +16,7 @@ const CadastroPecas = () => {
     const carregarPecas = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Token não encontrado');
-            }
-
-            const response = await fetch('http://localhost:8080/pecas?incluir_inativos=S', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Token': `${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao buscar peças');
-            }
-
-            const dados: Peca[] = await response.json();
+            const dados: Peca[] = await pecasAPI.getAllWithInactive();
             setPecas(dados);
         } catch (error) {
             console.error('Erro ao carregar peças:', error);

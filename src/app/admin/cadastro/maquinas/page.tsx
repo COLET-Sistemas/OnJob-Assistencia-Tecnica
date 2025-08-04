@@ -1,4 +1,5 @@
 'use client'
+import { maquinasAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
 import type { FormData, Maquina } from '@/types/admin/cadastro/maquinas';
 import { Edit2, Plus } from 'lucide-react';
@@ -28,24 +29,7 @@ export default function CadastroMaquinas() {
     const carregarMaquinas = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Token não encontrado');
-            }
-
-            const response = await fetch('http://localhost:8080/maquinas?incluir_inativos=S', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Token': `${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao buscar máquinas');
-            }
-
-            const dados: Maquina[] = await response.json();
+            const dados: Maquina[] = await maquinasAPI.getAllWithInactive();
             setMaquinas(dados);
         } catch (error) {
             console.error('Erro ao carregar máquinas:', error);
@@ -56,79 +40,21 @@ export default function CadastroMaquinas() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const token = localStorage.getItem('token');
-
-        if (!token) {
-            alert('Sessão expirada! Por favor, faça login novamente.');
-            return;
-        }
 
         try {
             if (maquinaEditando) {
-                // Em uma implementação completa, aqui seria feito o PUT para a API
-                // const response = await fetch(`http://localhost:8080/maquinas/${maquinaEditando.id}`, {
-                //     method: 'PUT',
-                //     headers: {
-                //         'Content-Type': 'application/json',
-                //         'X-Token': token
-                //     },
-                //     body: JSON.stringify(formData)
-                // });
+                // Utilizando o método update da API de máquinas
+                await maquinasAPI.update(maquinaEditando.id, formData);
 
-                // if (!response.ok) throw new Error('Falha ao atualizar máquina');
-
-                // Atualizando localmente (simulação)
-                const maquinasAtualizadas = maquinas.map(maquina =>
-                    maquina.id === maquinaEditando.id
-                        ? {
-                            ...maquina,
-                            numero_serie: formData.numero_serie,
-                            descricao: formData.descricao,
-                            modelo: formData.modelo,
-                            data_1a_venda: formData.data_1a_venda,
-                            nota_fiscal_venda: formData.nota_fiscal_venda,
-                            data_final_garantia: formData.data_final_garantia,
-                            situacao: formData.situacao,
-                            cliente_atual: {
-                                id_cliente: formData.id_cliente,
-                                nome_fantasia: maquina.cliente_atual.nome_fantasia // Mantém o nome do cliente
-                            }
-                        }
-                        : maquina
-                );
-                setMaquinas(maquinasAtualizadas);
+                // Atualiza a lista de máquinas após a atualização
+                await carregarMaquinas();
                 alert('Máquina atualizada com sucesso!');
             } else {
-                // Em uma implementação completa, aqui seria feito o POST para a API
-                // const response = await fetch('http://localhost:8080/maquinas', {
-                //     method: 'POST',
-                //     headers: {
-                //         'Content-Type': 'application/json',
-                //         'X-Token': token
-                //     },
-                //     body: JSON.stringify(formData)
-                // });
+                // Utilizando o método create da API de máquinas
+                await maquinasAPI.create(formData);
 
-                // if (!response.ok) throw new Error('Falha ao criar máquina');
-                // const dadosNovos = await response.json();
-
-                // Criando localmente (simulação)
-
-                const novaMaquina: Maquina = {
-                    id: maquinas.length + 1,
-                    numero_serie: formData.numero_serie,
-                    descricao: formData.descricao,
-                    modelo: formData.modelo,
-                    data_1a_venda: formData.data_1a_venda,
-                    nota_fiscal_venda: formData.nota_fiscal_venda,
-                    data_final_garantia: formData.data_final_garantia,
-                    situacao: formData.situacao,
-                    cliente_atual: {
-                        id_cliente: formData.id_cliente,
-                        nome_fantasia: "Cliente Novo" // Na API real viria o nome do cliente
-                    }
-                };
-                setMaquinas([...maquinas, novaMaquina]);
+                // Atualiza a lista de máquinas após a criação
+                await carregarMaquinas();
                 alert('Máquina cadastrada com sucesso!');
             }
 

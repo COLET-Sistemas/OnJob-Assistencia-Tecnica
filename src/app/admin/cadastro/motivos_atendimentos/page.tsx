@@ -1,4 +1,5 @@
 'use client'
+import { motivosAtendimentoAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
 import type { MotivoAtendimento } from '@/types/admin/cadastro/motivos_atendimento';
 import { Edit2, Plus } from 'lucide-react';
@@ -15,24 +16,7 @@ const CadastroMotivosAtendimento = () => {
     const carregarMotivosAtendimento = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Token não encontrado');
-            }
-
-            const response = await fetch('http://localhost:8080/motivos_atendimento', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Token': `${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao buscar motivos de atendimento');
-            }
-
-            const dados: MotivoAtendimento[] = await response.json();
+            const dados: MotivoAtendimento[] = await motivosAtendimentoAPI.getAll();
             setMotivosAtendimento(dados);
         } catch (error) {
             console.error('Erro ao carregar motivos de atendimento:', error);

@@ -1,4 +1,5 @@
 'use client'
+import { usuariosRegioesAPI } from '@/api/api';
 import { Loading } from '@/components/loading';
 import { UsuarioRegiao } from '@/types/admin/cadastro/usuarios';
 import { format, parseISO } from 'date-fns';
@@ -20,24 +21,7 @@ function CadastroUsuarios() {
         setError(null);
 
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Token não encontrado');
-            }
-
-            const response = await fetch('http://localhost:8080/usuarios_regioes', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Token': `${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao buscar usuários');
-            }
-
-            const dados: UsuarioRegiao[] = await response.json();
+            const dados: UsuarioRegiao[] = await usuariosRegioesAPI.getAll();
             setUsuariosRegioes(dados);
         } catch (err) {
             console.error('Erro ao carregar usuários:', err);
