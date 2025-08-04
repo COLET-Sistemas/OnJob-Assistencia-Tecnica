@@ -95,7 +95,7 @@ const CadastroCliente = () => {
     useEffect(() => {
         const handler = setTimeout(() => {
             aplicarFiltros();
-        }, 300); 
+        }, 300);
 
         return () => {
             clearTimeout(handler);
@@ -162,7 +162,7 @@ const CadastroCliente = () => {
             header: 'Cliente',
             accessor: (cliente: Cliente) => (
                 <div>
-                    <div className="text-sm font-semibold text-gray-900">{cliente.nome_fantasia || cliente.nome}</div>
+                    <div className="text-md font-semibold text-gray-900">{cliente.nome_fantasia || cliente.nome}</div>
                     <div className="text-xs text-gray-500 mt-0.5">{cliente.razao_social}</div>
                 </div>
             )
@@ -221,7 +221,7 @@ const CadastroCliente = () => {
                 <button
                     className="px-2 py-1.5 bg-[var(--neutral-light-gray)] border border-gray-100 rounded-lg text-xs font-medium text-[var(--neutral-graphite)] hover:bg-[var(--neutral-light-gray)]/80 flex items-center gap-2 transition-colors"
                     onClick={(e) => {
-                        e.stopPropagation(); 
+                        e.stopPropagation();
                         toggleExpand(cliente.id_cliente || cliente.id);
                     }}
                     type="button"
@@ -313,38 +313,44 @@ const CadastroCliente = () => {
                                                 ) : null}
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 py-2">
-                                            <div className="text-sm text-gray-700 flex items-center gap-2">
-                                                <svg className="w-4 h-4 text-[var(--primary)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                                                </svg>
-                                                <span className="truncate">{contato.telefone}</span>
+                                        <div className="pt-3">
+                                            <div className="flex flex-wrap gap-2">
+                                                {contato.telefone && (
+                                                    <div className="text-sm bg-gray-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-gray-100 hover:bg-gray-100 transition-colors">
+                                                        <svg className="w-4 h-4 text-[var(--primary)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                                        </svg>
+                                                        <span className="truncate max-w-[140px] text-gray-700">{contato.telefone}</span>
+                                                    </div>
+                                                )}
+
+                                                {contato.whatsapp && (
+                                                    <a
+                                                        href={`https://wa.me/${contato.whatsapp.replace(/\D/g, '')}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-sm bg-[var(--secondary-green)]/5 px-3 py-1.5 rounded-md flex items-center gap-2 border border-[var(--secondary-green)]/20 hover:bg-[var(--secondary-green)]/10 transition-colors"
+                                                    >
+                                                        <svg className="w-4 h-4 text-[var(--secondary-green)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                                                        </svg>
+                                                        <span className="truncate max-w-[140px] text-gray-700">{contato.whatsapp}</span>
+                                                    </a>
+                                                )}
+
+                                                {contato.email && (
+                                                    <a
+                                                        href={`mailto:${contato.email}`}
+                                                        className="text-sm bg-blue-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-blue-100 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                                                    >
+                                                        <svg className="w-4 h-4 text-blue-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                                            <polyline points="22,6 12,13 2,6"></polyline>
+                                                        </svg>
+                                                        <span className="truncate max-w-[180px] text-gray-700">{contato.email}</span>
+                                                    </a>
+                                                )}
                                             </div>
-
-                                            {contato.whatsapp && (
-                                                <a
-                                                    href={`https://wa.me/${contato.whatsapp.replace(/\D/g, '')}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-sm text-[var(--neutral-graphite)] flex items-center gap-2 hover:text-[var(--secondary-green)] transition-colors"
-                                                >
-                                                    <svg className="w-4 h-4 text-[var(--secondary-green)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                                                    </svg>
-                                                    <span className="truncate">{contato.whatsapp}</span>
-                                                </a>
-                                            )}
-
-                                            <a
-                                                href={`mailto:${contato.email}`}
-                                                className="text-sm text-gray-700 flex items-center gap-2 hover:text-blue-600 transition-colors col-span-full"
-                                            >
-                                                <svg className="w-4 h-4 text-gray-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                                    <polyline points="22,6 12,13 2,6"></polyline>
-                                                </svg>
-                                                <span className="truncate">{contato.email}</span>
-                                            </a>
                                         </div>
                                     </div>
                                 ))}
