@@ -148,8 +148,8 @@ export const regioesAPI = {
 };
 
 export const pecasAPI = {
-    getAll: () => api.get('/pecas'),
-    getAllWithInactive: () => api.get('/pecas?incluir_inativos=S'),
+    getAll: (page = 1, limit = 20) => api.get('/pecas', { params: { nro_pagina: page, qtde_registros: limit } }),
+    getAllWithInactive: (page = 1, limit = 20) => api.get('/pecas', { params: { incluir_inativos: 'S', nro_pagina: page, qtde_registros: limit } }),
     getById: (id) => api.get(`/pecas/${id}`),
     create: (pecaData) => api.post('/pecas', pecaData),
     update: (id, pecaData) => api.put(`/pecas/${id}`, pecaData),

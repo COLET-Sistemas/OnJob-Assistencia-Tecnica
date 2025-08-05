@@ -28,12 +28,10 @@ const CadastroPecas = () => {
     const paginacaoRef = useRef(paginacao);
     const dadosCarregados = useRef(false);
 
-    // Atualiza a referência quando paginação muda
     useEffect(() => {
         paginacaoRef.current = paginacao;
     }, [paginacao]);
 
-    // Configurar o título da página
     useEffect(() => {
         setTitle('Peças');
     }, [setTitle]);
@@ -50,65 +48,22 @@ const CadastroPecas = () => {
             : paginacaoRef.current.registrosPorPagina;
 
         try {
-            // Na prática, a API precisaria aceitar os parâmetros de paginação
-            // Simularei a resposta com o formato esperado
-            await pecasAPI.getAllWithInactive(); // Chamando a API mas usando dados de exemplo por enquanto
-
-            // Simulando a resposta formatada no formato esperado com os dados do exemplo
-            const formattedResponse = {
-                total_registros: 2,
-                total_paginas: 1,
-                dados: [
-                    {
-                        id: 1,
-                        codigo_peca: 'RBB-PRFT',
-                        descricao: 'Rebinboca da Parafuseta',
-                        unidade_medida: 'PC',
-                        situacao: 'A'
-                    },
-                    {
-                        id: 2,
-                        codigo_peca: 'P123',
-                        descricao: 'Sensor de Temperatura MAX',
-                        unidade_medida: 'PC',
-                        situacao: 'I'
-                    }
-                ]
-            };
-
-            // Supondo que a API retorne o novo formato
-            setPecas(formattedResponse.dados);
+            const response = await pecasAPI.getAllWithInactive(pagina, registrosPorPaginaAtual);
+         
+            setPecas(response.dados);
             setPaginacao({
                 paginaAtual: pagina,
-                totalPaginas: formattedResponse.total_paginas,
-                totalRegistros: formattedResponse.total_registros,
+                totalPaginas: response.total_paginas,
+                totalRegistros: response.total_registros,
                 registrosPorPagina: registrosPorPaginaAtual
             });
         } catch (error) {
             console.error('Erro ao carregar peças:', error);
-            // Para teste, adicionando dados de exemplo
-            const dadosTeste = [
-                {
-                    id: 1,
-                    codigo_peca: 'RBB-PRFT',
-                    descricao: 'Rebinboca da Parafuseta',
-                    unidade_medida: 'PC',
-                    situacao: 'A'
-                },
-                {
-                    id: 2,
-                    codigo_peca: 'P123',
-                    descricao: 'Sensor de Temperatura MAX',
-                    unidade_medida: 'PC',
-                    situacao: 'I'
-                },
-            ];
-
-            setPecas(dadosTeste);
+            setPecas([]);
             setPaginacao({
                 paginaAtual: 1,
                 totalPaginas: 1,
-                totalRegistros: dadosTeste.length,
+                totalRegistros: 0,
                 registrosPorPagina: registrosPorPaginaAtual
             });
         } finally {
@@ -242,7 +197,6 @@ const CadastroPecas = () => {
                         </div>
                     )}
 
-                    {/* Paginação */}
                     {paginacao.totalPaginas > 1 && (
                         <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-lg shadow-sm">
                             <div className="flex flex-1 justify-between sm:hidden">

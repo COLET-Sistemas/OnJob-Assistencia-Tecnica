@@ -3,7 +3,7 @@
 import { regioesAPI } from '@/api/api';
 import { useTitle } from '@/context/TitleContext';
 import { FormData } from '@/types/admin/cadastro/regioes';
-import { MapPin, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -97,36 +97,32 @@ const CadastrarRegiao = () => {
     // Loading state handled directly in the component
 
     return (
-        <div className="bg-[#F9F7F7] p-1">
-            <div className="max-w-6xl mx-auto">
-                <div className="bg-[var(--neutral-white)] rounded-xl shadow-md overflow-hidden border border-gray-100">
-                    {/* Cabeçalho do card */}
-                    <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/10">
-                        <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center">
-                            <span className="bg-[var(--primary)] h-6 w-1 rounded-full mr-3"></span>
-                            Cadastro de Região
-                        </h2>
-                        <Link
-                            href="/admin/cadastro/regioes"
-                            className="text-[var(--neutral-graphite)] hover:text-[var(--neutral-graphite)]/70 text-sm font-medium flex items-center gap-2"
-                        >
-                            Voltar para lista de regiões
-                        </Link>
-                    </div>
-
-                    {/* Formulário */}
+        <div className="px-2">
+            <div className="max-w-8xl mx-auto">
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl border-t-4 border-[#7C54BD]">
                     <form onSubmit={handleSubmit} className="p-8">
+                        {/* Se houver erros, mostrar alerta */}
+                        {Object.keys(formErrors).length > 0 && (
+                            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md shadow-sm">
+                                <h4 className="font-medium mb-1 text-red-700">Por favor, corrija os seguintes erros:</h4>
+                                <ul className="list-disc list-inside">
+                                    {Object.entries(formErrors).map(([field, message]) => (
+                                        <li key={field}>{message}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
                         {/* Informações básicas da região */}
                         <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-[var(--neutral-graphite)] mb-4 flex items-center">
-                                <MapPin size={20} className="mr-2 text-[var(--primary)]" />
+                            <h2 className="text-lg font-semibold text-[#7C54BD] border-b-2 border-[#F6C647] pb-2 inline-block mb-4">
                                 Informações da Região
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {/* Nome da região */}
                                 <div>
-                                    <label htmlFor="nome" className="block text-sm font-medium text-[var(--neutral-graphite)] mb-1">
-                                        Nome da Região *
+                                    <label htmlFor="nome" className="block text-sm font-medium text-[#7C54BD] mb-1">
+                                        Nome da Região<span className="text-red-500 ml-1">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -134,25 +130,44 @@ const CadastrarRegiao = () => {
                                         name="nome"
                                         value={formData.nome}
                                         onChange={handleInputChange}
-                                        className={`mt-1 block w-full px-3 py-2 border ${formErrors.nome ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] sm:text-sm`}
+                                        className={`w-full p-2 border ${formErrors.nome ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black placeholder:text-gray-400`}
                                         placeholder="Nome da região"
                                     />
                                     {formErrors.nome && (
-                                        <p className="mt-1 text-xs text-red-600">{formErrors.nome}</p>
+                                        <p className="mt-1 text-sm text-red-500">{formErrors.nome}</p>
+                                    )}
+                                </div>
+
+                                {/* Descrição */}
+                                <div>
+                                    <label htmlFor="descricao" className="block text-sm font-medium text-[#7C54BD] mb-1">
+                                        Descrição<span className="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="descricao"
+                                        name="descricao"
+                                        value={formData.descricao}
+                                        onChange={handleInputChange}
+                                        className={`w-full p-2 border ${formErrors.descricao ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black placeholder:text-gray-400`}
+                                        placeholder="Descrição detalhada da região"
+                                    />
+                                    {formErrors.descricao && (
+                                        <p className="mt-1 text-sm text-red-500">{formErrors.descricao}</p>
                                     )}
                                 </div>
 
                                 {/* UF */}
                                 <div>
-                                    <label htmlFor="uf" className="block text-sm font-medium text-[var(--neutral-graphite)] mb-1">
-                                        UF *
+                                    <label htmlFor="uf" className="block text-sm font-medium text-[#7C54BD] mb-1">
+                                        UF<span className="text-red-500 ml-1">*</span>
                                     </label>
                                     <select
                                         id="uf"
                                         name="uf"
                                         value={formData.uf}
                                         onChange={handleInputChange}
-                                        className={`mt-1 block w-full px-3 py-2 border ${formErrors.uf ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] sm:text-sm`}
+                                        className={`w-full p-2 border ${formErrors.uf ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black`}
                                     >
                                         {ufs.map((uf) => (
                                             <option key={uf} value={uf}>
@@ -161,26 +176,7 @@ const CadastrarRegiao = () => {
                                         ))}
                                     </select>
                                     {formErrors.uf && (
-                                        <p className="mt-1 text-xs text-red-600">{formErrors.uf}</p>
-                                    )}
-                                </div>
-
-                                {/* Descrição - 2 columns */}
-                                <div className="md:col-span-2">
-                                    <label htmlFor="descricao" className="block text-sm font-medium text-[var(--neutral-graphite)] mb-1">
-                                        Descrição *
-                                    </label>
-                                    <textarea
-                                        id="descricao"
-                                        name="descricao"
-                                        rows={3}
-                                        value={formData.descricao}
-                                        onChange={handleInputChange}
-                                        className={`mt-1 block w-full px-3 py-2 border ${formErrors.descricao ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] sm:text-sm`}
-                                        placeholder="Descrição detalhada da região"
-                                    />
-                                    {formErrors.descricao && (
-                                        <p className="mt-1 text-xs text-red-600">{formErrors.descricao}</p>
+                                        <p className="mt-1 text-sm text-red-500">{formErrors.uf}</p>
                                     )}
                                 </div>
                             </div>
@@ -188,9 +184,9 @@ const CadastrarRegiao = () => {
 
                         {/* Opções adicionais */}
                         <div className="mb-8">
-                            <h3 className="text-lg font-semibold text-[var(--neutral-graphite)] mb-4">
+                            <h2 className="text-lg font-semibold text-[#7C54BD] border-b-2 border-[#F6C647] pb-2 inline-block mb-4">
                                 Opções
-                            </h3>
+                            </h2>
                             <div className="flex items-center gap-6 flex-wrap">
                                 {/* Atendida pela empresa */}
                                 <div className="flex items-center">
@@ -200,44 +196,27 @@ const CadastrarRegiao = () => {
                                         type="checkbox"
                                         checked={formData.atendida_empresa}
                                         onChange={handleInputChange}
-                                        className="h-4 w-4 text-[var(--primary)] focus:ring-[var(--primary)] border-gray-300 rounded"
+                                        className="h-4 w-4 text-[#7C54BD] focus:ring-[#7C54BD] border-gray-300 rounded"
                                     />
                                     <label htmlFor="atendida_empresa" className="ml-2 block text-sm text-gray-900">
                                         Região atendida pela empresa
                                     </label>
                                 </div>
-
-                                {/* Status */}
-                                <div className="flex items-center">
-                                    <label htmlFor="situacao" className="block text-sm font-medium text-[var(--neutral-graphite)] mr-2">
-                                        Status:
-                                    </label>
-                                    <select
-                                        id="situacao"
-                                        name="situacao"
-                                        value={formData.situacao}
-                                        onChange={handleInputChange}
-                                        className="block w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] sm:text-sm"
-                                    >
-                                        <option value="A">Ativo</option>
-                                        <option value="I">Inativo</option>
-                                    </select>
-                                </div>
                             </div>
                         </div>
 
                         {/* Botões de ação */}
-                        <div className="flex items-center justify-end gap-4 border-t border-gray-100 pt-6">
+                        <div className="mt-8 flex justify-end space-x-3 border-t border-gray-100 pt-6">
                             <Link
                                 href="/admin/cadastro/regioes"
-                                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-[var(--neutral-graphite)] bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)]"
+                                className="px-5 py-2 bg-gray-100 text-[#7C54BD] rounded-md hover:bg-gray-200 transition-colors shadow-sm hover:shadow-md"
                             >
                                 Cancelar
                             </Link>
                             <button
                                 type="submit"
                                 disabled={savingData}
-                                className={`inline-flex justify-center items-center px-6 py-2.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[var(--primary)] hover:bg-[var(--primary)]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] ${savingData ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                className="px-5 py-2 bg-[#7C54BD] text-white rounded-md hover:bg-[#6743a1] transition-all flex items-center shadow-sm hover:shadow-md"
                             >
                                 <Save size={18} className="mr-2" />
                                 {savingData ? 'Salvando...' : 'Salvar Região'}

@@ -90,8 +90,6 @@ export default function LoginPage() {
   // Função para fazer login na API
   const authenticate = async (): Promise<LoginResponse | null> => {
     try {
-      console.log('Iniciando autenticação...');
-
       const loginData: LoginRequest = {
         login,
         senha_criptografada: criptografarSenha(senha)

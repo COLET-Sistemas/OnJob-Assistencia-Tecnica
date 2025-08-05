@@ -9,15 +9,12 @@ interface NavbarProps {
 }
 
 export default function Navbar({ sidebarOpen, setSidebarOpen, title }: NavbarProps) {
-    // Use the title from context if provided, otherwise use the prop or default to Dashboard
     const titleContext = useTitle();
     const displayTitle = titleContext.title || title || "Dashboard";
-    // Recupera os dados do localStorage
     const nomeUsuario = typeof window !== 'undefined' ? localStorage.getItem('nome_usuario') || 'Usuário' : 'Usuário';
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
 
-    // Fechar o dropdown ao clicar fora dele
     const closeDropdown = (e: MouseEvent) => {
         const target = e.target as HTMLElement;
         if (!target.closest('.user-profile-dropdown')) {
@@ -25,7 +22,6 @@ export default function Navbar({ sidebarOpen, setSidebarOpen, title }: NavbarPro
         }
     };
 
-    // Adiciona event listener ao montar o componente
     useEffect(() => {
         if (typeof window !== 'undefined') {
             document.addEventListener('click', closeDropdown);
@@ -35,7 +31,6 @@ export default function Navbar({ sidebarOpen, setSidebarOpen, title }: NavbarPro
         }
     }, []);
 
-    // Monitorar mudanças no estado de tela cheia
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const handleFullScreenChange = () => {
@@ -68,14 +63,12 @@ export default function Navbar({ sidebarOpen, setSidebarOpen, title }: NavbarPro
     };
 
     const handleLogout = () => {
-        // Remove os itens específicos do localStorage
         localStorage.removeItem('email');
         localStorage.removeItem('nome_usuario');
         localStorage.removeItem('perfil');
         localStorage.removeItem('token');
         localStorage.removeItem('usuario');
 
-        // Redireciona para a página inicial/login
         window.location.href = '/';
     };
 
@@ -92,10 +85,6 @@ export default function Navbar({ sidebarOpen, setSidebarOpen, title }: NavbarPro
                         {sidebarOpen ? <ChevronLeft size={18} /> : <Menu size={18} />}
                     </button>
                     <h1 className="text-xl font-semibold text-gray-800 hidden md:block">{displayTitle}</h1>
-                </div>
-
-                <div className="flex-1">
-                    {/* Espaço vazio onde ficava o input de pesquisa */}
                 </div>
 
                 <div className="flex items-center space-x-5">
