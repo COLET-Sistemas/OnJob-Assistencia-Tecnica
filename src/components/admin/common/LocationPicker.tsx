@@ -1,5 +1,5 @@
-import { Loader } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
+import { Loading } from '../../Loading';
 
 interface LocationPickerProps {
     initialLat: number | null;
@@ -142,7 +142,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         }, 100);
 
         // Coordenadas iniciais
-        const defaultLocation = { lat: -29.699500, lng: -51.135428 }; 
+        const defaultLocation = { lat: -29.699500, lng: -51.135428 };
         const initialLocation = {
             lat: currentLat || defaultLocation.lat,
             lng: currentLng || defaultLocation.lng
@@ -240,8 +240,12 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
                 <div className="p-4 flex-1 min-h-[400px] relative">
                     {loading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 z-10">
-                            <Loader className="w-10 h-10 text-[#7C54BD] animate-spin" />
+                        <div className="absolute inset-0 bg-white bg-opacity-80 z-10">
+                            <Loading
+                                size="medium"
+                                text="Carregando mapa..."
+                                fullScreen={false}
+                            />
                         </div>
                     )}
 
@@ -265,16 +269,11 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                                 {currentLng?.toFixed(6) || '-'}
                             </div>
                         </div>
-                        <div className="flex items-end">
-                            <span className="text-xs text-gray-500 italic block md:hidden mb-1">
-                                Arraste o marcador para ajustar a posição
-                            </span>
-                        </div>
                     </div>
 
-                    <div className="absolute top-4 left-4 right-4 bg-white p-2 rounded-md shadow-md z-10">
-                        <span className="text-sm text-black">
-                            Arraste o marcador <span className="hidden md:inline text-red-600 font-medium">vermelho</span> para ajustar a posição exata
+                    <div className="absolute top-4 left-4 right-4 bg-white p-2 rounded-md shadow-md z-10 flex items-center justify-center">
+                        <span className="text-sm text-black font-medium">
+                            Arraste o marcador para ajustar a localização exata
                         </span>
                     </div>
                 </div>

@@ -3,6 +3,7 @@
 import { clientesAPI, regioesAPI } from '@/api/api';
 import { Loading } from '@/components/Loading';
 import LocationPicker from '@/components/admin/common/LocationPicker';
+import StaticMap from '@/components/admin/common/StaticMap';
 import { useTitle } from '@/context/TitleContext';
 import { FormData, Regiao } from '@/types/admin/cadastro/clientes';
 import { formatDocumento } from '@/utils/formatters';
@@ -20,6 +21,8 @@ const CadastrarCliente = () => {
     const [regioes, setRegioes] = useState<Regiao[]>([]);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [mapOpen, setMapOpen] = useState(false);
+    const [showMapPreview, setShowMapPreview] = useState(false);
+    const [hasShownLocationToast, setHasShownLocationToast] = useState(false);
 
     // Set page title when component mounts
     useEffect(() => {
@@ -61,6 +64,13 @@ const CadastrarCliente = () => {
 
         carregarRegioes();
     }, []);
+
+    // Determinar quando mostrar o mapa - quando tivermos coordenadas válidas
+    useEffect(() => {
+        if (formData.latitude && formData.longitude) {
+            setShowMapPreview(true);
+        }
+    }, [formData.latitude, formData.longitude]);
 
     interface ViaCEPResponse {
         cep: string;
@@ -169,22 +179,29 @@ const CadastrarCliente = () => {
         }
 
         try {
-            // Buscar coordenadas iniciais para posicionar o mapa
-            const coordenadas = await buscarCoordenadas(
-                formData.endereco,
-                formData.numero,
-                formData.cidade,
-                formData.uf,
-                formData.cep
-            );
+            // Se não temos coordenadas ainda, tentar buscá-las
+            if (!formData.latitude || !formData.longitude) {
+                // Buscar coordenadas iniciais para posicionar o mapa
+                const coordenadas = await buscarCoordenadas(
+                    formData.endereco,
+                    formData.numero,
+                    formData.cidade,
+                    formData.uf,
+                    formData.cep
+                );
 
-            // Se encontramos coordenadas, atualizamos o formulário primeiro
-            if (coordenadas) {
-                setFormData(prev => ({
-                    ...prev,
-                    latitude: coordenadas.latitude,
-                    longitude: coordenadas.longitude
-                }));
+                // Se encontramos coordenadas, atualizamos o formulário primeiro
+                if (coordenadas) {
+                    setFormData(prev => ({
+                        ...prev,
+                        latitude: coordenadas.latitude,
+                        longitude: coordenadas.longitude
+                    }));
+                    setShowMapPreview(true);
+
+                    // Consideramos que o usuário já viu a mensagem sobre localização encontrada
+                    setHasShownLocationToast(true);
+                }
             }
 
             // Abrir o mapa para ajuste fino, independente de ter encontrado coordenadas iniciais ou não
@@ -203,7 +220,15 @@ const CadastrarCliente = () => {
             latitude: lat.toString(),
             longitude: lng.toString()
         }));
+        // Garantir que o preview do mapa esteja visível
+        setShowMapPreview(true);
+
+        // Já mostramos um toast sobre localização encontrada, aqui mostramos um diferente
+        // sobre a atualização das coordenadas
         toast.success('Coordenadas atualizadas com sucesso!');
+
+        // Consideramos que o usuário já viu a mensagem sobre localização encontrada
+        setHasShownLocationToast(true);
     };    // Manipular mudanças nos campos do formulário
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -236,9 +261,14 @@ const CadastrarCliente = () => {
                                     latitude: coordenadas.latitude,
                                     longitude: coordenadas.longitude
                                 }));
-                                // Abre o mapa automaticamente após obter as coordenadas iniciais
-                                setMapOpen(true);
-                                toast.success('Ajuste a localização exata no mapa');
+                                // Mostrar o preview do mapa em vez de abrir o modal automaticamente
+                                setShowMapPreview(true);
+
+                                // Mostrar toast apenas se não foi mostrado antes
+                                if (!hasShownLocationToast) {
+                                    toast.success('Localização encontrada! Visualize no mapa à direita.');
+                                    setHasShownLocationToast(true);
+                                }
                             }
                         })
                         .catch(err => console.error('Erro ao buscar coordenadas automaticamente:', err));
@@ -636,62 +666,111 @@ const CadastrarCliente = () => {
                     <div className="space-y-4 md:col-span-2">
                         <h2 className="text-lg font-semibold text-[#7C54BD] border-b-2 border-[#F6C647] pb-2 inline-block">Localização Geográfica</h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {/* Latitude */}
-                            <div>
-                                <label htmlFor="latitude" className="block text-sm font-medium text-[#7C54BD] mb-1">
-                                    Latitude
-                                </label>
-                                <input
-                                    type="text"
-                                    id="latitude"
-                                    name="latitude"
-                                    value={formData.latitude}
-                                    onChange={handleInputChange}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Lado esquerdo - Informações de Latitude e Longitude */}
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 gap-4">
+                                    {/* Latitude */}
+                                    <div>
+                                        <label htmlFor="latitude" className="block text-sm font-medium text-[#7C54BD] mb-1">
+                                            Latitude
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="latitude"
+                                            name="latitude"
+                                            value={formData.latitude}
+                                            onChange={handleInputChange}
+                                            disabled
+                                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black"
+                                        />
+                                    </div>
 
-                                    disabled
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black"
-                                />
-                                <p className="text-xs text-[#7C54BD] opacity-70 mt-1">
-                                    Será preenchido automaticamente ao buscar o endereço
-                                </p>
+                                    {/* Longitude */}
+                                    <div>
+                                        <label htmlFor="longitude" className="block text-sm font-medium text-[#7C54BD] mb-1">
+                                            Longitude
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="longitude"
+                                            name="longitude"
+                                            value={formData.longitude}
+                                            onChange={handleInputChange}
+                                            disabled
+                                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black"
+                                        />
+                                    </div>
+
+                                    {/* Botão para buscar coordenadas pelo Google Maps */}
+                                    <div>
+                                        <button
+                                            type="button"
+                                            onClick={atualizarCoordenadas}
+                                            className={`w-full p-2 rounded-md flex items-center justify-center gap-2 mt-6 transition-colors
+                                              ${(!formData.endereco || !formData.numero || !formData.cidade || !formData.uf)
+                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-70'
+                                                    : 'bg-[#7C54BD] text-white hover:bg-[#6743a1]'}`}
+                                            disabled={!formData.endereco || !formData.numero || !formData.cidade || !formData.uf}
+                                            title={(!formData.endereco || !formData.numero || !formData.cidade || !formData.uf)
+                                                ? "Preencha todos os campos de endereço para ajustar no mapa"
+                                                : "Abrir mapa para ajustar localização precisa"}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                                <circle cx="12" cy="10" r="3"></circle>
+                                            </svg>
+                                            {(!formData.endereco || !formData.numero || !formData.cidade || !formData.uf)
+                                                ? "Preencha os campos de endereço"
+                                                : "Ajustar Localização no Mapa"}
+                                        </button>
+                                        <p className="text-xs text-gray-500 mt-1 text-center">
+                                            Preencha o endereço completo e clique para ajustar a localização exata
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Longitude */}
-                            <div>
-                                <label htmlFor="longitude" className="block text-sm font-medium text-[#7C54BD] mb-1">
-                                    Longitude
-                                </label>
-                                <input
-                                    type="text"
-                                    id="longitude"
-                                    name="longitude"
-                                    value={formData.longitude}
-                                    onChange={handleInputChange}
-                                    disabled
-
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black"
-                                />
-                                <p className="text-xs text-[#7C54BD] opacity-70 mt-1">
-                                    Será preenchido automaticamente ao buscar o endereço
-                                </p>
-                            </div>
-
-                            {/* Botão para buscar coordenadas pelo Google Maps */}
-                            <div className="flex flex-col justify-end">
-                                <button
-                                    type="button"
-                                    onClick={atualizarCoordenadas}
-                                    className="mt-auto p-2 bg-[#7C54BD] text-white rounded-md hover:bg-[#6743a1] transition-colors flex items-center justify-center gap-2"
-                                    disabled={!formData.endereco || !formData.numero || !formData.cidade || !formData.uf}
-                                    title="Abrir mapa para ajustar localização precisa"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                        <circle cx="12" cy="10" r="3"></circle>
-                                    </svg>
-                                    Ajustar no Mapa
-                                </button>
+                            {/* Lado direito - Mapa Estático */}
+                            <div className="flex flex-col gap-2">
+                                <div className="h-[250px] relative rounded-md overflow-hidden shadow-md">
+                                    {formData.latitude && formData.longitude ? (
+                                        <StaticMap
+                                            latitude={parseFloat(formData.latitude)}
+                                            longitude={parseFloat(formData.longitude)}
+                                            className="h-full"
+                                        />
+                                    ) : (
+                                        <div className="h-full bg-gray-100 flex items-center justify-center">
+                                            <div className="text-center p-6">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                                </svg>
+                                                <p className="text-gray-500">
+                                                    Localização não definida.<br />
+                                                    Preencha o endereço completo.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                {formData.latitude && formData.longitude && (
+                                    <button
+                                        type="button"
+                                        onClick={atualizarCoordenadas}
+                                        className={`p-2 rounded-md flex items-center justify-center gap-2 text-sm transition-colors
+                                          ${(!formData.endereco || !formData.numero || !formData.cidade || !formData.uf)
+                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-70'
+                                                : 'bg-[#7C54BD] text-white hover:bg-[#6743a1]'}`}
+                                        disabled={!formData.endereco || !formData.numero || !formData.cidade || !formData.uf}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                            <circle cx="12" cy="10" r="3"></circle>
+                                        </svg>
+                                        Ajustar localização
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
