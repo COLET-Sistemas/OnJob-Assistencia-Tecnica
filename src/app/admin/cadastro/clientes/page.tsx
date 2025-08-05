@@ -1,5 +1,6 @@
 
 'use client'
+
 import { clientesAPI } from '@/api/api';
 import {
     DataTable,
@@ -15,7 +16,6 @@ import { formatDocumento } from '@/utils/formatters';
 import { Edit2, MapPin, User } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-// Interface para os parâmetros de filtro da API
 interface FiltroParams {
     nome?: string;
     situacao?: string;
@@ -24,14 +24,12 @@ interface FiltroParams {
     [key: string]: string | number | undefined;
 }
 
-// Interface para os filtros do componente
 interface Filtros {
     texto: string;
     status: string;
     [key: string]: string;
 }
 
-// Interface para informações de paginação
 interface PaginacaoInfo {
     paginaAtual: number;
     totalPaginas: number;
@@ -39,11 +37,9 @@ interface PaginacaoInfo {
     registrosPorPagina: number;
 }
 
-// Extend the base Cliente interface to include additional properties used in this component
 interface Cliente extends Omit<ClienteBase, 'endereco'> {
     id_cliente?: number;
-    // All properties from ClienteBase remain required, plus these additional properties
-    endereco: string; // Keep endereco required as in the base interface
+    endereco: string;
     qtd_contatos?: number;
     contatos?: Array<{
         id_contato: number;
@@ -63,6 +59,7 @@ const CadastroCliente = () => {
     const [clientesFiltrados, setClientesFiltrados] = useState<Cliente[]>([]);
     const [expandedClienteId, setExpandedClienteId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loadingData, setLoadingData] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [filtros, setFiltros] = useState<Filtros>({
         texto: '',
@@ -101,9 +98,14 @@ const CadastroCliente = () => {
     }, [paginacao]);
 
     const carregarClientes = useCallback(async (filtrosParam: Partial<Filtros> = {}, pagina: number = 1, registrosPorPagina?: number) => {
-        setLoading(true);
+        // Exibe loading completo apenas na carga inicial
+        if (!dadosCarregados.current) {
+            setLoading(true);
+        } else {
+            // Exibe loading parcial nas atualizações subsequentes
+            setLoadingData(true);
+        }
 
-        // Acessamos a referência para pegar o valor mais recente
         const registrosPorPaginaAtual = registrosPorPagina !== undefined ? registrosPorPagina : paginacaoRef.current.registrosPorPagina;
 
         try {
@@ -122,14 +124,11 @@ const CadastroCliente = () => {
                 params.situacao = filtrosParam.status;
             }
 
-            console.log('Chamada API - GET clientes:', params);
-            const response = await clientesAPI.getAll(params);            // Novo formato da API: { dados: [], total_registros: number, total_paginas: number }
+            const response = await clientesAPI.getAll(params);
             if (typeof response === 'object' && 'dados' in response && 'total_paginas' in response && 'total_registros' in response) {
                 const { dados, total_paginas, total_registros } = response;
                 setClientes(dados);
                 setClientesFiltrados(dados);
-
-                // Atualiza as informações de paginação com o novo formato
                 setPaginacao({
                     paginaAtual: pagina,
                     totalPaginas: total_paginas,
@@ -137,7 +136,6 @@ const CadastroCliente = () => {
                     registrosPorPagina: registrosPorPaginaAtual
                 });
             } else if (typeof response === 'object' && 'data' in response && 'pagination' in response) {
-                // Formato anterior - mantido para compatibilidade
                 const { data, pagination } = response;
                 setClientes(data);
                 setClientesFiltrados(data);
@@ -149,7 +147,6 @@ const CadastroCliente = () => {
                     registrosPorPagina: registrosPorPaginaAtual
                 });
             } else {
-                // Formato antigo - array direto
                 setClientes(response);
                 setClientesFiltrados(response);
 
@@ -158,7 +155,6 @@ const CadastroCliente = () => {
                     ...prev,
                     paginaAtual: pagina,
                     registrosPorPagina: registrosPorPaginaAtual,
-                    // Se retornou menos registros que o esperado, provavelmente é a última página
                     totalPaginas: response.length < registrosPorPaginaAtual ? pagina : pagina + 1
                 }));
             }
@@ -166,17 +162,12 @@ const CadastroCliente = () => {
             console.error('Erro ao carregar clientes:', error);
         } finally {
             setLoading(false);
+            setLoadingData(false);
         }
-        // Como estamos usando useRef para acessar paginacao, não precisamos incluir no array de dependências
     }, []);
 
-    // Função para aplicar todos os filtros quando o usuário clica no botão "Aplicar"
     const aplicarTodosFiltros = useCallback(() => {
-        // Mostrar estado de carregamento enquanto a API processa
-        setLoading(true);
-        // Aplica todos os filtros (texto e status) e reinicia a paginação
         carregarClientes(filtros, 1);
-        // Indica que já carregamos os dados pelo menos uma vez
         dadosCarregados.current = true;
     }, [filtros, carregarClientes]);
 
@@ -185,29 +176,22 @@ const CadastroCliente = () => {
 
     // Esse único efeito gerencia tanto a carga inicial quanto as atualizações de filtro de texto
     useEffect(() => {
-        // Caso especial para a primeira renderização
         if (!dadosCarregados.current) {
-            console.log('Carregando dados iniciais - DEVE APARECER APENAS UMA VEZ');
-            // Inicialmente carrega sem filtros, página 1
             carregarClientes({}, 1);
             dadosCarregados.current = true;
             textoRef.current = filtros.texto;
-            return; // Encerra o efeito após a carga inicial
+            return;
         }
 
-        // Verifica se o texto realmente mudou para evitar chamadas duplicadas
         if (filtros.texto === textoRef.current) {
             return;
         }
 
-        // Atualiza a referência ao texto atual
         textoRef.current = filtros.texto;
-
-        // Busca em tempo real ao digitar
         const handler = setTimeout(() => {
             const filtroAtual = filtros.texto ? { texto: filtros.texto } : {};
             carregarClientes(filtroAtual, 1);
-        }, 500); // Um tempo maior para evitar muitas requisições enquanto o usuário digita
+        }, 500);
 
         return () => {
             clearTimeout(handler);
@@ -219,24 +203,16 @@ const CadastroCliente = () => {
             ...prev,
             [campo]: valor
         }));
-
-        // O filtro de texto já está sendo processado pelo useEffect
-        // Para os outros filtros, vamos esperar o usuário clicar em "Aplicar"
     }, []);
 
     const limparFiltros = useCallback(() => {
-        // Limpa os filtros no estado
         setFiltros({
             texto: '',
             status: ''
         });
-        // Recarregar todos os clientes sem filtros
         carregarClientes({}, 1);
-        // Indica que já carregamos os dados pelo menos uma vez
         dadosCarregados.current = true;
     }, [carregarClientes]);
-
-    // Função para mudar de página
     const mudarPagina = useCallback((novaPagina: number) => {
         if (novaPagina < 1 || novaPagina > paginacao.totalPaginas) return;
         carregarClientes(filtros, novaPagina);
@@ -253,7 +229,6 @@ const CadastroCliente = () => {
         );
     }
 
-    // Define the filter options for the filter panel
     const filterOptions = [
         {
             id: 'texto',
@@ -273,7 +248,6 @@ const CadastroCliente = () => {
         }
     ];
 
-    // Define table columns
     const columns = [
         {
             header: 'Cliente',
@@ -381,8 +355,6 @@ const CadastroCliente = () => {
                         onClick={(e) => {
                             e.stopPropagation();
                             if (confirm(`Deseja realmente excluir o cliente "${cliente.nome_fantasia || cliente.razao_social}"?`)) {
-                                // Aqui você pode adicionar a lógica de exclusão
-                                // Por exemplo: clientesAPI.delete(cliente.id_cliente || cliente.id).then(() => carregarClientes(filtros as Partial<Filtros>));
                                 alert('Funcionalidade de exclusão será implementada em breve.');
                             }
                         }}
@@ -401,7 +373,6 @@ const CadastroCliente = () => {
         }
     ];
 
-    // Calculate active filters count
     const activeFiltersCount = Object.values(filtros).filter(Boolean).length;
 
     return (
@@ -430,89 +401,99 @@ const CadastroCliente = () => {
                 />
             )}
 
-            <DataTable
-                columns={columns}
-                data={clientesFiltrados}
-                keyField="id_cliente"
-                expandedRowId={expandedClienteId}
-                onRowExpand={toggleExpand}
-                emptyStateProps={{
-                    title: "Nenhum cliente encontrado",
-                    description: "Tente ajustar seus filtros ou cadastre um novo cliente."
-                }}
-                renderExpandedRow={(cliente: Cliente) => {
-                    if (!cliente.contatos) return null;
-
-                    return (
-                        <div className="border-t border-[var(--primary)]/10 pt-4 px-2">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {cliente.contatos.map((contato) => (
-                                    <div key={contato.id_contato} className="border border-gray-100 rounded-xl p-3 bg-white shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
-                                        <div className="flex justify-between items-center pb-1.5 border-b border-gray-100">
-                                            <div className="font-semibold text-gray-900 truncate">{contato.nome_completo || contato.nome}</div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex items-center gap-1">
-                                                    <div className={`w-2.5 h-2.5 rounded-full ${contato.situacao === 'A' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                                                    <span className={`text-xs font-medium ${contato.situacao === 'A' ? 'text-green-700' : 'text-red-700'}`}>
-                                                        {contato.situacao === 'A' ? 'Ativo' : 'Inativo'}
-                                                    </span>
-                                                </div>
-                                                {contato.recebe_aviso_os ? (
-                                                    <div className="flex items-center gap-1">
-                                                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
-                                                        <span className="text-xs font-medium text-yellow-700">Aviso OS</span>
-                                                    </div>
-                                                ) : null}
-                                            </div>
-                                        </div>
-                                        <div className="pt-3">
-                                            <div className="flex flex-wrap gap-2">
-                                                {contato.telefone && (
-                                                    <div className="text-sm bg-gray-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-gray-100 hover:bg-gray-100 transition-colors">
-                                                        <svg className="w-4 h-4 text-[var(--primary)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                                                        </svg>
-                                                        <span className="truncate max-w-[140px] text-gray-700">{contato.telefone}</span>
-                                                    </div>
-                                                )}
-
-                                                {contato.whatsapp && (
-                                                    <a
-                                                        href={`https://wa.me/${contato.whatsapp.replace(/\D/g, '')}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-sm bg-[var(--secondary-green)]/5 px-3 py-1.5 rounded-md flex items-center gap-2 border border-[var(--secondary-green)]/20 hover:bg-[var(--secondary-green)]/10 transition-colors"
-                                                    >
-                                                        <svg className="w-4 h-4 text-[var(--secondary-green)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                                                        </svg>
-                                                        <span className="truncate max-w-[140px] text-gray-700">{contato.whatsapp}</span>
-                                                    </a>
-                                                )}
-
-                                                {contato.email && (
-                                                    <a
-                                                        href={`mailto:${contato.email}`}
-                                                        className="text-sm bg-blue-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-blue-100 hover:bg-blue-100 hover:text-blue-600 transition-colors"
-                                                    >
-                                                        <svg className="w-4 h-4 text-blue-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                                            <polyline points="22,6 12,13 2,6"></polyline>
-                                                        </svg>
-                                                        <span className="truncate max-w-[180px] text-gray-700">{contato.email}</span>
-                                                    </a>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+            <div className="relative">
+                {loadingData && (
+                    <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-lg">
+                        <div className="flex flex-col items-center">
+                            <div className="w-10 h-10 border-4 border-t-[var(--primary)] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                            <span className="mt-2 text-sm text-gray-600 font-medium">Atualizando...</span>
                         </div>
-                    );
-                }}
-            />
+                    </div>
+                )}
 
-            {/* Componente de Paginação */}
+                <DataTable
+                    columns={columns}
+                    data={clientesFiltrados}
+                    keyField="id_cliente"
+                    expandedRowId={expandedClienteId}
+                    onRowExpand={toggleExpand}
+                    emptyStateProps={{
+                        title: "Nenhum cliente encontrado",
+                        description: "Tente ajustar seus filtros ou cadastre um novo cliente."
+                    }}
+                    renderExpandedRow={(cliente: Cliente) => {
+                        if (!cliente.contatos) return null;
+
+                        return (
+                            <div className="border-t border-[var(--primary)]/10 pt-4 px-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {cliente.contatos.map((contato) => (
+                                        <div key={contato.id_contato} className="border border-gray-100 rounded-xl p-3 bg-white shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
+                                            <div className="flex justify-between items-center pb-1.5 border-b border-gray-100">
+                                                <div className="font-semibold text-gray-900 truncate">{contato.nome_completo || contato.nome}</div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-1">
+                                                        <div className={`w-2.5 h-2.5 rounded-full ${contato.situacao === 'A' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                                        <span className={`text-xs font-medium ${contato.situacao === 'A' ? 'text-green-700' : 'text-red-700'}`}>
+                                                            {contato.situacao === 'A' ? 'Ativo' : 'Inativo'}
+                                                        </span>
+                                                    </div>
+                                                    {contato.recebe_aviso_os ? (
+                                                        <div className="flex items-center gap-1">
+                                                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
+                                                            <span className="text-xs font-medium text-yellow-700">Aviso OS</span>
+                                                        </div>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+                                            <div className="pt-3">
+                                                <div className="flex flex-wrap gap-2">
+                                                    {contato.telefone && (
+                                                        <div className="text-sm bg-gray-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-gray-100 hover:bg-gray-100 transition-colors">
+                                                            <svg className="w-4 h-4 text-[var(--primary)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                                            </svg>
+                                                            <span className="truncate max-w-[140px] text-gray-700">{contato.telefone}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {contato.whatsapp && (
+                                                        <a
+                                                            href={`https://wa.me/${contato.whatsapp.replace(/\D/g, '')}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-sm bg-[var(--secondary-green)]/5 px-3 py-1.5 rounded-md flex items-center gap-2 border border-[var(--secondary-green)]/20 hover:bg-[var(--secondary-green)]/10 transition-colors"
+                                                        >
+                                                            <svg className="w-4 h-4 text-[var(--secondary-green)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                                                            </svg>
+                                                            <span className="truncate max-w-[140px] text-gray-700">{contato.whatsapp}</span>
+                                                        </a>
+                                                    )}
+
+                                                    {contato.email && (
+                                                        <a
+                                                            href={`mailto:${contato.email}`}
+                                                            className="text-sm bg-blue-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-blue-100 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                                                        >
+                                                            <svg className="w-4 h-4 text-blue-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                                                <polyline points="22,6 12,13 2,6"></polyline>
+                                                            </svg>
+                                                            <span className="truncate max-w-[180px] text-gray-700">{contato.email}</span>
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    }}
+                />
+            </div>
+
             {paginacao.totalPaginas > 1 && (
                 <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-lg shadow-sm">
                     <div className="flex flex-1 justify-between sm:hidden">
