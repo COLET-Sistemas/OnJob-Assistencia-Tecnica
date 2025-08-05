@@ -1,6 +1,6 @@
 'use client'
 import { usuariosRegioesAPI } from '@/api/api';
-import { Loading } from '@/components/loading';
+import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
 import { UsuarioRegiao } from '@/types/admin/cadastro/usuarios';
 import { format, parseISO } from 'date-fns';

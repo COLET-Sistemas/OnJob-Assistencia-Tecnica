@@ -1,6 +1,6 @@
 'use client'
 import { motivosPendenciaAPI } from '@/api/api';
-import { Loading } from '@/components/loading';
+import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
 import type { MotivoPendencia } from '@/types/admin/cadastro/motivos_pendencia';
 import { Edit2, Plus } from 'lucide-react';

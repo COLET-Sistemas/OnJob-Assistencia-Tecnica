@@ -1,6 +1,6 @@
 'use client'
 import { pecasAPI } from '@/api/api';
-import { Loading } from '@/components/loading';
+import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
 import type { Peca } from '@/types/admin/cadastro/pecas';
 import { Edit2, Package, Plus } from 'lucide-react';

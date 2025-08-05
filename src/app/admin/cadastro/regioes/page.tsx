@@ -1,6 +1,6 @@
 'use client'
 import { regioesAPI } from '@/api/api';
-import { Loading } from '@/components/loading';
+import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
 import type { FormData, Regiao } from '@/types/admin/cadastro/regioes';
 import { Edit2, MapPin, Plus } from 'lucide-react';

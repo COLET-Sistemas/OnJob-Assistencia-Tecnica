@@ -1,7 +1,7 @@
 'use client'
 
 import { clientesAPI } from '@/api/api';
-import { Loading } from '@/components/loading';
+import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
 import { FormData } from '@/types/admin/cadastro/clientes';
 import { formatDocumento } from '@/utils/formatters';

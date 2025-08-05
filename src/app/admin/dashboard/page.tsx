@@ -1,5 +1,5 @@
 'use client'
-import { Loading } from '@/components/loading';
+import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
 import {
     BarChart3,

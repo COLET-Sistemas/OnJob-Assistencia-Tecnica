@@ -9,7 +9,7 @@ import {
     ListHeader,
     StatusBadge
 } from '@/components/admin/common';
-import { Loading } from '@/components/loading';
+import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
 import type { Cliente as ClienteBase } from '@/types/admin/cadastro/clientes';
 import { formatDocumento } from '@/utils/formatters';
@@ -19,6 +19,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 interface FiltroParams {
     nome?: string;
     situacao?: string;
+    incluir_inativos?: string;
     qtde_registros?: number;
     nro_pagina?: number;
     [key: string]: string | number | undefined;
@@ -72,15 +73,12 @@ const CadastroCliente = () => {
         registrosPorPagina: 20
     });
 
-    // Ref para controlar se os dados já foram carregados
     const dadosCarregados = useRef(false);
 
-    // Configurar o título da página
     useEffect(() => {
         setTitle('Clientes');
     }, [setTitle]);
 
-    // Memoize handlers for better performance
     const toggleExpand = useCallback((id: number | string) => {
         setExpandedClienteId(prevId => {
             const result = prevId === id ? null : Number(id);
@@ -88,21 +86,16 @@ const CadastroCliente = () => {
         });
     }, []);
 
-    // Carrega todos os clientes ou clientes com filtros específicos
-    // Usamos useRef para pegar o valor mais recente de paginacao sem causar novas renderizações
     const paginacaoRef = useRef(paginacao);
 
-    // Atualizamos a referência sempre que paginacao muda
     useEffect(() => {
         paginacaoRef.current = paginacao;
     }, [paginacao]);
 
     const carregarClientes = useCallback(async (filtrosParam: Partial<Filtros> = {}, pagina: number = 1, registrosPorPagina?: number) => {
-        // Exibe loading completo apenas na carga inicial
         if (!dadosCarregados.current) {
             setLoading(true);
         } else {
-            // Exibe loading parcial nas atualizações subsequentes
             setLoadingData(true);
         }
 
@@ -116,13 +109,15 @@ const CadastroCliente = () => {
 
             // Adicionar parâmetros de filtro à requisição
             if (filtrosParam.texto) {
-                // Adiciona o texto entre aspas duplas conforme solicitado
-                params.nome = `"${filtrosParam.texto}"`;
+                // Adiciona o texto diretamente como nome
+                params.nome = filtrosParam.texto;
             }
 
-            if (filtrosParam.status) {
-                params.situacao = filtrosParam.status;
+            // Se o checkbox de "Incluir clientes inativos" estiver marcado, adiciona o parâmetro
+            if (filtrosParam.status === 'true') {
+                params.incluir_inativos = 'S';
             }
+            // Quando não estiver marcado, não enviamos nenhum parâmetro adicional
 
             const response = await clientesAPI.getAll(params);
             if (typeof response === 'object' && 'dados' in response && 'total_paginas' in response && 'total_registros' in response) {
@@ -150,7 +145,6 @@ const CadastroCliente = () => {
                 setClientes(response);
                 setClientesFiltrados(response);
 
-                // Estima o total de páginas baseado no número de registros retornados
                 setPaginacao(prev => ({
                     ...prev,
                     paginaAtual: pagina,
@@ -171,32 +165,16 @@ const CadastroCliente = () => {
         dadosCarregados.current = true;
     }, [filtros, carregarClientes]);
 
-    // Efeito combinado para inicialização e busca em tempo real
     const textoRef = useRef(filtros.texto);
 
-    // Esse único efeito gerencia tanto a carga inicial quanto as atualizações de filtro de texto
+    // Efeito simplificado que só carrega os clientes inicialmente
     useEffect(() => {
         if (!dadosCarregados.current) {
             carregarClientes({}, 1);
             dadosCarregados.current = true;
             textoRef.current = filtros.texto;
-            return;
         }
-
-        if (filtros.texto === textoRef.current) {
-            return;
-        }
-
-        textoRef.current = filtros.texto;
-        const handler = setTimeout(() => {
-            const filtroAtual = filtros.texto ? { texto: filtros.texto } : {};
-            carregarClientes(filtroAtual, 1);
-        }, 500);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [filtros.texto, carregarClientes]);
+    }, [carregarClientes, filtros.texto]);
 
     const handleFiltroChange = useCallback((campo: string, valor: string) => {
         setFiltros(prev => ({
@@ -208,8 +186,9 @@ const CadastroCliente = () => {
     const limparFiltros = useCallback(() => {
         setFiltros({
             texto: '',
-            status: ''
+            status: '' // Estado vazio significa "não incluir inativos"
         });
+        // Carrega com parâmetros vazios (apenas ativos por padrão)
         carregarClientes({}, 1);
         dadosCarregados.current = true;
     }, [carregarClientes]);
@@ -232,19 +211,14 @@ const CadastroCliente = () => {
     const filterOptions = [
         {
             id: 'texto',
-            label: 'Busca Textual',
+            label: 'Busca por Texto',
             type: 'text' as const,
-            placeholder: 'Digite o nome, razão social ou CNPJ...'
+            placeholder: 'Digite o nome ou razão social...'
         },
         {
             id: 'status',
-            label: 'Status do Cliente',
-            type: 'select' as const,
-            options: [
-                { value: '', label: 'Todos os status' },
-                { value: 'A', label: 'Ativo' },
-                { value: 'I', label: 'Inativo' }
-            ]
+            label: 'Incluir Inativos',
+            type: 'checkbox' as const
         }
     ];
 
@@ -390,6 +364,7 @@ const CadastroCliente = () => {
             {showFilters && (
                 <FilterPanel
                     title="Filtros Avançados"
+                    pageName="Clientes"
                     filterOptions={filterOptions}
                     filterValues={filtros}
                     onFilterChange={handleFiltroChange}
@@ -397,17 +372,19 @@ const CadastroCliente = () => {
                     onApplyFilters={aplicarTodosFiltros}
                     onClose={() => setShowFilters(false)}
                     itemCount={clientesFiltrados.length}
-                    totalCount={clientes.length}
                 />
             )}
 
             <div className="relative">
                 {loadingData && (
-                    <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-lg">
-                        <div className="flex flex-col items-center">
-                            <div className="w-10 h-10 border-4 border-t-[var(--primary)] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-                            <span className="mt-2 text-sm text-gray-600 font-medium">Atualizando...</span>
-                        </div>
+                    <div className="absolute inset-0 bg-white/70 z-10 rounded-lg">
+                        <Loading
+                            fullScreen={false}
+                            preventScroll={false}
+                            text="Atualizando lista..."
+                            size="medium"
+                            className="h-full"
+                        />
                     </div>
                 )}
 
@@ -580,16 +557,12 @@ const CadastroCliente = () => {
                                     // Lógica para mostrar as páginas próximas da atual
                                     let pageNum;
                                     if (paginacao.totalPaginas <= 5) {
-                                        // Se temos 5 ou menos páginas, mostra todas
                                         pageNum = i + 1;
                                     } else if (paginacao.paginaAtual <= 3) {
-                                        // Nas primeiras páginas
                                         pageNum = i + 1;
                                     } else if (paginacao.paginaAtual >= paginacao.totalPaginas - 2) {
-                                        // Nas últimas páginas
                                         pageNum = paginacao.totalPaginas - 4 + i;
                                     } else {
-                                        // No meio
                                         pageNum = paginacao.paginaAtual - 2 + i;
                                     }
 

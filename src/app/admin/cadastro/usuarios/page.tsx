@@ -1,6 +1,6 @@
 'use client'
 import { usuariosAPI } from '@/api/api';
-import { Loading } from '@/components/loading';
+import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
 import { Edit2, Mail, Plus, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';

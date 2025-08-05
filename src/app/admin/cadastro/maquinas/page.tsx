@@ -1,6 +1,6 @@
 'use client'
 import { maquinasAPI } from '@/api/api';
-import { Loading } from '@/components/loading';
+import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
 import type { FormData, Maquina } from '@/types/admin/cadastro/maquinas';
 import { Edit2, Plus } from 'lucide-react';

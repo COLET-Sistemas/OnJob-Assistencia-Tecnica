@@ -1,6 +1,6 @@
 'use client'
 import { motivosAtendimentoAPI } from '@/api/api';
-import { Loading } from '@/components/loading';
+import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
 import type { MotivoAtendimento } from '@/types/admin/cadastro/motivos_atendimento';
 import { Edit2, Plus } from 'lucide-react';
