@@ -56,7 +56,6 @@ interface Cliente extends Omit<ClienteBase, 'endereco'> {
 
 const CadastroCliente = () => {
     const { setTitle } = useTitle();
-    const [clientes, setClientes] = useState<Cliente[]>([]);
     const [clientesFiltrados, setClientesFiltrados] = useState<Cliente[]>([]);
     const [expandedClienteId, setExpandedClienteId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
@@ -107,22 +106,17 @@ const CadastroCliente = () => {
                 nro_pagina: pagina
             };
 
-            // Adicionar parâmetros de filtro à requisição
             if (filtrosParam.texto) {
-                // Adiciona o texto diretamente como nome
                 params.nome = filtrosParam.texto;
             }
 
-            // Se o checkbox de "Incluir clientes inativos" estiver marcado, adiciona o parâmetro
             if (filtrosParam.status === 'true') {
                 params.incluir_inativos = 'S';
             }
-            // Quando não estiver marcado, não enviamos nenhum parâmetro adicional
 
             const response = await clientesAPI.getAll(params);
             if (typeof response === 'object' && 'dados' in response && 'total_paginas' in response && 'total_registros' in response) {
                 const { dados, total_paginas, total_registros } = response;
-                setClientes(dados);
                 setClientesFiltrados(dados);
                 setPaginacao({
                     paginaAtual: pagina,
@@ -132,7 +126,6 @@ const CadastroCliente = () => {
                 });
             } else if (typeof response === 'object' && 'data' in response && 'pagination' in response) {
                 const { data, pagination } = response;
-                setClientes(data);
                 setClientesFiltrados(data);
 
                 setPaginacao({
@@ -142,7 +135,6 @@ const CadastroCliente = () => {
                     registrosPorPagina: registrosPorPaginaAtual
                 });
             } else {
-                setClientes(response);
                 setClientesFiltrados(response);
 
                 setPaginacao(prev => ({
@@ -186,9 +178,9 @@ const CadastroCliente = () => {
     const limparFiltros = useCallback(() => {
         setFiltros({
             texto: '',
-            status: '' // Estado vazio significa "não incluir inativos"
+            status: ''
         });
-        // Carrega com parâmetros vazios (apenas ativos por padrão)
+
         carregarClientes({}, 1);
         dadosCarregados.current = true;
     }, [carregarClientes]);
@@ -371,7 +363,6 @@ const CadastroCliente = () => {
                     onClearFilters={limparFiltros}
                     onApplyFilters={aplicarTodosFiltros}
                     onClose={() => setShowFilters(false)}
-                    itemCount={clientesFiltrados.length}
                 />
             )}
 
@@ -518,13 +509,11 @@ const CadastroCliente = () => {
                                     onChange={(e) => {
                                         const novoValor = parseInt(e.target.value);
 
-                                        // Atualiza o estado diretamente
                                         setPaginacao(prev => ({
                                             ...prev,
                                             registrosPorPagina: novoValor
                                         }));
 
-                                        // Faz a chamada API com o novo valor diretamente
                                         carregarClientes(filtros, 1, novoValor);
                                     }}
                                 >
@@ -571,7 +560,7 @@ const CadastroCliente = () => {
                                             key={pageNum}
                                             onClick={() => mudarPagina(pageNum)}
                                             aria-current={paginacao.paginaAtual === pageNum ? 'page' : undefined}
-                                            className={`relative z-10 inline-flex items-center px-4 py-2 text-sm font-semibold ${paginacao.paginaAtual === pageNum
+                                            className={`relative z-10 inline-flex items-center px-4 py-2 text-sm font-semibold cursor-pointer ${paginacao.paginaAtual === pageNum
                                                 ? 'bg-[var(--primary)] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]'
                                                 : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
                                                 }`}

@@ -20,7 +20,6 @@ interface FilterPanelProps {
     onClearFilters: () => void;
     onClose: () => void;
     onApplyFilters?: () => void;
-    itemCount?: number; // Tornando opcional já que não vamos mais exibir
 }
 
 const FilterPanel: React.FC<FilterPanelProps> = ({
@@ -31,8 +30,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     onFilterChange,
     onClearFilters,
     onClose,
-    onApplyFilters,
-    itemCount
+    onApplyFilters
 }) => {
     // Check if any filter is active
     const hasActiveFilters = Object.values(filterValues).some(value => value !== '');
