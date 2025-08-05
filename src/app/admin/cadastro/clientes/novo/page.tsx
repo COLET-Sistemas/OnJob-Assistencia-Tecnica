@@ -1,26 +1,14 @@
 'use client'
 
-import { clientesAPI } from '@/api/api';
+import { clientesAPI, regioesAPI } from '@/api/api';
 import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
-import { FormData } from '@/types/admin/cadastro/clientes';
+import { FormData, Regiao } from '@/types/admin/cadastro/clientes';
 import { formatDocumento } from '@/utils/formatters';
 import { MapPin, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
-// Define interface for region based on the API response
-interface Regiao {
-    id: number;
-    nome: string;
-    descricao: string;
-    uf: string;
-    atendida_empresa: boolean;
-    situacao: string;
-    data_cadastro: string;
-    id_usuario_cadastro: number;
-}
 
 const CadastrarCliente = () => {
     const router = useRouter();
@@ -36,11 +24,13 @@ const CadastrarCliente = () => {
     }, [setTitle]);
 
     const [formData, setFormData] = useState<FormData>({
+        codigo_erp: '',
         nome_fantasia: '',
         razao_social: '',
         cnpj: '',
         endereco: '',
         numero: '',
+        complemento: '',
         bairro: '',
         cep: '',
         cidade: '',
@@ -56,10 +46,9 @@ const CadastrarCliente = () => {
         const carregarRegioes = async () => {
             setLoading(true);
             try {
-                // Usando o endpoint correto /regioes
-                const response = await fetch('/regioes');
-                const dados = await response.json();
-                setRegioes(dados);
+                // Usando o regioesAPI para buscar todas as regiões
+                const response = await regioesAPI.getAll();
+                setRegioes(response.data || []);
             } catch (error) {
                 console.error('Erro ao carregar regiões:', error);
             } finally {
@@ -125,7 +114,7 @@ const CadastrarCliente = () => {
                         endereco: data.street || '',
                         bairro: data.neighborhood || '',
                         cidade: data.city || '',
-                        uf: data.state || 'SP'
+                        uf: data.state || ''
                     }));
 
                     // Se tiver coordenadas, preenche latitude e longitude
@@ -153,7 +142,8 @@ const CadastrarCliente = () => {
                         endereco: data.logradouro || '',
                         bairro: data.bairro || '',
                         cidade: data.localidade || '',
-                        uf: data.uf || 'SP'
+                        uf: data.uf || '',
+                        complemento: data.complemento || ''
                     }));
 
                     // Foca no campo de número após encontrar o CEP
@@ -301,24 +291,7 @@ const CadastrarCliente = () => {
                         <h2 className="text-lg font-semibold text-[#7C54BD] border-b-2 border-[#F6C647] pb-2 inline-block">Informações Principais</h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Nome Fantasia */}
-                            <div>
-                                <label htmlFor="nome_fantasia" className="block text-sm font-medium text-[#7C54BD] mb-1">
-                                    Nome Fantasia<span className="text-red-500 ml-1">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    id="nome_fantasia"
-                                    name="nome_fantasia"
-                                    placeholder="Nome fantasia da empresa"
-                                    value={formData.nome_fantasia}
-                                    onChange={handleInputChange}
-                                    className={`w-full p-2 border ${formErrors.nome_fantasia ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
-                                />
-                                {formErrors.nome_fantasia && (
-                                    <p className="mt-1 text-sm text-red-500">{formErrors.nome_fantasia}</p>
-                                )}
-                            </div>
+
 
                             {/* Razão Social */}
                             <div>
@@ -338,9 +311,29 @@ const CadastrarCliente = () => {
                                     <p className="mt-1 text-sm text-red-500">{formErrors.razao_social}</p>
                                 )}
                             </div>
+                            {/* Nome Fantasia */}
+                            <div>
+                                <label htmlFor="nome_fantasia" className="block text-sm font-medium text-[#7C54BD] mb-1">
+                                    Nome Fantasia<span className="text-red-500 ml-1">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="nome_fantasia"
+                                    name="nome_fantasia"
+                                    placeholder="Nome fantasia da empresa"
+                                    value={formData.nome_fantasia}
+                                    onChange={handleInputChange}
+                                    className={`w-full p-2 border ${formErrors.nome_fantasia ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
+                                />
+                                {formErrors.nome_fantasia && (
+                                    <p className="mt-1 text-sm text-red-500">{formErrors.nome_fantasia}</p>
+                                )}
+                            </div>
+
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
                             {/* CNPJ */}
                             <div>
                                 <label htmlFor="cnpj" className="block text-sm font-medium text-[#7C54BD] mb-1">
@@ -356,14 +349,30 @@ const CadastrarCliente = () => {
                                     placeholder="00.000.000/0000-00"
                                     className={`w-full p-2 border ${formErrors.cnpj ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
                                 />
-                                <p className="mt-1 text-xs text-[#7C54BD] opacity-70">Digite apenas números, a formatação é automática</p>
+                                <p className="mt-1 text-xs text-gray-500">Digite apenas números, a formatação é automática</p>
                                 {formErrors.cnpj && (
                                     <p className="mt-1 text-sm text-red-500">{formErrors.cnpj}</p>
                                 )}
                             </div>
 
-                            {/* Região */}
+                            {/* Código ERP */}
                             <div>
+                                <label htmlFor="codigo_erp" className="block text-sm font-medium text-[#7C54BD] mb-1">
+                                    Código ERP
+                                </label>
+                                <input
+                                    type="text"
+                                    id="codigo_erp"
+                                    name="codigo_erp"
+                                    placeholder="Código interno do sistema ERP"
+                                    value={formData.codigo_erp}
+                                    onChange={handleInputChange}
+                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black"
+                                />
+                            </div>
+
+                            {/* Região */}
+                            <div className="md:col-span-1">
                                 <label htmlFor="id_regiao" className="block text-sm font-medium text-[#7C54BD] mb-1">
                                     Região<span className="text-red-500 ml-1">*</span>
                                 </label>
@@ -389,28 +398,6 @@ const CadastrarCliente = () => {
                                 {formErrors.id_regiao && (
                                     <p className="mt-1 text-sm text-red-500">{formErrors.id_regiao}</p>
                                 )}
-                            </div>
-
-                            {/* Situação */}
-                            <div>
-                                <label htmlFor="situacao" className="block text-sm font-medium text-[#7C54BD] mb-1">
-                                    Situação<span className="text-red-500 ml-1">*</span>
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        id="situacao"
-                                        name="situacao"
-                                        value={formData.situacao}
-                                        onChange={handleInputChange}
-                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm appearance-none text-black"
-                                    >
-                                        <option value="A">Ativo</option>
-                                        <option value="I">Inativo</option>
-                                    </select>
-                                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                                        <div className={`w-3 h-3 rounded-full ${formData.situacao === 'A' ? 'bg-[#75FABD]' : 'bg-[#F6C647]'} mr-1`}></div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -447,7 +434,7 @@ const CadastrarCliente = () => {
                                         </svg>
                                     </button>
                                 </div>
-                                <p className="mt-1 text-xs text-gray-500">Digite o CEP e clique na lupa para buscar o endereço</p>
+                                <p className="mt-1 text-xs text-gray-500">Digite apenas números, a formatação é automática</p>
                                 {formErrors.cep && (
                                     <p className="mt-1 text-sm text-red-500">{formErrors.cep}</p>
                                 )}
@@ -474,25 +461,25 @@ const CadastrarCliente = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                            {/* Número */}
-                            <div className="md:col-span-1">
-                                <label htmlFor="numero" className="block text-sm font-medium text-[#7C54BD] mb-1">
-                                    Número<span className="text-red-500 ml-1">*</span>
+
+                            {/* Cidade */}
+                            <div className="md:col-span-3">
+                                <label htmlFor="cidade" className="block text-sm font-medium text-[#7C54BD] mb-1">
+                                    Cidade<span className="text-red-500 ml-1">*</span>
                                 </label>
                                 <input
                                     type="text"
-                                    id="numero"
-                                    name="numero"
-                                    value={formData.numero}
+                                    id="cidade"
+                                    name="cidade"
+                                    value={formData.cidade}
                                     onChange={handleInputChange}
-                                    placeholder="Nº"
-                                    className={`w-full p-2 border ${formErrors.numero ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
+                                    placeholder="Cidade"
+                                    className={`w-full p-2 border ${formErrors.cidade ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
                                 />
-                                {formErrors.numero && (
-                                    <p className="mt-1 text-sm text-red-500">{formErrors.numero}</p>
+                                {formErrors.cidade && (
+                                    <p className="mt-1 text-sm text-red-500">{formErrors.cidade}</p>
                                 )}
                             </div>
-
                             {/* Bairro */}
                             <div className="md:col-span-2">
                                 <label htmlFor="bairro" className="block text-sm font-medium text-[#7C54BD] mb-1">
@@ -509,25 +496,6 @@ const CadastrarCliente = () => {
                                 />
                                 {formErrors.bairro && (
                                     <p className="mt-1 text-sm text-red-500">{formErrors.bairro}</p>
-                                )}
-                            </div>
-
-                            {/* Cidade */}
-                            <div className="md:col-span-2">
-                                <label htmlFor="cidade" className="block text-sm font-medium text-[#7C54BD] mb-1">
-                                    Cidade<span className="text-red-500 ml-1">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    id="cidade"
-                                    name="cidade"
-                                    value={formData.cidade}
-                                    onChange={handleInputChange}
-                                    placeholder="Cidade"
-                                    className={`w-full p-2 border ${formErrors.cidade ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
-                                />
-                                {formErrors.cidade && (
-                                    <p className="mt-1 text-sm text-red-500">{formErrors.cidade}</p>
                                 )}
                             </div>
 
@@ -575,8 +543,43 @@ const CadastrarCliente = () => {
                                     <p className="mt-1 text-sm text-red-500">{formErrors.uf}</p>
                                 )}
                             </div>
+                            {/* Número */}
+                            <div className="md:col-span-1">
+                                <label htmlFor="numero" className="block text-sm font-medium text-[#7C54BD] mb-1">
+                                    Número<span className="text-red-500 ml-1">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="numero"
+                                    name="numero"
+                                    value={formData.numero}
+                                    onChange={handleInputChange}
+                                    placeholder="Nº"
+                                    className={`w-full p-2 border ${formErrors.numero ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
+                                />
+                                {formErrors.numero && (
+                                    <p className="mt-1 text-sm text-red-500">{formErrors.numero}</p>
+                                )}
+                            </div>
+
+                            {/* Complemento */}
+                            <div className="md:col-span-3">
+                                <label htmlFor="complemento" className="block text-sm font-medium text-[#7C54BD] mb-1">
+                                    Complemento
+                                </label>
+                                <input
+                                    type="text"
+                                    id="complemento"
+                                    name="complemento"
+                                    value={formData.complemento}
+                                    onChange={handleInputChange}
+                                    placeholder="Apto, Bloco, Sala, etc."
+                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black"
+                                />
+                            </div>
                         </div>
                     </div>
+
 
                     {/* Localização */}
                     <div className="space-y-4 md:col-span-2">

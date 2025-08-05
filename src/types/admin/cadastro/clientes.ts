@@ -1,6 +1,6 @@
 export interface Regiao {
-    id_regiao: number;
-    nome_regiao: string;
+    id: number;
+    nome: string;
 }
 
 export interface Cliente {
@@ -21,11 +21,13 @@ export interface Cliente {
 }
 
 export interface FormData {
+    codigo_erp: string;
     nome_fantasia: string;
     razao_social: string;
     cnpj: string;
     endereco: string;
     numero: string;
+    complemento: string;
     bairro: string;
     cep: string;
     cidade: string;

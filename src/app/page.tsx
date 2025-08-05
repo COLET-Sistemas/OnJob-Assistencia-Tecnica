@@ -1,6 +1,8 @@
 'use client'
 
-import { AlertTriangle, Database, Eye, EyeOff, Loader2, Lock, Settings, Shield, User } from 'lucide-react';
+import {
+  AlertTriangle, Database, Eye, EyeOff, Loader2, Lock, Settings, Shield, User
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -11,12 +13,10 @@ export function criptografarSenha(senha: string): string {
   const hexResult = [];
   let result = "";
 
-  // Adiciona a chave como os dois primeiros caracteres do resultado
   hexResult.push((key >> 4).toString(16).toUpperCase());
   hexResult.push((key & 0xf).toString(16).toUpperCase());
   result += hexResult.join("");
 
-  // Criptografa cada caractere da senha usando XOR com a chave
   for (let i = 0; i < senha.length; i++) {
     const converted = senha.charCodeAt(i) ^ key;
     hexResult[0] = (converted >> 4).toString(16).toUpperCase();
@@ -53,24 +53,27 @@ export default function LoginPage() {
   const [loadingTech, setLoadingTech] = useState(false)
   const [error, setError] = useState('')
   const [isMobile, setIsMobile] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
   const loginInputRef = useRef<HTMLInputElement>(null)
-  const router = useRouter();
+  const router = useRouter()
 
-  // Detectar dispositivo e tamanho da tela
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   useEffect(() => {
     const checkDevice = () => {
       if (typeof window === 'undefined') return;
 
       const userAgent = navigator.userAgent.toLowerCase();
       const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
-      const isSmallScreen = window.innerWidth <= 1024; // tablets e celulares
+      const isSmallScreen = window.innerWidth <= 1024;
       const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
       setIsMobile(isMobileDevice || isSmallScreen || isTouchDevice);
     };
 
-    // Aguarda um pouco para garantir que o DOM esteja pronto
     const timer = setTimeout(checkDevice, 100);
     window.addEventListener('resize', checkDevice);
 
@@ -80,14 +83,12 @@ export default function LoginPage() {
     };
   }, []);
 
-  // Focar no input de usuário ao carregar a página
   useEffect(() => {
     if (loginInputRef.current) {
       loginInputRef.current.focus();
     }
   }, []);
 
-  // Função para fazer login na API
   const authenticate = async (): Promise<LoginResponse | null> => {
     try {
       const loginData: LoginRequest = {
@@ -97,15 +98,11 @@ export default function LoginPage() {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginData)
       })
 
-      if (!response.ok) {
-        throw new Error('Credenciais inválidas')
-      }
+      if (!response.ok) throw new Error('Credenciais inválidas')
 
       const data: LoginResponse = await response.json()
       return data
@@ -115,13 +112,11 @@ export default function LoginPage() {
     }
   }
 
-  const hasAdminAccess = (perfil: LoginResponse['perfil']): boolean => {
-    return perfil.interno || perfil.gestor || perfil.admin
-  }
+  const hasAdminAccess = (perfil: LoginResponse['perfil']) =>
+    perfil.interno || perfil.gestor || perfil.admin
 
-  const hasTechAccess = (perfil: LoginResponse['perfil']): boolean => {
-    return perfil.tecnico_proprio || perfil.tecnico_terceirizado
-  }
+  const hasTechAccess = (perfil: LoginResponse['perfil']) =>
+    perfil.tecnico_proprio || perfil.tecnico_terceirizado
 
   const handleAdminAccess = async () => {
     if (!login.trim() || !senha.trim()) {
@@ -137,22 +132,21 @@ export default function LoginPage() {
 
       if (!authData) {
         setError('Erro na autenticação. Verifique suas credenciais.')
-        setLoadingAdmin(false)
         return
       }
 
       if (hasAdminAccess(authData.perfil)) {
-        localStorage.setItem('usuario', login);
-        localStorage.setItem('email', authData.email);
-        localStorage.setItem('nome_usuario', authData.nome_usuario);
-        localStorage.setItem('perfil', JSON.stringify(authData.perfil));
-        localStorage.setItem('token', authData.token);
-        router.push('/admin/dashboard');
+        localStorage.setItem('usuario', login)
+        localStorage.setItem('email', authData.email)
+        localStorage.setItem('nome_usuario', authData.nome_usuario)
+        localStorage.setItem('perfil', JSON.stringify(authData.perfil))
+        localStorage.setItem('token', authData.token)
+        router.push('/admin/dashboard')
       } else {
         setError('Usuário não tem permissão para acessar o Módulo Administrativo.')
       }
     } catch (error) {
-      console.error('Erro no handleAdminAccess:', error);
+      console.error('Erro no handleAdminAccess:', error)
       setError('Erro interno. Tente novamente.')
     } finally {
       setLoadingAdmin(false)
@@ -173,22 +167,21 @@ export default function LoginPage() {
 
       if (!authData) {
         setError('Erro na autenticação. Verifique suas credenciais.')
-        setLoadingTech(false)
         return
       }
 
       if (hasTechAccess(authData.perfil)) {
-        localStorage.setItem('email', authData.email);
-        localStorage.setItem('nome_usuario', authData.nome_usuario);
-        localStorage.setItem('usuario', login);
-        localStorage.setItem('perfil', JSON.stringify(authData.perfil));
-        localStorage.setItem('token', authData.token);
-        router.push('/tecnico/dashboard');
+        localStorage.setItem('usuario', login)
+        localStorage.setItem('email', authData.email)
+        localStorage.setItem('nome_usuario', authData.nome_usuario)
+        localStorage.setItem('perfil', JSON.stringify(authData.perfil))
+        localStorage.setItem('token', authData.token)
+        router.push('/tecnico/dashboard')
       } else {
         setError('Usuário não tem permissão para acessar o Módulo Técnico.')
       }
     } catch (error) {
-      console.error('Erro no handleTechAccess:', error);
+      console.error('Erro no handleTechAccess:', error)
       setError('Erro interno. Tente novamente.')
     } finally {
       setLoadingTech(false)
@@ -197,17 +190,19 @@ export default function LoginPage() {
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && login.trim() && senha.trim()) {
-      e.preventDefault();
+      e.preventDefault()
 
-      if (loadingAdmin || loadingTech) return;
+      if (loadingAdmin || loadingTech) return
 
       if (isMobile) {
-        handleTechAccess();
+        handleTechAccess()
       } else {
-        handleAdminAccess();
+        handleAdminAccess()
       }
     }
   }
+
+  if (!isMounted) return null;
 
   return (
     <div className="min-h-screen flex">
