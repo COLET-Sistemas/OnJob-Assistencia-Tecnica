@@ -68,7 +68,7 @@ const CadastroMotivosPendencia = () => {
                             <span className="ml-2 bg-[var(--primary)]/10 text-[var(--primary)] text-sm px-3 py-0.5 rounded-full font-medium">{motivos.length}</span>
                         </h2>
                         <a
-                            href="/admin/cadastro/motivos_pendencia/novo"
+                            href="/admin/cadastro/motivos_pendencias/novo"
                             className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm hover:shadow transform hover:-translate-y-0.5"
                         >
                             <Plus size={18} />
@@ -103,7 +103,7 @@ const CadastroMotivosPendencia = () => {
                                         </td>
                                         <td className="px-6 py-4.5 whitespace-nowrap text-sm font-medium">
                                             <a
-                                                href={`/admin/cadastro/motivos_pendencia/editar/${motivo.id}`}
+                                                href={`/admin/cadastro/motivos_pendencias/editar/${motivo.id}`}
                                                 className="inline-flex items-center px-3 py-1.5 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] rounded-lg transition-colors gap-1.5"
                                             >
                                                 <Edit2 size={14} />

@@ -19,7 +19,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 interface FiltroParams {
     nome?: string;
     situacao?: string;
-    [key: string]: string | undefined;
+    qtde_registros?: number;
+    nro_pagina?: number;
+    [key: string]: string | number | undefined;
 }
 
 // Interface para os filtros do componente
@@ -27,6 +29,14 @@ interface Filtros {
     texto: string;
     status: string;
     [key: string]: string;
+}
+
+// Interface para informações de paginação
+interface PaginacaoInfo {
+    paginaAtual: number;
+    totalPaginas: number;
+    totalRegistros: number;
+    registrosPorPagina: number;
 }
 
 // Extend the base Cliente interface to include additional properties used in this component
@@ -58,6 +68,12 @@ const CadastroCliente = () => {
         texto: '',
         status: ''
     });
+    const [paginacao, setPaginacao] = useState<PaginacaoInfo>({
+        paginaAtual: 1,
+        totalPaginas: 1,
+        totalRegistros: 0,
+        registrosPorPagina: 20
+    });
 
     // Ref para controlar se os dados já foram carregados
     const dadosCarregados = useRef(false);
@@ -75,21 +91,26 @@ const CadastroCliente = () => {
         });
     }, []);
 
-    // Função para aplicar todos os filtros quando o usuário clica no botão "Aplicar"
-    const aplicarTodosFiltros = useCallback(() => {
-        // Mostrar estado de carregamento enquanto a API processa
-        setLoading(true);
-        // Aplica todos os filtros (texto e status)
-        carregarClientes(filtros);
-        // Indica que já carregamos os dados pelo menos uma vez
-        dadosCarregados.current = true;
-    }, [filtros]);
-
     // Carrega todos os clientes ou clientes com filtros específicos
-    const carregarClientes = async (filtrosParam: Partial<Filtros> = {}) => {
+    // Usamos useRef para pegar o valor mais recente de paginacao sem causar novas renderizações
+    const paginacaoRef = useRef(paginacao);
+
+    // Atualizamos a referência sempre que paginacao muda
+    useEffect(() => {
+        paginacaoRef.current = paginacao;
+    }, [paginacao]);
+
+    const carregarClientes = useCallback(async (filtrosParam: Partial<Filtros> = {}, pagina: number = 1, registrosPorPagina?: number) => {
         setLoading(true);
+
+        // Acessamos a referência para pegar o valor mais recente
+        const registrosPorPaginaAtual = registrosPorPagina !== undefined ? registrosPorPagina : paginacaoRef.current.registrosPorPagina;
+
         try {
-            const params: FiltroParams = {};
+            const params: FiltroParams = {
+                qtde_registros: registrosPorPaginaAtual,
+                nro_pagina: pagina
+            };
 
             // Adicionar parâmetros de filtro à requisição
             if (filtrosParam.texto) {
@@ -101,41 +122,97 @@ const CadastroCliente = () => {
                 params.situacao = filtrosParam.status;
             }
 
-            const dados: Cliente[] = await clientesAPI.getAll(params);
-            setClientes(dados);
-            setClientesFiltrados(dados);
+            console.log('Chamada API - GET clientes:', params);
+            const response = await clientesAPI.getAll(params);            // Novo formato da API: { dados: [], total_registros: number, total_paginas: number }
+            if (typeof response === 'object' && 'dados' in response && 'total_paginas' in response && 'total_registros' in response) {
+                const { dados, total_paginas, total_registros } = response;
+                setClientes(dados);
+                setClientesFiltrados(dados);
+
+                // Atualiza as informações de paginação com o novo formato
+                setPaginacao({
+                    paginaAtual: pagina,
+                    totalPaginas: total_paginas,
+                    totalRegistros: total_registros,
+                    registrosPorPagina: registrosPorPaginaAtual
+                });
+            } else if (typeof response === 'object' && 'data' in response && 'pagination' in response) {
+                // Formato anterior - mantido para compatibilidade
+                const { data, pagination } = response;
+                setClientes(data);
+                setClientesFiltrados(data);
+
+                setPaginacao({
+                    paginaAtual: pagination.currentPage || pagina,
+                    totalPaginas: pagination.totalPages || 1,
+                    totalRegistros: pagination.totalRecords || data.length,
+                    registrosPorPagina: registrosPorPaginaAtual
+                });
+            } else {
+                // Formato antigo - array direto
+                setClientes(response);
+                setClientesFiltrados(response);
+
+                // Estima o total de páginas baseado no número de registros retornados
+                setPaginacao(prev => ({
+                    ...prev,
+                    paginaAtual: pagina,
+                    registrosPorPagina: registrosPorPaginaAtual,
+                    // Se retornou menos registros que o esperado, provavelmente é a última página
+                    totalPaginas: response.length < registrosPorPaginaAtual ? pagina : pagina + 1
+                }));
+            }
         } catch (error) {
             console.error('Erro ao carregar clientes:', error);
         } finally {
             setLoading(false);
         }
-    };
+        // Como estamos usando useRef para acessar paginacao, não precisamos incluir no array de dependências
+    }, []);
 
-    // Função para busca em tempo real ao digitar no campo de texto
+    // Função para aplicar todos os filtros quando o usuário clica no botão "Aplicar"
+    const aplicarTodosFiltros = useCallback(() => {
+        // Mostrar estado de carregamento enquanto a API processa
+        setLoading(true);
+        // Aplica todos os filtros (texto e status) e reinicia a paginação
+        carregarClientes(filtros, 1);
+        // Indica que já carregamos os dados pelo menos uma vez
+        dadosCarregados.current = true;
+    }, [filtros, carregarClientes]);
+
+    // Efeito combinado para inicialização e busca em tempo real
+    const textoRef = useRef(filtros.texto);
+
+    // Esse único efeito gerencia tanto a carga inicial quanto as atualizações de filtro de texto
     useEffect(() => {
+        // Caso especial para a primeira renderização
+        if (!dadosCarregados.current) {
+            console.log('Carregando dados iniciais - DEVE APARECER APENAS UMA VEZ');
+            // Inicialmente carrega sem filtros, página 1
+            carregarClientes({}, 1);
+            dadosCarregados.current = true;
+            textoRef.current = filtros.texto;
+            return; // Encerra o efeito após a carga inicial
+        }
+
+        // Verifica se o texto realmente mudou para evitar chamadas duplicadas
+        if (filtros.texto === textoRef.current) {
+            return;
+        }
+
+        // Atualiza a referência ao texto atual
+        textoRef.current = filtros.texto;
+
+        // Busca em tempo real ao digitar
         const handler = setTimeout(() => {
-            if (filtros.texto) {
-                // Se houver texto, faz a busca com o parâmetro
-                carregarClientes({ texto: filtros.texto } as Partial<Filtros>);
-            } else if (filtros.texto === '' && dadosCarregados.current) {
-                // Se o texto foi limpo, recarrega todos os clientes
-                carregarClientes({});
-            }
+            const filtroAtual = filtros.texto ? { texto: filtros.texto } : {};
+            carregarClientes(filtroAtual, 1);
         }, 500); // Um tempo maior para evitar muitas requisições enquanto o usuário digita
 
         return () => {
             clearTimeout(handler);
         };
-    }, [filtros.texto]);
-
-    // Usando useRef para garantir que a API só seja chamada uma vez, mesmo com rerenderizações do StrictMode
-    useEffect(() => {
-        if (!dadosCarregados.current) {
-            // Inicialmente carrega sem filtros
-            carregarClientes({});
-            dadosCarregados.current = true;
-        }
-    }, []);
+    }, [filtros.texto, carregarClientes]);
 
     const handleFiltroChange = useCallback((campo: string, valor: string) => {
         setFiltros(prev => ({
@@ -154,10 +231,16 @@ const CadastroCliente = () => {
             status: ''
         });
         // Recarregar todos os clientes sem filtros
-        carregarClientes({});
+        carregarClientes({}, 1);
         // Indica que já carregamos os dados pelo menos uma vez
         dadosCarregados.current = true;
-    }, []);
+    }, [carregarClientes]);
+
+    // Função para mudar de página
+    const mudarPagina = useCallback((novaPagina: number) => {
+        if (novaPagina < 1 || novaPagina > paginacao.totalPaginas) return;
+        carregarClientes(filtros, novaPagina);
+    }, [filtros, paginacao.totalPaginas, carregarClientes]);
 
     if (loading) {
         return (
@@ -428,6 +511,140 @@ const CadastroCliente = () => {
                     );
                 }}
             />
+
+            {/* Componente de Paginação */}
+            {paginacao.totalPaginas > 1 && (
+                <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-lg shadow-sm">
+                    <div className="flex flex-1 justify-between sm:hidden">
+                        <button
+                            onClick={() => mudarPagina(paginacao.paginaAtual - 1)}
+                            disabled={paginacao.paginaAtual === 1}
+                            className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${paginacao.paginaAtual === 1
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-gray-700 hover:bg-gray-50'
+                                }`}
+                        >
+                            Anterior
+                        </button>
+                        <button
+                            onClick={() => mudarPagina(paginacao.paginaAtual + 1)}
+                            disabled={paginacao.paginaAtual === paginacao.totalPaginas}
+                            className={`relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${paginacao.paginaAtual === paginacao.totalPaginas
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-gray-700 hover:bg-gray-50'
+                                }`}
+                        >
+                            Próxima
+                        </button>
+                    </div>
+                    <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                        <div className="flex items-center">
+                            <p className="text-sm text-gray-700 mr-6">
+                                Mostrando{' '}
+                                <span className="font-medium">
+                                    {Math.min((paginacao.paginaAtual - 1) * paginacao.registrosPorPagina + 1, paginacao.totalRegistros)}
+                                </span>{' '}
+                                a{' '}
+                                <span className="font-medium">
+                                    {Math.min(paginacao.paginaAtual * paginacao.registrosPorPagina, paginacao.totalRegistros)}
+                                </span>{' '}
+                                de{' '}
+                                <span className="font-medium">{paginacao.totalRegistros}</span>{' '}
+                                resultados
+                            </p>
+                            <div className="flex items-center">
+                                <span className="text-sm text-gray-700 mr-2">Exibir:</span>
+                                <select
+                                    className="rounded-md border border-gray-300 py-1.5 px-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                                    value={paginacao.registrosPorPagina}
+                                    onChange={(e) => {
+                                        const novoValor = parseInt(e.target.value);
+
+                                        // Atualiza o estado diretamente
+                                        setPaginacao(prev => ({
+                                            ...prev,
+                                            registrosPorPagina: novoValor
+                                        }));
+
+                                        // Faz a chamada API com o novo valor diretamente
+                                        carregarClientes(filtros, 1, novoValor);
+                                    }}
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={20}>20</option>
+                                    <option value={25}>25</option>
+                                    <option value={50}>50</option>
+                                    <option value={100}>100</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Paginação">
+                                <button
+                                    onClick={() => mudarPagina(paginacao.paginaAtual - 1)}
+                                    disabled={paginacao.paginaAtual === 1}
+                                    className={`relative inline-flex items-center rounded-l-md px-2 py-2 ${paginacao.paginaAtual === 1
+                                        ? 'text-gray-300 cursor-not-allowed'
+                                        : 'text-gray-500 hover:bg-gray-50'
+                                        } focus:z-20 focus:outline-offset-0`}
+                                >
+                                    <span className="sr-only">Anterior</span>
+                                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+
+                                {/* Renderiza os números das páginas */}
+                                {Array.from({ length: Math.min(5, paginacao.totalPaginas) }, (_, i) => {
+                                    // Lógica para mostrar as páginas próximas da atual
+                                    let pageNum;
+                                    if (paginacao.totalPaginas <= 5) {
+                                        // Se temos 5 ou menos páginas, mostra todas
+                                        pageNum = i + 1;
+                                    } else if (paginacao.paginaAtual <= 3) {
+                                        // Nas primeiras páginas
+                                        pageNum = i + 1;
+                                    } else if (paginacao.paginaAtual >= paginacao.totalPaginas - 2) {
+                                        // Nas últimas páginas
+                                        pageNum = paginacao.totalPaginas - 4 + i;
+                                    } else {
+                                        // No meio
+                                        pageNum = paginacao.paginaAtual - 2 + i;
+                                    }
+
+                                    return (
+                                        <button
+                                            key={pageNum}
+                                            onClick={() => mudarPagina(pageNum)}
+                                            aria-current={paginacao.paginaAtual === pageNum ? 'page' : undefined}
+                                            className={`relative z-10 inline-flex items-center px-4 py-2 text-sm font-semibold ${paginacao.paginaAtual === pageNum
+                                                ? 'bg-[var(--primary)] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]'
+                                                : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                                }`}
+                                        >
+                                            {pageNum}
+                                        </button>
+                                    );
+                                })}
+
+                                <button
+                                    onClick={() => mudarPagina(paginacao.paginaAtual + 1)}
+                                    disabled={paginacao.paginaAtual === paginacao.totalPaginas}
+                                    className={`relative inline-flex items-center rounded-r-md px-2 py-2 ${paginacao.paginaAtual === paginacao.totalPaginas
+                                        ? 'text-gray-300 cursor-not-allowed'
+                                        : 'text-gray-500 hover:bg-gray-50'
+                                        } focus:z-20 focus:outline-offset-0`}
+                                >
+                                    <span className="sr-only">Próxima</span>
+                                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            )}
         </ListContainer>
     );
 };

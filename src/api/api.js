@@ -49,13 +49,26 @@ const apiRequest = async (endpoint, options = {}) => {
     }
 };
 
+// Função para converter objeto de parâmetros em string de consulta
+const buildQueryString = (params) => {
+    if (!params || Object.keys(params).length === 0) return '';
+
+    return '?' + Object.entries(params)
+        .filter(([, value]) => value !== undefined && value !== null && value !== '')
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join('&');
+};
+
 // Métodos HTTP específicos
 const api = {
     // GET
     get: (endpoint, options = {}) => {
-        return apiRequest(endpoint, {
+        const { params, ...restOptions } = options;
+        const queryString = buildQueryString(params);
+
+        return apiRequest(`${endpoint}${queryString}`, {
             method: 'GET',
-            ...options
+            ...restOptions
         });
     },
 
