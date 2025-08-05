@@ -11,6 +11,7 @@ interface ListHeaderProps {
     newButtonLink: string;
     newButtonLabel: string;
     activeFiltersCount?: number;
+    onNewButtonClick?: () => void;
 }
 
 const ListHeader: React.FC<ListHeaderProps> = ({
@@ -20,7 +21,8 @@ const ListHeader: React.FC<ListHeaderProps> = ({
     showFilters,
     newButtonLink,
     newButtonLabel,
-    activeFiltersCount = 0
+    activeFiltersCount = 0,
+    onNewButtonClick
 }) => {
     return (
         <div className="px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/10">
@@ -50,13 +52,23 @@ const ListHeader: React.FC<ListHeaderProps> = ({
                             )}
                         </button>
                     </div>
-                    <a
-                        href={newButtonLink}
-                        className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
-                    >
-                        <Plus size={18} />
-                        {newButtonLabel}
-                    </a>
+                    {onNewButtonClick ? (
+                        <button
+                            onClick={onNewButtonClick}
+                            className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
+                        >
+                            <Plus size={18} />
+                            {newButtonLabel}
+                        </button>
+                    ) : (
+                        <a
+                            href={newButtonLink}
+                            className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
+                        >
+                            <Plus size={18} />
+                            {newButtonLabel}
+                        </a>
+                    )}
                 </div>
             </div>
         </div>

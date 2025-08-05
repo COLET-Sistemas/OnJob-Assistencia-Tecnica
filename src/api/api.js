@@ -122,8 +122,8 @@ export const clientesAPI = {
 };
 
 export const maquinasAPI = {
-    getAll: () => api.get('/maquinas'),
-    getAllWithInactive: () => api.get('/maquinas?incluir_inativos=S'),
+    getAll: (page = 1, limit = 20) => api.get('/maquinas', { params: { nro_pagina: page, qtde_registros: limit } }),
+    getAllWithInactive: (page = 1, limit = 20) => api.get('/maquinas', { params: { incluir_inativos: 'S', nro_pagina: page, qtde_registros: limit } }),
     getById: (id) => api.get(`/maquinas/${id}`),
     create: (maquinaData) => api.post('/maquinas', maquinaData),
     update: (id, maquinaData) => api.put(`/maquinas/${id}`, maquinaData),

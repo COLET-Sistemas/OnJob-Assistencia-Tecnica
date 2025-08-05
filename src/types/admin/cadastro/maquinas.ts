@@ -23,3 +23,12 @@ export interface FormData {
     situacao: string;
     id_cliente: number;
 }
+
+// Nova interface para o formato da resposta da API
+export interface MaquinaResponse {
+    total_registros: number;
+    total_paginas: number;
+    dados: Maquina[];
+    pagina_atual?: number;
+    registros_por_pagina?: number;
+}
