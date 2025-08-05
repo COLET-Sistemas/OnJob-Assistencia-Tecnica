@@ -2,6 +2,7 @@
 
 import { clientesAPI, regioesAPI } from '@/api/api';
 import { Loading } from '@/components/Loading';
+import LocationPicker from '@/components/admin/common/LocationPicker';
 import { useTitle } from '@/context/TitleContext';
 import { FormData, Regiao } from '@/types/admin/cadastro/clientes';
 import { formatDocumento } from '@/utils/formatters';
@@ -9,6 +10,7 @@ import { MapPin, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 const CadastrarCliente = () => {
     const router = useRouter();
@@ -17,6 +19,7 @@ const CadastrarCliente = () => {
     const [savingData, setSavingData] = useState(false);
     const [regioes, setRegioes] = useState<Regiao[]>([]);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    const [mapOpen, setMapOpen] = useState(false);
 
     // Set page title when component mounts
     useEffect(() => {
@@ -59,23 +62,6 @@ const CadastrarCliente = () => {
         carregarRegioes();
     }, []);
 
-    // Interfaces para as APIs de CEP
-    interface BrasilAPICEP {
-        cep: string;
-        state: string;
-        city: string;
-        neighborhood: string;
-        street: string;
-        service: string;
-        location?: {
-            type: string;
-            coordinates: {
-                longitude: string;
-                latitude: string;
-            };
-        };
-    }
-
     interface ViaCEPResponse {
         cep: string;
         logradouro: string;
@@ -83,14 +69,43 @@ const CadastrarCliente = () => {
         bairro: string;
         localidade: string;
         uf: string;
-        ibge: string;
-        gia: string;
-        ddd: string;
-        siafi: string;
         erro?: boolean;
     }
 
-    // Função para buscar CEP e preencher dados do endereço usando BrasilAPI
+    const buscarCoordenadas = async (endereco: string, numero: string, cidade: string, uf: string, cep: string) => {
+        try {
+            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+            if (!apiKey) {
+                console.warn('Chave de API do Google Maps não encontrada');
+                return null;
+            }
+
+            // Formata o endereço completo para a API do Google
+            const enderecoCompleto = `${endereco}, ${numero}, ${cidade}, ${uf}, ${cep}, Brasil`;
+
+            // Codifica os parâmetros da URL
+            const enderecoEncoded = encodeURIComponent(enderecoCompleto);
+
+            // Faz a chamada para a API de Geocoding do Google
+            const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${enderecoEncoded}&key=${apiKey}`);
+            const data = await response.json();
+
+            // Verifica se a requisição foi bem-sucedida e se há resultados
+            if (data.status === 'OK' && data.results.length > 0) {
+                const { lat, lng } = data.results[0].geometry.location;
+                return { latitude: lat.toString(), longitude: lng.toString() };
+            } else {
+                console.warn('Não foi possível obter as coordenadas:', data.status);
+                return null;
+            }
+        } catch (error) {
+            console.error('Erro ao buscar coordenadas:', error);
+            return null;
+        }
+    };
+
+    // Função para buscar CEP e preencher dados do endereço usando BrasilAPI e Google Maps
     const buscarCEP = async (cep: string) => {
         if (!cep || cep.length !== 9) return;
 
@@ -99,63 +114,32 @@ const CadastrarCliente = () => {
 
         if (cepNumerico.length !== 8) return;
 
-        // Define qual API usar (alternativa: BrasilAPI)
-        const useBrasilAPI = true;
-
         try {
-            if (useBrasilAPI) {
-                // Usando BrasilAPI - oferece mais dados
-                const response = await fetch(`https://brasilapi.com.br/api/cep/v2/${cepNumerico}`);
-                const data: BrasilAPICEP = await response.json();
+            const response = await fetch(`https://viacep.com.br/ws/${cepNumerico}/json/`);
+            const data: ViaCEPResponse = await response.json();
 
-                if (response.ok) {
-                    setFormData(prev => ({
-                        ...prev,
-                        endereco: data.street || '',
-                        bairro: data.neighborhood || '',
-                        cidade: data.city || '',
-                        uf: data.state || ''
-                    }));
+            if (!data.erro) {
+                setFormData(prev => ({
+                    ...prev,
+                    endereco: data.logradouro || '',
+                    bairro: data.bairro || '',
+                    cidade: data.localidade || '',
+                    uf: data.uf || '',
+                    complemento: data.complemento || ''
+                }));
 
-                    // Se tiver coordenadas, preenche latitude e longitude
-                    if (data.location?.coordinates) {
-                        setFormData(prev => ({
-                            ...prev,
-                            latitude: data.location?.coordinates.latitude || '',
-                            longitude: data.location?.coordinates.longitude || ''
-                        }));
-                    }
-
-                    // Foca no campo de número após encontrar o CEP
-                    setTimeout(() => {
-                        document.getElementById('numero')?.focus();
-                    }, 100);
-                }
+                // Foca no campo de número após encontrar o CEP
+                setTimeout(() => {
+                    document.getElementById('numero')?.focus();
+                }, 100);
             } else {
-                // Usando ViaCEP como fallback
-                const response = await fetch(`https://viacep.com.br/ws/${cepNumerico}/json/`);
-                const data: ViaCEPResponse = await response.json();
-
-                if (!data.erro) {
-                    setFormData(prev => ({
-                        ...prev,
-                        endereco: data.logradouro || '',
-                        bairro: data.bairro || '',
-                        cidade: data.localidade || '',
-                        uf: data.uf || '',
-                        complemento: data.complemento || ''
-                    }));
-
-                    // Foca no campo de número após encontrar o CEP
-                    setTimeout(() => {
-                        document.getElementById('numero')?.focus();
-                    }, 100);
-                }
+                throw new Error('CEP não encontrado');
             }
         } catch (error) {
             console.error('Erro ao buscar CEP:', error);
             alert('Não foi possível buscar o endereço pelo CEP. Por favor, digite manualmente.');
         }
+
     };
 
     // Formatar o campo de CEP automaticamente
@@ -176,7 +160,51 @@ const CadastrarCliente = () => {
         return formatDocumento(value);
     };
 
-    // Manipular mudanças nos campos do formulário
+    // Função para atualizar as coordenadas usando o Google Maps
+    const atualizarCoordenadas = async () => {
+        // Verificar se tem os dados necessários para buscar as coordenadas
+        if (!formData.endereco || !formData.numero || !formData.cidade || !formData.uf) {
+            toast.error('Preencha o endereço, número, cidade e UF para obter as coordenadas.');
+            return;
+        }
+
+        try {
+            // Buscar coordenadas iniciais para posicionar o mapa
+            const coordenadas = await buscarCoordenadas(
+                formData.endereco,
+                formData.numero,
+                formData.cidade,
+                formData.uf,
+                formData.cep
+            );
+
+            // Se encontramos coordenadas, atualizamos o formulário primeiro
+            if (coordenadas) {
+                setFormData(prev => ({
+                    ...prev,
+                    latitude: coordenadas.latitude,
+                    longitude: coordenadas.longitude
+                }));
+            }
+
+            // Abrir o mapa para ajuste fino, independente de ter encontrado coordenadas iniciais ou não
+            setMapOpen(true);
+
+        } catch (error) {
+            console.error('Erro ao atualizar coordenadas:', error);
+            toast.error('Erro ao buscar coordenadas. Por favor, tente novamente.');
+        }
+    };
+
+    // Função chamada quando o usuário confirma a localização no mapa
+    const handleLocationSelected = (lat: number, lng: number) => {
+        setFormData(prev => ({
+            ...prev,
+            latitude: lat.toString(),
+            longitude: lng.toString()
+        }));
+        toast.success('Coordenadas atualizadas com sucesso!');
+    };    // Manipular mudanças nos campos do formulário
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
 
@@ -192,6 +220,30 @@ const CadastrarCliente = () => {
         }
         else if (name === 'cnpj') {
             setFormData(prev => ({ ...prev, [name]: formatarCNPJ(value) }));
+        }
+        else if (name === 'numero') {
+            setFormData(prev => ({ ...prev, [name]: value }));
+
+            // Se o número for preenchido e temos o endereço completo, tenta buscar as coordenadas
+            if (value && formData.endereco && formData.cidade && formData.uf && formData.cep) {
+                // Tentamos buscar coordenadas automaticamente e então abrimos o mapa para o ajuste fino
+                setTimeout(() => {
+                    buscarCoordenadas(formData.endereco, value, formData.cidade, formData.uf, formData.cep)
+                        .then(coordenadas => {
+                            if (coordenadas) {
+                                setFormData(prev => ({
+                                    ...prev,
+                                    latitude: coordenadas.latitude,
+                                    longitude: coordenadas.longitude
+                                }));
+                                // Abre o mapa automaticamente após obter as coordenadas iniciais
+                                setMapOpen(true);
+                                toast.success('Ajuste a localização exata no mapa');
+                            }
+                        })
+                        .catch(err => console.error('Erro ao buscar coordenadas automaticamente:', err));
+                }, 1000);
+            }
         }
         else {
             setFormData(prev => ({ ...prev, [name]: value }));
@@ -461,7 +513,6 @@ const CadastrarCliente = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-
                             {/* Cidade */}
                             <div className="md:col-span-3">
                                 <label htmlFor="cidade" className="block text-sm font-medium text-[#7C54BD] mb-1">
@@ -585,7 +636,7 @@ const CadastrarCliente = () => {
                     <div className="space-y-4 md:col-span-2">
                         <h2 className="text-lg font-semibold text-[#7C54BD] border-b-2 border-[#F6C647] pb-2 inline-block">Localização Geográfica</h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* Latitude */}
                             <div>
                                 <label htmlFor="latitude" className="block text-sm font-medium text-[#7C54BD] mb-1">
@@ -597,11 +648,12 @@ const CadastrarCliente = () => {
                                     name="latitude"
                                     value={formData.latitude}
                                     onChange={handleInputChange}
-                                    placeholder="-23.669854"
+
+                                    disabled
                                     className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black"
                                 />
                                 <p className="text-xs text-[#7C54BD] opacity-70 mt-1">
-                                    Use o formato decimal (ex: -23.669854)
+                                    Será preenchido automaticamente ao buscar o endereço
                                 </p>
                             </div>
 
@@ -616,12 +668,30 @@ const CadastrarCliente = () => {
                                     name="longitude"
                                     value={formData.longitude}
                                     onChange={handleInputChange}
-                                    placeholder="-45.41698"
+                                    disabled
+
                                     className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black"
                                 />
                                 <p className="text-xs text-[#7C54BD] opacity-70 mt-1">
-                                    Use o formato decimal (ex: -45.41698)
+                                    Será preenchido automaticamente ao buscar o endereço
                                 </p>
+                            </div>
+
+                            {/* Botão para buscar coordenadas pelo Google Maps */}
+                            <div className="flex flex-col justify-end">
+                                <button
+                                    type="button"
+                                    onClick={atualizarCoordenadas}
+                                    className="mt-auto p-2 bg-[#7C54BD] text-white rounded-md hover:bg-[#6743a1] transition-colors flex items-center justify-center gap-2"
+                                    disabled={!formData.endereco || !formData.numero || !formData.cidade || !formData.uf}
+                                    title="Abrir mapa para ajustar localização precisa"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                    Ajustar no Mapa
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -654,6 +724,16 @@ const CadastrarCliente = () => {
                     </button>
                 </div>
             </form>
+
+            {/* Seletor de Localização no Mapa */}
+            <LocationPicker
+                isOpen={mapOpen}
+                onClose={() => setMapOpen(false)}
+                initialLat={formData.latitude ? parseFloat(formData.latitude) : null}
+                initialLng={formData.longitude ? parseFloat(formData.longitude) : null}
+                address={`${formData.endereco}, ${formData.numero}, ${formData.cidade}, ${formData.uf}, ${formData.cep}, Brasil`}
+                onLocationSelected={handleLocationSelected}
+            />
         </div>
     );
 };
