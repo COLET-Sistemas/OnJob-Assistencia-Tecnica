@@ -42,7 +42,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
                 <div className="flex-1 flex flex-col min-h-screen w-full transition-all duration-300">
                     <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-                    <main className="flex-1 p-4 md:p-6 overflow-auto bg-[#F9F7F7]">{children}</main>
+                    <main className="flex-1 pt-2 px-4 md:px-6 overflow-auto bg-[#F9F7F7]">{children}</main>
                 </div>
             </div>
         </TitleProvider>
