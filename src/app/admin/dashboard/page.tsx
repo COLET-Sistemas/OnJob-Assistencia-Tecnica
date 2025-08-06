@@ -1,6 +1,8 @@
 'use client'
+import FeedbackButtons from '@/components/FeedbackButtons';
 import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
+import { feedback } from '@/utils/feedback';
 import {
     BarChart3,
     Cog,
@@ -32,6 +34,8 @@ export default function DashboardPage() {
         // Simulate data loading
         const timer = setTimeout(() => {
             setLoading(false);
+            // Show welcome feedback when dashboard loads
+            feedback.toast('Dashboard carregado com sucesso!', 'success');
         }, 1000);
 
         return () => clearTimeout(timer);
@@ -59,6 +63,19 @@ export default function DashboardPage() {
                 <div className="mb-8">
                     <h2 className="text-3xl font-bold text-gray-800 mb-2">Bem-vindo ao Dashboard!</h2>
                     <p className="text-gray-600">Gerencie todas as operações da sua assistência técnica de forma eficiente.</p>
+                </div>
+
+                <div className="mb-8 p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <h3 className="text-xl font-bold text-gray-800 mb-4">Sistema de Feedback</h3>
+                    <p className="mb-4 text-gray-600">Demonstração do sistema de feedback com cores primária e secundárias.</p>
+                    <FeedbackButtons />
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <h4 className="font-semibold mb-2">Como usar em seus componentes:</h4>
+                        <p className="text-sm text-gray-600 mb-2">1. Usando o hook:</p>
+                        <pre className="bg-gray-800 text-white p-2 rounded text-sm mb-3">{'const { showToast, showAlert } = useFeedback();'}</pre>
+                        <p className="text-sm text-gray-600 mb-2">2. Usando a utilidade:</p>
+                        <pre className="bg-gray-800 text-white p-2 rounded text-sm">{'import { feedback } from \'@/utils/feedback\';\n\n// Em sua função:\nfeedback.toast(\'Mensagem\', \'success\');'}</pre>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
