@@ -42,8 +42,8 @@ function CadastroUsuarios() {
     );
 
     // Agrupa usuários por ID para evitar repetição na listagem
-    const usuariosAgrupados = usuariosRegioes ? usuariosRegioes.reduce((acc: { 
-        [key: number]: UsuarioAgrupado 
+    const usuariosAgrupados = usuariosRegioes ? usuariosRegioes.reduce((acc: {
+        [key: number]: UsuarioAgrupado
     }, item: UsuarioRegiao) => {
         if (!acc[item.id_usuario]) {
             acc[item.id_usuario] = {
