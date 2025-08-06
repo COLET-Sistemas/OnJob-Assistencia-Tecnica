@@ -1,6 +1,6 @@
 'use client'
 
-import Navbar from '@/components/admin/Navbar'
+import Navbar from '@/components/admin/layout/Navbar'
 import Sidebar from '@/components/admin/Sidebar'
 import { TitleProvider } from '@/context/TitleContext'
 import { useEffect, useState } from 'react'

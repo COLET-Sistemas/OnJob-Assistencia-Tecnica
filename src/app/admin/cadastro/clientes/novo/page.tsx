@@ -5,7 +5,8 @@ import { Loading } from '@/components/Loading';
 import LocationPicker from '@/components/admin/common/LocationPicker';
 import StaticMap from '@/components/admin/common/StaticMap';
 import { useTitle } from '@/context/TitleContext';
-import { FormData, Regiao } from '@/types/admin/cadastro/clientes';
+import { FormData } from '@/types/admin/cadastro/clientes';
+import { Regiao } from '@/types/admin/cadastro/regioes';
 import { formatDocumento } from '@/utils/formatters';
 import { MapPin, Save } from 'lucide-react';
 import Link from 'next/link';
@@ -24,7 +25,6 @@ const CadastrarCliente = () => {
     const [showMapPreview, setShowMapPreview] = useState(false);
     const [hasShownLocationToast, setHasShownLocationToast] = useState(false);
 
-    // Set page title when component mounts
     useEffect(() => {
         setTitle('Cadastro de Cliente');
     }, [setTitle]);
@@ -52,7 +52,6 @@ const CadastrarCliente = () => {
         const carregarRegioes = async () => {
             setLoading(true);
             try {
-                // Usando o regioesAPI para buscar todas as regiões
                 const response = await regioesAPI.getAll();
                 setRegioes(response.data || []);
             } catch (error) {
@@ -65,7 +64,6 @@ const CadastrarCliente = () => {
         carregarRegioes();
     }, []);
 
-    // Determinar quando mostrar o mapa - quando tivermos coordenadas válidas
     useEffect(() => {
         if (formData.latitude && formData.longitude) {
             setShowMapPreview(true);
@@ -734,7 +732,7 @@ const CadastrarCliente = () => {
                             {/* Lado direito - Mapa Estático */}
                             <div className="flex flex-col gap-2">
                                 <div className="h-[250px] relative rounded-md overflow-hidden shadow-md">
-                                    {formData.latitude && formData.longitude ? (
+                                    {showMapPreview && formData.latitude && formData.longitude ? (
                                         <StaticMap
                                             latitude={parseFloat(formData.latitude)}
                                             longitude={parseFloat(formData.longitude)}
@@ -754,23 +752,6 @@ const CadastrarCliente = () => {
                                         </div>
                                     )}
                                 </div>
-                                {formData.latitude && formData.longitude && (
-                                    <button
-                                        type="button"
-                                        onClick={atualizarCoordenadas}
-                                        className={`p-2 rounded-md flex items-center justify-center gap-2 text-sm transition-colors
-                                          ${(!formData.endereco || !formData.numero || !formData.cidade || !formData.uf)
-                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-70'
-                                                : 'bg-[#7C54BD] text-white hover:bg-[#6743a1]'}`}
-                                        disabled={!formData.endereco || !formData.numero || !formData.cidade || !formData.uf}
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                            <circle cx="12" cy="10" r="3"></circle>
-                                        </svg>
-                                        Ajustar localização
-                                    </button>
-                                )}
                             </div>
                         </div>
                     </div>

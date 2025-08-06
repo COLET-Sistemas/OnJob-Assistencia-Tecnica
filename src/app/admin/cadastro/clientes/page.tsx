@@ -246,13 +246,14 @@ const CadastroCliente = () => {
         },
         {
             header: 'Região',
-            accessor: (cliente: Cliente) => (
-                cliente.regiao?.nome_regiao && (
+            accessor: (cliente: Cliente) => {
+                const regionName = cliente.regiao?.nome_regiao || cliente.regiao?.nome;
+                return regionName ? (
                     <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-[var(--secondary-yellow)]/20 text-[var(--dark-navy)] border border-[var(--secondary-yellow)]/30">
-                        {cliente.regiao.nome_regiao}
+                        {regionName}
                     </span>
-                )
-            )
+                ) : null;
+            }
         },
         {
             header: 'Status',

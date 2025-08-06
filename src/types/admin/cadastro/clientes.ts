@@ -1,7 +1,4 @@
-export interface Regiao {
-    id: number;
-    nome: string;
-}
+import { Regiao as RegiaoBase } from './regioes';
 
 export interface Cliente {
     id: number;
@@ -17,7 +14,7 @@ export interface Cliente {
     latitude: number;
     longitude: number;
     situacao: string;
-    regiao: Regiao;
+    regiao: RegiaoBase;
 }
 
 export interface FormData {
