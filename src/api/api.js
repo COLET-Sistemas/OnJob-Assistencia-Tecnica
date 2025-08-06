@@ -110,11 +110,10 @@ const api = {
 
 // Funções específicas para diferentes recursos
 export const clientesAPI = {
-    getAll: (params = {}) => api.get('/clientes', { params }),
-    getById: (id) => api.get(`/clientes/${id}`),
-    create: (clienteData) => api.post('/clientes', clienteData),
-    update: (id, clienteData) => api.put(`/clientes/${id}`, clienteData),
-    delete: (id) => api.delete(`/clientes/${id}`),
+    getAll: (params = {}) => {
+        console.log('clientesAPI.getAll chamado com params:', JSON.stringify(params));
+        return api.get('/clientes', { params });
+    },
     getById: (id) => api.get(`/clientes/${id}`),
     create: (clienteData) => api.post('/clientes', clienteData),
     update: (id, clienteData) => api.put(`/clientes/${id}`, clienteData),

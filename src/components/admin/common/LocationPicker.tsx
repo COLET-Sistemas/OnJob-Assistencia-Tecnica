@@ -84,6 +84,8 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     onClose
 }) => {
     const mapRef = useRef<HTMLDivElement>(null);
+    const addressRef = useRef<string>(address);
+    const isFirstLoad = useRef<boolean>(true);
 
     /* Estas variáveis de estado armazenam referências aos objetos do mapa e marcador
      * que são importantes para a limpeza no retorno do useEffect,
@@ -94,17 +96,50 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     const [marker, setMarker] = useState<GoogleMarker | null>(null);
 
     const [loading, setLoading] = useState<boolean>(true);
-    const [currentLat, setCurrentLat] = useState<number | null>(initialLat);
-    const [currentLng, setCurrentLng] = useState<number | null>(initialLng);
+    const [currentLat, setCurrentLat] = useState<number | null>(initialLat !== null ? Number(initialLat) : null);
+    const [currentLng, setCurrentLng] = useState<number | null>(initialLng !== null ? Number(initialLng) : null);
     const [googleMapsLoaded, setGoogleMapsLoaded] = useState<boolean>(false);
+
+    // Atualizar as coordenadas quando o modal é aberto ou as propriedades mudam
+    useEffect(() => {
+        if (isOpen) {
+            console.log('Modal aberto - atualizando coordenadas:', { initialLat, initialLng, address });
+            setCurrentLat(initialLat !== null ? Number(initialLat) : null);
+            setCurrentLng(initialLng !== null ? Number(initialLng) : null);
+        }
+    }, [isOpen, initialLat, initialLng, address]);
+
+    // Resetar o flag de primeira carga quando o modal é aberto
+    useEffect(() => {
+        if (isOpen) {
+            isFirstLoad.current = true;
+        }
+    }, [isOpen]);
 
     // Função para carregar o script do Google Maps
     useEffect(() => {
         if (!isOpen) return;
 
+        // Resetting loading state when modal is opened
+        setLoading(true);
+
         const loadGoogleMaps = () => {
+            // Check if Google Maps API is already loaded
             if (window.google && window.google.maps) {
                 setGoogleMapsLoaded(true);
+                return;
+            }
+
+            // Check if script tag already exists (to prevent multiple loading)
+            const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
+            if (existingScript) {
+                // If script exists but isn't ready yet, wait for it
+                const checkGoogleMaps = setInterval(() => {
+                    if (window.google && window.google.maps) {
+                        clearInterval(checkGoogleMaps);
+                        setGoogleMapsLoaded(true);
+                    }
+                }, 100);
                 return;
             }
 
@@ -114,6 +149,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
             googleMapScript.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap`;
             googleMapScript.async = true;
             googleMapScript.defer = true;
+            googleMapScript.id = 'google-maps-script';
 
             window.initMap = () => {
                 setGoogleMapsLoaded(true);
@@ -132,20 +168,26 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         };
     }, [isOpen]);
 
+    // Atualizar addressRef quando address mudar
+    useEffect(() => {
+        if (addressRef.current !== address) {
+            addressRef.current = address;
+            isFirstLoad.current = true;
+        }
+    }, [address]);
+
     // Inicializar o mapa quando o Google Maps for carregado
     useEffect(() => {
         if (!googleMapsLoaded || !mapRef.current || !isOpen) return;
 
-        // Pequeno atraso para garantir que o DOM esteja pronto
-        const timer = setTimeout(() => {
-            setLoading(true);
-        }, 100);
+        // Garantir que estamos em um estado de carregamento
+        setLoading(true);
 
         // Coordenadas iniciais
         const defaultLocation = { lat: -29.699500, lng: -51.135428 };
         const initialLocation = {
-            lat: currentLat || defaultLocation.lat,
-            lng: currentLng || defaultLocation.lng
+            lat: currentLat !== null ? Number(currentLat) : defaultLocation.lat,
+            lng: currentLng !== null ? Number(currentLng) : defaultLocation.lng
         };
 
         // Inicializar o mapa
@@ -170,13 +212,15 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         markerInstance.addListener('dragend', () => {
             const position = markerInstance.getPosition();
             if (position) {
-                setCurrentLat(position.lat());
-                setCurrentLng(position.lng());
+                setCurrentLat(Number(position.lat()));
+                setCurrentLng(Number(position.lng()));
             }
         });
 
-        // Se temos um endereço, centralizar o mapa nele
-        if (address && (!currentLat || !currentLng)) {
+        // Geocodificar o endereço somente na primeira vez ou quando ele mudar
+        if (address && isFirstLoad.current) {
+            isFirstLoad.current = false; // Marcar que já fizemos a primeira carga
+
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ address }, (results: GoogleGeocodeResult[], status: string) => {
                 if (status === 'OK' && results && results[0]) {
@@ -185,10 +229,22 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                         lat: location.lat(),
                         lng: location.lng()
                     };
+
+                    // Usar as coordenadas do endereço para centralizar o mapa
                     mapInstance.setCenter(locationCoords);
                     markerInstance.setPosition(locationCoords);
-                    setCurrentLat(locationCoords.lat);
-                    setCurrentLng(locationCoords.lng);
+                    setCurrentLat(Number(locationCoords.lat));
+                    setCurrentLng(Number(locationCoords.lng));
+
+                    console.log('Endereço geocodificado:', address, locationCoords);
+                } else {
+                    console.warn('Falha ao geocodificar endereço:', status);
+                    // Se não conseguir geocodificar, usar as coordenadas iniciais se disponíveis
+                    if (initialLat !== null && initialLng !== null) {
+                        const coords = { lat: Number(initialLat), lng: Number(initialLng) };
+                        mapInstance.setCenter(coords);
+                        markerInstance.setPosition(coords);
+                    }
                 }
             });
         }
@@ -197,7 +253,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         setMarker(markerInstance);
 
         // Forçar redimensionamento do mapa após um pequeno atraso
-        setTimeout(() => {
+        const resizeTimer = setTimeout(() => {
             // Truque para forçar o Google Maps a redimensionar corretamente
             window.dispatchEvent(new Event('resize'));
             setLoading(false);
@@ -208,14 +264,16 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
             if (markerInstance) {
                 window.google.maps.event.clearInstanceListeners(markerInstance);
             }
-            clearTimeout(timer);
+            clearTimeout(resizeTimer);
         };
-    }, [googleMapsLoaded, isOpen, address, currentLat, currentLng]);
+        // Only re-run when these specific dependencies change to avoid infinite loops
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [googleMapsLoaded, isOpen]);
 
     // Função para confirmar a seleção da localização
     const handleConfirm = () => {
-        if (currentLat && currentLng) {
-            onLocationSelected(currentLat, currentLng);
+        if (currentLat !== null && currentLng !== null) {
+            onLocationSelected(Number(currentLat), Number(currentLng));
             onClose();
         }
     };
@@ -223,13 +281,13 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 backdrop-blur-sm bg-black/30 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-                <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                    <h2 className="text-lg font-semibold text-black">Ajustar Localização</h2>
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col border-t-4 border-[#7C54BD]">
+                <div className="p-5 flex justify-between items-center bg-gradient-to-r from-[#7C54BD]/10 to-white">
+                    <h2 className="text-xl font-semibold text-[#7C54BD]">Ajustar Localização</h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-500 hover:text-gray-700"
+                        className="text-[#7C54BD] hover:text-[#6743a1] bg-white rounded-full p-1 shadow-sm transition-all hover:shadow"
                         aria-label="Fechar"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -238,56 +296,63 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                     </button>
                 </div>
 
-                <div className="p-4 flex-1 min-h-[400px] relative">
-                    {loading && (
-                        <div className="absolute inset-0 bg-white bg-opacity-80 z-10">
-                            <Loading
-                                size="medium"
-                                text="Carregando mapa..."
-                                fullScreen={false}
-                            />
-                        </div>
-                    )}
-
-                    <div
-                        className="bg-gray-100 rounded h-full w-full"
-                        ref={mapRef}
-                        style={{ minHeight: '400px' }}
-                    ></div>
-
-                    {/* Informação de coordenadas atuais */}
-                    <div className="absolute bottom-8 left-4 right-4 bg-white p-3 rounded-md shadow-md z-10 flex flex-col md:flex-row gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-black">Latitude</label>
-                            <div className="mt-1 font-mono bg-gray-50 p-2 rounded border border-gray-200 text-black">
-                                {currentLat?.toFixed(6) || '-'}
-                            </div>
-                        </div>
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-black">Longitude</label>
-                            <div className="mt-1 font-mono bg-gray-50 p-2 rounded border border-gray-200 text-black">
-                                {currentLng?.toFixed(6) || '-'}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="absolute top-4 left-4 right-4 bg-white p-2 rounded-md shadow-md z-10 flex items-center justify-center">
-                        <span className="text-sm text-black font-medium">
+                <div className="p-6 flex-1 flex flex-col min-h-[550px]">
+                    {/* Instruction Banner - Now outside of the map container */}
+                    <div className="bg-[#7C54BD] p-3 rounded-lg shadow-lg mb-4 flex items-center justify-center">
+                        <span className="text-sm text-white font-medium flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path>
+                            </svg>
                             Arraste o marcador para ajustar a localização exata
                         </span>
                     </div>
+
+                    {/* Map Container */}
+                    <div className="relative flex-1">
+                        {loading && (
+                            <div className="absolute inset-0 bg-white bg-opacity-90 z-10 flex items-center justify-center">
+                                <Loading
+                                    size="medium"
+                                    text="Carregando mapa..."
+                                    fullScreen={false}
+                                />
+                            </div>
+                        )}
+
+                        <div
+                            className="bg-gray-100 rounded-lg shadow-inner w-full h-full overflow-hidden"
+                            ref={mapRef}
+                            style={{ minHeight: '400px' }}
+                        ></div>
+                    </div>
+
+                    {/* Coordinates Display - Now outside of the map container */}
+                    <div className="mt-4 bg-white p-4 rounded-lg shadow-lg flex flex-col md:flex-row gap-6 border-l-4 border-[#F6C647]">
+                        <div className="flex-1">
+                            <label className="block text-sm font-semibold text-[#7C54BD]">Latitude</label>
+                            <div className="mt-1 font-mono bg-gray-50 p-3 rounded border border-gray-100 text-gray-800 shadow-inner">
+                                {currentLat !== null ? Number(currentLat).toFixed(6) : '-'}
+                            </div>
+                        </div>
+                        <div className="flex-1">
+                            <label className="block text-sm font-semibold text-[#7C54BD]">Longitude</label>
+                            <div className="mt-1 font-mono bg-gray-50 p-3 rounded border border-gray-100 text-gray-800 shadow-inner">
+                                {currentLng !== null ? Number(currentLng).toFixed(6) : '-'}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="p-4 border-t border-gray-200 flex justify-between">
+                <div className="p-6 border-t border-gray-100 flex justify-between bg-gradient-to-b from-white to-gray-50">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                        className="px-6 py-2.5 bg-white text-[#7C54BD] border border-[#7C54BD] rounded-md hover:bg-[#7C54BD]/5 transition-colors font-medium shadow-sm"
                     >
                         Cancelar
                     </button>
                     <button
                         onClick={handleConfirm}
-                        className="px-4 py-2 bg-[#7C54BD] text-white rounded-md hover:bg-[#6743a1] transition-colors flex items-center gap-2"
+                        className="px-6 py-2.5 bg-gradient-to-r from-[#7C54BD] to-[#6743a1] text-white rounded-md hover:shadow-lg transition-all flex items-center gap-2 font-medium shadow-sm disabled:opacity-70 disabled:hover:shadow-none"
                         disabled={!currentLat || !currentLng}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

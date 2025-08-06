@@ -6,6 +6,7 @@ export { default as EmptyState } from './EmptyState';
 export { default as FilterPanel } from './FilterPanel';
 export { default as ListContainer } from './ListContainer';
 export { default as ListHeader } from './ListHeader';
+export { default as LocationPicker } from './LocationPicker';
 export { default as PageHeader } from './PageHeader';
 export { default as StatusBadge } from './StatusBadge';
 export { default as TableList } from './TableList';

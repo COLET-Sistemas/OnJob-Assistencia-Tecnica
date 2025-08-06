@@ -1,19 +1,19 @@
 
 'use client'
 
-import { clientesAPI } from '@/api/api';
+import api, { clientesAPI } from '@/api/api';
 import {
     ActionButton,
     DataTable,
     FilterPanel,
     ListContainer,
     ListHeader,
+    LocationPicker,
     StatusBadge
 } from '@/components/admin/common';
 import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
 import { useDataFetch } from '@/hooks';
-import type { Cliente as ClienteBase } from '@/types/admin/cadastro/clientes';
 import { formatDocumento } from '@/utils/formatters';
 import { Edit2, MapPin, User } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -40,9 +40,22 @@ interface PaginacaoInfo {
     registrosPorPagina: number;
 }
 
-interface Cliente extends Omit<ClienteBase, 'endereco'> {
+interface Cliente {
+    id?: number;
     id_cliente?: number;
+    nome_fantasia: string;
+    razao_social: string;
+    cnpj: string;
     endereco: string;
+    numero: string;
+    bairro: string;
+    cep: string;
+    cidade: string;
+    uf: string;
+    latitude?: number;
+    longitude?: number;
+    situacao: string;
+    regiao?: { id: number; nome?: string; nome_regiao?: string; };
     qtd_contatos?: number;
     contatos?: Array<{
         id_contato: number;
@@ -56,10 +69,14 @@ interface Cliente extends Omit<ClienteBase, 'endereco'> {
     }>;
 }
 
+// We're using the LocationPicker component now instead of a custom implementation
+
 const CadastroCliente = () => {
     const { setTitle } = useTitle();
     const [expandedClienteId, setExpandedClienteId] = useState<number | null>(null);
     const [showFilters, setShowFilters] = useState(false);
+    const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+    const [showLocationModal, setShowLocationModal] = useState(false);
     const [filtros, setFiltros] = useState<Filtros>({
         texto: '',
         status: ''
@@ -67,7 +84,8 @@ const CadastroCliente = () => {
     // Create a ref to track the current filters
     const filtrosRef = useRef<Filtros>(filtros);
     // Add a state to track when the user applies filters
-    const [filtroAplicado, setFiltroAplicado] = useState<number>(0);
+    // Iniciamos com 1 para que o hook useDataFetch faça uma chamada na primeira renderização
+    const [filtroAplicado, setFiltroAplicado] = useState<number>(1);
     const [paginacao, setPaginacao] = useState<PaginacaoInfo>({
         paginaAtual: 1,
         totalPaginas: 1,
@@ -80,18 +98,19 @@ const CadastroCliente = () => {
         setTitle('Clientes');
     }, [setTitle]);
 
-    // Initial data load
-    useEffect(() => {
-        // Trigger initial data load when component mounts
-        setFiltroAplicado(1);
-    }, []);    // Create a function to fetch clients with filters and pagination
+    // Initial data load - No need to set filtroAplicado here as it's already initialized to 0
+    // Create a function to fetch clients with filters and pagination
     const fetchClientes = useCallback(async () => {
-        // Get the current filters from ref
+        // Get the current filters from ref and current pagination state
         const currentFiltros = filtrosRef.current;
+        const currentPaginacao = { ...paginacao }; // Create a copy to avoid stale values
+
+        // Comentado para evitar duplicação com o log em api.js
+        // console.log('Fetching clients with page:', currentPaginacao.paginaAtual, 'and size:', currentPaginacao.registrosPorPagina);
 
         const params: FiltroParams = {
-            qtde_registros: paginacao.registrosPorPagina,
-            nro_pagina: paginacao.paginaAtual
+            qtde_registros: currentPaginacao.registrosPorPagina,
+            nro_pagina: currentPaginacao.paginaAtual
         };
 
         if (currentFiltros.texto) {
@@ -134,27 +153,29 @@ const CadastroCliente = () => {
             console.error('Error fetching clients:', error);
             return [];
         }
-    }, [paginacao.paginaAtual, paginacao.registrosPorPagina]);
+    }, [paginacao]);
 
-    // Use our custom hook to load data
+    // Use our custom hook to load data only when filters are applied or pagination changes
     const { data: clientesFiltrados, loading } = useDataFetch<Cliente[]>(
         fetchClientes,
-        [filtroAplicado, paginacao.paginaAtual, paginacao.registrosPorPagina]
+        [filtroAplicado]
     );
 
-    // Add debug logging to track data
-    useEffect(() => {
+    // Add debug logging to track data (commented out to prevent excessive logging)
+    /*useEffect(() => {
         if (clientesFiltrados) {
             console.log('Clientes filtrados updated:', clientesFiltrados);
             console.log('Clientes length:', clientesFiltrados.length);
             console.log('First client ID:', clientesFiltrados[0]?.id || clientesFiltrados[0]?.id_cliente);
         }
-    }, [clientesFiltrados]);
+    }, [clientesFiltrados]);*/
 
     // Update filtrosRef when filtros changes
     useEffect(() => {
         filtrosRef.current = filtros;
     }, [filtros]);
+
+    // NÃO PRECISAMOS MAIS DISSO COM O NOVO HOOK - o useDataFetch agora fará a chamada inicial automaticamente
 
 
     // Toggle expand function for contacts
@@ -175,35 +196,100 @@ const CadastroCliente = () => {
     }, []);
 
     const aplicarTodosFiltros = useCallback(() => {
-        setPaginacao(prev => ({
-            ...prev,
-            paginaAtual: 1
-        }));
-        // Increment filtroAplicado to trigger the useDataFetch hook
-        setFiltroAplicado(prev => prev + 1);
+        // Atualizar paginação e disparar apenas uma chamada API depois
+        setPaginacao(prev => {
+            const novaPaginacao = {
+                ...prev,
+                paginaAtual: 1
+            };
+
+            // Incrementar o filtroAplicado depois que a paginação for atualizada
+            // Usando um timeout para garantir que o estado foi atualizado
+            setTimeout(() => {
+                setFiltroAplicado(prev => prev + 1);
+            }, 100);
+
+            return novaPaginacao;
+        });
     }, []);
 
     const limparFiltros = useCallback(() => {
+        // Primeiro atualizar os filtros
         setFiltros({
             texto: '',
             status: ''
         });
-        setPaginacao(prev => ({
-            ...prev,
-            paginaAtual: 1
-        }));
-        // Increment filtroAplicado to trigger the useDataFetch hook with the cleaned filters
-        setFiltroAplicado(prev => prev + 1);
+
+        // Em seguida atualizar a paginação e acionar a atualização
+        setTimeout(() => {
+            setPaginacao(prev => {
+                const novaPaginacao = {
+                    ...prev,
+                    paginaAtual: 1
+                };
+
+                // Só incrementar o filtroAplicado depois que todos os estados
+                // tiverem sido atualizados
+                setTimeout(() => {
+                    setFiltroAplicado(prev => prev + 1);
+                }, 50);
+
+                return novaPaginacao;
+            });
+        }, 50);
+    }, []);    // Function to handle opening the location modal
+    const openLocationModal = useCallback((cliente: Cliente) => {
+        setSelectedCliente(cliente);
+        setShowLocationModal(true);
     }, []);
+
+    // Function to handle saving coordinates
+    const saveClienteLocation = useCallback(async (latitude: number, longitude: number) => {
+        if (!selectedCliente) return;
+
+        try {
+            // Get the client ID consistently
+            const clientId = selectedCliente.id_cliente !== undefined ? selectedCliente.id_cliente : selectedCliente.id;
+
+            // Make the API call with explicitly converted number values
+            await api.patch(`/clientes/geo?id=${clientId}`, {
+                latitude: Number(latitude),
+                longitude: Number(longitude)
+            });
+
+            // Atualizar o estado local em sequência
+            setShowLocationModal(false);
+
+            // Disparar a busca após fechar o modal
+            setTimeout(() => {
+                setFiltroAplicado(prev => prev + 1); // Refresh data
+            }, 100);
+
+            // Show success message
+            alert('Localização atualizada com sucesso!');
+        } catch (error) {
+            console.error('Error updating location:', error);
+            alert('Erro ao atualizar localização. Tente novamente.');
+        }
+    }, [selectedCliente]);
 
     const mudarPagina = useCallback((novaPagina: number) => {
         if (novaPagina < 1 || novaPagina > paginacao.totalPaginas) return;
-        setPaginacao(prev => ({
-            ...prev,
-            paginaAtual: novaPagina
-        }));
-        // Trigger refetch with new page
-        setFiltroAplicado(prev => prev + 1);
+
+        // Atualizar a paginação e disparar uma única chamada API depois
+        setPaginacao(prev => {
+            const novaPaginacao = {
+                ...prev,
+                paginaAtual: novaPagina
+            };
+
+            // Garantir que a paginação foi atualizada antes de disparar a busca
+            setTimeout(() => {
+                setFiltroAplicado(prev => prev + 1);
+            }, 100);
+
+            return novaPaginacao;
+        });
     }, [paginacao.totalPaginas]);
 
     if (loading) {
@@ -316,7 +402,7 @@ const CadastroCliente = () => {
                             e.stopPropagation();
                             if (hasContatos) {
                                 console.log('Clicking contact button for client ID:', clientId);
-                                toggleExpand(clientId);
+                                toggleExpand(clientId || 0);
                             }
                         }}
                         type="button"
@@ -344,6 +430,16 @@ const CadastroCliente = () => {
 
         return (
             <div className="flex items-center gap-2">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        openLocationModal(cliente);
+                    }}
+                    className="inline-flex items-center px-3 py-1.5 bg-[var(--secondary-green)]/20 hover:bg-[var(--secondary-green)]/40 text-[var(--dark-navy)] rounded-lg transition-colors gap-1.5"
+                    title="Definir localização geográfica"
+                >
+                    <MapPin size={16} />
+                </button>
                 <ActionButton
                     href={`/admin/cadastro/clientes/editar/${clientId}`}
                     icon={<Edit2 size={16} />}
@@ -542,14 +638,21 @@ const CadastroCliente = () => {
                                     onChange={(e) => {
                                         const novoValor = parseInt(e.target.value);
 
-                                        setPaginacao(prev => ({
-                                            ...prev,
-                                            registrosPorPagina: novoValor,
-                                            paginaAtual: 1
-                                        }));
+                                        setPaginacao(prev => {
+                                            const novaPaginacao = {
+                                                ...prev,
+                                                registrosPorPagina: novoValor,
+                                                paginaAtual: 1
+                                            };
 
-                                        // Trigger refetch with new page size
-                                        setFiltroAplicado(prev => prev + 1);
+                                            // Garantir que a paginação foi atualizada
+                                            // antes de disparar nova busca
+                                            setTimeout(() => {
+                                                setFiltroAplicado(prev => prev + 1);
+                                            }, 100);
+
+                                            return novaPaginacao;
+                                        });
                                     }}
                                 >
                                     <option value={10}>10</option>
@@ -622,6 +725,18 @@ const CadastroCliente = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Location Modal */}
+            {selectedCliente && (
+                <LocationPicker
+                    isOpen={showLocationModal}
+                    onClose={() => setShowLocationModal(false)}
+                    initialLat={selectedCliente.latitude || null}
+                    initialLng={selectedCliente.longitude || null}
+                    address={`${selectedCliente.endereco}, ${selectedCliente.numero}, ${selectedCliente.cidade}, ${selectedCliente.uf}, ${selectedCliente.cep || ''}`}
+                    onLocationSelected={saveClienteLocation}
+                />
             )}
         </ListContainer>
     );
