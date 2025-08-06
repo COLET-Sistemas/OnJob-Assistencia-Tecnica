@@ -12,6 +12,7 @@ import {
 } from '@/components/admin/common';
 import { Loading } from '@/components/Loading';
 import { useTitle } from '@/context/TitleContext';
+import { useDataFetch } from '@/hooks';
 import type { Cliente as ClienteBase } from '@/types/admin/cadastro/clientes';
 import { formatDocumento } from '@/utils/formatters';
 import { Edit2, MapPin, User } from 'lucide-react';
@@ -57,15 +58,16 @@ interface Cliente extends Omit<ClienteBase, 'endereco'> {
 
 const CadastroCliente = () => {
     const { setTitle } = useTitle();
-    const [clientesFiltrados, setClientesFiltrados] = useState<Cliente[]>([]);
     const [expandedClienteId, setExpandedClienteId] = useState<number | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [loadingData, setLoadingData] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [filtros, setFiltros] = useState<Filtros>({
         texto: '',
         status: ''
     });
+    // Create a ref to track the current filters
+    const filtrosRef = useRef<Filtros>(filtros);
+    // Add a state to track when the user applies filters
+    const [filtroAplicado, setFiltroAplicado] = useState<number>(0);
     const [paginacao, setPaginacao] = useState<PaginacaoInfo>({
         paginaAtual: 1,
         totalPaginas: 1,
@@ -73,102 +75,98 @@ const CadastroCliente = () => {
         registrosPorPagina: 20
     });
 
-    const dadosCarregados = useRef(false);
-
+    // Configure the page title
     useEffect(() => {
         setTitle('Clientes');
     }, [setTitle]);
 
+    // Initial data load
+    useEffect(() => {
+        // Trigger initial data load when component mounts
+        setFiltroAplicado(1);
+    }, []);    // Create a function to fetch clients with filters and pagination
+    const fetchClientes = useCallback(async () => {
+        // Get the current filters from ref
+        const currentFiltros = filtrosRef.current;
+
+        const params: FiltroParams = {
+            qtde_registros: paginacao.registrosPorPagina,
+            nro_pagina: paginacao.paginaAtual
+        };
+
+        if (currentFiltros.texto) {
+            params.nome = currentFiltros.texto;
+        }
+
+        if (currentFiltros.status === 'true') {
+            params.incluir_inativos = 'S';
+        }
+
+        try {
+            const response = await clientesAPI.getAll(params);
+
+            // Process the response based on its format
+            if (typeof response === 'object' && 'dados' in response && 'total_paginas' in response && 'total_registros' in response) {
+                const { dados, total_paginas, total_registros } = response;
+
+                // Update pagination info
+                setPaginacao(prev => ({
+                    ...prev,
+                    totalPaginas: total_paginas,
+                    totalRegistros: total_registros
+                }));
+
+                return dados;
+            } else if (typeof response === 'object' && 'data' in response && 'pagination' in response) {
+                const { data, pagination } = response;
+
+                setPaginacao(prev => ({
+                    ...prev,
+                    totalPaginas: pagination.totalPages || prev.totalPaginas,
+                    totalRegistros: pagination.totalRecords || data.length
+                }));
+
+                return data;
+            }
+
+            return response;
+        } catch (error) {
+            console.error('Error fetching clients:', error);
+            return [];
+        }
+    }, [paginacao.paginaAtual, paginacao.registrosPorPagina]);
+
+    // Use our custom hook to load data
+    const { data: clientesFiltrados, loading } = useDataFetch<Cliente[]>(
+        fetchClientes,
+        [filtroAplicado, paginacao.paginaAtual, paginacao.registrosPorPagina]
+    );
+
+    // Add debug logging to track data
+    useEffect(() => {
+        if (clientesFiltrados) {
+            console.log('Clientes filtrados updated:', clientesFiltrados);
+            console.log('Clientes length:', clientesFiltrados.length);
+            console.log('First client ID:', clientesFiltrados[0]?.id || clientesFiltrados[0]?.id_cliente);
+        }
+    }, [clientesFiltrados]);
+
+    // Update filtrosRef when filtros changes
+    useEffect(() => {
+        filtrosRef.current = filtros;
+    }, [filtros]);
+
+
+    // Toggle expand function for contacts
     const toggleExpand = useCallback((id: number | string) => {
+        console.log('Toggle expand for ID:', id);
         setExpandedClienteId(prevId => {
             const result = prevId === id ? null : Number(id);
             return result;
         });
     }, []);
 
-    const paginacaoRef = useRef(paginacao);
-
-    useEffect(() => {
-        paginacaoRef.current = paginacao;
-    }, [paginacao]);
-
-    const carregarClientes = useCallback(async (filtrosParam: Partial<Filtros> = {}, pagina: number = 1, registrosPorPagina?: number) => {
-        if (!dadosCarregados.current) {
-            setLoading(true);
-        } else {
-            setLoadingData(true);
-        }
-
-        const registrosPorPaginaAtual = registrosPorPagina !== undefined ? registrosPorPagina : paginacaoRef.current.registrosPorPagina;
-
-        try {
-            const params: FiltroParams = {
-                qtde_registros: registrosPorPaginaAtual,
-                nro_pagina: pagina
-            };
-
-            if (filtrosParam.texto) {
-                params.nome = filtrosParam.texto;
-            }
-
-            if (filtrosParam.status === 'true') {
-                params.incluir_inativos = 'S';
-            }
-
-            const response = await clientesAPI.getAll(params);
-            if (typeof response === 'object' && 'dados' in response && 'total_paginas' in response && 'total_registros' in response) {
-                const { dados, total_paginas, total_registros } = response;
-                setClientesFiltrados(dados);
-                setPaginacao({
-                    paginaAtual: pagina,
-                    totalPaginas: total_paginas,
-                    totalRegistros: total_registros,
-                    registrosPorPagina: registrosPorPaginaAtual
-                });
-            } else if (typeof response === 'object' && 'data' in response && 'pagination' in response) {
-                const { data, pagination } = response;
-                setClientesFiltrados(data);
-
-                setPaginacao({
-                    paginaAtual: pagination.currentPage || pagina,
-                    totalPaginas: pagination.totalPages || 1,
-                    totalRegistros: pagination.totalRecords || data.length,
-                    registrosPorPagina: registrosPorPaginaAtual
-                });
-            } else {
-                setClientesFiltrados(response);
-
-                setPaginacao(prev => ({
-                    ...prev,
-                    paginaAtual: pagina,
-                    registrosPorPagina: registrosPorPaginaAtual,
-                    totalPaginas: response.length < registrosPorPaginaAtual ? pagina : pagina + 1
-                }));
-            }
-        } catch (error) {
-            console.error('Erro ao carregar clientes:', error);
-        } finally {
-            setLoading(false);
-            setLoadingData(false);
-        }
-    }, []);
-
-    const aplicarTodosFiltros = useCallback(() => {
-        carregarClientes(filtros, 1);
-        dadosCarregados.current = true;
-    }, [filtros, carregarClientes]);
-
-    const textoRef = useRef(filtros.texto);
-
-    // Efeito simplificado que só carrega os clientes inicialmente
-    useEffect(() => {
-        if (!dadosCarregados.current) {
-            carregarClientes({}, 1);
-            dadosCarregados.current = true;
-            textoRef.current = filtros.texto;
-        }
-    }, [carregarClientes, filtros.texto]);
-
+    // Filter handlers
     const handleFiltroChange = useCallback((campo: string, valor: string) => {
         setFiltros(prev => ({
             ...prev,
@@ -176,19 +174,37 @@ const CadastroCliente = () => {
         }));
     }, []);
 
+    const aplicarTodosFiltros = useCallback(() => {
+        setPaginacao(prev => ({
+            ...prev,
+            paginaAtual: 1
+        }));
+        // Increment filtroAplicado to trigger the useDataFetch hook
+        setFiltroAplicado(prev => prev + 1);
+    }, []);
+
     const limparFiltros = useCallback(() => {
         setFiltros({
             texto: '',
             status: ''
         });
+        setPaginacao(prev => ({
+            ...prev,
+            paginaAtual: 1
+        }));
+        // Increment filtroAplicado to trigger the useDataFetch hook with the cleaned filters
+        setFiltroAplicado(prev => prev + 1);
+    }, []);
 
-        carregarClientes({}, 1);
-        dadosCarregados.current = true;
-    }, [carregarClientes]);
     const mudarPagina = useCallback((novaPagina: number) => {
         if (novaPagina < 1 || novaPagina > paginacao.totalPaginas) return;
-        carregarClientes(filtros, novaPagina);
-    }, [filtros, paginacao.totalPaginas, carregarClientes]);
+        setPaginacao(prev => ({
+            ...prev,
+            paginaAtual: novaPagina
+        }));
+        // Trigger refetch with new page
+        setFiltroAplicado(prev => prev + 1);
+    }, [paginacao.totalPaginas]);
 
     if (loading) {
         return (
@@ -215,10 +231,12 @@ const CadastroCliente = () => {
         }
     ];
 
+    // Define columns for the table
     const columns = [
         {
             header: 'Cliente',
-            accessor: (cliente: Cliente) => (
+            accessor: 'nome_fantasia' as keyof Cliente,
+            render: (cliente: Cliente) => (
                 <div>
                     <div className="text-md font-semibold text-gray-900">{cliente.nome_fantasia}</div>
                     <div className="text-xs text-gray-500 mt-0.5">{cliente.razao_social}</div>
@@ -227,13 +245,15 @@ const CadastroCliente = () => {
         },
         {
             header: 'CNPJ / CPF',
-            accessor: (cliente: Cliente) => (
+            accessor: 'cnpj' as keyof Cliente,
+            render: (cliente: Cliente) => (
                 <span className="text-md text-gray-500">{formatDocumento(cliente.cnpj)}</span>
             )
         },
         {
             header: 'Localização',
-            accessor: (cliente: Cliente) => (
+            accessor: 'cidade' as keyof Cliente,
+            render: (cliente: Cliente) => (
                 <>
                     <div className="text-sm text-[var(--neutral-graphite)] flex items-center gap-1.5">
                         <MapPin size={16} className="text-[var(--primary)]" />
@@ -247,7 +267,8 @@ const CadastroCliente = () => {
         },
         {
             header: 'Região',
-            accessor: (cliente: Cliente) => {
+            accessor: 'regiao' as keyof Cliente,
+            render: (cliente: Cliente) => {
                 const regionName = cliente.regiao?.nome_regiao || cliente.regiao?.nome;
                 return regionName ? (
                     <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-[var(--secondary-yellow)]/20 text-[var(--dark-navy)] border border-[var(--secondary-yellow)]/30">
@@ -258,7 +279,8 @@ const CadastroCliente = () => {
         },
         {
             header: 'Status',
-            accessor: (cliente: Cliente) => (
+            accessor: 'situacao' as keyof Cliente,
+            render: (cliente: Cliente) => (
                 <StatusBadge
                     status={cliente.situacao}
                     mapping={{
@@ -276,9 +298,13 @@ const CadastroCliente = () => {
         },
         {
             header: 'Contatos',
-            accessor: (cliente: Cliente) => {
+            accessor: 'contatos' as keyof Cliente,
+            render: (cliente: Cliente) => {
                 const contatosCount = cliente.qtd_contatos || (cliente.contatos ? cliente.contatos.length : 0);
                 const hasContatos = contatosCount > 0;
+
+                // Determine client ID consistently
+                const clientId = cliente.id_cliente !== undefined ? cliente.id_cliente : cliente.id;
 
                 return (
                     <button
@@ -289,7 +315,8 @@ const CadastroCliente = () => {
                         onClick={(e) => {
                             e.stopPropagation();
                             if (hasContatos) {
-                                toggleExpand(cliente.id_cliente || cliente.id);
+                                console.log('Clicking contact button for client ID:', clientId);
+                                toggleExpand(clientId);
                             }
                         }}
                         type="button"
@@ -301,7 +328,7 @@ const CadastroCliente = () => {
                         </span>
                         {hasContatos && (
                             <span className="text-[var(--primary)]">
-                                {expandedClienteId === (cliente.id_cliente || cliente.id) ? "▲" : "▼"}
+                                {expandedClienteId === clientId ? "▲" : "▼"}
                             </span>
                         )}
                     </button>
@@ -310,48 +337,131 @@ const CadastroCliente = () => {
         }
     ];
 
+    // Componente personalizado para renderizar as ações para cada item
+    const renderActions = (cliente: Cliente) => {
+        // Determine client ID consistently
+        const clientId = cliente.id_cliente !== undefined ? cliente.id_cliente : cliente.id;
+
+        return (
+            <div className="flex items-center gap-2">
+                <ActionButton
+                    href={`/admin/cadastro/clientes/editar/${clientId}`}
+                    icon={<Edit2 size={16} />}
+                    label=""
+                    variant="secondary"
+                />
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Deseja realmente excluir o cliente "${cliente.nome_fantasia || cliente.razao_social}"?`)) {
+                            alert('Funcionalidade de exclusão será implementada em breve.');
+                        }
+                    }}
+                    className="inline-flex items-center p-1.5 text-red-500 rounded transition-colors hover:bg-red-50"
+                    title="Excluir cliente"
+                    type="button"
+                >
+                    <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+        );
+    };
+
+    // Function to render expanded contacts
+    const renderExpandedRow = (cliente: Cliente) => {
+        if (!cliente.contatos) return null;
+
+        return (
+            <div className="border-t border-[var(--primary)]/10 pt-4 px-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {cliente.contatos.map((contato) => (
+                        <div key={contato.id_contato} className="border border-gray-100 rounded-xl p-3 bg-white shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
+                            <div className="flex justify-between items-center pb-1.5 border-b border-gray-100">
+                                <div className="font-semibold text-gray-900 truncate">{contato.nome_completo || contato.nome}</div>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1">
+                                        <div className={`w-2.5 h-2.5 rounded-full ${contato.situacao === 'A' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                        <span className={`text-xs font-medium ${contato.situacao === 'A' ? 'text-green-700' : 'text-red-700'}`}>
+                                            {contato.situacao === 'A' ? 'Ativo' : 'Inativo'}
+                                        </span>
+                                    </div>
+                                    {contato.recebe_aviso_os ? (
+                                        <div className="flex items-center gap-1">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
+                                            <span className="text-xs font-medium text-yellow-700">Aviso OS</span>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            </div>
+                            <div className="pt-3">
+                                <div className="flex flex-wrap gap-2">
+                                    {contato.telefone && (
+                                        <div className="text-sm bg-gray-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-gray-100 hover:bg-gray-100 transition-colors">
+                                            <svg className="w-4 h-4 text-[var(--primary)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                            </svg>
+                                            <span className="truncate max-w-[140px] text-gray-700">{contato.telefone}</span>
+                                        </div>
+                                    )}
+
+                                    {contato.whatsapp && (
+                                        <a
+                                            href={`https://wa.me/${contato.whatsapp.replace(/\D/g, '')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-sm bg-[var(--secondary-green)]/5 px-3 py-1.5 rounded-md flex items-center gap-2 border border-[var(--secondary-green)]/20 hover:bg-[var(--secondary-green)]/10 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4 text-[var(--secondary-green)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                                            </svg>
+                                            <span className="truncate max-w-[140px] text-gray-700">{contato.whatsapp}</span>
+                                        </a>
+                                    )}
+
+                                    {contato.email && (
+                                        <a
+                                            href={`mailto:${contato.email}`}
+                                            className="text-sm bg-blue-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-blue-100 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4 text-blue-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                                <polyline points="22,6 12,13 2,6"></polyline>
+                                            </svg>
+                                            <span className="truncate max-w-[180px] text-gray-700">{contato.email}</span>
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    // Count active filters for the UI
     const activeFiltersCount = Object.values(filtros).filter(Boolean).length;
 
-    // Componente personalizado para renderizar as ações para cada item
-    const renderActions = (cliente: Cliente) => (
-        <div className="flex items-center gap-2">
-            <ActionButton
-                href={`/admin/cadastro/clientes/editar/${cliente.id_cliente || cliente.id}`}
-                icon={<Edit2 size={16} />}
-                label=""
-                variant="secondary"
-            />
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`Deseja realmente excluir o cliente "${cliente.nome_fantasia || cliente.razao_social}"?`)) {
-                        alert('Funcionalidade de exclusão será implementada em breve.');
-                    }
-                }}
-                className="inline-flex items-center p-1.5 text-red-500 rounded transition-colors hover:bg-red-50"
-                title="Excluir cliente"
-                type="button"
-            >
-                <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 6h18"></path>
-                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                </svg>
-            </button>
-        </div>
+    // Create a custom header component to support the filter toggle
+    const customHeader = (
+        <ListHeader
+            title="Lista de Clientes"
+            itemCount={clientesFiltrados?.length || 0}
+            onFilterToggle={() => setShowFilters(!showFilters)}
+            showFilters={showFilters}
+            newButtonLink="/admin/cadastro/clientes/novo"
+            newButtonLabel="Novo Cliente"
+            activeFiltersCount={activeFiltersCount}
+        />
     );
 
     return (
         <ListContainer>
-            <ListHeader
-                title="Lista de Clientes"
-                itemCount={clientesFiltrados.length}
-                onFilterToggle={() => setShowFilters(!showFilters)}
-                showFilters={showFilters}
-                newButtonLink="/admin/cadastro/clientes/novo"
-                newButtonLabel="Novo Cliente"
-                activeFiltersCount={activeFiltersCount}
-            />
+            {customHeader}
 
             {showFilters && (
                 <FilterPanel
@@ -366,107 +476,24 @@ const CadastroCliente = () => {
                 />
             )}
 
-            <div className="relative">
-                {loadingData && (
-                    <div className="absolute inset-0 bg-white/70 z-10 rounded-lg">
-                        <Loading
-                            fullScreen={false}
-                            preventScroll={false}
-                            text="Atualizando lista..."
-                            size="medium"
-                            className="h-full"
-                        />
-                    </div>
-                )}
-
-                <DataTable
-                    columns={[
-                        ...columns,
-                        {
-                            header: 'Ações',
-                            accessor: (cliente: Cliente) => renderActions(cliente)
-                        }
-                    ]}
-                    data={clientesFiltrados}
-                    keyField="id_cliente"
-                    expandedRowId={expandedClienteId}
-                    onRowExpand={toggleExpand}
-                    emptyStateProps={{
-                        title: "Nenhum cliente encontrado",
-                        description: "Tente ajustar seus filtros ou cadastre um novo cliente."
-                    }}
-                    renderExpandedRow={(cliente: Cliente) => {
-                        if (!cliente.contatos) return null;
-
-                        return (
-                            <div className="border-t border-[var(--primary)]/10 pt-4 px-2">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {cliente.contatos.map((contato) => (
-                                        <div key={contato.id_contato} className="border border-gray-100 rounded-xl p-3 bg-white shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1">
-                                            <div className="flex justify-between items-center pb-1.5 border-b border-gray-100">
-                                                <div className="font-semibold text-gray-900 truncate">{contato.nome_completo || contato.nome}</div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="flex items-center gap-1">
-                                                        <div className={`w-2.5 h-2.5 rounded-full ${contato.situacao === 'A' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                                                        <span className={`text-xs font-medium ${contato.situacao === 'A' ? 'text-green-700' : 'text-red-700'}`}>
-                                                            {contato.situacao === 'A' ? 'Ativo' : 'Inativo'}
-                                                        </span>
-                                                    </div>
-                                                    {contato.recebe_aviso_os ? (
-                                                        <div className="flex items-center gap-1">
-                                                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
-                                                            <span className="text-xs font-medium text-yellow-700">Aviso OS</span>
-                                                        </div>
-                                                    ) : null}
-                                                </div>
-                                            </div>
-                                            <div className="pt-3">
-                                                <div className="flex flex-wrap gap-2">
-                                                    {contato.telefone && (
-                                                        <div className="text-sm bg-gray-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-gray-100 hover:bg-gray-100 transition-colors">
-                                                            <svg className="w-4 h-4 text-[var(--primary)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                                                            </svg>
-                                                            <span className="truncate max-w-[140px] text-gray-700">{contato.telefone}</span>
-                                                        </div>
-                                                    )}
-
-                                                    {contato.whatsapp && (
-                                                        <a
-                                                            href={`https://wa.me/${contato.whatsapp.replace(/\D/g, '')}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-sm bg-[var(--secondary-green)]/5 px-3 py-1.5 rounded-md flex items-center gap-2 border border-[var(--secondary-green)]/20 hover:bg-[var(--secondary-green)]/10 transition-colors"
-                                                        >
-                                                            <svg className="w-4 h-4 text-[var(--secondary-green)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                                                            </svg>
-                                                            <span className="truncate max-w-[140px] text-gray-700">{contato.whatsapp}</span>
-                                                        </a>
-                                                    )}
-
-                                                    {contato.email && (
-                                                        <a
-                                                            href={`mailto:${contato.email}`}
-                                                            className="text-sm bg-blue-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-blue-100 hover:bg-blue-100 hover:text-blue-600 transition-colors"
-                                                        >
-                                                            <svg className="w-4 h-4 text-blue-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                                                <polyline points="22,6 12,13 2,6"></polyline>
-                                                            </svg>
-                                                            <span className="truncate max-w-[180px] text-gray-700">{contato.email}</span>
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    }}
-                />
-            </div>
+            <DataTable
+                columns={[
+                    ...columns,
+                    {
+                        header: 'Ações',
+                        accessor: (cliente: Cliente) => renderActions(cliente)
+                    }
+                ]}
+                data={clientesFiltrados || []}
+                keyField={clientesFiltrados?.[0]?.id_cliente !== undefined ? 'id_cliente' as keyof Cliente : 'id' as keyof Cliente}
+                expandedRowId={expandedClienteId}
+                onRowExpand={toggleExpand}
+                emptyStateProps={{
+                    title: "Nenhum cliente encontrado",
+                    description: "Tente ajustar seus filtros ou cadastre um novo cliente."
+                }}
+                renderExpandedRow={renderExpandedRow}
+            />
 
             {paginacao.totalPaginas > 1 && (
                 <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-lg shadow-sm">
@@ -517,10 +544,12 @@ const CadastroCliente = () => {
 
                                         setPaginacao(prev => ({
                                             ...prev,
-                                            registrosPorPagina: novoValor
+                                            registrosPorPagina: novoValor,
+                                            paginaAtual: 1
                                         }));
 
-                                        carregarClientes(filtros, 1, novoValor);
+                                        // Trigger refetch with new page size
+                                        setFiltroAplicado(prev => prev + 1);
                                     }}
                                 >
                                     <option value={10}>10</option>
