@@ -17,7 +17,7 @@ import React, { useState } from 'react';
 
 import { LucideIcon } from 'lucide-react';
 // Importar a versão do package.json
-import packageInfo from '../../../package.json';
+import packageInfo from '../../../../package.json';
 interface MenuItem {
     key: string;
     label: string;
@@ -95,7 +95,6 @@ const menuItems: MenuItem[] = [
 export default function Sidebar({ isOpen }: SidebarProps) {
     const pathname = usePathname();
 
-    // Função para encontrar a chave do item de menu ativo com base no pathname
     const findActiveMenuKey = React.useCallback((path: string, items: MenuItem[]): string | null => {
         for (const item of items) {
             // Verificar se o item atual corresponde ao path
@@ -103,7 +102,6 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                 return item.key;
             }
 
-            // Verificar recursivamente nos submenus
             if (item.submenu) {
                 const activeKey = findActiveMenuKey(path, item.submenu);
                 if (activeKey) return activeKey;
@@ -112,15 +110,13 @@ export default function Sidebar({ isOpen }: SidebarProps) {
         return null;
     }, []);
 
-    // Determinar qual menu deve estar ativo com base no pathname
     const currentActiveKey = findActiveMenuKey(pathname, menuItems) || 'dashboard';
     const [activeMenu, setActiveMenu] = useState<string>(currentActiveKey);
 
-    // Determinar quais submenus devem estar expandidos com base no pathname
     const determineExpandedMenus = React.useCallback((): Record<string, boolean> => {
         const expanded: Record<string, boolean> = {};
 
-        // Expandir o menu pai se um item filho estiver ativo
+
         menuItems.forEach(item => {
             if (item.submenu) {
                 item.submenu.forEach(subItem => {
