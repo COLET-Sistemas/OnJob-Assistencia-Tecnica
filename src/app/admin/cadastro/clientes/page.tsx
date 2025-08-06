@@ -69,8 +69,6 @@ interface Cliente {
     }>;
 }
 
-// We're using the LocationPicker component now instead of a custom implementation
-
 const CadastroCliente = () => {
     const { setTitle } = useTitle();
     const [expandedClienteId, setExpandedClienteId] = useState<number | null>(null);
@@ -81,10 +79,8 @@ const CadastroCliente = () => {
         texto: '',
         status: ''
     });
-    // Create a ref to track the current filters
     const filtrosRef = useRef<Filtros>(filtros);
-    // Add a state to track when the user applies filters
-    // Iniciamos com 1 para que o hook useDataFetch faça uma chamada na primeira renderização
+
     const [filtroAplicado, setFiltroAplicado] = useState<number>(1);
     const [paginacao, setPaginacao] = useState<PaginacaoInfo>({
         paginaAtual: 1,
@@ -98,15 +94,10 @@ const CadastroCliente = () => {
         setTitle('Clientes');
     }, [setTitle]);
 
-    // Initial data load - No need to set filtroAplicado here as it's already initialized to 0
-    // Create a function to fetch clients with filters and pagination
-    const fetchClientes = useCallback(async () => {
-        // Get the current filters from ref and current pagination state
-        const currentFiltros = filtrosRef.current;
-        const currentPaginacao = { ...paginacao }; // Create a copy to avoid stale values
 
-        // Comentado para evitar duplicação com o log em api.js
-        // console.log('Fetching clients with page:', currentPaginacao.paginaAtual, 'and size:', currentPaginacao.registrosPorPagina);
+    const fetchClientes = useCallback(async () => {
+        const currentFiltros = filtrosRef.current;
+        const currentPaginacao = { ...paginacao };
 
         const params: FiltroParams = {
             qtde_registros: currentPaginacao.registrosPorPagina,
@@ -161,26 +152,12 @@ const CadastroCliente = () => {
         [filtroAplicado]
     );
 
-    // Add debug logging to track data (commented out to prevent excessive logging)
-    /*useEffect(() => {
-        if (clientesFiltrados) {
-            console.log('Clientes filtrados updated:', clientesFiltrados);
-            console.log('Clientes length:', clientesFiltrados.length);
-            console.log('First client ID:', clientesFiltrados[0]?.id || clientesFiltrados[0]?.id_cliente);
-        }
-    }, [clientesFiltrados]);*/
-
-    // Update filtrosRef when filtros changes
     useEffect(() => {
         filtrosRef.current = filtros;
     }, [filtros]);
 
-    // NÃO PRECISAMOS MAIS DISSO COM O NOVO HOOK - o useDataFetch agora fará a chamada inicial automaticamente
 
-
-    // Toggle expand function for contacts
     const toggleExpand = useCallback((id: number | string) => {
-        console.log('Toggle expand for ID:', id);
         setExpandedClienteId(prevId => {
             const result = prevId === id ? null : Number(id);
             return result;
@@ -196,15 +173,12 @@ const CadastroCliente = () => {
     }, []);
 
     const aplicarTodosFiltros = useCallback(() => {
-        // Atualizar paginação e disparar apenas uma chamada API depois
         setPaginacao(prev => {
             const novaPaginacao = {
                 ...prev,
                 paginaAtual: 1
             };
 
-            // Incrementar o filtroAplicado depois que a paginação for atualizada
-            // Usando um timeout para garantir que o estado foi atualizado
             setTimeout(() => {
                 setFiltroAplicado(prev => prev + 1);
             }, 100);
@@ -428,18 +402,29 @@ const CadastroCliente = () => {
         // Determine client ID consistently
         const clientId = cliente.id_cliente !== undefined ? cliente.id_cliente : cliente.id;
 
+        // Check if location needs to be defined
+        // Handle all cases: undefined, null, 0, "0", or empty string
+        const needsLocationDefinition =
+            cliente.latitude === undefined ||
+            cliente.latitude === null ||
+            cliente.latitude === 0 ||
+            String(cliente.latitude) === "0" ||
+            String(cliente.latitude) === "";
+
         return (
             <div className="flex items-center gap-2">
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        openLocationModal(cliente);
-                    }}
-                    className="inline-flex items-center px-3 py-1.5 bg-[var(--secondary-green)]/20 hover:bg-[var(--secondary-green)]/40 text-[var(--dark-navy)] rounded-lg transition-colors gap-1.5"
-                    title="Definir localização geográfica"
-                >
-                    <MapPin size={16} />
-                </button>
+                {needsLocationDefinition && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            openLocationModal(cliente);
+                        }}
+                        className="inline-flex items-center px-3 py-1.5 bg-[var(--secondary-green)]/20 hover:bg-[var(--secondary-green)]/40 text-[var(--dark-navy)] rounded-lg transition-colors gap-1.5"
+                        title="Definir localização geográfica"
+                    >
+                        <MapPin size={16} />
+                    </button>
+                )}
                 <ActionButton
                     href={`/admin/cadastro/clientes/editar/${clientId}`}
                     icon={<Edit2 size={16} />}
