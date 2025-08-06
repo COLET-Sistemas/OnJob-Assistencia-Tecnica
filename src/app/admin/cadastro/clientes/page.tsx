@@ -266,16 +266,7 @@ const CadastroCliente = () => {
         });
     }, [paginacao.totalPaginas]);
 
-    if (loading) {
-        return (
-            <Loading
-                fullScreen={true}
-                preventScroll={false}
-                text="Carregando clientes..."
-                size="large"
-            />
-        );
-    }
+    // Loading state is now handled within the DataTable component's wrapper
 
     const filterOptions = [
         {
@@ -577,32 +568,44 @@ const CadastroCliente = () => {
                 />
             )}
 
-            <DataTable
-                columns={[
-                    ...columns,
-                    {
-                        header: 'Ações',
-                        accessor: (cliente: Cliente) => renderActions(cliente)
-                    }
-                ]}
-                data={clientesFiltrados || []}
-                keyField={clientesFiltrados?.[0]?.id_cliente !== undefined ? 'id_cliente' as keyof Cliente : 'id' as keyof Cliente}
-                expandedRowId={expandedClienteId}
-                onRowExpand={toggleExpand}
-                emptyStateProps={{
-                    title: "Nenhum cliente encontrado",
-                    description: "Tente ajustar seus filtros ou cadastre um novo cliente."
-                }}
-                renderExpandedRow={renderExpandedRow}
-            />
+            <div className="relative min-h-[300px]">
+                {loading && (
+                    <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center">
+                        <Loading text="Carregando clientes..." size="medium" />
+                    </div>
+                )}
+                <DataTable
+                    columns={[
+                        ...columns,
+                        {
+                            header: 'Ações',
+                            accessor: (cliente: Cliente) => renderActions(cliente)
+                        }
+                    ]}
+                    data={clientesFiltrados || []}
+                    keyField={clientesFiltrados?.[0]?.id_cliente !== undefined ? 'id_cliente' as keyof Cliente : 'id' as keyof Cliente}
+                    expandedRowId={expandedClienteId}
+                    onRowExpand={toggleExpand}
+                    emptyStateProps={{
+                        title: loading ? "Carregando..." : "Nenhum cliente encontrado",
+                        description: loading ? "Por favor, aguarde..." : "Tente ajustar seus filtros ou cadastre um novo cliente."
+                    }}
+                    renderExpandedRow={renderExpandedRow}
+                />
+            </div>
 
             {paginacao.totalPaginas > 1 && (
-                <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-lg shadow-sm">
+                <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-lg shadow-sm relative">
+                    {loading && (
+                        <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-lg">
+                            {/* Não precisa de texto aqui, já que o indicador principal está na tabela */}
+                        </div>
+                    )}
                     <div className="flex flex-1 justify-between sm:hidden">
                         <button
                             onClick={() => mudarPagina(paginacao.paginaAtual - 1)}
-                            disabled={paginacao.paginaAtual === 1}
-                            className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${paginacao.paginaAtual === 1
+                            disabled={paginacao.paginaAtual === 1 || loading}
+                            className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${(paginacao.paginaAtual === 1 || loading)
                                 ? 'text-gray-300 cursor-not-allowed'
                                 : 'text-gray-700 hover:bg-gray-50'
                                 }`}
@@ -611,8 +614,8 @@ const CadastroCliente = () => {
                         </button>
                         <button
                             onClick={() => mudarPagina(paginacao.paginaAtual + 1)}
-                            disabled={paginacao.paginaAtual === paginacao.totalPaginas}
-                            className={`relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${paginacao.paginaAtual === paginacao.totalPaginas
+                            disabled={paginacao.paginaAtual === paginacao.totalPaginas || loading}
+                            className={`relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${(paginacao.paginaAtual === paginacao.totalPaginas || loading)
                                 ? 'text-gray-300 cursor-not-allowed'
                                 : 'text-gray-700 hover:bg-gray-50'
                                 }`}
@@ -672,8 +675,8 @@ const CadastroCliente = () => {
                             <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Paginação">
                                 <button
                                     onClick={() => mudarPagina(paginacao.paginaAtual - 1)}
-                                    disabled={paginacao.paginaAtual === 1}
-                                    className={`relative inline-flex items-center rounded-l-md px-2 py-2 ${paginacao.paginaAtual === 1
+                                    disabled={paginacao.paginaAtual === 1 || loading}
+                                    className={`relative inline-flex items-center rounded-l-md px-2 py-2 ${(paginacao.paginaAtual === 1 || loading)
                                         ? 'text-gray-300 cursor-not-allowed'
                                         : 'text-gray-500 hover:bg-gray-50'
                                         } focus:z-20 focus:outline-offset-0`}
@@ -702,10 +705,13 @@ const CadastroCliente = () => {
                                         <button
                                             key={pageNum}
                                             onClick={() => mudarPagina(pageNum)}
+                                            disabled={loading}
                                             aria-current={paginacao.paginaAtual === pageNum ? 'page' : undefined}
-                                            className={`relative z-10 inline-flex items-center px-4 py-2 text-sm font-semibold cursor-pointer ${paginacao.paginaAtual === pageNum
+                                            className={`relative z-10 inline-flex items-center px-4 py-2 text-sm font-semibold ${loading ? 'cursor-not-allowed' : 'cursor-pointer'} ${paginacao.paginaAtual === pageNum
                                                 ? 'bg-[var(--primary)] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]'
-                                                : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                                : loading
+                                                    ? 'text-gray-400 ring-1 ring-inset ring-gray-300'
+                                                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
                                                 }`}
                                         >
                                             {pageNum}
@@ -715,8 +721,8 @@ const CadastroCliente = () => {
 
                                 <button
                                     onClick={() => mudarPagina(paginacao.paginaAtual + 1)}
-                                    disabled={paginacao.paginaAtual === paginacao.totalPaginas}
-                                    className={`relative inline-flex items-center rounded-r-md px-2 py-2 ${paginacao.paginaAtual === paginacao.totalPaginas
+                                    disabled={paginacao.paginaAtual === paginacao.totalPaginas || loading}
+                                    className={`relative inline-flex items-center rounded-r-md px-2 py-2 ${(paginacao.paginaAtual === paginacao.totalPaginas || loading)
                                         ? 'text-gray-300 cursor-not-allowed'
                                         : 'text-gray-500 hover:bg-gray-50'
                                         } focus:z-20 focus:outline-offset-0`}

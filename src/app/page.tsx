@@ -9,11 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 export function criptografarSenha(senha: string): string {
   if (!senha) return '';
 
-  // Use a fixed key on the server side to ensure consistency between SSR and client
-  // On the client side, use random key for better security
-  const key = typeof window !== 'undefined'
-    ? Math.floor(Math.random() * 255)
-    : 123; // Fixed value for server-side rendering
+  const key = 123; // Fixed value for both server and client rendering
 
   const hexResult = [];
   let result = "";
