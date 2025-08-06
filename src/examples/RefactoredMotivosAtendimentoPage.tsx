@@ -1,4 +1,5 @@
 'use client'
+
 import { motivosAtendimentoAPI } from '@/api/api';
 import { Loading } from '@/components/Loading';
 import { ActionButton, TableList, TableStatusColumn } from '@/components/admin/common';
@@ -16,7 +17,7 @@ const CadastroMotivosAtendimento = () => {
         setTitle('Motivos de Atendimento');
     }, [setTitle]);
 
-    // Usar o hook customizado para carregar os dados
+    // Usar nosso hook customizado para carregar os dados
     const { data: motivosAtendimento, loading } = useDataFetch<MotivoAtendimento[]>(
         () => motivosAtendimentoAPI.getAll(),
         []
