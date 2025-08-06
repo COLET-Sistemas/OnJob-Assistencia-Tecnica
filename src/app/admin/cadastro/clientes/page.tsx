@@ -313,17 +313,37 @@ const CadastroCliente = () => {
         {
             header: 'Localização',
             accessor: 'cidade' as keyof Cliente,
-            render: (cliente: Cliente) => (
-                <>
-                    <div className="text-sm text-[var(--neutral-graphite)] flex items-center gap-1.5">
-                        <MapPin size={16} className="text-[var(--primary)]" />
-                        {cliente.cidade}, {cliente.uf}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-0.5">
-                        {cliente.endereco}, {cliente.numero}
-                    </div>
-                </>
-            )
+            render: (cliente: Cliente) => {
+                const hasValidCoordinates =
+                    cliente.latitude !== undefined &&
+                    cliente.latitude !== null &&
+                    cliente.latitude !== 0 &&
+                    String(cliente.latitude) !== "0" &&
+                    String(cliente.latitude) !== "";
+
+                return (
+                    <>
+                        {hasValidCoordinates ? (
+                            <a
+                                href={`https://www.google.com/maps/place/${cliente.latitude},${cliente.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-[var(--primary)] flex items-center gap-1.5 hover:underline"
+                            >
+                                <MapPin size={16} className="text-[var(--primary)]" />
+                                {cliente.cidade}, {cliente.uf}
+                            </a>
+                        ) : (
+                            <div className="text-sm text-[var(--neutral-graphite)] flex items-center gap-1.5">
+                                {cliente.cidade}, {cliente.uf}
+                            </div>
+                        )}
+                        <div className="text-xs text-gray-500 mt-0.5">
+                            {cliente.endereco}, {cliente.numero}
+                        </div>
+                    </>
+                );
+            }
         },
         {
             header: 'Região',
