@@ -65,7 +65,10 @@ function DataTable<T extends object>({
 
                             return (
                                 <React.Fragment key={id}>
-                                    <tr className="hover:bg-[var(--primary)]/5 transition-colors duration-150">
+                                    <tr
+                                        className="hover:bg-[var(--primary)]/5 transition-colors duration-150 cursor-pointer"
+                                        onClick={() => handleRowClick(id)}
+                                    >
                                         {columns.map((column, colIndex) => (
                                             <td key={colIndex} className="px-6 py-4 whitespace-nowrap">
                                                 {column.render

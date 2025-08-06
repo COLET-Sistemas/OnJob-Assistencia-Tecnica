@@ -587,8 +587,8 @@ const CadastroCliente = () => {
                     expandedRowId={expandedClienteId}
                     onRowExpand={toggleExpand}
                     emptyStateProps={{
-                        title: loading ? "Carregando..." : "Nenhum cliente encontrado",
-                        description: loading ? "Por favor, aguarde..." : "Tente ajustar seus filtros ou cadastre um novo cliente."
+                        title: loading ? "" : "Nenhum cliente encontrado",
+                        description: loading ? "" : "Tente ajustar seus filtros ou cadastre um novo cliente."
                     }}
                     renderExpandedRow={renderExpandedRow}
                 />
