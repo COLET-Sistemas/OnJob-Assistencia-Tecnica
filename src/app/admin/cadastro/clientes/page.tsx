@@ -3,6 +3,7 @@
 
 import { clientesAPI } from '@/api/api';
 import {
+    ActionButton,
     DataTable,
     FilterPanel,
     ListContainer,
@@ -306,41 +307,39 @@ const CadastroCliente = () => {
                     </button>
                 );
             }
-        },
-        {
-            header: 'Ações',
-            accessor: (cliente: Cliente) => (
-                <div className="flex items-center gap-2">
-                    <a
-                        href={`/admin/cadastro/clientes/editar/${cliente.id_cliente || cliente.id}`}
-                        className="inline-flex items-center p-1.5 text-[var(--primary)] rounded transition-colors hover:bg-[var(--primary)]/10"
-                        title="Editar cliente"
-                    >
-                        <Edit2 size={16} />
-                    </a>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm(`Deseja realmente excluir o cliente "${cliente.nome_fantasia || cliente.razao_social}"?`)) {
-                                alert('Funcionalidade de exclusão será implementada em breve.');
-                            }
-                        }}
-                        className="inline-flex items-center p-1.5 text-red-500 rounded transition-colors hover:bg-red-50"
-                        title="Excluir cliente"
-                        type="button"
-                    >
-                        <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M3 6h18"></path>
-                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                        </svg>
-                    </button>
-                </div>
-            )
         }
     ];
 
     const activeFiltersCount = Object.values(filtros).filter(Boolean).length;
+
+    // Componente personalizado para renderizar as ações para cada item
+    const renderActions = (cliente: Cliente) => (
+        <div className="flex items-center gap-2">
+            <ActionButton
+                href={`/admin/cadastro/clientes/editar/${cliente.id_cliente || cliente.id}`}
+                icon={<Edit2 size={16} />}
+                label=""
+                variant="secondary"
+            />
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Deseja realmente excluir o cliente "${cliente.nome_fantasia || cliente.razao_social}"?`)) {
+                        alert('Funcionalidade de exclusão será implementada em breve.');
+                    }
+                }}
+                className="inline-flex items-center p-1.5 text-red-500 rounded transition-colors hover:bg-red-50"
+                title="Excluir cliente"
+                type="button"
+            >
+                <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+            </button>
+        </div>
+    );
 
     return (
         <ListContainer>
@@ -381,7 +380,13 @@ const CadastroCliente = () => {
                 )}
 
                 <DataTable
-                    columns={columns}
+                    columns={[
+                        ...columns,
+                        {
+                            header: 'Ações',
+                            accessor: (cliente: Cliente) => renderActions(cliente)
+                        }
+                    ]}
                     data={clientesFiltrados}
                     keyField="id_cliente"
                     expandedRowId={expandedClienteId}
