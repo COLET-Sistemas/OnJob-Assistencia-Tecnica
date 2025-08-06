@@ -11,7 +11,12 @@ interface NavbarProps {
 export default function Navbar({ sidebarOpen, setSidebarOpen, title }: NavbarProps) {
     const titleContext = useTitle();
     const displayTitle = titleContext.title || title || "Dashboard";
-    const nomeUsuario = typeof window !== 'undefined' ? localStorage.getItem('nome_usuario') || 'Usuário' : 'Usuário';
+    const [nomeUsuario, setNomeUsuario] = useState('Usuário');
+
+    // Use useEffect to access localStorage after component mounts (client-side only)
+    useEffect(() => {
+        setNomeUsuario(localStorage.getItem('nome_usuario') || 'Usuário');
+    }, []);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
 

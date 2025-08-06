@@ -14,6 +14,12 @@ import type { Maquina, MaquinaResponse } from '@/types/admin/cadastro/maquinas';
 import { Edit2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+// Helper function to consistently format dates on both server and client
+const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+};
+
 interface Filtros {
     texto: string;
     status: string;
@@ -270,7 +276,7 @@ export default function CadastroMaquinas() {
                             accessor: (maquina: Maquina) => (
                                 <span className="text-sm text-gray-600">
                                     {maquina.data_1a_venda && !isNaN(new Date(maquina.data_1a_venda).getTime())
-                                        ? new Date(maquina.data_1a_venda).toLocaleDateString('pt-BR')
+                                        ? formatDate(maquina.data_1a_venda)
                                         : '-'}
                                 </span>
                             )
@@ -288,7 +294,7 @@ export default function CadastroMaquinas() {
                             accessor: (maquina: Maquina) => (
                                 <span className="text-sm text-gray-600">
                                     {maquina.data_final_garantia && !isNaN(new Date(maquina.data_final_garantia).getTime())
-                                        ? new Date(maquina.data_final_garantia).toLocaleDateString('pt-BR')
+                                        ? formatDate(maquina.data_final_garantia)
                                         : '-'}
                                 </span>
                             )
@@ -396,8 +402,8 @@ export default function CadastroMaquinas() {
                                     onClick={() => mudarPagina(paginacao.paginaAtual - 1)}
                                     disabled={paginacao.paginaAtual === 1}
                                     className={`relative inline-flex items-center rounded-l-md px-2 py-2 ${paginacao.paginaAtual === 1
-                                            ? 'text-gray-300 cursor-not-allowed'
-                                            : 'text-gray-500 hover:bg-gray-50'
+                                        ? 'text-gray-300 cursor-not-allowed'
+                                        : 'text-gray-500 hover:bg-gray-50'
                                         } focus:z-20 focus:outline-offset-0`}
                                 >
                                     <span className="sr-only">Anterior</span>
@@ -425,8 +431,8 @@ export default function CadastroMaquinas() {
                                             onClick={() => mudarPagina(pageNum)}
                                             aria-current={paginacao.paginaAtual === pageNum ? 'page' : undefined}
                                             className={`relative z-10 inline-flex items-center px-4 py-2 text-sm font-semibold cursor-pointer ${paginacao.paginaAtual === pageNum
-                                                    ? 'bg-[var(--primary)] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]'
-                                                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                                ? 'bg-[var(--primary)] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]'
+                                                : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
                                                 }`}
                                         >
                                             {pageNum}
@@ -438,8 +444,8 @@ export default function CadastroMaquinas() {
                                     onClick={() => mudarPagina(paginacao.paginaAtual + 1)}
                                     disabled={paginacao.paginaAtual === paginacao.totalPaginas}
                                     className={`relative inline-flex items-center rounded-r-md px-2 py-2 ${paginacao.paginaAtual === paginacao.totalPaginas
-                                            ? 'text-gray-300 cursor-not-allowed'
-                                            : 'text-gray-500 hover:bg-gray-50'
+                                        ? 'text-gray-300 cursor-not-allowed'
+                                        : 'text-gray-500 hover:bg-gray-50'
                                         } focus:z-20 focus:outline-offset-0`}
                                 >
                                     <span className="sr-only">Próxima</span>

@@ -28,7 +28,6 @@ const useDataFetch = <T>(
 
         setLoading(true);
         try {
-            console.log('useDataFetch: Chamando fetchFunction...');
             const result = await fetchFunction();
             if (isMounted.current) {
                 setData(result);
@@ -46,13 +45,10 @@ const useDataFetch = <T>(
         }
     };
 
-    // Efetuar apenas uma chamada na montagem inicial
     useEffect(() => {
         isMounted.current = true;
 
-        // No primeiro render, sempre fazer a chamada
         if (isFirstRender.current) {
-            console.log('useDataFetch: Primeira renderização, carregando dados...');
             isFirstRender.current = false;
             setLoading(true);
             fetchFunction()
@@ -82,7 +78,6 @@ const useDataFetch = <T>(
 
     // Efetuar chamadas quando as dependências mudarem (exceto na primeira renderização)
     useEffect(() => {
-        // Pular a primeira execução, pois já está sendo tratada acima
         if (isFirstRender.current) return;
 
         fetchData();
