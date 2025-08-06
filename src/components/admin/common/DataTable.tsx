@@ -31,15 +31,15 @@ function DataTable<T extends object>({
         description: 'Tente ajustar seus filtros ou cadastre um novo item.'
     },
     expandedRowId,
+    // onRowExpand is received but no longer used directly by the DataTable component.
+    // It's still needed as an interface since component users call it directly.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onRowExpand,
     renderExpandedRow
 }: DataTableProps<T>): React.ReactElement {
 
-    const handleRowClick = (id: string | number) => {
-        if (onRowExpand) {
-            onRowExpand(id);
-        }
-    };
+    // Row expansion is now handled only by specific controls (like the contacts button)
+    // and not by clicking anywhere in the row
     return (
         <div className="overflow-x-auto overflow-y-auto max-h-[70vh] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             <table className="w-full table-auto border-separate border-spacing-0">
@@ -66,8 +66,7 @@ function DataTable<T extends object>({
                             return (
                                 <React.Fragment key={id}>
                                     <tr
-                                        className="hover:bg-[var(--primary)]/5 transition-colors duration-150 cursor-pointer"
-                                        onClick={() => handleRowClick(id)}
+                                        className="hover:bg-[var(--primary)]/5 transition-colors duration-150"
                                     >
                                         {columns.map((column, colIndex) => (
                                             <td key={colIndex} className="px-6 py-4 whitespace-nowrap">

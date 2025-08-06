@@ -380,7 +380,7 @@ const CadastroCliente = () => {
                 return (
                     <button
                         className={`px-2 py-1.5 border border-gray-100 rounded-lg text-xs font-medium flex items-center gap-2 transition-colors ${hasContatos
-                            ? "bg-[var(--neutral-light-gray)] text-[var(--neutral-graphite)] hover:bg-[var(--neutral-light-gray)]/80"
+                            ? "bg-[var(--neutral-light-gray)] text-[var(--neutral-graphite)] hover:bg-[var(--neutral-light-gray)]/80 cursor-pointer"
                             : "bg-gray-50 text-gray-400 cursor-not-allowed"
                             }`}
                         onClick={(e) => {
@@ -430,7 +430,7 @@ const CadastroCliente = () => {
                             e.stopPropagation();
                             openLocationModal(cliente);
                         }}
-                        className="inline-flex items-center px-3 py-1.5 bg-[var(--secondary-green)]/20 hover:bg-[var(--secondary-green)]/40 text-[var(--dark-navy)] rounded-lg transition-colors gap-1.5"
+                        className="inline-flex items-center px-3 py-1.5 bg-[var(--secondary-green)]/20 hover:bg-[var(--secondary-green)]/40 text-[var(--dark-navy)] rounded-lg transition-colors gap-1.5 cursor-pointer"
                         title="Definir localização geográfica"
                     >
                         <MapPin size={16} />
@@ -449,7 +449,7 @@ const CadastroCliente = () => {
                             alert('Funcionalidade de exclusão será implementada em breve.');
                         }
                     }}
-                    className="inline-flex items-center p-1.5 text-red-500 rounded transition-colors hover:bg-red-50"
+                    className="inline-flex items-center p-1.5 text-red-500 rounded transition-colors hover:bg-red-50 cursor-pointer"
                     title="Excluir cliente"
                     type="button"
                 >

@@ -77,7 +77,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                         </div>
                         <button
                             onClick={onClose}
-                            className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
+                            className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
                         >
                             <X size={18} className="text-gray-500" />
                         </button>
@@ -229,7 +229,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                                     onClose();
                                 }}
                                 disabled={hasInvalidTextFilter}
-                                className={`w-full py-3 text-sm font-medium text-white ${hasInvalidTextFilter
+                                className={`w-full py-3 text-sm font-medium text-white cursor-pointer ${hasInvalidTextFilter
                                     ? 'bg-gray-400 cursor-not-allowed'
                                     : 'bg-[var(--primary)] hover:bg-[var(--primary)]/90 shadow-sm hover:shadow-md'
                                     } rounded-xl flex items-center justify-center gap-3 transition-all duration-200 border border-[var(--primary)]/20`}
@@ -244,7 +244,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                     {hasActiveFilters && (
                         <button
                             onClick={onClearFilters}
-                            className="w-full py-3 text-sm font-medium text-[var(--neutral-graphite)] hover:text-[var(--primary)] bg-white hover:bg-gray-50 rounded-xl flex items-center justify-center gap-3 transition-all duration-200 border-2 border-gray-200"
+                            className="w-full py-3 text-sm font-medium text-[var(--neutral-graphite)] hover:text-[var(--primary)] bg-white hover:bg-gray-50 rounded-xl flex items-center justify-center gap-3 transition-all duration-200 border-2 border-gray-200 cursor-pointer"
                         >
                             <X size={18} />
                             <span>Limpar Filtros</span>

@@ -287,7 +287,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                     <h2 className="text-xl font-semibold text-[#7C54BD]">Ajustar Localização</h2>
                     <button
                         onClick={onClose}
-                        className="text-[#7C54BD] hover:text-[#6743a1] bg-white rounded-full p-1 shadow-sm transition-all hover:shadow"
+                        className="text-[#7C54BD] hover:text-[#6743a1] bg-white rounded-full p-1 shadow-sm transition-all hover:shadow cursor-pointer"
                         aria-label="Fechar"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -346,13 +346,13 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                 <div className="p-6 border-t border-gray-100 flex justify-between bg-gradient-to-b from-white to-gray-50">
                     <button
                         onClick={onClose}
-                        className="px-6 py-2.5 bg-white text-[#7C54BD] border border-[#7C54BD] rounded-md hover:bg-[#7C54BD]/5 transition-colors font-medium shadow-sm"
+                        className="px-6 py-2.5 bg-white text-[#7C54BD] border border-[#7C54BD] rounded-md hover:bg-[#7C54BD]/5 transition-colors font-medium shadow-sm cursor-pointer"
                     >
                         Cancelar
                     </button>
                     <button
                         onClick={handleConfirm}
-                        className="px-6 py-2.5 bg-gradient-to-r from-[#7C54BD] to-[#6743a1] text-white rounded-md hover:shadow-lg transition-all flex items-center gap-2 font-medium shadow-sm disabled:opacity-70 disabled:hover:shadow-none"
+                        className="px-6 py-2.5 bg-gradient-to-r from-[#7C54BD] to-[#6743a1] text-white rounded-md hover:shadow-lg transition-all flex items-center gap-2 font-medium shadow-sm disabled:opacity-70 disabled:hover:shadow-none cursor-pointer"
                         disabled={!currentLat || !currentLng}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
