@@ -465,7 +465,7 @@ const CadastroCliente = () => {
                             alert('Funcionalidade de exclusão será implementada em breve.');
                         }
                     }}
-                    className="inline-flex items-center p-1.5 text-red-500 rounded transition-colors hover:bg-red-50 cursor-pointer"
+                    className="inline-flex items-center px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors gap-1.5 cursor-pointer"
                     title="Excluir cliente"
                     type="button"
                 >
