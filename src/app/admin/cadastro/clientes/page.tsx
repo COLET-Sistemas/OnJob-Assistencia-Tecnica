@@ -422,6 +422,9 @@ const CadastroCliente = () => {
             String(cliente.latitude) === "0" ||
             String(cliente.latitude) === "";
 
+        // Check if location is valid for route tracing
+        const hasValidLocation = !needsLocationDefinition;
+
         return (
             <div className="flex items-center gap-2">
                 {needsLocationDefinition && (
@@ -435,6 +438,19 @@ const CadastroCliente = () => {
                     >
                         <MapPin size={16} />
                     </button>
+                )}
+                {hasValidLocation && (
+                    <a
+                        href={`https://www.google.com/maps/dir/Himaco+Indústria/${cliente.latitude},${cliente.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors gap-1.5 cursor-pointer"
+                        title="Traçar rota até o cliente"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+                        </svg>
+                    </a>
                 )}
                 <ActionButton
                     href={`/admin/cadastro/clientes/editar/${clientId}`}
