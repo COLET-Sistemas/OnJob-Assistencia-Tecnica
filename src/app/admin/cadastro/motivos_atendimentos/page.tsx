@@ -1,12 +1,11 @@
 'use client'
-import { motivosAtendimentoAPI } from '@/api/api';
 import { Loading } from '@/components/Loading';
-import { ActionButton, TableList, TableStatusColumn } from '@/components/admin/common';
+import { ActionButton, ListHeader, TableList, TableStatusColumn } from '@/components/admin/common';
 import { useTitle } from '@/context/TitleContext';
 import { useDataFetch } from '@/hooks';
 import type { MotivoAtendimento } from '@/types/admin/cadastro/motivos_atendimento';
 import { Edit2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 const CadastroMotivosAtendimento = () => {
     const { setTitle } = useTitle();
@@ -16,10 +15,45 @@ const CadastroMotivosAtendimento = () => {
         setTitle('Motivos de Atendimento');
     }, [setTitle]);
 
-    // Usar o hook customizado para carregar os dados
+
+
+    // Filtros e estado do painel
+    const [showFilters, setShowFilters] = useState(false);
+    // Filtros editáveis no painel
+    const [filtrosPainel, setFiltrosPainel] = useState<{ descricao: string; incluir_inativos: string }>(
+        { descricao: '', incluir_inativos: '' }
+    );
+    // Filtros aplicados (usados na busca)
+    const [filtrosAplicados, setFiltrosAplicados] = useState<{ descricao: string; incluir_inativos: string }>(
+        { descricao: '', incluir_inativos: '' }
+    );
+
+    // Funções de manipulação dos filtros
+    const handleFiltroChange = useCallback((campo: string, valor: string) => {
+        setFiltrosPainel(prev => ({ ...prev, [campo]: valor }));
+    }, []);
+
+    const limparFiltros = useCallback(() => {
+        setFiltrosPainel({ descricao: '', incluir_inativos: '' });
+    }, []);
+
+    // Aplicar filtros do painel
+    const aplicarFiltros = useCallback(() => {
+        setFiltrosAplicados({ ...filtrosPainel });
+        setShowFilters(false);
+    }, [filtrosPainel]);
+
+    // Hook para buscar dados com filtros aplicados
+    const fetchMotivos = useCallback(async () => {
+        const params: Record<string, string> = {};
+        if (filtrosAplicados.descricao) params.descricao = filtrosAplicados.descricao;
+        if (filtrosAplicados.incluir_inativos === 'true') params.incluir_inativos = 'S';
+        return await import('@/api/api').then(mod => mod.default.get('/motivos_atendimento', { params }));
+    }, [filtrosAplicados]);
+
     const { data: motivosAtendimento, loading } = useDataFetch<MotivoAtendimento[]>(
-        () => motivosAtendimentoAPI.getAll(),
-        []
+        fetchMotivos,
+        [fetchMotivos]
     );
 
     if (loading) {
@@ -61,6 +95,23 @@ const CadastroMotivosAtendimento = () => {
         />
     );
 
+    // Opções de filtro para o painel
+    const filterOptions = [
+        {
+            id: 'descricao',
+            label: 'Descrição',
+            type: 'text' as const,
+            placeholder: 'Buscar por descrição...'
+        },
+        {
+            id: 'incluir_inativos',
+            label: 'Incluir Inativos',
+            type: 'checkbox' as const
+        }
+    ];
+
+    const activeFiltersCount = Object.values(filtrosAplicados).filter(Boolean).length;
+
     return (
         <TableList
             title="Lista Motivos de Atendimento"
@@ -70,6 +121,24 @@ const CadastroMotivosAtendimento = () => {
             renderActions={renderActions}
             newItemLink="/admin/cadastro/motivos_atendimentos/novo"
             newItemLabel="Novo Motivo"
+            showFilter={showFilters}
+            filterOptions={filterOptions}
+            filterValues={filtrosPainel}
+            onFilterChange={handleFiltroChange}
+            onClearFilters={limparFiltros}
+            onApplyFilters={aplicarFiltros}
+            onFilterToggle={() => setShowFilters(!showFilters)}
+            customHeader={
+                <ListHeader
+                    title="Lista Motivos de Atendimento"
+                    itemCount={motivosAtendimento?.length || 0}
+                    onFilterToggle={() => setShowFilters(!showFilters)}
+                    showFilters={showFilters}
+                    newButtonLink="/admin/cadastro/motivos_atendimentos/novo"
+                    newButtonLabel="Novo Motivo"
+                    activeFiltersCount={activeFiltersCount}
+                />
+            }
         />
     );
 };

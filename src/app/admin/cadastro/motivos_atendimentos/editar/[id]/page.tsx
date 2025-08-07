@@ -14,16 +14,7 @@ interface PageProps {
     };
 }
 
-/**
- * Função auxiliar para lidar com os parâmetros de rota
- * Esta função é preparada para quando o Next.js mudar e params se tornar uma Promise
- */
-function getRouteParams<T>(params: T | Promise<T>): T {
-    if (params instanceof Promise) {
-        return React.use(params);
-    }
-    return params;
-}
+
 
 // Define interface for the form data
 interface FormData {
@@ -32,9 +23,8 @@ interface FormData {
 }
 
 const EditarMotivoAtendimento = ({ params }: PageProps) => {
-    // Usando a função auxiliar para estar preparado para mudanças futuras do Next.js
-    const routeParams = getRouteParams(params);
-    const id = parseInt(routeParams.id);
+    // Usando params diretamente
+    const id = parseInt(params.id);
     const router = useRouter();
     const { setTitle } = useTitle();
     const [savingData, setSavingData] = useState(false);
@@ -164,7 +154,7 @@ const EditarMotivoAtendimento = ({ params }: PageProps) => {
                     <div className="space-y-4 md:col-span-2">
                         <h2 className="text-lg font-semibold text-[#7C54BD] border-b-2 border-[#F6C647] pb-2 inline-block">Informações do Motivo de Atendimento</h2>
 
-                        <div className="grid grid-cols-1 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Descrição */}
                             <div>
                                 <label htmlFor="descricao" className="block text-sm font-medium text-[#7C54BD] mb-1">
@@ -194,7 +184,7 @@ const EditarMotivoAtendimento = ({ params }: PageProps) => {
                                     name="situacao"
                                     value={formData.situacao}
                                     onChange={handleInputChange}
-                                    className={`w-full p-2 border ${formErrors.situacao ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black`}
+                                    className={`w-full p-2 h-[42px] border ${formErrors.situacao ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black`}
                                 >
                                     <option value="A">Ativo</option>
                                     <option value="I">Inativo</option>

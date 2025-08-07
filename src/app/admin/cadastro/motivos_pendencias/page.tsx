@@ -1,12 +1,11 @@
 'use client'
-import { motivosPendenciaAPI } from '@/api/api';
 import { Loading } from '@/components/Loading';
-import { ActionButton, TableList, TableStatusColumn } from '@/components/admin/common';
+import { ActionButton, ListHeader, TableList, TableStatusColumn } from '@/components/admin/common';
 import { useTitle } from '@/context/TitleContext';
 import { useDataFetch } from '@/hooks';
 import type { MotivoPendencia } from '@/types/admin/cadastro/motivos_pendencia';
 import { Edit2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 const CadastroMotivosPendencia = () => {
     const { setTitle } = useTitle();
@@ -16,27 +15,50 @@ const CadastroMotivosPendencia = () => {
         setTitle('Motivos de Pendência');
     }, [setTitle]);
 
-    // Função personalizada para processar a resposta da API
-    const fetchMotivos = async () => {
-        let dados: MotivoPendencia[] = await motivosPendenciaAPI.getAllWithInactive();
 
-        // Verificar se os dados são um array. Se não for, criar um array a partir dos dados
+    // Filtros e estado do painel
+    const [showFilters, setShowFilters] = useState(false);
+    // Filtros editáveis no painel
+    const [filtrosPainel, setFiltrosPainel] = useState<{ descricao: string; incluir_inativos: string }>({ descricao: '', incluir_inativos: '' });
+    // Filtros aplicados (usados na busca)
+    const [filtrosAplicados, setFiltrosAplicados] = useState<{ descricao: string; incluir_inativos: string }>({ descricao: '', incluir_inativos: '' });
+
+    // Funções de manipulação dos filtros
+    const handleFiltroChange = useCallback((campo: string, valor: string) => {
+        setFiltrosPainel(prev => ({ ...prev, [campo]: valor }));
+    }, []);
+
+    const limparFiltros = useCallback(() => {
+        setFiltrosPainel({ descricao: '', incluir_inativos: '' });
+    }, []);
+
+    // Aplicar filtros do painel
+    const aplicarFiltros = useCallback(() => {
+        setFiltrosAplicados({ ...filtrosPainel });
+        setShowFilters(false);
+    }, [filtrosPainel]);
+
+    // Hook para buscar dados com filtros aplicados
+    const fetchMotivos = useCallback(async () => {
+        const params: Record<string, string> = {};
+        if (filtrosAplicados.descricao) params.descricao = filtrosAplicados.descricao;
+        if (filtrosAplicados.incluir_inativos === 'true') params.incluir_inativos = 'S';
+        // Chamada direta à API com filtros
+        const api = (await import('@/api/api')).default;
+        let dados: MotivoPendencia[] = await api.get('/motivos_pendencia_os', { params });
         if (!Array.isArray(dados)) {
-            console.warn('Resposta da API não é um array, convertendo...', dados);
             if (typeof dados === 'object' && dados !== null) {
                 dados = Object.values(dados);
             } else {
                 dados = [];
             }
         }
-
         return dados;
-    };
+    }, [filtrosAplicados]);
 
-    // Usar o hook customizado para carregar os dados
     const { data: motivos, loading } = useDataFetch<MotivoPendencia[]>(
         fetchMotivos,
-        []
+        [fetchMotivos]
     );
 
     if (loading) {
@@ -80,6 +102,24 @@ const CadastroMotivosPendencia = () => {
         />
     );
 
+
+    // Opções de filtro para o painel
+    const filterOptions = [
+        {
+            id: 'descricao',
+            label: 'Descrição',
+            type: 'text' as const,
+            placeholder: 'Buscar por descrição...'
+        },
+        {
+            id: 'incluir_inativos',
+            label: 'Incluir Inativos',
+            type: 'checkbox' as const
+        }
+    ];
+
+    const activeFiltersCount = Object.values(filtrosAplicados).filter(Boolean).length;
+
     return (
         <TableList
             title="Lista Motivos de Pendência"
@@ -89,6 +129,24 @@ const CadastroMotivosPendencia = () => {
             renderActions={renderActions}
             newItemLink="/admin/cadastro/motivos_pendencias/novo"
             newItemLabel="Novo Motivo"
+            showFilter={showFilters}
+            filterOptions={filterOptions}
+            filterValues={filtrosPainel}
+            onFilterChange={handleFiltroChange}
+            onClearFilters={limparFiltros}
+            onApplyFilters={aplicarFiltros}
+            onFilterToggle={() => setShowFilters(!showFilters)}
+            customHeader={
+                <ListHeader
+                    title="Lista Motivos de Pendência"
+                    itemCount={motivos?.length || 0}
+                    onFilterToggle={() => setShowFilters(!showFilters)}
+                    showFilters={showFilters}
+                    newButtonLink="/admin/cadastro/motivos_pendencias/novo"
+                    newButtonLabel="Novo Motivo"
+                    activeFiltersCount={activeFiltersCount}
+                />
+            }
         />
     );
 };
