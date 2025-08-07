@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Login - OnJob Assistência Técnica",
+  title: "OnJob Assistência Técnica",
   description: "OnJob Assistência Técnica",
 };
 
