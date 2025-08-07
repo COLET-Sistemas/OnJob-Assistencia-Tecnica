@@ -304,7 +304,9 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                             <Cog size={18} className="text-[#F6C647]" />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-white/80">...</p>
+                            <p className="text-sm font-medium text-white/80">
+                                {typeof window !== 'undefined' ? localStorage.getItem('nome_bd') || 'Nome BD não definido' : 'Nome BD não disponível'}
+                            </p>
                             <p className="text-xs font-medium text-white">Versão {packageInfo.version}</p>
                         </div>
                     </div>

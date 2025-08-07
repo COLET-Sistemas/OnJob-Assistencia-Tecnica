@@ -180,11 +180,4 @@ export const usuariosRegioesAPI = {
     delete: (id) => api.delete(`/usuarios_regioes/${id}`)
 };
 
-// Exportar API genérica também
 export default api;
-
-// IMPORTANTE: Este arquivo está sendo substituído pelos serviços tipados em TypeScript
-// Por favor, use os novos serviços importando de src/api
-// Exemplo: import { services } from 'src/api';
-//
-// Este arquivo será mantido temporariamente para compatibilidade com código existente.

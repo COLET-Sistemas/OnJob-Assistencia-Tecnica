@@ -28,17 +28,34 @@ export function criptografarSenha(senha: string): string {
   return result;
 }
 
+interface Empresa {
+  id_empresa: number;
+  razao_social: string;
+  cnpj: string;
+  nome_bd: string;
+  endereco: string;
+  numero: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  cep: string;
+  latitude: string;
+  longitude: string;
+  licenca_demo: boolean;
+}
+
 interface LoginResponse {
-  token: string
-  nome_usuario: string
-  email: string
+  token: string;
+  nome_usuario: string;
+  email: string;
   perfil: {
-    interno: boolean
-    gestor: boolean
-    tecnico_proprio: boolean
-    tecnico_terceirizado: boolean
-    admin: boolean
-  }
+    interno: boolean;
+    gestor: boolean;
+    tecnico_proprio: boolean;
+    tecnico_terceirizado: boolean;
+    admin: boolean;
+  };
+  empresa?: Empresa;
 }
 
 interface LoginRequest {
@@ -142,6 +159,17 @@ export default function LoginPage() {
         localStorage.setItem('nome_usuario', authData.nome_usuario)
         localStorage.setItem('perfil', JSON.stringify(authData.perfil))
         localStorage.setItem('token', authData.token)
+        if (authData.empresa) {
+          localStorage.setItem('nome_bd', authData.empresa.nome_bd || '')
+          const enderecoCompleto = [
+            authData.empresa.endereco,
+            authData.empresa.numero,
+            authData.empresa.bairro,
+            authData.empresa.cidade,
+            authData.empresa.uf
+          ].filter(Boolean).join(', ')
+          localStorage.setItem('endereco_empresa', enderecoCompleto)
+        }
         router.push('/admin/dashboard')
       } else {
         setError('Usuário não tem permissão para acessar o Módulo Administrativo.')
@@ -177,6 +205,18 @@ export default function LoginPage() {
         localStorage.setItem('nome_usuario', authData.nome_usuario)
         localStorage.setItem('perfil', JSON.stringify(authData.perfil))
         localStorage.setItem('token', authData.token)
+        // Salva informações da empresa se existirem
+        if (authData.empresa) {
+          localStorage.setItem('nome_bd', authData.empresa.nome_bd || '')
+          const enderecoCompleto = [
+            authData.empresa.endereco,
+            authData.empresa.numero,
+            authData.empresa.bairro,
+            authData.empresa.cidade,
+            authData.empresa.uf
+          ].filter(Boolean).join(', ')
+          localStorage.setItem('endereco_empresa', enderecoCompleto)
+        }
         router.push('/tecnico/dashboard')
       } else {
         setError('Usuário não tem permissão para acessar o Módulo Técnico.')

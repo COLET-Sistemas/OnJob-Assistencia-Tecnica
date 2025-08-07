@@ -188,7 +188,6 @@ const CadastroCliente = () => {
     }, []);
 
     const limparFiltros = useCallback(() => {
-        // Primeiro atualizar os filtros
         setFiltros({
             texto: '',
             status: ''
@@ -202,8 +201,6 @@ const CadastroCliente = () => {
                     paginaAtual: 1
                 };
 
-                // Só incrementar o filtroAplicado depois que todos os estados
-                // tiverem sido atualizados
                 setTimeout(() => {
                     setFiltroAplicado(prev => prev + 1);
                 }, 50);
@@ -211,21 +208,19 @@ const CadastroCliente = () => {
                 return novaPaginacao;
             });
         }, 50);
-    }, []);    // Function to handle opening the location modal
+    }, []);
     const openLocationModal = useCallback((cliente: Cliente) => {
         setSelectedCliente(cliente);
         setShowLocationModal(true);
     }, []);
 
-    // Function to handle saving coordinates
     const saveClienteLocation = useCallback(async (latitude: number, longitude: number) => {
         if (!selectedCliente) return;
 
         try {
-            // Get the client ID consistently
+
             const clientId = selectedCliente.id_cliente !== undefined ? selectedCliente.id_cliente : selectedCliente.id;
 
-            // Make the API call with explicitly converted number values
             await api.patch(`/clientes/geo?id=${clientId}`, {
                 latitude: Number(latitude),
                 longitude: Number(longitude)
@@ -234,9 +229,8 @@ const CadastroCliente = () => {
             // Atualizar o estado local em sequência
             setShowLocationModal(false);
 
-            // Disparar a busca após fechar o modal
             setTimeout(() => {
-                setFiltroAplicado(prev => prev + 1); // Refresh data
+                setFiltroAplicado(prev => prev + 1);
             }, 100);
 
             // Show success message
@@ -250,14 +244,12 @@ const CadastroCliente = () => {
     const mudarPagina = useCallback((novaPagina: number) => {
         if (novaPagina < 1 || novaPagina > paginacao.totalPaginas) return;
 
-        // Atualizar a paginação e disparar uma única chamada API depois
         setPaginacao(prev => {
             const novaPaginacao = {
                 ...prev,
                 paginaAtual: novaPagina
             };
 
-            // Garantir que a paginação foi atualizada antes de disparar a busca
             setTimeout(() => {
                 setFiltroAplicado(prev => prev + 1);
             }, 100);
@@ -266,7 +258,6 @@ const CadastroCliente = () => {
         });
     }, [paginacao.totalPaginas]);
 
-    // Loading state is now handled within the DataTable component's wrapper
 
     const filterOptions = [
         {
@@ -282,7 +273,6 @@ const CadastroCliente = () => {
         }
     ];
 
-    // Define columns for the table
     const columns = [
         {
             header: 'Cliente',
@@ -374,7 +364,6 @@ const CadastroCliente = () => {
                 const contatosCount = cliente.qtd_contatos || (cliente.contatos ? cliente.contatos.length : 0);
                 const hasContatos = contatosCount > 0;
 
-                // Determine client ID consistently
                 const clientId = cliente.id_cliente !== undefined ? cliente.id_cliente : cliente.id;
 
                 return (
@@ -386,7 +375,6 @@ const CadastroCliente = () => {
                         onClick={(e) => {
                             e.stopPropagation();
                             if (hasContatos) {
-                                console.log('Clicking contact button for client ID:', clientId);
                                 toggleExpand(clientId || 0);
                             }
                         }}
@@ -410,11 +398,8 @@ const CadastroCliente = () => {
 
     // Componente personalizado para renderizar as ações para cada item
     const renderActions = (cliente: Cliente) => {
-        // Determine client ID consistently
         const clientId = cliente.id_cliente !== undefined ? cliente.id_cliente : cliente.id;
 
-        // Check if location needs to be defined
-        // Handle all cases: undefined, null, 0, "0", or empty string
         const needsLocationDefinition =
             cliente.latitude === undefined ||
             cliente.latitude === null ||
@@ -422,8 +407,15 @@ const CadastroCliente = () => {
             String(cliente.latitude) === "0" ||
             String(cliente.latitude) === "";
 
-        // Check if location is valid for route tracing
         const hasValidLocation = !needsLocationDefinition;
+
+        // Recupera o endereço da empresa do localStorage
+        let enderecoEmpresa = "";
+        if (typeof window !== "undefined") {
+            enderecoEmpresa = localStorage.getItem("endereco_empresa") || "";
+        }
+        // Formata para URL (substitui espaços por '+')
+        const enderecoEmpresaUrl = encodeURIComponent(enderecoEmpresa.replace(/\s+/g, "+"));
 
         return (
             <div className="flex items-center gap-2">
@@ -441,7 +433,7 @@ const CadastroCliente = () => {
                 )}
                 {hasValidLocation && (
                     <a
-                        href={`https://www.google.com/maps/dir/Himaco+Indústria/${cliente.latitude},${cliente.longitude}`}
+                        href={`https://www.google.com/maps/dir/${enderecoEmpresaUrl}/${cliente.latitude},${cliente.longitude}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors gap-1.5 cursor-pointer"
@@ -461,7 +453,7 @@ const CadastroCliente = () => {
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm(`Deseja realmente excluir o cliente "${cliente.nome_fantasia || cliente.razao_social}"?`)) {
+                        if (confirm(`Deseja realmente excluir o cliente \"${cliente.nome_fantasia || cliente.razao_social}\"?`)) {
                             alert('Funcionalidade de exclusão será implementada em breve.');
                         }
                     }}

@@ -1,8 +1,7 @@
 'use client'
 
-import api, { motivosAtendimentoAPI } from '@/api/api';
+import api from '@/api/api';
 import { useTitle } from '@/context/TitleContext';
-import { MotivoAtendimento } from '@/types/admin/cadastro/motivos_atendimento';
 import { Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -58,7 +57,7 @@ const EditarMotivoAtendimento = ({ params }: PageProps) => {
             try {
                 // Obter dados com parâmetro de consulta id
                 const response = await api.get(`/motivos_atendimento?id=${id}`);
-                
+
                 if (response && response.length > 0) {
                     const motivo = response[0];
                     setFormData({
@@ -120,9 +119,9 @@ const EditarMotivoAtendimento = ({ params }: PageProps) => {
 
         try {
             // Enviar para a API usando a URL com parâmetro id conforme solicitado
-            await api.put(`/motivos_atendimento?id=${id}`, { 
+            await api.put(`/motivos_atendimento?id=${id}`, {
                 descricao: formData.descricao,
-                situacao: formData.situacao 
+                situacao: formData.situacao
             });
 
             // Redirecionar para a lista de motivos de atendimento
@@ -184,7 +183,7 @@ const EditarMotivoAtendimento = ({ params }: PageProps) => {
                                     <p className="mt-1 text-sm text-red-500">{formErrors.descricao}</p>
                                 )}
                             </div>
-                            
+
                             {/* Situação */}
                             <div>
                                 <label htmlFor="situacao" className="block text-sm font-medium text-[#7C54BD] mb-1">
