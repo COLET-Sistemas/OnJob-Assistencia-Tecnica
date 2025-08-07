@@ -1,12 +1,12 @@
 'use client'
 
-import { motivosAtendimentoAPI } from '@/api/api';
+import api, { motivosAtendimentoAPI } from '@/api/api';
 import { useTitle } from '@/context/TitleContext';
 import { MotivoAtendimento } from '@/types/admin/cadastro/motivos_atendimento';
 import { Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Definindo a interface para os parâmetros
 interface PageProps {
@@ -15,13 +15,27 @@ interface PageProps {
     };
 }
 
+/**
+ * Função auxiliar para lidar com os parâmetros de rota
+ * Esta função é preparada para quando o Next.js mudar e params se tornar uma Promise
+ */
+function getRouteParams<T>(params: T | Promise<T>): T {
+    if (params instanceof Promise) {
+        return React.use(params);
+    }
+    return params;
+}
+
 // Define interface for the form data
 interface FormData {
     descricao: string;
+    situacao: string;
 }
 
 const EditarMotivoAtendimento = ({ params }: PageProps) => {
-    const id = parseInt(params.id);
+    // Usando a função auxiliar para estar preparado para mudanças futuras do Next.js
+    const routeParams = getRouteParams(params);
+    const id = parseInt(routeParams.id);
     const router = useRouter();
     const { setTitle } = useTitle();
     const [savingData, setSavingData] = useState(false);
@@ -29,6 +43,7 @@ const EditarMotivoAtendimento = ({ params }: PageProps) => {
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [formData, setFormData] = useState<FormData>({
         descricao: '',
+        situacao: 'A',
     });
 
     // Set page title when component mounts
@@ -41,10 +56,18 @@ const EditarMotivoAtendimento = ({ params }: PageProps) => {
         const carregarDados = async () => {
             setLoading(true);
             try {
-                const motivo: MotivoAtendimento = await motivosAtendimentoAPI.getById(id);
-                setFormData({
-                    descricao: motivo.descricao,
-                });
+                // Obter dados com parâmetro de consulta id
+                const response = await api.get(`/motivos_atendimento?id=${id}`);
+                
+                if (response && response.length > 0) {
+                    const motivo = response[0];
+                    setFormData({
+                        descricao: motivo.descricao,
+                        situacao: motivo.situacao,
+                    });
+                } else {
+                    throw new Error('Motivo de atendimento não encontrado');
+                }
             } catch (error) {
                 console.error('Erro ao carregar motivo de atendimento:', error);
                 alert('Erro ao carregar dados. Por favor, tente novamente.');
@@ -78,6 +101,7 @@ const EditarMotivoAtendimento = ({ params }: PageProps) => {
         const errors: Record<string, string> = {};
 
         if (!formData.descricao) errors.descricao = 'Campo obrigatório';
+        if (!formData.situacao) errors.situacao = 'Campo obrigatório';
 
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
@@ -95,8 +119,11 @@ const EditarMotivoAtendimento = ({ params }: PageProps) => {
         setSavingData(true);
 
         try {
-            // Enviar para a API apenas o campo de descrição usando a rota especificada
-            await motivosAtendimentoAPI.update(id, { descricao: formData.descricao });
+            // Enviar para a API usando a URL com parâmetro id conforme solicitado
+            await api.put(`/motivos_atendimento?id=${id}`, { 
+                descricao: formData.descricao,
+                situacao: formData.situacao 
+            });
 
             // Redirecionar para a lista de motivos de atendimento
             router.push('/admin/cadastro/motivos_atendimentos');
@@ -155,6 +182,26 @@ const EditarMotivoAtendimento = ({ params }: PageProps) => {
                                 />
                                 {formErrors.descricao && (
                                     <p className="mt-1 text-sm text-red-500">{formErrors.descricao}</p>
+                                )}
+                            </div>
+                            
+                            {/* Situação */}
+                            <div>
+                                <label htmlFor="situacao" className="block text-sm font-medium text-[#7C54BD] mb-1">
+                                    Situação<span className="text-red-500 ml-1">*</span>
+                                </label>
+                                <select
+                                    id="situacao"
+                                    name="situacao"
+                                    value={formData.situacao}
+                                    onChange={handleInputChange}
+                                    className={`w-full p-2 border ${formErrors.situacao ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black`}
+                                >
+                                    <option value="A">Ativo</option>
+                                    <option value="I">Inativo</option>
+                                </select>
+                                {formErrors.situacao && (
+                                    <p className="mt-1 text-sm text-red-500">{formErrors.situacao}</p>
                                 )}
                             </div>
                         </div>
