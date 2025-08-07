@@ -49,13 +49,16 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
             setLoading(true);
             try {
                 const id = parseInt(params.id);
-                const dadosRegiao = await regioesAPI.getById(id);
+                // Chamada GET para /regioes?id=ID, espera array de objetos
+                const response = await regioesAPI.getById(id); // Supondo que já faz GET /regioes?id=ID
+                const dadosRegiao = Array.isArray(response) ? response[0] : response;
+                if (!dadosRegiao) throw new Error('Região não encontrada');
 
                 setFormData({
                     nome: dadosRegiao.nome || '',
                     descricao: dadosRegiao.descricao || '',
                     uf: dadosRegiao.uf || 'SP',
-                    atendida_empresa: dadosRegiao.atendida_empresa !== undefined ? dadosRegiao.atendida_empresa : true,
+                    atendida_empresa: dadosRegiao.atendida_pela_empresa !== undefined ? dadosRegiao.atendida_pela_empresa : true,
                     situacao: dadosRegiao.situacao || 'A'
                 });
             } catch (error) {
@@ -66,7 +69,6 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
                 setLoading(false);
             }
         };
-
         carregarRegiao();
     }, [params.id, router]);
 
@@ -119,7 +121,8 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
 
         try {
             const id = parseInt(params.id);
-            await regioesAPI.update(id, formData);
+            // Enviar PUT para /regioes?id=ID, mantendo o padrão do backend
+            await regioesAPI.update(id, formData); 
             alert('Região atualizada com sucesso!');
             router.push('/admin/cadastro/regioes');
         } catch (error) {
