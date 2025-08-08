@@ -73,6 +73,8 @@ export default function Navbar({ sidebarOpen, setSidebarOpen, title }: NavbarPro
         localStorage.removeItem('perfil');
         localStorage.removeItem('token');
         localStorage.removeItem('usuario');
+        localStorage.removeItem('endereco_empresa');
+        localStorage.removeItem('nome_bd');
 
         window.location.href = '/';
     };
