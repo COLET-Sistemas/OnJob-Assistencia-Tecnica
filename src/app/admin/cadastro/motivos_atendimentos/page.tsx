@@ -15,20 +15,14 @@ const CadastroMotivosAtendimento = () => {
         setTitle('Motivos de Atendimento');
     }, [setTitle]);
 
-
-
-    // Filtros e estado do painel
     const [showFilters, setShowFilters] = useState(false);
-    // Filtros editáveis no painel
     const [filtrosPainel, setFiltrosPainel] = useState<{ descricao: string; incluir_inativos: string }>(
         { descricao: '', incluir_inativos: '' }
     );
-    // Filtros aplicados (usados na busca)
     const [filtrosAplicados, setFiltrosAplicados] = useState<{ descricao: string; incluir_inativos: string }>(
         { descricao: '', incluir_inativos: '' }
     );
 
-    // Funções de manipulação dos filtros
     const handleFiltroChange = useCallback((campo: string, valor: string) => {
         setFiltrosPainel(prev => ({ ...prev, [campo]: valor }));
     }, []);
@@ -37,13 +31,11 @@ const CadastroMotivosAtendimento = () => {
         setFiltrosPainel({ descricao: '', incluir_inativos: '' });
     }, []);
 
-    // Aplicar filtros do painel
     const aplicarFiltros = useCallback(() => {
         setFiltrosAplicados({ ...filtrosPainel });
         setShowFilters(false);
     }, [filtrosPainel]);
 
-    // Hook para buscar dados com filtros aplicados
     const fetchMotivos = useCallback(async () => {
         const params: Record<string, string> = {};
         if (filtrosAplicados.descricao) params.descricao = filtrosAplicados.descricao;
@@ -67,7 +59,6 @@ const CadastroMotivosAtendimento = () => {
         );
     }
 
-    // Definir as colunas da tabela
     const columns = [
         {
             header: 'Descrição',
@@ -85,7 +76,6 @@ const CadastroMotivosAtendimento = () => {
         }
     ];
 
-    // Renderizar as ações para cada item
     const renderActions = (motivo: MotivoAtendimento) => (
         <ActionButton
             href={`/admin/cadastro/motivos_atendimentos/editar/${motivo.id}`}
@@ -95,7 +85,6 @@ const CadastroMotivosAtendimento = () => {
         />
     );
 
-    // Opções de filtro para o painel
     const filterOptions = [
         {
             id: 'descricao',

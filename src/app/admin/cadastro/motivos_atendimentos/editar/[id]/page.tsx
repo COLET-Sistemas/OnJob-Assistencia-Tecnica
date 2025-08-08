@@ -14,14 +14,12 @@ interface PageProps {
   }>;
 }
 
-// Define interface for the form data
 interface FormData {
   descricao: string;
   situacao: string;
 }
 
 const EditarMotivoAtendimento = (props: PageProps) => {
-  // Unwrap params using React.use()
   const params = React.use(props.params);
   const id = parseInt(params.id);
   const router = useRouter();
@@ -65,7 +63,6 @@ const EditarMotivoAtendimento = (props: PageProps) => {
     carregarDados();
   }, [id, router]);
 
-  // Manipular mudanças nos campos do formulário
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -75,7 +72,6 @@ const EditarMotivoAtendimento = (props: PageProps) => {
 
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Limpar erro do campo quando usuário digitar
     if (formErrors[name]) {
       setFormErrors((prev) => {
         const updated = { ...prev };
@@ -85,7 +81,6 @@ const EditarMotivoAtendimento = (props: PageProps) => {
     }
   };
 
-  // Validar formulário
   const validarFormulario = () => {
     const errors: Record<string, string> = {};
 
@@ -96,7 +91,6 @@ const EditarMotivoAtendimento = (props: PageProps) => {
     return Object.keys(errors).length === 0;
   };
 
-  // Enviar formulário
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -108,13 +102,11 @@ const EditarMotivoAtendimento = (props: PageProps) => {
     setSavingData(true);
 
     try {
-      // Enviar para a API usando a URL com parâmetro id conforme solicitado
       await api.put(`/motivos_atendimento?id=${id}`, {
         descricao: formData.descricao,
         situacao: formData.situacao,
       });
 
-      // Redirecionar para a lista de motivos de atendimento
       router.push("/admin/cadastro/motivos_atendimentos");
     } catch (error) {
       console.error("Erro ao atualizar motivo de atendimento:", error);

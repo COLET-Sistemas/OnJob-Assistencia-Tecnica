@@ -83,7 +83,6 @@ const EditarMotivoPendencia = (props: PageProps) => {
     }
   };
 
-  // Validar formulário
   const validarFormulario = () => {
     const errors: Record<string, string> = {};
 
@@ -105,13 +104,11 @@ const EditarMotivoPendencia = (props: PageProps) => {
     setSavingData(true);
 
     try {
-      // Enviar para a API usando a URL com parâmetro id conforme solicitado
       await api.put(`/motivos_pendencia_os?id=${id}`, {
         descricao: formData.descricao,
         situacao: formData.situacao,
       });
 
-      // Redirecionar para a lista de motivos de atendimento
       router.push("/admin/cadastro/motivos_pendencias");
     } catch (error) {
       console.error("Erro ao atualizar motivo de pendência:", error);
