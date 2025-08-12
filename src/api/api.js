@@ -158,24 +158,17 @@ export const usuariosAPI = {
 
 export const regioesAPI = {
   getAll: (params = {}) => {
-    // Garante paginação padrão se não vier nos filtros
-    const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
     return api.get("/regioes", {
       params: {
-        nro_pagina,
-        qtde_registros,
-        ...filtros,
+        ...params,
       },
     });
   },
   getAllWithInactive: (params = {}) => {
-    const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
     return api.get("/regioes", {
       params: {
         incluir_inativos: "S",
-        nro_pagina,
-        qtde_registros,
-        ...filtros,
+        ...params,
       },
     });
   },
