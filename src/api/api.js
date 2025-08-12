@@ -176,7 +176,7 @@ export const pecasAPI = {
         qtde_registros: limit,
       },
     }),
-  getById: (id) => api.get(`/pecas/${id}`),
+  getById: (id) => api.get("/pecas", { params: { id } }),
   create: (pecaData) => api.post("/pecas", pecaData),
   update: (id, pecaData) => api.put(`/pecas/${id}`, pecaData),
   delete: (id) => api.delete(`/pecas/${id}`),
@@ -184,7 +184,7 @@ export const pecasAPI = {
 
 export const motivosAtendimentoAPI = {
   getAll: () => api.get("/motivos_atendimento"),
-  getById: (id) => api.get(`/motivos_atendimento/${id}`),
+  getById: (id) => api.get("/motivos_atendimento", { params: { id } }),
   create: (motivoData) => api.post("/motivos_atendimento", motivoData),
   update: (id, motivoData) => api.put(`/motivos_atendimento/${id}`, motivoData),
   delete: (id) => api.delete(`/motivos_atendimento/${id}`),
@@ -193,7 +193,7 @@ export const motivosAtendimentoAPI = {
 export const motivosPendenciaAPI = {
   getAll: () => api.get("/motivos_pendencia_os"),
   getAllWithInactive: () => api.get("/motivos_pendencia_os?incluir_inativos=S"),
-  getById: (id) => api.get(`/motivos_pendencia_os/${id}`),
+  getById: (id) => api.get("/motivos_pendencia_os", { params: { id } }),
   create: (motivoData) => api.post("/motivos_pendencia_os", motivoData),
   update: (id, motivoData) =>
     api.put(`/motivos_pendencia_os/${id}`, motivoData),
