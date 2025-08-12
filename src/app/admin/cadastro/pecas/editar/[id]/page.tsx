@@ -91,7 +91,11 @@ const EditarPeca = () => {
     >
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let newValue = value;
+    if (name === "codigo_peca") {
+      newValue = value.toUpperCase();
+    }
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
     if (formErrors[name]) {
       setFormErrors((prev) => {
         const updated = { ...prev };
