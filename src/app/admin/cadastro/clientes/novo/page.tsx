@@ -6,13 +6,24 @@ import LocationPicker from "@/components/admin/common/LocationPicker";
 import StaticMap from "@/components/admin/common/StaticMap";
 import { useTitle } from "@/context/TitleContext";
 import { FormData } from "@/types/admin/cadastro/clientes";
-import { Regiao } from "@/types/admin/cadastro/regioes";
 import { formatDocumento } from "@/utils/formatters";
-import { MapPin, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
+
+// Interface para tipagem das regiões
+interface Regiao {
+  id: number;
+  nome: string;
+  descricao: string;
+  uf: string;
+  atendida_empresa: boolean;
+  situacao: string;
+  data_cadastro: string;
+  id_usuario_cadastro: number;
+}
 
 const CadastrarCliente = () => {
   const router = useRouter();
@@ -47,20 +58,29 @@ const CadastrarCliente = () => {
     id_regiao: 0,
   });
 
-  // Carregar as regiões disponíveis
+  // Carregar as regiões disponíveis - usando useRef para evitar duplo disparo no Strict Mode
+  const carregouRegioes = useRef(false);
   useEffect(() => {
+    if (carregouRegioes.current) return;
+    carregouRegioes.current = true;
     const carregarRegioes = async () => {
       setLoading(true);
       try {
         const response = await regioesAPI.getAll();
-        setRegioes(response.data || []);
+        const regioesAtivas = (response || []).filter(
+          (regiao: Regiao) => regiao.situacao === "A"
+        );
+        regioesAtivas.sort((a: Regiao, b: Regiao) =>
+          a.nome.localeCompare(b.nome)
+        );
+        setRegioes(regioesAtivas);
       } catch (error) {
         console.error("Erro ao carregar regiões:", error);
+        toast.error("Erro ao carregar regiões. Tente novamente.");
       } finally {
         setLoading(false);
       }
     };
-
     carregarRegioes();
   }, []);
 
@@ -244,7 +264,9 @@ const CadastrarCliente = () => {
 
     // Consideramos que o usuário já viu a mensagem sobre localização encontrada
     setHasShownLocationToast(true);
-  }; // Manipular mudanças nos campos do formulário
+  };
+
+  // Manipular mudanças nos campos do formulário - REFATORADO
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -263,6 +285,10 @@ const CadastrarCliente = () => {
       }
     } else if (name === "cnpj") {
       setFormData((prev) => ({ ...prev, [name]: formatarCNPJ(value) }));
+    } else if (name === "id_regiao") {
+      // Converte para number e valida
+      const regiaoId = parseInt(value, 10);
+      setFormData((prev) => ({ ...prev, [name]: regiaoId }));
     } else if (name === "numero") {
       setFormData((prev) => ({ ...prev, [name]: value }));
 
@@ -321,7 +347,7 @@ const CadastrarCliente = () => {
     }
   };
 
-  // Validar formulário
+  // Validar formulário - REFATORADO
   const validarFormulario = () => {
     const errors: Record<string, string> = {};
 
@@ -335,8 +361,19 @@ const CadastrarCliente = () => {
     if (!formData.cep || formData.cep.length < 9) errors.cep = "CEP inválido";
     if (!formData.cidade) errors.cidade = "Campo obrigatório";
     if (!formData.uf) errors.uf = "Campo obrigatório";
-    if (!formData.id_regiao || formData.id_regiao === 0)
-      errors.id_regiao = "Campo obrigatório";
+
+    // Validação aprimorada para região
+    if (!formData.id_regiao || formData.id_regiao === 0) {
+      errors.id_regiao = "Selecione uma região válida";
+    } else {
+      // Verifica se a região selecionada ainda existe e está ativa
+      const regiaoExiste = regioes.find(
+        (r) => r.id === formData.id_regiao && r.situacao === "A"
+      );
+      if (!regiaoExiste) {
+        errors.id_regiao = "Região selecionada não é válida";
+      }
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -406,156 +443,141 @@ const CadastrarCliente = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Informações principais */}
-          <div className="space-y-4 md:col-span-2">
-            <h2 className="text-lg font-semibold text-[#7C54BD] border-b-2 border-[#F6C647] pb-2 inline-block">
-              Informações Principais
-            </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        {/* Informações principais */}
+        <div className="space-y-4 md:col-span-2">
+          <h2 className="text-lg font-semibold text-[#7C54BD] border-b-2 border-[#F6C647] pb-2 inline-block">
+            Informações Principais
+          </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Razão Social */}
-              <div>
-                <label
-                  htmlFor="razao_social"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Razão Social<span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="razao_social"
-                  name="razao_social"
-                  placeholder="Razão social completa"
-                  value={formData.razao_social}
-                  onChange={handleInputChange}
-                  className={`w-full p-2 border ${
-                    formErrors.razao_social
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
-                />
-                {formErrors.razao_social && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {formErrors.razao_social}
-                  </p>
-                )}
-              </div>
-              {/* Nome Fantasia */}
-              <div>
-                <label
-                  htmlFor="nome_fantasia"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Nome Fantasia<span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="nome_fantasia"
-                  name="nome_fantasia"
-                  placeholder="Nome fantasia da empresa"
-                  value={formData.nome_fantasia}
-                  onChange={handleInputChange}
-                  className={`w-full p-2 border ${
-                    formErrors.nome_fantasia
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
-                />
-                {formErrors.nome_fantasia && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {formErrors.nome_fantasia}
-                  </p>
-                )}
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Razão Social */}
+            <div>
+              <label
+                htmlFor="razao_social"
+                className="block text-sm font-medium text-[#7C54BD] mb-1"
+              >
+                Razão Social<span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="text"
+                id="razao_social"
+                name="razao_social"
+                placeholder="Razão social completa"
+                value={formData.razao_social}
+                onChange={handleInputChange}
+                className={`w-full p-2 border ${
+                  formErrors.razao_social ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
+              />
+              {formErrors.razao_social && (
+                <p className="mt-1 text-sm text-red-500">
+                  {formErrors.razao_social}
+                </p>
+              )}
+            </div>
+            {/* Nome Fantasia */}
+            <div>
+              <label
+                htmlFor="nome_fantasia"
+                className="block text-sm font-medium text-[#7C54BD] mb-1"
+              >
+                Nome Fantasia<span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="text"
+                id="nome_fantasia"
+                name="nome_fantasia"
+                placeholder="Nome fantasia da empresa"
+                value={formData.nome_fantasia}
+                onChange={handleInputChange}
+                className={`w-full p-2 border ${
+                  formErrors.nome_fantasia
+                    ? "border-red-500"
+                    : "border-gray-300"
+                } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
+              />
+              {formErrors.nome_fantasia && (
+                <p className="mt-1 text-sm text-red-500">
+                  {formErrors.nome_fantasia}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* CNPJ */}
+            <div>
+              <label
+                htmlFor="cnpj"
+                className="block text-sm font-medium text-[#7C54BD] mb-1"
+              >
+                CNPJ ou CPF<span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="text"
+                id="cnpj"
+                name="cnpj"
+                value={formData.cnpj}
+                onChange={handleInputChange}
+                maxLength={18}
+                placeholder="00.000.000/0000-00"
+                className={`w-full p-2 border ${
+                  formErrors.cnpj ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Digite apenas números, a formatação é automática
+              </p>
+              {formErrors.cnpj && (
+                <p className="mt-1 text-sm text-red-500">{formErrors.cnpj}</p>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* CNPJ */}
-              <div>
-                <label
-                  htmlFor="cnpj"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  CNPJ ou CPF<span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="cnpj"
-                  name="cnpj"
-                  value={formData.cnpj}
+            {/* Código ERP */}
+            <div>
+              <label
+                htmlFor="codigo_erp"
+                className="block text-sm font-medium text-[#7C54BD] mb-1"
+              >
+                Código ERP
+              </label>
+              <input
+                type="text"
+                id="codigo_erp"
+                name="codigo_erp"
+                placeholder="Código interno do sistema ERP"
+                value={formData.codigo_erp}
+                onChange={handleInputChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black"
+              />
+            </div>
+
+            {/* Região - REFATORADO */}
+            <div className="md:col-span-1">
+              <label
+                htmlFor="id_regiao"
+                className="block text-sm font-medium text-[#7C54BD] mb-1"
+              >
+                Região<span className="text-red-500 ml-1">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  id="id_regiao"
+                  name="id_regiao"
+                  value={formData.id_regiao}
                   onChange={handleInputChange}
-                  maxLength={18}
-                  placeholder="00.000.000/0000-00"
                   className={`w-full p-2 border ${
-                    formErrors.cnpj ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Digite apenas números, a formatação é automática
-                </p>
-                {formErrors.cnpj && (
-                  <p className="mt-1 text-sm text-red-500">{formErrors.cnpj}</p>
-                )}
-              </div>
-
-              {/* Código ERP */}
-              <div>
-                <label
-                  htmlFor="codigo_erp"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
+                    formErrors.id_regiao ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm appearance-none text-black`}
                 >
-                  Código ERP
-                </label>
-                <input
-                  type="text"
-                  id="codigo_erp"
-                  name="codigo_erp"
-                  placeholder="Código interno do sistema ERP"
-                  value={formData.codigo_erp}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black"
-                />
-              </div>
-
-              {/* Região */}
-              <div className="md:col-span-1">
-                <label
-                  htmlFor="id_regiao"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Região<span className="text-red-500 ml-1">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    id="id_regiao"
-                    name="id_regiao"
-                    value={formData.id_regiao}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border ${
-                      formErrors.id_regiao
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm appearance-none text-black`}
-                  >
-                    <option value={0} className="text-gray-500">
-                      Selecione uma região
+                  <option value={0}>Selecione uma região</option>
+                  {regioes.map((regiao) => (
+                    <option key={regiao.id} value={regiao.id}>
+                      {regiao.nome}
                     </option>
-                    {regioes.map((regiao) => (
-                      <option key={regiao.id} value={regiao.id}>
-                        {regiao.nome} - {regiao.descricao} ({regiao.uf})
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                    <MapPin size={18} className="text-[#7C54BD]" />
-                  </div>
-                </div>
-                {formErrors.id_regiao && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {formErrors.id_regiao}
-                  </p>
-                )}
+                  ))}
+                </select>
               </div>
             </div>
           </div>
