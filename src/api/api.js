@@ -130,18 +130,27 @@ export const clientesAPI = {
 };
 
 export const maquinasAPI = {
-  getAll: (page = 1, limit = 20) =>
-    api.get("/maquinas", {
-      params: { nro_pagina: page, qtde_registros: limit },
-    }),
-  getAllWithInactive: (page = 1, limit = 20) =>
-    api.get("/maquinas", {
+  getAll: (params = {}) => {
+    const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
+    return api.get("/maquinas", {
+      params: {
+        nro_pagina,
+        qtde_registros,
+        ...filtros,
+      },
+    });
+  },
+  getAllWithInactive: (params = {}) => {
+    const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
+    return api.get("/maquinas", {
       params: {
         incluir_inativos: "S",
-        nro_pagina: page,
-        qtde_registros: limit,
+        nro_pagina,
+        qtde_registros,
+        ...filtros,
       },
-    }),
+    });
+  },
   getById: (id) => api.get(`/maquinas/${id}`),
   create: (maquinaData) => api.post("/maquinas", maquinaData),
   update: (id, maquinaData) => api.put(`/maquinas/${id}`, maquinaData),
