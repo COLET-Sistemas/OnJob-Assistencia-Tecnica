@@ -322,85 +322,91 @@ const CadastrarMaquina = () => {
                   </p>
                 )}
               </div>
-              {/* Data 1ª Venda */}
-              <div>
-                <label
-                  htmlFor="data_1a_venda"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Data 1ª Venda<span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="date"
-                  id="data_1a_venda"
-                  name="data_1a_venda"
-                  value={formData.data_1a_venda}
-                  onChange={handleInputChange}
-                  className={`w-full p-2 border ${
-                    formErrors.data_1a_venda
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black`}
-                />
-                {formErrors.data_1a_venda && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {formErrors.data_1a_venda}
-                  </p>
-                )}
-              </div>
-              {/* Nota Fiscal Venda */}
-              <div>
-                <label
-                  htmlFor="nota_fiscal_venda"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Nota Fiscal Venda<span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="nota_fiscal_venda"
-                  name="nota_fiscal_venda"
-                  placeholder="Número da nota fiscal"
-                  value={formData.nota_fiscal_venda}
-                  onChange={handleInputChange}
-                  className={`w-full p-2 border ${
-                    formErrors.nota_fiscal_venda
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
-                />
-                {formErrors.nota_fiscal_venda && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {formErrors.nota_fiscal_venda}
-                  </p>
-                )}
-              </div>
-              {/* Data Final Garantia */}
-              <div>
-                <label
-                  htmlFor="data_final_garantia"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Data Final Garantia
-                  <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="date"
-                  id="data_final_garantia"
-                  name="data_final_garantia"
-                  value={formData.data_final_garantia}
-                  onChange={handleInputChange}
-                  className={`w-full p-2 border ${
-                    formErrors.data_final_garantia
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black`}
-                />
-                {formErrors.data_final_garantia && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {formErrors.data_final_garantia}
-                  </p>
-                )}
+              {/* Linha com 3 campos: Data 1ª Venda, Nota Fiscal Venda, Data Final Garantia */}
+              <div className="md:col-span-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Data 1ª Venda */}
+                  <div>
+                    <label
+                      htmlFor="data_1a_venda"
+                      className="block text-sm font-medium text-[#7C54BD] mb-1"
+                    >
+                      Data 1ª Venda<span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      id="data_1a_venda"
+                      name="data_1a_venda"
+                      value={formData.data_1a_venda}
+                      onChange={handleInputChange}
+                      className={`w-full p-2 border ${
+                        formErrors.data_1a_venda
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black`}
+                    />
+                    {formErrors.data_1a_venda && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {formErrors.data_1a_venda}
+                      </p>
+                    )}
+                  </div>
+                  {/* Nota Fiscal Venda */}
+                  <div>
+                    <label
+                      htmlFor="nota_fiscal_venda"
+                      className="block text-sm font-medium text-[#7C54BD] mb-1"
+                    >
+                      Nota Fiscal Venda
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="nota_fiscal_venda"
+                      name="nota_fiscal_venda"
+                      placeholder="Número da nota fiscal"
+                      value={formData.nota_fiscal_venda}
+                      onChange={handleInputChange}
+                      className={`w-full p-2 border ${
+                        formErrors.nota_fiscal_venda
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
+                    />
+                    {formErrors.nota_fiscal_venda && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {formErrors.nota_fiscal_venda}
+                      </p>
+                    )}
+                  </div>
+                  {/* Data Final Garantia */}
+                  <div>
+                    <label
+                      htmlFor="data_final_garantia"
+                      className="block text-sm font-medium text-[#7C54BD] mb-1"
+                    >
+                      Data Final Garantia
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      id="data_final_garantia"
+                      name="data_final_garantia"
+                      value={formData.data_final_garantia}
+                      onChange={handleInputChange}
+                      className={`w-full p-2 border ${
+                        formErrors.data_final_garantia
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black`}
+                    />
+                    {formErrors.data_final_garantia && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {formErrors.data_final_garantia}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
