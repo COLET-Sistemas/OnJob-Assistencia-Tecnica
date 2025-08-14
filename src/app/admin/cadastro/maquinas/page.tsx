@@ -11,7 +11,7 @@ import {
 } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import type { Maquina, MaquinaResponse } from "@/types/admin/cadastro/maquinas";
-import { Edit2 } from "lucide-react";
+import { Edit2, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // Helper function to consistently format dates on both server and client
@@ -53,6 +53,8 @@ export default function CadastroMaquinas() {
     descricao: "",
     status: "",
   });
+  // Estado para controle de exclusão
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   // Estado para controle de paginação
   const [paginacao, setPaginacao] = useState({
@@ -62,10 +64,28 @@ export default function CadastroMaquinas() {
     totalRegistros: 0,
   });
 
+  // Função para deletar máquina
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Tem certeza que deseja excluir esta máquina?")) return;
+    setDeletingId(id);
+    try {
+      await import("@/api/api").then((mod) =>
+        mod.default.delete(`/maquinas?id=${id}`)
+      );
+      await carregarMaquinas(
+        filtros,
+        paginacao?.paginaAtual ?? 1,
+        paginacao?.registrosPorPagina ?? 20
+      );
+    } catch {
+      alert("Erro ao excluir máquina.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const dadosCarregados = useRef(false);
   const paginacaoRef = useRef(paginacao);
-
-  // Form data state removed since we no longer have a modal form
 
   // Configurar o título da página
   useEffect(() => {
@@ -198,12 +218,6 @@ export default function CadastroMaquinas() {
       dadosCarregados.current = true;
     }
   }, [carregarMaquinas]);
-
-  // Form submission handler removed since we no longer have a modal form
-
-  // Modal functions removed
-
-  // Input change handler removed since we no longer have a modal form
 
   if (loading) {
     return (
@@ -369,12 +383,22 @@ export default function CadastroMaquinas() {
             {
               header: "Ações",
               accessor: (maquina: Maquina) => (
-                <ActionButton
-                  href={`/admin/cadastro/maquinas/editar/${maquina.id}`}
-                  icon={<Edit2 size={14} />}
-                  label="Editar"
-                  variant="secondary"
-                />
+                <div className="flex gap-2">
+                  <ActionButton
+                    href={`/admin/cadastro/maquinas/editar/${maquina.id}`}
+                    icon={<Edit2 size={14} />}
+                    label="Editar"
+                    variant="secondary"
+                  />
+                  <ActionButton
+                    onClick={() => handleDelete(maquina.id)}
+                    icon={<Trash2 size={14} />}
+                    label={
+                      deletingId === maquina.id ? "Excluindo..." : "Excluir"
+                    }
+                    variant="secondary"
+                  />
+                </div>
               ),
             },
           ]}

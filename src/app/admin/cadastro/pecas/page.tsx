@@ -11,7 +11,7 @@ import {
 } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import type { Peca } from "@/types/admin/cadastro/pecas";
-import { Edit2, Package } from "lucide-react";
+import { Edit2, Package, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface PaginacaoInfo {
@@ -32,6 +32,9 @@ const CadastroPecas = () => {
     totalRegistros: 0,
     registrosPorPagina: 20,
   });
+
+  // Estado para controle de exclusão
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const paginacaoRef = useRef(paginacao);
   const dadosCarregados = useRef(false);
@@ -104,7 +107,7 @@ const CadastroPecas = () => {
   // Handlers de filtro
   const handleFiltroChange = (campo: string, valor: string | boolean) => {
     let newValue = valor;
-    if (campo === 'codigo' && typeof valor === 'string') {
+    if (campo === "codigo" && typeof valor === "string") {
       newValue = valor.toUpperCase();
     }
     setFiltros((prev) => ({
@@ -151,14 +154,44 @@ const CadastroPecas = () => {
     );
   }
 
+  // Estado para controle de exclusão
+
+  // Função para deletar peça
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Tem certeza que deseja excluir esta peça?")) return;
+    setDeletingId(id);
+    try {
+      await import("@/api/api").then((mod) =>
+        mod.default.delete(`/pecas?id=${id}`)
+      );
+      await carregarPecas(
+        paginacao.paginaAtual,
+        paginacao.registrosPorPagina,
+        filtros
+      );
+    } catch {
+      alert("Erro ao excluir peça.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   // Definindo a função para renderizar as ações para cada item
   const renderActions = (peca: Peca) => (
-    <ActionButton
-      href={`/admin/cadastro/pecas/editar/${peca.id}`}
-      icon={<Edit2 size={14} />}
-      label="Editar"
-      variant="secondary"
-    />
+    <div className="flex gap-2">
+      <ActionButton
+        href={`/admin/cadastro/pecas/editar/${peca.id}`}
+        icon={<Edit2 size={14} />}
+        label="Editar"
+        variant="secondary"
+      />
+      <ActionButton
+        onClick={() => handleDelete(peca.id)}
+        icon={<Trash2 size={14} />}
+        label={deletingId === peca.id ? "Excluindo..." : "Excluir"}
+        variant="secondary"
+      />
+    </div>
   );
 
   // Definindo as colunas da tabela

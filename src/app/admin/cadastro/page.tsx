@@ -2,9 +2,6 @@
 import React, { useState } from "react";
 import {
   UserPlus,
-  Settings,
-  Package,
-  MapPin,
   Users,
   ArrowRight,
   Search,
@@ -83,16 +80,12 @@ const cards = [
   },
 ];
 
-const categories = [...new Set(cards.map((card) => card.category))];
-
 export default function CadastroCentralPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Todos");
-  const [hoveredCard, setHoveredCard] = useState(null);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   const filteredCards = cards;
 
-  const handleCardClick = (path) => {
+  const handleCardClick = (path: string) => {
     console.log(`Navegando para: ${path}`);
   };
 
@@ -189,20 +182,6 @@ export default function CadastroCentralPage() {
                 <p className="text-gray-600 text-base leading-relaxed">
                   {card.description}
                 </p>
-
-                {/* Category Badge */}
-                <div className="pt-2">
-                  <span
-                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg border transition-all duration-300"
-                    style={{
-                      background: "rgba(117, 250, 189, 0.15)",
-                      color: "#059669",
-                      borderColor: "rgba(117, 250, 189, 0.3)",
-                    }}
-                  >
-                    {card.category}
-                  </span>
-                </div>
               </div>
 
               {/* Arrow Icon */}
