@@ -15,7 +15,6 @@ import { EditButton } from "@/components/admin/ui/EditButton";
 const CadastroMotivosAtendimento = () => {
   const { setTitle } = useTitle();
 
-  // Configurar o título da página
   useEffect(() => {
     setTitle("Motivos de Atendimento");
   }, [setTitle]);
@@ -107,7 +106,6 @@ const CadastroMotivosAtendimento = () => {
         id={motivo.id}
         editRoute="/admin/cadastro/motivos_atendimentos/editar"
       />
-
       <DeleteButton
         id={motivo.id}
         onDelete={handleDelete}

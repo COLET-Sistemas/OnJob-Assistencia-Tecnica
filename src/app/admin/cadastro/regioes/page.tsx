@@ -18,7 +18,6 @@ import { EditButton } from "@/components/admin/ui/EditButton";
 const CadastroRegioes = () => {
   const { setTitle } = useTitle();
 
-  // Configurar o título da página
   useEffect(() => {
     setTitle("Regiões");
   }, [setTitle]);
@@ -31,7 +30,6 @@ const CadastroRegioes = () => {
     atendida_empresa: "",
     incluir_inativos: "",
   });
-  // Estado para filtros aplicados
   const [appliedFilters, setAppliedFilters] = useState({
     nome: "",
     uf: "",
@@ -61,7 +59,6 @@ const CadastroRegioes = () => {
     loading,
     refetch,
   } = useDataFetch<Regiao[]>(fetchRegioes, [appliedFilters]);
-  // UFs para o select (pode ser ajustado conforme necessário)
   const ufOptions = [
     { value: "", label: "Todas" },
     { value: "AC", label: "AC" },

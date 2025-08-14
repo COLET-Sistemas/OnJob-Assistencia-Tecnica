@@ -48,19 +48,9 @@ const CadastroMotivosPendencia = () => {
       params.descricao = filtrosAplicados.descricao;
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
-
-    const api = (await import("@/api/api")).default;
-    let dados: MotivoPendencia[] = await api.get("/motivos_pendencia_os", {
-      params,
-    });
-    if (!Array.isArray(dados)) {
-      if (typeof dados === "object" && dados !== null) {
-        dados = Object.values(dados);
-      } else {
-        dados = [];
-      }
-    }
-    return dados;
+    return await import("@/api/api").then((mod) =>
+      mod.default.get("/motivos_pendencia_os", { params })
+    );
   }, [filtrosAplicados]);
 
   const {
