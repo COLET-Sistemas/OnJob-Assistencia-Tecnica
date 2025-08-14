@@ -158,11 +158,13 @@ export const maquinasAPI = {
 };
 
 export const usuariosAPI = {
-  getAll: () => api.get("/usuarios"),
+  getAll: (params = {}) => {
+    return api.get("/usuarios", { params });
+  },
   getById: (id) => api.get(`/usuarios/${id}`),
   create: (usuarioData) => api.post("/usuarios", usuarioData),
   update: (id, usuarioData) => api.put(`/usuarios/${id}`, usuarioData),
-  delete: (id) => api.delete(`/usuarios/${id}`),
+  delete: (id) => api.delete(`/usuarios?id=${id}`),
 };
 
 export const regioesAPI = {
