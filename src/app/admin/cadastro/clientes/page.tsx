@@ -2,7 +2,6 @@
 
 import api, { clientesAPI } from "@/api/api";
 import {
-  ActionButton,
   DataTable,
   FilterPanel,
   ListContainer,
@@ -14,8 +13,9 @@ import { Loading } from "@/components/Loading";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import { formatDocumento } from "@/utils/formatters";
-import { Edit2, MapPin, User } from "lucide-react";
+import { MapPin, User } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { EditButton } from "@/components/admin/ui/EditButton";
 
 interface FiltroParams {
   nome?: string;
@@ -458,7 +458,11 @@ const CadastroCliente = () => {
 
   const renderActions = (cliente: Cliente) => {
     const clientId =
-      cliente.id_cliente !== undefined ? cliente.id_cliente : cliente.id;
+      cliente.id_cliente !== undefined && cliente.id_cliente !== null
+        ? cliente.id_cliente
+        : cliente.id !== undefined && cliente.id !== null
+        ? cliente.id
+        : "";
 
     const needsLocationDefinition =
       cliente.latitude === undefined ||
@@ -516,11 +520,10 @@ const CadastroCliente = () => {
             </svg>
           </a>
         )}
-        <ActionButton
-          href={`/admin/cadastro/clientes/editar/${clientId}`}
-          icon={<Edit2 size={16} />}
-          label=""
-          variant="secondary"
+        <EditButton
+          id={clientId as string | number}
+          editRoute="/admin/cadastro/clientes/editar"
+          iconOnly={true}
         />
         <button
           onClick={(e) => {
@@ -888,7 +891,7 @@ const CadastroCliente = () => {
                           loading ? "cursor-not-allowed" : "cursor-pointer"
                         } ${
                           paginacao.paginaAtual === pageNum
-                            ? "bg-[var(--primary)] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+                            ? "bg-[var(--primary)] text-white focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
                             : loading
                             ? "text-gray-400 ring-1 ring-inset ring-gray-300"
                             : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"

@@ -2,7 +2,6 @@
 import { regioesAPI } from "@/api/api";
 import { Loading } from "@/components/Loading";
 import {
-  ActionButton,
   TableList,
   TableStatusColumn,
   FilterPanel,
@@ -11,13 +10,13 @@ import ListHeader from "@/components/admin/common/ListHeader";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { Regiao } from "@/types/admin/cadastro/regioes";
-import { Edit2, MapPin, Trash2 } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
+import { DeleteButton } from "@/components/admin/ui/DeleteButton";
+import { EditButton } from "@/components/admin/ui/EditButton";
 
 const CadastroRegioes = () => {
   const { setTitle } = useTitle();
-  // Estado para controle de exclusão
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   // Configurar o título da página
   useEffect(() => {
@@ -29,15 +28,14 @@ const CadastroRegioes = () => {
   const [filters, setFilters] = useState({
     nome: "",
     uf: "",
-    atendida_empresa: "", // "" = Todos, "true" = Sim, "false" = Não
+    atendida_empresa: "",
     incluir_inativos: "",
   });
-  // Estado para controle de exclusão
   // Estado para filtros aplicados
   const [appliedFilters, setAppliedFilters] = useState({
     nome: "",
     uf: "",
-    atendida_empresa: "", // "" = Todos, "true" = Sim, "false" = Não
+    atendida_empresa: "",
     incluir_inativos: "",
   });
 
@@ -58,9 +56,11 @@ const CadastroRegioes = () => {
     return regioesAPI.getAll(params);
   };
 
-  const { data: regioes, loading } = useDataFetch<Regiao[]>(fetchRegioes, [
-    appliedFilters,
-  ]);
+  const {
+    data: regioes,
+    loading,
+    refetch,
+  } = useDataFetch<Regiao[]>(fetchRegioes, [appliedFilters]);
   // UFs para o select (pode ser ajustado conforme necessário)
   const ufOptions = [
     { value: "", label: "Todas" },
@@ -249,39 +249,27 @@ const CadastroRegioes = () => {
     },
   ];
 
-  // Estado para controle de exclusão
-
-  // Função para deletar região
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Tem certeza que deseja excluir esta região?")) return;
-    setDeletingId(id);
     try {
       await import("@/api/api").then((mod) =>
         mod.default.delete(`/regioes?id=${id}`)
       );
-      // Atualiza a lista após exclusão
-      window.location.reload();
+      await refetch();
     } catch {
       alert("Erro ao excluir região.");
-    } finally {
-      setDeletingId(null);
     }
   };
 
-  // Renderizar as ações para cada item
   const renderActions = (regiao: Regiao) => (
     <div className="flex gap-2">
-      <ActionButton
-        href={`/admin/cadastro/regioes/editar/${regiao.id}`}
-        icon={<Edit2 size={14} />}
-        label="Editar"
-        variant="secondary"
-      />
-      <ActionButton
-        onClick={() => handleDelete(regiao.id)}
-        icon={<Trash2 size={14} />}
-        label={deletingId === regiao.id ? "Excluindo..." : "Excluir"}
-        variant="secondary"
+      <EditButton id={regiao.id} editRoute="/admin/cadastro/regioes/editar" />
+
+      <DeleteButton
+        id={regiao.id}
+        onDelete={handleDelete}
+        confirmText="Deseja realmente excluir esta região?"
+        confirmTitle="Exclusão de Região"
+        itemName={`${regiao.nome}`}
       />
     </div>
   );

@@ -9,7 +9,7 @@ type DeleteButtonProps = {
   confirmTitle?: string;
   label?: string;
   className?: string;
-  itemName?: string; // Nome do item sendo excluído para exibir no modal
+  itemName?: string; 
 };
 
 export const DeleteButton = ({
@@ -57,22 +57,19 @@ export const DeleteButton = ({
           ${className}
         `.trim()}
       >
-        <Trash2 size={14} />
+        <Trash2 size={15} />
         {isLoading ? "Excluindo..." : label}
       </button>
 
-      {/* Modal de Confirmação */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Overlay */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={handleCancel}
           />
 
-          {/* Modal Content */}
+          {/* Modal */}
           <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-in fade-in-0 zoom-in-95 duration-200">
-            {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">
                 {confirmTitle}
@@ -86,7 +83,6 @@ export const DeleteButton = ({
               </button>
             </div>
 
-            {/* Body */}
             <div className="p-6">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
@@ -103,7 +99,6 @@ export const DeleteButton = ({
               </div>
             </div>
 
-            {/* Footer */}
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg">
               <button
                 onClick={handleCancel}

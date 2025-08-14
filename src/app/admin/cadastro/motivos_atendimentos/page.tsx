@@ -1,7 +1,6 @@
 "use client";
 import { Loading } from "@/components/Loading";
 import {
-  ActionButton,
   ListHeader,
   TableList,
   TableStatusColumn,
@@ -9,9 +8,9 @@ import {
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { MotivoAtendimento } from "@/types/admin/cadastro/motivos_atendimento";
-import { Edit2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
+import { EditButton } from "@/components/admin/ui/EditButton";
 
 const CadastroMotivosAtendimento = () => {
   const { setTitle } = useTitle();
@@ -61,7 +60,6 @@ const CadastroMotivosAtendimento = () => {
     refetch,
   } = useDataFetch<MotivoAtendimento[]>(fetchMotivos, [fetchMotivos]);
 
-
   if (loading) {
     return (
       <Loading
@@ -105,20 +103,17 @@ const CadastroMotivosAtendimento = () => {
 
   const renderActions = (motivo: MotivoAtendimento) => (
     <div className="flex gap-2">
-      <ActionButton
-        href={`/admin/cadastro/motivos_atendimentos/editar/${motivo.id}`}
-        icon={<Edit2 size={14} />}
-        label="Editar"
-        variant="secondary"
+    <EditButton
+        id={motivo.id}
+        editRoute="/admin/cadastro/motivos_atendimentos/editar"
       />
+
       <DeleteButton
         id={motivo.id}
         onDelete={handleDelete}
         confirmText="Deseja realmente excluir este motivo de atendimento?"
         confirmTitle="Exclusão de Motivo de Atendimento"
         itemName={`${motivo.descricao}`}
-        label="Excluir"
-        className="bg-red-50 hover:bg-red-100 text-red-700"
       />
     </div>
   );

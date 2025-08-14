@@ -11,8 +11,9 @@ import {
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import { Usuario } from "@/types/admin/cadastro/usuarios";
-import { Edit2, Mail, ShieldCheck, Trash2 } from "lucide-react";
+import { Mail, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
+import { EditButton } from "@/components/admin/ui/EditButton";
 
 const CadastroUsuario = () => {
   const { setTitle } = useTitle();
@@ -166,15 +167,9 @@ const CadastroUsuario = () => {
     }
   };
 
-  // Renderizar as ações para cada item
   const renderActions = (usuario: Usuario) => (
     <div className="flex gap-2">
-      <ActionButton
-        href={`/admin/cadastro/usuarios/editar/${usuario.id}`}
-        icon={<Edit2 size={14} />}
-        label="Editar"
-        variant="secondary"
-      />
+      <EditButton id={usuario.id} editRoute="/admin/cadastro/usuarios/editar" />
       <ActionButton
         onClick={() => handleDelete(usuario.id)}
         icon={<Trash2 size={14} />}

@@ -1,7 +1,6 @@
 "use client";
 import { Loading } from "@/components/Loading";
 import {
-  ActionButton,
   ListHeader,
   TableList,
   TableStatusColumn,
@@ -9,9 +8,9 @@ import {
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { MotivoPendencia } from "@/types/admin/cadastro/motivos_pendencia";
-import { Edit2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
+import { EditButton } from "@/components/admin/ui/EditButton";
 
 const CadastroMotivosPendencia = () => {
   const { setTitle } = useTitle();
@@ -113,11 +112,9 @@ const CadastroMotivosPendencia = () => {
 
   const renderActions = (motivo: MotivoPendencia) => (
     <div className="flex gap-2">
-      <ActionButton
-        href={`/admin/cadastro/motivos_pendencias/editar/${motivo.id}`}
-        icon={<Edit2 size={14} />}
-        label="Editar"
-        variant="secondary"
+      <EditButton
+        id={motivo.id}
+        editRoute="/admin/cadastro/motivos_pendencias/editar"
       />
       <DeleteButton
         id={motivo.id}
@@ -125,8 +122,6 @@ const CadastroMotivosPendencia = () => {
         confirmText="Deseja realmente excluir este motivo de pendência?"
         confirmTitle="Exclusão de Motivo de Pendência"
         itemName={`${motivo.descricao}`}
-        label="Excluir"
-        className="bg-red-50 hover:bg-red-100 text-red-700"
       />
     </div>
   );

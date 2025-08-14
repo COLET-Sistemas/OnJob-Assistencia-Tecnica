@@ -2,7 +2,6 @@
 import { maquinasAPI } from "@/api/api";
 import { Loading } from "@/components/Loading";
 import {
-  ActionButton,
   DataTable,
   FilterPanel,
   ListContainer,
@@ -11,8 +10,9 @@ import {
 } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import type { Maquina, MaquinaResponse } from "@/types/admin/cadastro/maquinas";
-import { Edit2, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DeleteButton } from "@/components/admin/ui/DeleteButton";
+import { EditButton } from "@/components/admin/ui/EditButton";
 
 // Helper function to consistently format dates on both server and client
 const formatDate = (dateString: string): string => {
@@ -53,8 +53,6 @@ export default function CadastroMaquinas() {
     descricao: "",
     status: "",
   });
-  // Estado para controle de exclusão
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   // Estado para controle de paginação
   const [paginacao, setPaginacao] = useState({
@@ -64,10 +62,7 @@ export default function CadastroMaquinas() {
     totalRegistros: 0,
   });
 
-  // Função para deletar máquina
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Tem certeza que deseja excluir esta máquina?")) return;
-    setDeletingId(id);
     try {
       await import("@/api/api").then((mod) =>
         mod.default.delete(`/maquinas?id=${id}`)
@@ -79,8 +74,6 @@ export default function CadastroMaquinas() {
       );
     } catch {
       alert("Erro ao excluir máquina.");
-    } finally {
-      setDeletingId(null);
     }
   };
 
@@ -384,19 +377,17 @@ export default function CadastroMaquinas() {
               header: "Ações",
               accessor: (maquina: Maquina) => (
                 <div className="flex gap-2">
-                  <ActionButton
-                    href={`/admin/cadastro/maquinas/editar/${maquina.id}`}
-                    icon={<Edit2 size={14} />}
-                    label="Editar"
-                    variant="secondary"
+                  <EditButton
+                    id={maquina.id}
+                    editRoute="/admin/cadastro/maquinas/editar"
                   />
-                  <ActionButton
-                    onClick={() => handleDelete(maquina.id)}
-                    icon={<Trash2 size={14} />}
-                    label={
-                      deletingId === maquina.id ? "Excluindo..." : "Excluir"
-                    }
-                    variant="secondary"
+
+                  <DeleteButton
+                    id={maquina.id}
+                    onDelete={handleDelete}
+                    confirmText="Deseja realmente excluir esta máquina?"
+                    confirmTitle="Exclusão de Máquina"
+                    itemName={`${maquina.descricao}`}
                   />
                 </div>
               ),

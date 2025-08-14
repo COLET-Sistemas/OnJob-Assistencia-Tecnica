@@ -2,7 +2,6 @@
 import { pecasAPI } from "@/api/api";
 import { Loading } from "@/components/Loading";
 import {
-  ActionButton,
   DataTable,
   ListContainer,
   ListHeader,
@@ -11,8 +10,10 @@ import {
 } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import type { Peca } from "@/types/admin/cadastro/pecas";
-import { Edit2, Package, Trash2 } from "lucide-react";
+import { Package } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DeleteButton } from "@/components/admin/ui/DeleteButton";
+import { EditButton } from "@/components/admin/ui/EditButton";
 
 interface PaginacaoInfo {
   paginaAtual: number;
@@ -32,9 +33,6 @@ const CadastroPecas = () => {
     totalRegistros: 0,
     registrosPorPagina: 20,
   });
-
-  // Estado para controle de exclusão
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const paginacaoRef = useRef(paginacao);
   const dadosCarregados = useRef(false);
@@ -154,12 +152,7 @@ const CadastroPecas = () => {
     );
   }
 
-  // Estado para controle de exclusão
-
-  // Função para deletar peça
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Tem certeza que deseja excluir esta peça?")) return;
-    setDeletingId(id);
     try {
       await import("@/api/api").then((mod) =>
         mod.default.delete(`/pecas?id=${id}`)
@@ -170,26 +163,19 @@ const CadastroPecas = () => {
         filtros
       );
     } catch {
-      alert("Erro ao excluir peça.");
-    } finally {
-      setDeletingId(null);
+      alert("Erro ao excluir essa peça.");
     }
   };
 
-  // Definindo a função para renderizar as ações para cada item
   const renderActions = (peca: Peca) => (
     <div className="flex gap-2">
-      <ActionButton
-        href={`/admin/cadastro/pecas/editar/${peca.id}`}
-        icon={<Edit2 size={14} />}
-        label="Editar"
-        variant="secondary"
-      />
-      <ActionButton
-        onClick={() => handleDelete(peca.id)}
-        icon={<Trash2 size={14} />}
-        label={deletingId === peca.id ? "Excluindo..." : "Excluir"}
-        variant="secondary"
+      <EditButton id={peca.id} editRoute="/admin/cadastro/pecas/editar" />
+      <DeleteButton
+        id={peca.id}
+        onDelete={handleDelete}
+        confirmText="Deseja realmente excluir esta peça?"
+        confirmTitle="Exclusão de Peça"
+        itemName={`${peca.codigo_peca}`}
       />
     </div>
   );
@@ -444,7 +430,7 @@ const CadastroPecas = () => {
                       }
                       className={`relative z-10 inline-flex items-center px-4 py-2 text-sm font-semibold cursor-pointer ${
                         paginacao.paginaAtual === pageNum
-                          ? "bg-[var(--primary)] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+                          ? "bg-[var(--primary)] text-white focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
                           : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
                       }`}
                     >
