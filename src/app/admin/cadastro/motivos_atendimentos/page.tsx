@@ -9,8 +9,9 @@ import {
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { MotivoAtendimento } from "@/types/admin/cadastro/motivos_atendimento";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 
 const CadastroMotivosAtendimento = () => {
   const { setTitle } = useTitle();
@@ -60,7 +61,6 @@ const CadastroMotivosAtendimento = () => {
     refetch,
   } = useDataFetch<MotivoAtendimento[]>(fetchMotivos, [fetchMotivos]);
 
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   if (loading) {
     return (
@@ -93,8 +93,6 @@ const CadastroMotivosAtendimento = () => {
   ];
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Tem certeza que deseja excluir este motivo?")) return;
-    setDeletingId(id);
     try {
       await import("@/api/api").then((mod) =>
         mod.default.delete(`/motivos_atendimento?id=${id}`)
@@ -102,8 +100,6 @@ const CadastroMotivosAtendimento = () => {
       await refetch();
     } catch {
       alert("Erro ao excluir motivo.");
-    } finally {
-      setDeletingId(null);
     }
   };
 
@@ -115,11 +111,14 @@ const CadastroMotivosAtendimento = () => {
         label="Editar"
         variant="secondary"
       />
-      <ActionButton
-        onClick={() => handleDelete(motivo.id)}
-        icon={<Trash2 size={14} />}
-        label={deletingId === motivo.id ? "Excluindo..." : "Excluir"}
-        variant="secondary"
+      <DeleteButton
+        id={motivo.id}
+        onDelete={handleDelete}
+        confirmText="Deseja realmente excluir este motivo de atendimento?"
+        confirmTitle="Exclusão de Motivo de Atendimento"
+        itemName={`${motivo.descricao}`}
+        label="Excluir"
+        className="bg-red-50 hover:bg-red-100 text-red-700"
       />
     </div>
   );
