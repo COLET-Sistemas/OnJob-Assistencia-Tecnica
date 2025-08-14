@@ -30,7 +30,7 @@ const CadastrarPeca = () => {
   const [formData, setFormData] = useState<FormData>({
     codigo_peca: "",
     descricao: "",
-    unidade_medida: "PC", // Valor padrão
+    unidade_medida: "UN",
   });
 
   // Lista de unidades de medida comuns
