@@ -102,7 +102,7 @@ const CadastroMotivosAtendimento = () => {
 
   const renderActions = (motivo: MotivoAtendimento) => (
     <div className="flex gap-2">
-    <EditButton
+      <EditButton
         id={motivo.id}
         editRoute="/admin/cadastro/motivos_atendimentos/editar"
       />
@@ -133,9 +133,16 @@ const CadastroMotivosAtendimento = () => {
   const activeFiltersCount =
     Object.values(filtrosAplicados).filter(Boolean).length;
 
+  // Define o texto do título conforme filtro de inativos
+  const count = motivosAtendimento?.length || 0;
+  const incluirInativos = filtrosAplicados.incluir_inativos === "true";
+  const titulo = incluirInativos
+    ? `Exibindo ${count} motivos de atendimentos`
+    : `Exibindo ${count} motivos de atendimentos ativos`;
+
   return (
     <TableList
-      title="Lista Motivos de Atendimento"
+      title={titulo}
       items={motivosAtendimento || []}
       keyField="id"
       columns={columns}
@@ -151,7 +158,7 @@ const CadastroMotivosAtendimento = () => {
       onFilterToggle={() => setShowFilters(!showFilters)}
       customHeader={
         <ListHeader
-          title="Lista Motivos de Atendimento"
+          title={titulo}
           itemCount={motivosAtendimento?.length || 0}
           onFilterToggle={() => setShowFilters(!showFilters)}
           showFilters={showFilters}

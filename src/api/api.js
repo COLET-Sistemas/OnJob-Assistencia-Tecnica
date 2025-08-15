@@ -1,4 +1,8 @@
-// Configurações da API
+export const ordensServicoAPI = {
+  getPendentes: (params = {}) =>
+    api.get("/ordens_servico", { params: { ...params } }),
+};
+
 const API_CONFIG = {
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
   headers: {

@@ -1,13 +1,21 @@
-'use client'
+"use client";
 
 import {
-  AlertTriangle, Database, Eye, EyeOff, Loader2, Lock, Settings, Shield, User
-} from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+  AlertTriangle,
+  Database,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  Settings,
+  Shield,
+  User,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 export function criptografarSenha(senha: string): string {
-  if (!senha) return '';
+  if (!senha) return "";
 
   const key = 123; // Fixed value for both server and client rendering
 
@@ -59,45 +67,49 @@ interface LoginResponse {
 }
 
 interface LoginRequest {
-  login: string
-  senha_criptografada: string
+  login: string;
+  senha_criptografada: string;
 }
 
 export default function LoginPage() {
-  const [login, setLogin] = useState('')
-  const [senha, setSenha] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loadingAdmin, setLoadingAdmin] = useState(false)
-  const [loadingTech, setLoadingTech] = useState(false)
-  const [error, setError] = useState('')
-  const [isMobile, setIsMobile] = useState(false)
-  const [isMounted, setIsMounted] = useState(false)
+  const [login, setLogin] = useState("");
+  const [senha, setSenha] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loadingAdmin, setLoadingAdmin] = useState(false);
+  const [loadingTech, setLoadingTech] = useState(false);
+  const [error, setError] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  const loginInputRef = useRef<HTMLInputElement>(null)
-  const router = useRouter()
+  const loginInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    setIsMounted(true)
-  }, [])
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const checkDevice = () => {
-      if (typeof window === 'undefined') return;
+      if (typeof window === "undefined") return;
 
       const userAgent = navigator.userAgent.toLowerCase();
-      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+      const isMobileDevice =
+        /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(
+          userAgent
+        );
       const isSmallScreen = window.innerWidth <= 1024;
-      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isTouchDevice =
+        "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
       setIsMobile(isMobileDevice || isSmallScreen || isTouchDevice);
     };
 
     const timer = setTimeout(checkDevice, 100);
-    window.addEventListener('resize', checkDevice);
+    window.addEventListener("resize", checkDevice);
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', checkDevice);
+      window.removeEventListener("resize", checkDevice);
     };
   }, []);
 
@@ -111,137 +123,143 @@ export default function LoginPage() {
     try {
       const loginData: LoginRequest = {
         login,
-        senha_criptografada: criptografarSenha(senha)
-      }
+        senha_criptografada: criptografarSenha(senha),
+      };
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginData)
-      })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(loginData),
+      });
 
-      if (!response.ok) throw new Error('Credenciais inválidas')
+      if (!response.ok) throw new Error("Credenciais inválidas");
 
-      const data: LoginResponse = await response.json()
-      return data
+      const data: LoginResponse = await response.json();
+      return data;
     } catch (error) {
-      console.error('Erro na autenticação:', error)
-      return null
+      console.error("Erro na autenticação:", error);
+      return null;
     }
-  }
+  };
 
-  const hasAdminAccess = (perfil: LoginResponse['perfil']) =>
-    perfil.interno || perfil.gestor || perfil.admin
+  const hasAdminAccess = (perfil: LoginResponse["perfil"]) =>
+    perfil.interno || perfil.gestor || perfil.admin;
 
-  const hasTechAccess = (perfil: LoginResponse['perfil']) =>
-    perfil.tecnico_proprio || perfil.tecnico_terceirizado
+  const hasTechAccess = (perfil: LoginResponse["perfil"]) =>
+    perfil.tecnico_proprio || perfil.tecnico_terceirizado;
 
   const handleAdminAccess = async () => {
     if (!login.trim() || !senha.trim()) {
-      setError('Por favor, preencha todos os campos.')
-      return
+      setError("Por favor, preencha todos os campos.");
+      return;
     }
 
-    setLoadingAdmin(true)
-    setError('')
+    setLoadingAdmin(true);
+    setError("");
 
     try {
-      const authData = await authenticate()
+      const authData = await authenticate();
 
       if (!authData) {
-        setError('Erro na autenticação. Verifique suas credenciais.')
-        return
+        setError("Erro na autenticação. Verifique suas credenciais.");
+        return;
       }
 
       if (hasAdminAccess(authData.perfil)) {
-        localStorage.setItem('usuario', login)
-        localStorage.setItem('email', authData.email)
-        localStorage.setItem('nome_usuario', authData.nome_usuario)
-        localStorage.setItem('perfil', JSON.stringify(authData.perfil))
-        localStorage.setItem('token', authData.token)
+        localStorage.setItem("usuario", login);
+        localStorage.setItem("email", authData.email);
+        localStorage.setItem("nome_usuario", authData.nome_usuario);
+        localStorage.setItem("perfil", JSON.stringify(authData.perfil));
+        localStorage.setItem("token", authData.token);
         if (authData.empresa) {
-          localStorage.setItem('nome_bd', authData.empresa.nome_bd || '')
+          localStorage.setItem("nome_bd", authData.empresa.nome_bd || "");
           const enderecoCompleto = [
             authData.empresa.endereco,
             authData.empresa.numero,
             authData.empresa.bairro,
             authData.empresa.cidade,
-            authData.empresa.uf
-          ].filter(Boolean).join(', ')
-          localStorage.setItem('endereco_empresa', enderecoCompleto)
+            authData.empresa.uf,
+          ]
+            .filter(Boolean)
+            .join(", ");
+          localStorage.setItem("endereco_empresa", enderecoCompleto);
         }
-        router.push('/admin/dashboard')
+        router.push("/admin/dashboard");
       } else {
-        setError('Usuário não tem permissão para acessar o Módulo Administrativo.')
+        setError(
+          "Usuário não tem permissão para acessar o Módulo Administrativo."
+        );
       }
     } catch (error) {
-      console.error('Erro no handleAdminAccess:', error)
-      setError('Erro interno. Tente novamente.')
+      console.error("Erro no handleAdminAccess:", error);
+      setError("Erro interno. Tente novamente.");
     } finally {
-      setLoadingAdmin(false)
+      setLoadingAdmin(false);
     }
-  }
+  };
 
   const handleTechAccess = async () => {
     if (!login.trim() || !senha.trim()) {
-      setError('Por favor, preencha todos os campos.')
-      return
+      setError("Por favor, preencha todos os campos.");
+      return;
     }
 
-    setLoadingTech(true)
-    setError('')
+    setLoadingTech(true);
+    setError("");
 
     try {
-      const authData = await authenticate()
+      const authData = await authenticate();
 
       if (!authData) {
-        setError('Erro na autenticação. Verifique suas credenciais.')
-        return
+        setError("Erro na autenticação. Verifique suas credenciais.");
+        return;
       }
 
       if (hasTechAccess(authData.perfil)) {
-        localStorage.setItem('usuario', login)
-        localStorage.setItem('email', authData.email)
-        localStorage.setItem('nome_usuario', authData.nome_usuario)
-        localStorage.setItem('perfil', JSON.stringify(authData.perfil))
-        localStorage.setItem('token', authData.token)
+        localStorage.setItem("usuario", login);
+        localStorage.setItem("email", authData.email);
+        localStorage.setItem("nome_usuario", authData.nome_usuario);
+        localStorage.setItem("perfil", JSON.stringify(authData.perfil));
+        localStorage.setItem("token", authData.token);
         // Salva informações da empresa se existirem
         if (authData.empresa) {
-          localStorage.setItem('nome_bd', authData.empresa.nome_bd || '')
+          localStorage.setItem("nome_bd", authData.empresa.nome_bd || "");
           const enderecoCompleto = [
             authData.empresa.endereco,
             authData.empresa.numero,
             authData.empresa.bairro,
             authData.empresa.cidade,
-            authData.empresa.uf
-          ].filter(Boolean).join(', ')
-          localStorage.setItem('endereco_empresa', enderecoCompleto)
+            authData.empresa.uf,
+          ]
+            .filter(Boolean)
+            .join(", ");
+          localStorage.setItem("endereco_empresa", enderecoCompleto);
         }
-        router.push('/tecnico/dashboard')
+        router.push("/tecnico/dashboard");
       } else {
-        setError('Usuário não tem permissão para acessar o Módulo Técnico.')
+        setError("Usuário não tem permissão para acessar o Módulo Técnico.");
       }
     } catch (error) {
-      console.error('Erro no handleTechAccess:', error)
-      setError('Erro interno. Tente novamente.')
+      console.error("Erro no handleTechAccess:", error);
+      setError("Erro interno. Tente novamente.");
     } finally {
-      setLoadingTech(false)
+      setLoadingTech(false);
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && login.trim() && senha.trim()) {
-      e.preventDefault()
+    if (e.key === "Enter" && login.trim() && senha.trim()) {
+      e.preventDefault();
 
-      if (loadingAdmin || loadingTech) return
+      if (loadingAdmin || loadingTech) return;
 
       if (isMobile) {
-        handleTechAccess()
+        handleTechAccess();
       } else {
-        handleAdminAccess()
+        handleAdminAccess();
       }
     }
-  }
+  };
 
   if (!isMounted) return null;
 
@@ -266,7 +284,9 @@ export default function LoginPage() {
               </div>
               <div>
                 <h1 className="text-4xl font-bold tracking-tight">OnJob</h1>
-                <p className="text-white/80 text-base font-medium">Sistema de Assistência Técnica</p>
+                <p className="text-white/80 text-base font-medium">
+                  Sistema de Assistência Técnica
+                </p>
               </div>
             </div>
           </div>
@@ -274,13 +294,13 @@ export default function LoginPage() {
           <div className="mb-8">
             <h2 className="text-5xl font-bold mb-6 leading-tight">
               Sistema de
-              <span className="block text-[#75FABD] bg-gradient-to-r from-[#75FABD] to-[#F6C647] bg-clip-text text-transparent">
+              <span className="block text-[#75FABD] bg-gradient-to-r from-[#75FABD] to-[#F6C647] bg-clip-text">
                 Assistencia Técnica
               </span>
             </h2>
             <p className="text-white/90 text-xl leading-relaxed font-light">
-              Plataforma integrada para otimização de processos de trabalho,
-              com módulos administrativos e operacionais modernos.
+              Plataforma integrada para otimização de processos de trabalho, com
+              módulos administrativos e operacionais modernos.
             </p>
           </div>
 
@@ -290,8 +310,13 @@ export default function LoginPage() {
                 <Settings className="w-6 h-6 text-[#7C54BD]" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-white">Módulo Administrativo</h3>
-                <p className="text-white/70 text-sm leading-relaxed">Gestão completa de usuários, criação de ordens de serviço, relatórios avançados e configurações</p>
+                <h3 className="font-semibold text-lg text-white">
+                  Módulo Administrativo
+                </h3>
+                <p className="text-white/70 text-sm leading-relaxed">
+                  Gestão completa de usuários, criação de ordens de serviço,
+                  relatórios avançados e configurações
+                </p>
               </div>
             </div>
 
@@ -300,8 +325,13 @@ export default function LoginPage() {
                 <Shield className="w-6 h-6 text-[#7C54BD]" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-white">Módulo Técnico</h3>
-                <p className="text-white/70 text-sm leading-relaxed">Interface otimizada para técnicos com recursos mobile e operações de campo</p>
+                <h3 className="font-semibold text-lg text-white">
+                  Módulo Técnico
+                </h3>
+                <p className="text-white/70 text-sm leading-relaxed">
+                  Interface otimizada para técnicos com recursos mobile e
+                  operações de campo
+                </p>
               </div>
             </div>
 
@@ -310,15 +340,21 @@ export default function LoginPage() {
                 <Database className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-white">Segurança Avançada</h3>
-                <p className="text-white/70 text-sm leading-relaxed">Criptografia de última geração e controle de acesso multinível</p>
+                <h3 className="font-semibold text-lg text-white">
+                  Segurança Avançada
+                </h3>
+                <p className="text-white/70 text-sm leading-relaxed">
+                  Criptografia de última geração e controle de acesso multinível
+                </p>
               </div>
             </div>
           </div>
 
           <div className="mt-16 pt-8 border-t border-white/20">
             <div className="text-center">
-              <p className="text-white/60 text-sm">Tecnologia que transforma a forma como você trabalha</p>
+              <p className="text-white/60 text-sm">
+                Tecnologia que transforma a forma como você trabalha
+              </p>
             </div>
           </div>
         </div>
@@ -335,7 +371,9 @@ export default function LoginPage() {
               </div>
               <h1 className="text-2xl font-bold text-gray-800">OnJob</h1>
             </div>
-            <h2 className="text-xl font-semibold mb-2 text-gray-800">Sistema de Gestão Profissional</h2>
+            <h2 className="text-xl font-semibold mb-2 text-gray-800">
+              Sistema de Gestão Profissional
+            </h2>
             <p className="text-gray-600">Faça login para continuar</p>
           </div>
 
@@ -345,8 +383,12 @@ export default function LoginPage() {
                 <span className="text-[#7C54BD] font-bold text-lg">O</span>
               </div>
             </div>
-            <h2 className="text-3xl font-bold mb-3 text-gray-800">Bem-vindo de volta</h2>
-            <p className="text-gray-600 text-lg">Acesse sua conta para continuar</p>
+            <h2 className="text-3xl font-bold mb-3 text-gray-800">
+              Bem-vindo de volta
+            </h2>
+            <p className="text-gray-600 text-lg">
+              Acesse sua conta para continuar
+            </p>
           </div>
 
           {error && (
@@ -386,7 +428,7 @@ export default function LoginPage() {
                   <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   onKeyPress={handleKeyPress}
@@ -413,8 +455,15 @@ export default function LoginPage() {
               {!isMobile && (
                 <button
                   onClick={handleAdminAccess}
-                  disabled={loadingAdmin || loadingTech || !login.trim() || !senha.trim()}
-                  className={`w-full text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-[#75FABD]/25 transform hover:-translate-y-1 active:scale-95 bg-[#75FABD] ${loadingAdmin ? 'animate-pulse scale-95' : ''}`}
+                  disabled={
+                    loadingAdmin ||
+                    loadingTech ||
+                    !login.trim() ||
+                    !senha.trim()
+                  }
+                  className={`w-full text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-[#75FABD]/25 transform hover:-translate-y-1 active:scale-95 bg-[#75FABD] ${
+                    loadingAdmin ? "animate-pulse scale-95" : ""
+                  }`}
                 >
                   {loadingAdmin ? (
                     <>
@@ -433,8 +482,12 @@ export default function LoginPage() {
               {/* Botão Técnico */}
               <button
                 onClick={handleTechAccess}
-                disabled={loadingAdmin || loadingTech || !login.trim() || !senha.trim()}
-                className={`w-full text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-[#7C54BD]/25 transform hover:-translate-y-1 active:scale-95 bg-[#7C54BD] ${loadingTech ? 'animate-pulse scale-95' : ''}`}
+                disabled={
+                  loadingAdmin || loadingTech || !login.trim() || !senha.trim()
+                }
+                className={`w-full text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-[#7C54BD]/25 transform hover:-translate-y-1 active:scale-95 bg-[#7C54BD] ${
+                  loadingTech ? "animate-pulse scale-95" : ""
+                }`}
               >
                 {loadingTech ? (
                   <>
@@ -461,15 +514,22 @@ export default function LoginPage() {
 
       <style jsx>{`
         @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-5px); }
-          75% { transform: translateX(5px); }
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+          25% {
+            transform: translateX(-5px);
+          }
+          75% {
+            transform: translateX(5px);
+          }
         }
-        
+
         .animate-shake {
           animation: shake 0.5s ease-in-out;
         }
       `}</style>
     </div>
-  )
+  );
 }

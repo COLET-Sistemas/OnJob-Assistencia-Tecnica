@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   UserPlus,
   Users,
@@ -82,11 +83,12 @@ const cards = [
 
 export default function CadastroCentralPage() {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const router = useRouter();
 
   const filteredCards = cards;
 
   const handleCardClick = (path: string) => {
-    console.log(`Navegando para: ${path}`);
+    router.push(path);
   };
 
   return (

@@ -10,12 +10,16 @@ import {
   UserPlus,
   Users,
   Wrench,
+  FilePlus,
+  ClipboardEdit,
+  FileCog,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 import { LucideIcon } from "lucide-react";
 import packageInfo from "../../../../package.json";
+
 interface MenuItem {
   key: string;
   label: string;
@@ -39,36 +43,42 @@ const menuItems: MenuItem[] = [
   {
     key: "os_aberto",
     label: "OSs em Aberto",
-    icon: Wrench,
-    path: "/os_aberto",
+    icon: FileCog,
+    path: "/admin/os_aberto",
   },
   {
     key: "revisao_os",
     label: "Revisão de OSs",
-    icon: Wrench,
-    path: "/revisao_os",
+    icon: ClipboardEdit,
+    path: "/admin/revisao_os",
   },
   {
     key: "consultas",
     label: "Consultas",
     icon: Search,
-    path: "/consultas",
+    path: "/admin/consultas",
   },
   {
     key: "relatorios",
     label: "Relatórios",
     icon: BarChart3,
-    path: "/relatorios",
+    path: "/admin/relatorios",
   },
+  // {
+  //   key: "cadastros_link",
+  //   label: "Cadastros",
+  //   icon: FilePlus,
+  //   path: "/admin/cadastro",
+  // },
   {
-    key: "cadastros",
+    key: "cadastros_section",
     label: "Cadastros",
     isSection: true,
   },
   {
     key: "central_cadastro",
-    label: "Central Cadastro",
-    icon: Users,
+    label: "Central de Cadastro",
+    icon: FilePlus,
     path: "/admin/cadastro",
     submenu: [
       {
@@ -346,15 +356,26 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           </div>
         )}
 
+        {/* Submenu expandido - Removido max-height para mostrar todos os itens */}
         {hasSubmenu && isExpanded && (
           <div
-            className={`overflow-y-auto max-h-64 transition-all duration-300 ${
+            className={`transition-all duration-300 ease-in-out ${
               level > 0
-                ? "bg-[#7C54BD] rounded-b-lg mx-2 border border-white/10"
-                : ""
-            }`}
+                ? "bg-[#6A4399] rounded-b-lg mx-2 border border-white/5"
+                : "bg-[#6A4399]/30 rounded-lg mx-2 mt-1 border border-white/5"
+            } overflow-hidden`}
+            style={{
+              // Animação suave de altura
+              maxHeight: isExpanded
+                ? `${(item.submenu?.length || 0) * 60}px`
+                : "0px",
+            }}
           >
-            {item.submenu?.map((subItem) => renderMenuItem(subItem, level + 1))}
+            <div className="py-1">
+              {item.submenu?.map((subItem) =>
+                renderMenuItem(subItem, level + 1)
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -362,90 +383,131 @@ export default function Sidebar({ isOpen }: SidebarProps) {
   };
 
   return (
-    <div
-      className={`${
-        isOpen ? "w-72" : "w-0 md:w-20"
-      } transition-all duration-300 bg-[#7C54BD] shadow-xl h-screen flex flex-col overflow-hidden`}
-    >
-      <div className="flex items-center justify-between h-20 border-b border-white/10 bg-[#7C54BD]">
-        <div className="flex items-center space-x-3 px-6 h-full">
-          <div className="w-10 h-10 bg-[#F6C647] rounded-lg flex items-center justify-center shadow-lg ring-2 ring-white/20 flex-shrink-0">
-            <Wrench className="text-[#7C54BD]" size={22} />
-          </div>
-          <div
-            className={`${
-              !isOpen && "hidden md:hidden"
-            } transition-opacity duration-300 ${
-              isOpen ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <h2 className="text-xl font-bold text-[#F6C647]">OnJob</h2>
-            <p className="text-sm text-[#F6C647]">Assistência Técnica</p>
+    <>
+      {/* Estilos CSS personalizados para scrollbar moderna */}
+      <style jsx global>{`
+        .modern-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(246, 198, 71, 0.4) transparent;
+        }
+
+        .modern-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        .modern-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+          border-radius: 10px;
+        }
+
+        .modern-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(
+            180deg,
+            rgba(246, 198, 71, 0.6) 0%,
+            rgba(246, 198, 71, 0.3) 100%
+          );
+          border-radius: 10px;
+          border: none;
+        }
+
+        .modern-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(
+            180deg,
+            rgba(246, 198, 71, 0.8) 0%,
+            rgba(246, 198, 71, 0.5) 100%
+          );
+        }
+
+        .modern-scrollbar::-webkit-scrollbar-corner {
+          background: transparent;
+        }
+      `}</style>
+
+      <div
+        className={`${
+          isOpen ? "w-72" : "w-0 md:w-20"
+        } transition-all duration-300 bg-[#7C54BD] shadow-xl h-screen flex flex-col overflow-hidden`}
+      >
+        <div className="flex items-center justify-between h-20 border-b border-white/10 bg-[#7C54BD]">
+          <div className="flex items-center space-x-3 px-6 h-full">
+            <div className="w-10 h-10 bg-[#F6C647] rounded-lg flex items-center justify-center shadow-lg ring-2 ring-white/20 flex-shrink-0">
+              <Wrench className="text-[#7C54BD]" size={22} />
+            </div>
+            <div
+              className={`${
+                !isOpen && "hidden md:hidden"
+              } transition-opacity duration-300 ${
+                isOpen ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <h2 className="text-xl font-bold text-[#F6C647]">OnJob</h2>
+              <p className="text-sm text-[#F6C647]">Assistência Técnica</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <nav className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent py-4 pr-1">
-        {isOpen && menuItems.map((item) => renderMenuItem(item))}
-        {!isOpen &&
-          menuItems.map((item) =>
-            item.isSection ? (
-              <div key={item.key} className="py-2 flex justify-center">
-                <div className="h-px w-6 bg-white/30"></div>
-              </div>
-            ) : (
-              <div key={item.key} className="relative my-3 group">
-                {item.icon && (
-                  <Link
-                    href={item.path || "#"}
-                    onClick={(e) => !item.path && e.preventDefault()}
-                    className="mx-auto w-12 h-12 flex items-center justify-center"
-                  >
-                    <div
-                      className={`p-2 rounded-lg hover:bg-white/15 transition-colors ${
-                        item.path && pathname.startsWith(item.path)
-                          ? "bg-white/20 text-[#F6C647]"
-                          : "text-[#F6C647]"
-                      }`}
-                    >
-                      {item.icon && <item.icon size={18} />}
-                    </div>
-                  </Link>
-                )}
-                {/* Tooltip */}
-                <div className="absolute left-full ml-2 rounded-md bg-[#7C54BD] border border-white/10 text-white px-2 py-1 text-xs font-medium invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg">
-                  {item.label}
+        <nav className="flex-1 overflow-y-auto modern-scrollbar py-4 pr-1">
+          {isOpen && menuItems.map((item) => renderMenuItem(item))}
+          {!isOpen &&
+            menuItems.map((item) =>
+              item.isSection ? (
+                <div key={item.key} className="py-2 flex justify-center">
+                  <div className="h-px w-6 bg-white/30"></div>
                 </div>
-              </div>
-            )
-          )}
-      </nav>
+              ) : (
+                <div key={item.key} className="relative my-3 group">
+                  {item.icon && (
+                    <Link
+                      href={item.path || "#"}
+                      onClick={(e) => !item.path && e.preventDefault()}
+                      className="mx-auto w-12 h-12 flex items-center justify-center"
+                    >
+                      <div
+                        className={`p-2 rounded-lg hover:bg-white/15 transition-colors ${
+                          item.path && pathname.startsWith(item.path)
+                            ? "bg-white/20 text-[#F6C647]"
+                            : "text-[#F6C647]"
+                        }`}
+                      >
+                        {item.icon && <item.icon size={18} />}
+                      </div>
+                    </Link>
+                  )}
+                  {/* Tooltip */}
+                  <div className="absolute left-full ml-2 rounded-md bg-[#7C54BD] border border-white/10 text-white px-2 py-1 text-xs font-medium invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg">
+                    {item.label}
+                  </div>
+                </div>
+              )
+            )}
+        </nav>
 
-      <div className="border-t border-white/10 p-5 mt-auto">
-        {isOpen ? (
-          <div className="flex items-center space-x-3 bg-[#7C54BD] p-3 rounded-lg border border-white/20">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <Cog size={18} className="text-[#F6C647]" />
+        <div className="border-t border-white/10 p-5 mt-auto">
+          {isOpen ? (
+            <div className="flex items-center space-x-3 bg-[#7C54BD] p-3 rounded-lg border border-white/20">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <Cog size={18} className="text-[#F6C647]" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white/80">
+                  {typeof window !== "undefined"
+                    ? localStorage.getItem("nome_bd") || "Nome BD não definido"
+                    : "Nome BD não disponível"}
+                </p>
+                <p className="text-xs font-medium text-white">
+                  Versão {packageInfo.version}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-white/80">
-                {typeof window !== "undefined"
-                  ? localStorage.getItem("nome_bd") || "Nome BD não definido"
-                  : "Nome BD não disponível"}
-              </p>
-              <p className="text-xs font-medium text-white">
-                Versão {packageInfo.version}
-              </p>
+          ) : (
+            <div className="flex items-center justify-center">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <Cog size={18} className="text-[#F6C647]" />
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <Cog size={18} className="text-[#F6C647]" />
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
