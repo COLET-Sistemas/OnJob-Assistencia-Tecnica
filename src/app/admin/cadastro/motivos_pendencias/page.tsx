@@ -1,22 +1,18 @@
 "use client";
 import { Loading } from "@/components/Loading";
-import {
-  ListHeader,
-  TableList,
-  TableStatusColumn,
-} from "@/components/admin/common";
+import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { MotivoPendencia } from "@/types/admin/cadastro/motivos_pendencia";
 import { useCallback, useEffect, useState } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
-
+import PageHeader from "@/components/admin/ui/PageHeader";
 const CadastroMotivosPendencia = () => {
   const { setTitle } = useTitle();
 
   useEffect(() => {
-    setTitle("Motivos de Pendência");
+    setTitle("Motivos de Pendências");
   }, [setTitle]);
 
   const [showFilters, setShowFilters] = useState(false);
@@ -133,34 +129,38 @@ const CadastroMotivosPendencia = () => {
   const activeFiltersCount =
     Object.values(filtrosAplicados).filter(Boolean).length;
 
+  const itemCount = motivos ? motivos.length : 0;
   return (
-    <TableList
-      title="Lista Motivos de Pendência"
-      items={motivos || []}
-      keyField="id"
-      columns={columns}
-      renderActions={renderActions}
-      newItemLink="/admin/cadastro/motivos_pendencias/novo"
-      newItemLabel="Novo Motivo"
-      showFilter={showFilters}
-      filterOptions={filterOptions}
-      filterValues={filtrosPainel}
-      onFilterChange={handleFiltroChange}
-      onClearFilters={limparFiltros}
-      onApplyFilters={aplicarFiltros}
-      onFilterToggle={() => setShowFilters(!showFilters)}
-      customHeader={
-        <ListHeader
-          title="Lista Motivos de Pendência"
-          itemCount={motivos?.length || 0}
-          onFilterToggle={() => setShowFilters(!showFilters)}
-          showFilters={showFilters}
-          newButtonLink="/admin/cadastro/motivos_pendencias/novo"
-          newButtonLabel="Novo Motivo"
-          activeFiltersCount={activeFiltersCount}
-        />
-      }
-    />
+    <>
+      <PageHeader
+        title="Motivos de Pendências"
+        config={{
+          type: "list",
+          itemCount: itemCount,
+          onFilterToggle: () => setShowFilters(!showFilters),
+          showFilters: showFilters,
+          activeFiltersCount: activeFiltersCount,
+          newButton: {
+            label: "Novo Motivo",
+            link: "/admin/cadastro/motivos_pendencias/novo",
+          },
+        }}
+      />
+      <TableList
+        title="Lista Motivos de Pendência"
+        items={motivos || []}
+        keyField="id"
+        columns={columns}
+        renderActions={renderActions}
+        showFilter={showFilters}
+        filterOptions={filterOptions}
+        filterValues={filtrosPainel}
+        onFilterChange={handleFiltroChange}
+        onClearFilters={limparFiltros}
+        onApplyFilters={aplicarFiltros}
+        onFilterToggle={() => setShowFilters(!showFilters)}
+      />
+    </>
   );
 };
 

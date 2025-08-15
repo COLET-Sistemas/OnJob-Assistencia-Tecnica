@@ -110,11 +110,7 @@ export default function Navbar({
         <div className="flex items-center gap-4 px-2">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="focus:outline-none text-[#374151] cursor-pointer "
-            aria-label={
-              sidebarOpen ? "Fechar menu lateral" : "Abrir menu lateral"
-            }
-            title={sidebarOpen ? "Fechar menu lateral" : "Abrir menu lateral"}
+            className="focus:outline-none text-[#374151]  transition-colors cursor-pointer "
             style={{
               background: "none",
               border: "none",
@@ -164,7 +160,7 @@ export default function Navbar({
           </div>
           <button
             onClick={toggleFullScreen}
-            className="text-gray-700 hover:text-[#7C54BD] transition-colors p-1.5 hover:bg-gray-100 rounded-full cursor-pointer"
+            className="text-gray-700 hover:text-[#7C54BD] transition-colors p-1.5 hover:bg-gray-200 rounded-full cursor-pointer"
             aria-label={isFullScreen ? "Sair da tela cheia" : "Tela cheia"}
             title={isFullScreen ? "Sair da tela cheia" : "Tela cheia"}
           >
@@ -174,52 +170,74 @@ export default function Navbar({
               <Maximize size={20} className="cursor-pointer" />
             )}
           </button>
+
+          {/* Seção do Usuário Melhorada */}
           <div className="flex items-center space-x-3 pl-4 border-l border-gray-300 relative">
-            <div className="w-9 h-9 bg-[#7C54BD] rounded-full flex items-center justify-center shadow-lg ring-2 ring-gray-200">
-              <span className="text-white font-bold text-sm">
+            {/* Avatar do Usuário */}
+            <div className="w-10 h-10 bg-gradient-to-br from-[#7C54BD] to-[#9333ea] rounded-full flex items-center justify-center shadow-lg ring-1 ring-gray-200/50 transition-all duration-300 hover:shadow-xl">
+              <span className="text-white font-semibold text-base select-none flex items-center justify-center w-full h-full">
                 {nomeUsuario.charAt(0).toUpperCase()}
               </span>
             </div>
+
+            {/* Nome e Dropdown */}
             <div
-              className="hidden sm:flex items-center cursor-pointer user-profile-dropdown"
+              className={`hidden sm:flex items-center cursor-pointer user-profile-dropdown group transition-all duration-200 ease-out hover:bg-gray-50/80 rounded-lg px-2 py-2 ${
+                dropdownOpen ? "bg-gray-50/80" : ""
+              }`}
               onClick={() => setDropdownOpen(!dropdownOpen)}
             >
-              <p className="text-sm font-medium text-gray-800 mr-1">
+              <p className="text-md font-bold text-gray-800 mr-2 group-hover:text-[#7C54BD] transition-colors duration-200">
                 {nomeUsuario}
               </p>
               <ChevronDown
-                size={14}
-                className={`text-gray-600 transition-transform ${
-                  dropdownOpen ? "transform rotate-180" : ""
+                size={16}
+                className={`text-gray-500 transition-all duration-300 ease-out group-hover:text-[#7C54BD] ${
+                  dropdownOpen ? "transform rotate-180 text-[#7C54BD]" : ""
                 }`}
               />
             </div>
 
-            {/* Dropdown Menu */}
-            {dropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
+            {/* Dropdown Menu Clean */}
+            <div
+              className={`absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200/60 overflow-hidden z-20 transition-all duration-250 ease-out origin-top-right ${
+                dropdownOpen
+                  ? "opacity-100 scale-100 translate-y-0"
+                  : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
+              }`}
+            >
+              <div className="py-1">
                 <button
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7C54BD] transition-all duration-150 cursor-pointer group"
                   onClick={() => {
                     setDropdownOpen(false);
                     console.log("Ir para perfil");
                   }}
                 >
-                  <UserCircle size={16} className="mr-2 cursor-pointer" />
-                  Perfil
+                  <UserCircle
+                    size={18}
+                    className="mr-3 text-gray-500 group-hover:text-[#7C54BD] transition-colors duration-150"
+                  />
+                  <span className="font-medium">Perfil</span>
                 </button>
+
+                <div className="border-t border-gray-100 my-1"></div>
+
                 <button
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-150 cursor-pointer group"
                   onClick={() => {
                     setDropdownOpen(false);
                     handleLogout();
                   }}
                 >
-                  <LogOut size={16} className="mr-2 cursor-pointer" />
-                  Sair
+                  <LogOut
+                    size={18}
+                    className="mr-3 text-gray-500 group-hover:text-red-600 transition-colors duration-150"
+                  />
+                  <span className="font-medium">Sair</span>
                 </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

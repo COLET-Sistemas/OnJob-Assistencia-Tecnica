@@ -1,16 +1,13 @@
 "use client";
 import { Loading } from "@/components/Loading";
-import {
-  ListHeader,
-  TableList,
-  TableStatusColumn,
-} from "@/components/admin/common";
+import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { MotivoAtendimento } from "@/types/admin/cadastro/motivos_atendimento";
 import { useCallback, useEffect, useState } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
+import PageHeader from "@/components/admin/ui/PageHeader";
 
 const CadastroMotivosAtendimento = () => {
   const { setTitle } = useTitle();
@@ -133,41 +130,39 @@ const CadastroMotivosAtendimento = () => {
   const activeFiltersCount =
     Object.values(filtrosAplicados).filter(Boolean).length;
 
-  // Define o texto do título conforme filtro de inativos
-  const count = motivosAtendimento?.length || 0;
-  const incluirInativos = filtrosAplicados.incluir_inativos === "true";
-  const titulo = incluirInativos
-    ? `Exibindo ${count} motivos de atendimentos`
-    : `Exibindo ${count} motivos de atendimentos ativos`;
+  const itemCount = motivosAtendimento ? motivosAtendimento.length : 0;
 
   return (
-    <TableList
-      title={titulo}
-      items={motivosAtendimento || []}
-      keyField="id"
-      columns={columns}
-      renderActions={renderActions}
-      newItemLink="/admin/cadastro/motivos_atendimentos/novo"
-      newItemLabel="Novo Motivo"
-      showFilter={showFilters}
-      filterOptions={filterOptions}
-      filterValues={filtrosPainel}
-      onFilterChange={handleFiltroChange}
-      onClearFilters={limparFiltros}
-      onApplyFilters={aplicarFiltros}
-      onFilterToggle={() => setShowFilters(!showFilters)}
-      customHeader={
-        <ListHeader
-          title={titulo}
-          itemCount={motivosAtendimento?.length || 0}
-          onFilterToggle={() => setShowFilters(!showFilters)}
-          showFilters={showFilters}
-          newButtonLink="/admin/cadastro/motivos_atendimentos/novo"
-          newButtonLabel="Novo Motivo"
-          activeFiltersCount={activeFiltersCount}
-        />
-      }
-    />
+    <>
+      <PageHeader
+        title="Motivos de Atendimentos"
+        config={{
+          type: "list",
+          itemCount: itemCount,
+          onFilterToggle: () => setShowFilters(!showFilters),
+          showFilters: showFilters,
+          activeFiltersCount: activeFiltersCount,
+          newButton: {
+            label: "Novo Motivo",
+            link: "/admin/cadastro/motivos_atendimentos/novo",
+          },
+        }}
+      />
+      <TableList
+        title="Lista Motivos de Atendimento"
+        items={motivosAtendimento || []}
+        keyField="id"
+        columns={columns}
+        renderActions={renderActions}
+        showFilter={showFilters}
+        filterOptions={filterOptions}
+        filterValues={filtrosPainel}
+        onFilterChange={handleFiltroChange}
+        onClearFilters={limparFiltros}
+        onApplyFilters={aplicarFiltros}
+        onFilterToggle={() => setShowFilters(!showFilters)}
+      />
+    </>
   );
 };
 
