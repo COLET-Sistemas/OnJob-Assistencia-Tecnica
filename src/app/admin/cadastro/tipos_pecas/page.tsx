@@ -94,7 +94,7 @@ const CadastroTiposPecas = () => {
   const handleDelete = async (id: number) => {
     try {
       await import("@/api/api").then((mod) =>
-        mod.default.delete(`/tipos_pecas?id_tipo_peca=${id}`)
+        mod.default.delete(`/tipos_pecas?id=${id}`)
       );
       await refetch();
     } catch {
