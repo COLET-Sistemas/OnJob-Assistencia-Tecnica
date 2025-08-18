@@ -1,3 +1,31 @@
+// Tipos de Peças API
+export const tiposPecasAPI = {
+  getAll: (params = {}) => {
+    const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
+    return api.get("/tipos_pecas", {
+      params: {
+        nro_pagina,
+        qtde_registros,
+        ...filtros,
+      },
+    });
+  },
+  getAllWithInactive: (params = {}) => {
+    const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
+    return api.get("/tipos_pecas", {
+      params: {
+        incluir_inativos: "S",
+        nro_pagina,
+        qtde_registros,
+        ...filtros,
+      },
+    });
+  },
+  getById: (id) => api.get("/tipos_pecas", { params: { id } }),
+  create: (tipoPecaData) => api.post("/tipos_pecas", tipoPecaData),
+  update: (id, tipoPecaData) => api.put(`/tipos_pecas/${id}`, tipoPecaData),
+  delete: (id) => api.delete(`/tipos_pecas/${id}`),
+};
 export const ordensServicoAPI = {
   getPendentes: (params = {}) =>
     api.get("/ordens_servico", { params: { ...params } }),

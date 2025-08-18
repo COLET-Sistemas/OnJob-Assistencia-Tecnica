@@ -1,6 +1,6 @@
 "use client";
 
-import { motivosAtendimentoAPI } from "@/api/api";
+import { tiposPecasAPI } from "@/api/api";
 import { useTitle } from "@/context/TitleContext";
 import { Save, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import PageHeader from "@/components/admin/ui/PageHeader";
 
+// Interfaces separadas para melhor organização
 interface FormData {
   descricao: string;
 }
@@ -25,9 +26,9 @@ interface FormValidation {
 // Constants para evitar magic numbers e facilitar manutenção
 const MESSAGES = {
   required: "Este campo é obrigatório",
-  success: "Motivo de atendimento cadastrado com sucesso!",
+  success: "Tipo de peça cadastrado com sucesso!",
   error:
-    "Erro ao cadastrar motivo de atendimento. Verifique os dados e tente novamente.",
+    "Erro ao cadastrar tipo de peça. Verifique os dados e tente novamente.",
 } as const;
 
 // Hook customizado para validação simplificada
@@ -114,7 +115,7 @@ const InputField: React.FC<InputFieldProps> = ({
     <div className="space-y-1">
       <label
         htmlFor={inputId}
-        className="block text-sm font-medium text-slate-700 transition-colors"
+        className="block text-md font-medium text-slate-700 transition-colors"
       >
         {label}
         {required && (
@@ -163,7 +164,7 @@ const InputField: React.FC<InputFieldProps> = ({
 };
 
 // Componente principal
-const CadastrarMotivoAtendimento: React.FC = () => {
+const CadastrarTipoPeca: React.FC = () => {
   const router = useRouter();
   const { setTitle } = useTitle();
   const { validateForm } = useFormValidation();
@@ -179,7 +180,7 @@ const CadastrarMotivoAtendimento: React.FC = () => {
 
   // Definir título da página e focar no input
   useEffect(() => {
-    setTitle("Motivo de Atendimento");
+    setTitle("Tipos de Peças");
     descricaoInputRef.current?.focus();
   }, [setTitle]);
 
@@ -220,23 +221,23 @@ const CadastrarMotivoAtendimento: React.FC = () => {
       setIsSubmitting(true);
 
       try {
-        await motivosAtendimentoAPI.create({
+        await tiposPecasAPI.create({
           descricao: formData.descricao.trim(),
         });
 
-        router.push("/admin/cadastro/motivos_atendimentos");
+        router.push("/admin/cadastro/tipos_pecas");
 
         showSuccess(
           "Cadastro realizado!",
-          "Motivo de atendimento cadastrado com sucesso."
+          "Tipo de peça cadastrado com sucesso."
         );
       } catch (error) {
-        console.error("Erro ao cadastrar motivo de atendimento:", error);
+        console.error("Erro ao cadastrar tipo de peça:", error);
 
         // Mostrar toast de erro
         showError(
           "Erro ao cadastrar",
-          "Não foi possível cadastrar o motivo de atendimento. Tente novamente."
+          "Não foi possível cadastrar o tipo de peça. Tente novamente."
         );
       } finally {
         setIsSubmitting(false);
@@ -248,11 +249,11 @@ const CadastrarMotivoAtendimento: React.FC = () => {
   return (
     <>
       <PageHeader
-        title="Cadastro de Motivo de Atendimento"
+        title="Cadastro de Tipo de Peça"
         config={{
           type: "form",
-          backLink: "/admin/cadastro/motivos_atendimentos",
-          backLabel: "Voltar para lista de motivos",
+          backLink: "/admin/cadastro/tipos_pecas",
+          backLabel: "Voltar para lista de tipos",
         }}
       />
 
@@ -267,21 +268,20 @@ const CadastrarMotivoAtendimento: React.FC = () => {
               <header className="mb-6">
                 <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
                   <div className="w-2 h-2 bg-[var(--primary)] rounded-full" />
-                  Informações do Motivo
+                  Informações do Tipo de Peça
                 </h2>
                 <p className="text-slate-600 text-sm mt-1">
-                  Preencha os dados abaixo para cadastrar o motivo de
-                  atendimento
+                  Preencha os dados abaixo para cadastrar o tipo de peça.
                 </p>
               </header>
 
               <div className="space-y-6">
                 <InputField
-                  label="Descrição do Motivo"
+                  label="Descrição do Tipo de Peça"
                   name="descricao"
                   value={formData.descricao}
                   error={formErrors.descricao}
-                  placeholder="Ex: Solicitação de informações, Reclamação, Sugestão..."
+                  placeholder="Ex: Rebimbocas, Válvulas, Parafusos..."
                   required
                   onChange={handleInputChange}
                   inputRef={descricaoInputRef}
@@ -294,7 +294,7 @@ const CadastrarMotivoAtendimento: React.FC = () => {
           <footer className="bg-slate-50 px-8 py-6 border-t border-slate-200">
             <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
               <Link
-                href="/admin/cadastro/motivos_atendimentos"
+                href="/admin/cadastro/tipos_pecas"
                 className="px-6 py-3 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-colors text-center font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
               >
                 Cancelar
@@ -303,7 +303,7 @@ const CadastrarMotivoAtendimento: React.FC = () => {
               <LoadingButton
                 type="submit"
                 isLoading={isSubmitting}
-                className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
+                className="bg-violet-600 text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
                 <span className="flex items-center justify-center gap-2">
                   <Save className="h-4 w-4" />
@@ -318,4 +318,4 @@ const CadastrarMotivoAtendimento: React.FC = () => {
   );
 };
 
-export default CadastrarMotivoAtendimento;
+export default CadastrarTipoPeca;

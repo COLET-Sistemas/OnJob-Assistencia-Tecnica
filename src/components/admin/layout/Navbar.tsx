@@ -23,7 +23,7 @@ export default function Navbar({
   title,
 }: NavbarProps) {
   const titleContext = useTitle();
-  const displayTitle = titleContext.title || title || "Dashboard";
+  const displayTitle = titleContext.title || title || "";
   const [nomeUsuario, setNomeUsuario] = useState("Usuário");
 
   useEffect(() => {

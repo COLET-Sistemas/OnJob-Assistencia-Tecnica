@@ -6,6 +6,7 @@ import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import PageHeader from "@/components/admin/ui/PageHeader";
 
 // Interface para o formulário
 interface FormData {
@@ -21,19 +22,16 @@ const CadastrarPeca = () => {
   const [savingData, setSavingData] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Set page title when component mounts
   useEffect(() => {
-    setTitle("Cadastro de Peça");
+    setTitle("Peças");
   }, [setTitle]);
 
-  // Inicializar formulário com valores padrão
   const [formData, setFormData] = useState<FormData>({
     codigo_peca: "",
     descricao: "",
     unidade_medida: "UN",
   });
 
-  // Lista de unidades de medida comuns
   const unidadesMedida = [
     "PC",
     "UN",
@@ -122,6 +120,14 @@ const CadastrarPeca = () => {
   return (
     <div className="px-2">
       <div className="max-w-8xl mx-auto">
+        <PageHeader
+          title="Cadastro de Peças"
+          config={{
+            type: "form",
+            backLink: "/admin/cadastro/pecas",
+            backLabel: "Voltar para lista de peças",
+          }}
+        />
         <div className="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl border-t-4 border-[var(--primary)]">
           <form onSubmit={handleSubmit} className="p-8">
             {/* Se houver erros, mostrar alerta */}
@@ -139,10 +145,8 @@ const CadastrarPeca = () => {
             )}
 
             {/* Informações básicas da peça */}
+
             <div className="mb-6">
-              <h2 className="text-lg font-semibold text-[var(--primary)] border-b-2 border-[var(--secondary-yellow)] pb-2 inline-block mb-4">
-                Informações da Peça
-              </h2>
               <div className="flex flex-wrap gap-4">
                 {/* Código da peça */}
                 <div className="w-[20%]">

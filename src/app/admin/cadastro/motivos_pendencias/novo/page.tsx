@@ -267,7 +267,7 @@ const CadastrarMotivoPendencia: React.FC = () => {
             <section>
               <header className="mb-6">
                 <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-[var(--secondary-yellow)] rounded-full" />
+                  <div className="w-2 h-2 bg-[var(--primary)] rounded-full" />
                   Informações do Motivo
                 </h2>
                 <p className="text-slate-600 text-sm mt-1">

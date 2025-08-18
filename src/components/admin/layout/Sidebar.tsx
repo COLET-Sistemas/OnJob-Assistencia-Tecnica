@@ -2,17 +2,21 @@ import {
   BarChart3,
   ChevronDown,
   ChevronRight,
+  AlertTriangle,
   Cog,
+  ClipboardList,
   Home,
   MapPin,
-  Package,
+  Settings,
   Search,
   UserPlus,
-  Users,
+  Tag,
   Wrench,
   FilePlus,
   ClipboardEdit,
   FileCog,
+  UsersRound,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -90,25 +94,25 @@ const menuItems: MenuItem[] = [
       {
         key: "maquinas",
         label: "Máquinas",
-        icon: Cog,
+        icon: Settings,
         path: "/admin/cadastro/maquinas",
       },
       {
         key: "motivos_atendimentos",
         label: "Motivos Atendimentos",
-        icon: Package,
+        icon: ClipboardList,
         path: "/admin/cadastro/motivos_atendimentos",
       },
       {
         key: "motivos_pendencias",
         label: "Motivos Pendências",
-        icon: Package,
+        icon: AlertTriangle,
         path: "/admin/cadastro/motivos_pendencias",
       },
       {
         key: "pecas",
         label: "Peças",
-        icon: Package,
+        icon: Wrench,
         path: "/admin/cadastro/pecas",
       },
       {
@@ -118,15 +122,21 @@ const menuItems: MenuItem[] = [
         path: "/admin/cadastro/regioes",
       },
       {
+        key: "tipos_pecas",
+        label: "Tipos Peças",
+        icon: Tag,
+        path: "/admin/cadastro/tipos_pecas",
+      },
+      {
         key: "usuarios",
         label: "Usuários",
-        icon: Users,
+        icon: User,
         path: "/admin/cadastro/usuarios",
       },
       {
         key: "usuarios_regioes",
         label: "Usuários x Regiões",
-        icon: MapPin,
+        icon: UsersRound,
         path: "/admin/cadastro/usuarios_regioes",
       },
     ],
@@ -361,8 +371,8 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           <div
             className={`transition-all duration-300 ease-in-out ${
               level > 0
-                ? "bg-[#6A4399] rounded-b-lg mx-2 border border-white/5"
-                : "bg-[#6A4399]/30 rounded-lg mx-2 mt-1 border border-white/5"
+                ? "bg-[#6A4399] rounded-b-lg mx-1 border border-white/5"
+                : "bg-[#6A4399]/30 rounded-lg mx-1 mt-1 border border-white/5"
             } overflow-hidden`}
             style={{
               // Animação suave de altura
@@ -384,7 +394,6 @@ export default function Sidebar({ isOpen }: SidebarProps) {
 
   return (
     <>
-      {/* Estilos CSS personalizados para scrollbar moderna */}
       <style jsx global>{`
         .modern-scrollbar {
           scrollbar-width: thin;
@@ -482,7 +491,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
             )}
         </nav>
 
-        <div className="border-t border-white/10 p-5 mt-auto">
+        <div className="border-t border-white/10 p-4 mt-auto">
           {isOpen ? (
             <div className="flex items-center space-x-3 bg-[#7C54BD] p-3 rounded-lg border border-white/20">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">

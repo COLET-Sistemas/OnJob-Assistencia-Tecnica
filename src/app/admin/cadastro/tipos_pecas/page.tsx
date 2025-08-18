@@ -3,17 +3,18 @@ import { Loading } from "@/components/Loading";
 import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
-import type { MotivoAtendimento } from "@/types/admin/cadastro/motivos_atendimento";
+import type { TipoPeca } from "@/types/admin/cadastro/tipos_pecas";
 import { useCallback, useEffect, useState } from "react";
+import api from "@/api/httpClient";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 
-const CadastroMotivosAtendimento = () => {
+const CadastroTiposPecas = () => {
   const { setTitle } = useTitle();
 
   useEffect(() => {
-    setTitle("Motivos de Atendimento");
+    setTitle("Tipos de Peças");
   }, [setTitle]);
 
   const [showFilters, setShowFilters] = useState(false);
@@ -39,29 +40,33 @@ const CadastroMotivosAtendimento = () => {
     setShowFilters(false);
   }, [filtrosPainel]);
 
-  const fetchMotivos = useCallback(async () => {
+  const fetchTiposPecas = useCallback(async () => {
     const params: Record<string, string> = {};
     if (filtrosAplicados.descricao)
       params.descricao = filtrosAplicados.descricao;
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
-    return await import("@/api/api").then((mod) =>
-      mod.default.get("/motivos_atendimento", { params })
+
+    const response = await api.get<{ tipos_pecas: TipoPeca[] }>(
+      "/tipos_pecas",
+      { params }
     );
+    console.log("API tipos_pecas response", response);
+    return response.tipos_pecas;
   }, [filtrosAplicados]);
 
   const {
-    data: motivosAtendimento,
+    data: tiposPecas,
     loading,
     refetch,
-  } = useDataFetch<MotivoAtendimento[]>(fetchMotivos, [fetchMotivos]);
+  } = useDataFetch<TipoPeca[]>(fetchTiposPecas, [fetchTiposPecas]);
 
   if (loading) {
     return (
       <Loading
         fullScreen={true}
         preventScroll={false}
-        text="Carregando motivos de atendimento..."
+        text="Carregando tipos de peças..."
         size="large"
       />
     );
@@ -70,18 +75,18 @@ const CadastroMotivosAtendimento = () => {
   const columns = [
     {
       header: "Descrição",
-      accessor: "descricao" as keyof MotivoAtendimento,
-      render: (motivo: MotivoAtendimento) => (
+      accessor: "descricao" as keyof TipoPeca,
+      render: (tipoPeca: TipoPeca) => (
         <div className="text-sm font-semibold text-gray-900">
-          {motivo.descricao}
+          {tipoPeca.descricao}
         </div>
       ),
     },
     {
       header: "Status",
-      accessor: "situacao" as keyof MotivoAtendimento,
-      render: (motivo: MotivoAtendimento) => (
-        <TableStatusColumn status={motivo.situacao} />
+      accessor: "situacao" as keyof TipoPeca,
+      render: (tipoPeca: TipoPeca) => (
+        <TableStatusColumn status={tipoPeca.situacao} />
       ),
     },
   ];
@@ -89,26 +94,26 @@ const CadastroMotivosAtendimento = () => {
   const handleDelete = async (id: number) => {
     try {
       await import("@/api/api").then((mod) =>
-        mod.default.delete(`/motivos_atendimento?id=${id}`)
+        mod.default.delete(`/tipos_pecas?id_tipo_peca=${id}`)
       );
       await refetch();
     } catch {
-      alert("Erro ao excluir motivo.");
+      alert("Erro ao excluir tipo de peça.");
     }
   };
 
-  const renderActions = (motivo: MotivoAtendimento) => (
+  const renderActions = (tipoPeca: TipoPeca) => (
     <div className="flex gap-2">
       <EditButton
-        id={motivo.id}
-        editRoute="/admin/cadastro/motivos_atendimentos/editar"
+        id={tipoPeca.id_tipo_peca}
+        editRoute="/admin/cadastro/tipos_pecas/editar"
       />
       <DeleteButton
-        id={motivo.id}
+        id={tipoPeca.id_tipo_peca}
         onDelete={handleDelete}
-        confirmText="Deseja realmente excluir este motivo de atendimento?"
-        confirmTitle="Exclusão de Motivo de Atendimento"
-        itemName={`${motivo.descricao}`}
+        confirmText="Deseja realmente excluir este tipo de peça?"
+        confirmTitle="Exclusão de Tipo de Peça"
+        itemName={`${tipoPeca.descricao}`}
       />
     </div>
   );
@@ -130,12 +135,12 @@ const CadastroMotivosAtendimento = () => {
   const activeFiltersCount =
     Object.values(filtrosAplicados).filter(Boolean).length;
 
-  const itemCount = motivosAtendimento ? motivosAtendimento.length : 0;
+  const itemCount = tiposPecas ? tiposPecas.length : 0;
 
   return (
     <>
       <PageHeader
-        title="Lista de Motivos de Atendimentos"
+        title="Lista de Tipos de Peças"
         config={{
           type: "list",
           itemCount: itemCount,
@@ -143,15 +148,15 @@ const CadastroMotivosAtendimento = () => {
           showFilters: showFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
-            label: "Novo Motivo",
-            link: "/admin/cadastro/motivos_atendimentos/novo",
+            label: "Novo Tipo",
+            link: "/admin/cadastro/tipos_pecas/novo",
           },
         }}
       />
       <TableList
-        title="Lista Motivos de Atendimento"
-        items={motivosAtendimento || []}
-        keyField="id"
+        title="Lista Tipos de Peças"
+        items={tiposPecas || []}
+        keyField="id_tipo_peca"
         columns={columns}
         renderActions={renderActions}
         showFilter={showFilters}
@@ -166,4 +171,4 @@ const CadastroMotivosAtendimento = () => {
   );
 };
 
-export default CadastroMotivosAtendimento;
+export default CadastroTiposPecas;

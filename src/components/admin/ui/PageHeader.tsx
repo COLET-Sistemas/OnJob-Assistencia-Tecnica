@@ -4,7 +4,6 @@ import { Filter, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
-// Tipo para configuração de lista
 interface ListConfig {
   type: "list";
   itemCount: number;
@@ -18,14 +17,12 @@ interface ListConfig {
   };
 }
 
-// Tipo para configuração de formulário (cadastro/edição)
 interface FormConfig {
   type: "form";
   backLink: string;
   backLabel?: string;
 }
 
-// Props base do componente
 interface PageHeaderProps {
   title: string;
   config: ListConfig | FormConfig;
@@ -36,7 +33,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
   if (config.type === "list") {
     return (
       <header className="mb-5">
-        <div className="p-5 rounded-xl shadow-sm border border-slate-200 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/20">
+        <div className="p-5 rounded-xl shadow-sm border border-slate-200 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/20 min-h-[88px]">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center">
               <span className="bg-[var(--primary)] h-6 w-1 rounded-full mr-3"></span>
@@ -95,8 +92,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
   // Renderizar header para formulários (cadastro/edição)
   return (
     <header className="mb-5">
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-        <div className="flex items-center gap-4">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--primary)]/20 p-5 min-h-[88px] flex items-center">
+        <div className="flex items-center gap-4 w-full">
           <Link
             href={config.backLink}
             className="p-2 text-slate-600 hover:text-[var(--primary)] hover:bg-violet-50 rounded-lg transition-colors"
@@ -104,7 +101,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div>
+          <div className="flex-1 flex items-center">
             <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center">
               <span className="bg-[var(--primary)] h-6 w-1 rounded-full mr-3"></span>
               {title}
