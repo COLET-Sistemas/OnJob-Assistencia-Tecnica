@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from "react";
 export function criptografarSenha(senha: string): string {
   if (!senha) return "";
 
-  const key = 123; // Fixed value for both server and client rendering
+  const key = 123; 
 
   const hexResult = [];
   let result = "";

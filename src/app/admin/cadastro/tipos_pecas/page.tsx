@@ -51,7 +51,6 @@ const CadastroTiposPecas = () => {
       "/tipos_pecas",
       { params }
     );
-    console.log("API tipos_pecas response", response);
     return response.tipos_pecas;
   }, [filtrosAplicados]);
 

@@ -122,6 +122,12 @@ const menuItems: MenuItem[] = [
         path: "/admin/cadastro/regioes",
       },
       {
+        key: "usuarios_regioes",
+        label: "Técnicos x Regiões",
+        icon: UsersRound,
+        path: "/admin/cadastro/usuarios_regioes",
+      },
+      {
         key: "tipos_pecas",
         label: "Tipos Peças",
         icon: Tag,
@@ -132,12 +138,6 @@ const menuItems: MenuItem[] = [
         label: "Usuários",
         icon: User,
         path: "/admin/cadastro/usuarios",
-      },
-      {
-        key: "usuarios_regioes",
-        label: "Usuários x Regiões",
-        icon: UsersRound,
-        path: "/admin/cadastro/usuarios_regioes",
       },
     ],
   },
