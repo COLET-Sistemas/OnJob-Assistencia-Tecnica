@@ -1,5 +1,5 @@
 "use client";
-import { Loading } from "@/components/Loading";
+import { Loading } from "@/components/LoadingPersonalizado";
 import { useTitle } from "@/context/TitleContext";
 import { feedback } from "@/utils/feedback";
 import { BarChart3, Cog, Plus, UserPlus } from "lucide-react";

@@ -1,7 +1,7 @@
 "use client";
 
 import { clientesAPI, regioesAPI } from "@/api/api";
-import { Loading } from "@/components/Loading";
+import { Loading } from "@/components/LoadingPersonalizado";
 import LocationPicker from "@/components/admin/common/LocationPicker";
 import StaticMap from "@/components/admin/common/StaticMap";
 import { useTitle } from "@/context/TitleContext";

@@ -1,5 +1,5 @@
 "use client";
-import { Loading } from "@/components/Loading";
+import { Loading } from "@/components/LoadingPersonalizado";
 import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";

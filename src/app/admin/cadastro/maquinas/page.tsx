@@ -1,58 +1,30 @@
 "use client";
-import { maquinasAPI } from "@/api/api";
-import { Loading } from "@/components/Loading";
-import {
-  DataTable,
-  FilterPanel,
-  ListContainer,
-  ListHeader,
-  StatusBadge,
-} from "@/components/admin/common";
+import { Loading } from "@/components/LoadingPersonalizado";
+import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import type { Maquina, MaquinaResponse } from "@/types/admin/cadastro/maquinas";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
+import PageHeader from "@/components/admin/ui/PageHeader";
+import { useMaquinasFilters } from "@/hooks/useSpecificFilters";
+import { maquinasAPI } from "@/api/api";
 
 // Helper function to consistently format dates on both server and client
 const formatDate = (dateString: string): string => {
+  if (!dateString) return "-";
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
   return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
     .toString()
     .padStart(2, "0")}/${date.getFullYear()}`;
 };
 
-interface Filtros {
-  numero_serie: string;
-  modelo: string;
-  descricao: string;
-  status: string;
-  [key: string]: string;
-}
-
-interface FiltroParams {
-  numero_serie?: string;
-  modelo?: string;
-  descricao?: string;
-  situacao?: string;
-  incluir_inativos?: string;
-  qtde_registros?: number;
-  nro_pagina?: number;
-  [key: string]: string | number | undefined;
-}
-
-export default function CadastroMaquinas() {
+const CadastroMaquinas = () => {
   const { setTitle } = useTitle();
   const [maquinas, setMaquinas] = useState<Maquina[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingData, setLoadingData] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [filtros, setFiltros] = useState<Filtros>({
-    numero_serie: "",
-    modelo: "",
-    descricao: "",
-    status: "",
-  });
 
   // Estado para controle de paginação
   const [paginacao, setPaginacao] = useState({
@@ -62,56 +34,40 @@ export default function CadastroMaquinas() {
     totalRegistros: 0,
   });
 
-  const handleDelete = async (id: number) => {
-    try {
-      await import("@/api/api").then((mod) =>
-        mod.default.delete(`/maquinas?id=${id}`)
-      );
-      await carregarMaquinas(
-        filtros,
-        paginacao?.paginaAtual ?? 1,
-        paginacao?.registrosPorPagina ?? 20
-      );
-    } catch {
-      alert("Erro ao excluir máquina.");
-    }
-  };
-
-  const dadosCarregados = useRef(false);
-  const paginacaoRef = useRef(paginacao);
-
-  // Configurar o título da página
   useEffect(() => {
     setTitle("Máquinas");
   }, [setTitle]);
 
-  useEffect(() => {
-    paginacaoRef.current = paginacao;
-  }, [paginacao]);
+  const {
+    showFilters,
+    filtrosPainel,
+    filtrosAplicados,
+    activeFiltersCount,
+    handleFiltroChange,
+    limparFiltros,
+    aplicarFiltros,
+    toggleFilters,
+  } = useMaquinasFilters();
 
   const carregarMaquinas = useCallback(
     async (
-      filtrosParam: Partial<Filtros> = {},
+      filtrosParam = filtrosAplicados,
       pagina = paginacao.paginaAtual,
       limite = paginacao.registrosPorPagina
     ) => {
-      if (!dadosCarregados.current) {
+      if (pagina === 1 && limite === paginacao.registrosPorPagina) {
         setLoading(true);
       } else {
         setLoadingData(true);
       }
 
-      const registrosPorPaginaAtual =
-        limite !== undefined ? limite : paginacaoRef.current.registrosPorPagina;
-
       try {
-        // Prepare params for API request
-        const params: FiltroParams = {
-          qtde_registros: registrosPorPaginaAtual,
+        const params: Record<string, string | number> = {
+          qtde_registros: limite,
           nro_pagina: pagina,
         };
 
-        // Adiciona os filtros individualmente conforme preenchidos
+        // Adiciona os filtros
         if (
           filtrosParam.numero_serie &&
           filtrosParam.numero_serie.trim() !== ""
@@ -125,92 +81,76 @@ export default function CadastroMaquinas() {
           params.descricao = filtrosParam.descricao.trim();
         }
 
-        // Chamar endpoint com incluir_inativos=S apenas se filtro status estiver marcado
         let response: MaquinaResponse | Maquina[];
-        if (filtrosParam.status === "true") {
+        if (filtrosParam.incluir_inativos === "true") {
           params.incluir_inativos = "S";
-          response = (await maquinasAPI.getAllWithInactive(params)) as
-            | MaquinaResponse
-            | Maquina[];
+          response = await maquinasAPI.getAllWithInactive(params);
         } else {
-          response = (await maquinasAPI.getAll(params)) as
-            | MaquinaResponse
-            | Maquina[];
+          response = await maquinasAPI.getAll(params);
         }
 
-        // Verifique se a resposta tem o formato novo com dados dentro de 'dados'
-        let maquinasCarregadas: Maquina[] = [];
+        // Verifica se a resposta tem o formato paginado
+        if (response && typeof response === "object" && "dados" in response) {
+          const paginatedResponse = response as MaquinaResponse;
+          setMaquinas(paginatedResponse.dados || []);
 
-        if ("dados" in response && Array.isArray(response.dados)) {
-          maquinasCarregadas = response.dados;
-          setMaquinas(maquinasCarregadas);
-
-          // Atualizar informações de paginação
           setPaginacao({
-            paginaAtual: response.pagina_atual || pagina,
+            paginaAtual: paginatedResponse.pagina_atual || pagina,
             registrosPorPagina:
-              response.registros_por_pagina || registrosPorPaginaAtual,
-            totalPaginas: response.total_paginas || 1,
-            totalRegistros: response.total_registros || response.dados.length,
+              paginatedResponse.registros_por_pagina || limite,
+            totalPaginas: paginatedResponse.total_paginas || 1,
+            totalRegistros: paginatedResponse.total_registros || 0,
           });
         } else {
           // Fallback para o formato antigo
-          maquinasCarregadas = response as Maquina[];
-          setMaquinas(maquinasCarregadas);
+          const maquinasArray = response as Maquina[];
+          setMaquinas(maquinasArray || []);
+          setPaginacao((prev) => ({
+            ...prev,
+            totalRegistros: maquinasArray?.length || 0,
+          }));
         }
       } catch (error) {
         console.error("Erro ao carregar máquinas:", error);
+        setMaquinas([]);
       } finally {
         setLoading(false);
         setLoadingData(false);
       }
     },
-    [paginacao.paginaAtual, paginacao.registrosPorPagina]
+    [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]
   );
 
-  // Handler para aplicar todos os filtros
-  const aplicarTodosFiltros = useCallback(() => {
-    carregarMaquinas(filtros, 1);
-    dadosCarregados.current = true;
-  }, [filtros, carregarMaquinas]);
+  // Carregamento inicial e quando filtros são aplicados
+  useEffect(() => {
+    carregarMaquinas(filtrosAplicados, 1);
+  }, [filtrosAplicados, carregarMaquinas]);
+
+  // Carregamento inicial
+  useEffect(() => {
+    carregarMaquinas();
+  }, []);
 
   // Handler para mudar a página
   const mudarPagina = useCallback(
     (novaPagina: number) => {
       if (novaPagina < 1 || novaPagina > paginacao.totalPaginas) return;
-      carregarMaquinas(filtros, novaPagina);
+      carregarMaquinas(filtrosAplicados, novaPagina);
     },
-    [filtros, paginacao.totalPaginas, carregarMaquinas]
+    [filtrosAplicados, paginacao.totalPaginas, carregarMaquinas]
   );
 
-  // Handler para alterar filtros
-  const handleFiltroChange = useCallback((campo: string, valor: string) => {
-    setFiltros((prev) => ({
-      ...prev,
-      [campo]: valor,
-    }));
-  }, []);
+  // Handler customizado para aplicar filtros
+  const handleAplicarFiltros = useCallback(() => {
+    aplicarFiltros();
+    // carregarMaquinas será chamado automaticamente pelo useEffect quando filtrosAplicados mudar
+  }, [aplicarFiltros]);
 
-  // Handler para limpar filtros
-  const limparFiltros = useCallback(() => {
-    setFiltros({
-      numero_serie: "",
-      modelo: "",
-      descricao: "",
-      status: "",
-    });
-
-    carregarMaquinas({}, 1);
-    dadosCarregados.current = true;
-  }, [carregarMaquinas]);
-
-  // Carregamento inicial de dados
-  useEffect(() => {
-    if (!dadosCarregados.current) {
-      carregarMaquinas({}, 1);
-      dadosCarregados.current = true;
-    }
-  }, [carregarMaquinas]);
+  // Handler customizado para limpar filtros
+  const handleLimparFiltros = useCallback(() => {
+    limparFiltros();
+    // carregarMaquinas será chamado automaticamente pelo useEffect quando filtrosAplicados mudar
+  }, [limparFiltros]);
 
   if (loading) {
     return (
@@ -223,59 +163,144 @@ export default function CadastroMaquinas() {
     );
   }
 
+  const columns = [
+    {
+      header: "Máquina",
+      accessor: "numero_serie" as keyof Maquina,
+      render: (maquina: Maquina) => (
+        <div className="flex flex-col">
+          <div className="text-sm font-semibold text-gray-900">
+            {maquina.numero_serie}
+          </div>
+          <div
+            className="text-xs text-gray-600 mt-1 max-w-[200px] line-clamp-1"
+            title={maquina.descricao}
+          >
+            {maquina.descricao || "-"}
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: "Modelo",
+      accessor: "modelo" as keyof Maquina,
+      render: (maquina: Maquina) => (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[var(--secondary-yellow)]/10 text-[var(--dark-navy)] border border-[var(--secondary-yellow)]/20">
+          {maquina.modelo}
+        </span>
+      ),
+    },
+    {
+      header: "Cliente Atual",
+      accessor: "cliente_atual" as keyof Maquina,
+      render: (maquina: Maquina) => (
+        <span className="text-sm text-gray-600">
+          {maquina.cliente_atual?.nome_fantasia || "-"}
+        </span>
+      ),
+    },
+    {
+      header: "Data 1ª Venda",
+      accessor: "data_1a_venda" as keyof Maquina,
+      render: (maquina: Maquina) => (
+        <span className="text-sm text-gray-600">
+          {formatDate(maquina.data_1a_venda)}
+        </span>
+      ),
+    },
+    {
+      header: "Nota Fiscal",
+      accessor: "nota_fiscal_venda" as keyof Maquina,
+      render: (maquina: Maquina) => (
+        <span className="text-sm text-gray-600 font-medium">
+          {maquina.nota_fiscal_venda || "-"}
+        </span>
+      ),
+    },
+    {
+      header: "Data Final Garantia",
+      accessor: "data_final_garantia" as keyof Maquina,
+      render: (maquina: Maquina) => (
+        <span className="text-sm text-gray-600">
+          {formatDate(maquina.data_final_garantia)}
+        </span>
+      ),
+    },
+    {
+      header: "Status",
+      accessor: "situacao" as keyof Maquina,
+      render: (maquina: Maquina) => (
+        <TableStatusColumn status={maquina.situacao} />
+      ),
+    },
+  ];
+
+  const handleDelete = async (id: number) => {
+    try {
+      await maquinasAPI.delete(id);
+      await carregarMaquinas();
+    } catch {
+      alert("Erro ao excluir máquina.");
+    }
+  };
+
+  const renderActions = (maquina: Maquina) => (
+    <div className="flex gap-2">
+      <EditButton id={maquina.id} editRoute="/admin/cadastro/maquinas/editar" />
+      <DeleteButton
+        id={maquina.id}
+        onDelete={handleDelete}
+        confirmText="Deseja realmente excluir esta máquina?"
+        confirmTitle="Exclusão de Máquina"
+        itemName={`${maquina.numero_serie} - ${
+          maquina.descricao || "Sem descrição"
+        }`}
+      />
+    </div>
+  );
+
   const filterOptions = [
     {
       id: "numero_serie",
       label: "Número de Série",
       type: "text" as const,
-      placeholder: "Digite o número de série...",
+      placeholder: "Buscar por número de série...",
     },
     {
       id: "modelo",
       label: "Modelo",
       type: "text" as const,
-      placeholder: "Digite o modelo...",
+      placeholder: "Buscar por modelo...",
     },
     {
       id: "descricao",
       label: "Descrição",
       type: "text" as const,
-      placeholder: "Digite a descrição...",
+      placeholder: "Buscar por descrição...",
     },
     {
-      id: "status",
-      label: "Incluir máquinas inativas",
+      id: "incluir_inativos",
+      label: "Incluir Inativos",
       type: "checkbox" as const,
     },
   ];
 
-  // Count active filters
-  const activeFiltersCount = Object.values(filtros).filter(Boolean).length;
-
   return (
-    <ListContainer>
-      <ListHeader
+    <>
+      <PageHeader
         title="Lista de Máquinas"
-        itemCount={maquinas.length}
-        onFilterToggle={() => setShowFilters(!showFilters)}
-        showFilters={showFilters}
-        newButtonLink="/admin/cadastro/maquinas/novo"
-        newButtonLabel="Nova Máquina"
-        activeFiltersCount={activeFiltersCount}
+        config={{
+          type: "list",
+          itemCount: paginacao.totalRegistros,
+          onFilterToggle: toggleFilters,
+          showFilters: showFilters,
+          activeFiltersCount: activeFiltersCount,
+          newButton: {
+            label: "Nova Máquina",
+            link: "/admin/cadastro/maquinas/novo",
+          },
+        }}
       />
-
-      {showFilters && (
-        <FilterPanel
-          title="Filtros Avançados"
-          pageName="Máquinas"
-          filterOptions={filterOptions}
-          filterValues={filtros}
-          onFilterChange={handleFiltroChange}
-          onClearFilters={limparFiltros}
-          onApplyFilters={aplicarTodosFiltros}
-          onClose={() => setShowFilters(false)}
-        />
-      )}
 
       <div className="relative">
         {loadingData && (
@@ -290,116 +315,19 @@ export default function CadastroMaquinas() {
           </div>
         )}
 
-        <DataTable
-          columns={[
-            {
-              header: "Máquina",
-              accessor: (maquina: Maquina) => (
-                <div className="flex flex-col">
-                  <div className="text-sm font-medium text-gray-900">
-                    {maquina.numero_serie}
-                  </div>
-                  <div
-                    className="text-xs text-gray-600 mt-1 max-w-[200px] line-clamp-1"
-                    title={maquina.descricao}
-                  >
-                    {maquina.descricao || "-"}
-                  </div>
-                </div>
-              ),
-            },
-            {
-              header: "Modelo",
-              accessor: (maquina: Maquina) => (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[var(--secondary-yellow)]/10 text-[var(--dark-navy)] border border-[var(--secondary-yellow)]/20">
-                  {maquina.modelo}
-                </span>
-              ),
-            },
-            {
-              header: "Cliente Atual",
-              accessor: (maquina: Maquina) => (
-                <span className="text-sm text-gray-600">
-                  {maquina.cliente_atual?.nome_fantasia || "-"}
-                </span>
-              ),
-            },
-            {
-              header: "Data 1ª Venda",
-              accessor: (maquina: Maquina) => (
-                <span className="text-sm text-gray-600">
-                  {maquina.data_1a_venda &&
-                  !isNaN(new Date(maquina.data_1a_venda).getTime())
-                    ? formatDate(maquina.data_1a_venda)
-                    : "-"}
-                </span>
-              ),
-            },
-            {
-              header: "Nota Fiscal",
-              accessor: (maquina: Maquina) => (
-                <span className="text-sm text-gray-600 font-medium">
-                  {maquina.nota_fiscal_venda || "-"}
-                </span>
-              ),
-            },
-            {
-              header: "Data Final Garantia",
-              accessor: (maquina: Maquina) => (
-                <span className="text-sm text-gray-600">
-                  {maquina.data_final_garantia &&
-                  !isNaN(new Date(maquina.data_final_garantia).getTime())
-                    ? formatDate(maquina.data_final_garantia)
-                    : "-"}
-                </span>
-              ),
-            },
-            {
-              header: "Situação",
-              accessor: (maquina: Maquina) => (
-                <StatusBadge
-                  status={maquina.situacao}
-                  mapping={{
-                    A: {
-                      label: "Ativo",
-                      className:
-                        "bg-[var(--secondary-green)]/20 text-[var(--dark-navy)] border border-[var(--secondary-green)]/30",
-                    },
-                    I: {
-                      label: "Inativo",
-                      className: "bg-red-50 text-red-700 border border-red-100",
-                    },
-                  }}
-                />
-              ),
-            },
-            {
-              header: "Ações",
-              accessor: (maquina: Maquina) => (
-                <div className="flex gap-2">
-                  <EditButton
-                    id={maquina.id}
-                    editRoute="/admin/cadastro/maquinas/editar"
-                  />
-
-                  <DeleteButton
-                    id={maquina.id}
-                    onDelete={handleDelete}
-                    confirmText="Deseja realmente excluir esta máquina?"
-                    confirmTitle="Exclusão de Máquina"
-                    itemName={`${maquina.descricao}`}
-                  />
-                </div>
-              ),
-            },
-          ]}
-          data={maquinas}
+        <TableList
+          title="Lista de Máquinas"
+          items={maquinas || []}
           keyField="id"
-          emptyStateProps={{
-            title: "Nenhuma máquina cadastrada",
-            description:
-              "Você ainda não possui máquinas cadastradas no sistema. Clique no botão acima para adicionar sua primeira máquina.",
-          }}
+          columns={columns}
+          renderActions={renderActions}
+          showFilter={showFilters}
+          filterOptions={filterOptions}
+          filterValues={filtrosPainel}
+          onFilterChange={handleFiltroChange}
+          onClearFilters={handleLimparFiltros}
+          onApplyFilters={handleAplicarFiltros}
+          onFilterToggle={toggleFilters}
         />
 
         {/* Paginação */}
@@ -465,7 +393,7 @@ export default function CadastroMaquinas() {
                         ...prev,
                         registrosPorPagina: novoValor,
                       }));
-                      carregarMaquinas(filtros, 1, novoValor);
+                      carregarMaquinas(filtrosAplicados, 1, novoValor);
                     }}
                   >
                     {[10, 20, 25, 50, 100].map((value) => (
@@ -507,7 +435,6 @@ export default function CadastroMaquinas() {
                 {Array.from(
                   { length: Math.min(5, paginacao.totalPaginas) },
                   (_, i) => {
-                    // Lógica para mostrar as páginas próximas da atual
                     let pageNum;
                     if (paginacao.totalPaginas <= 5) {
                       pageNum = i + 1;
@@ -569,6 +496,8 @@ export default function CadastroMaquinas() {
           </div>
         )}
       </div>
-    </ListContainer>
+    </>
   );
-}
+};
+
+export default CadastroMaquinas;

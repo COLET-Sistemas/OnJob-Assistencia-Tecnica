@@ -6,7 +6,7 @@ import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { Loading } from "@/components/Loading";
+import { Loading } from "@/components/LoadingPersonalizado";
 
 interface PageProps {
   params: Promise<{

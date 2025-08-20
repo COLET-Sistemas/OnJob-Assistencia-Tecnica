@@ -9,7 +9,7 @@ import {
   LocationPicker,
   StatusBadge,
 } from "@/components/admin/common";
-import { Loading } from "@/components/Loading";
+import { Loading } from "@/components/LoadingPersonalizado";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import { formatDocumento } from "@/utils/formatters";

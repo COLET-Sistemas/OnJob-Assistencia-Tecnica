@@ -194,11 +194,6 @@ export const regioesAPI = {
 };
 
 export const pecasAPI = {
-  /**
-   * Busca peças com suporte a filtros dinâmicos e paginação.
-   * @param {Object} params - Parâmetros de filtro e paginação.
-   *   Exemplo: { nro_pagina: 1, qtde_registros: 20, codigo_peca: '123', descricao: 'Filtro' }
-   */
   getAll: (params = {}) => {
     // Garante paginação padrão se não vier nos filtros
     const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
@@ -223,8 +218,8 @@ export const pecasAPI = {
   },
   getById: (id) => api.get("/pecas", { params: { id } }),
   create: (pecaData) => api.post("/pecas", pecaData),
-  update: (id, pecaData) => api.put(`/pecas/${id}`, pecaData),
-  delete: (id) => api.delete(`/pecas/${id}`),
+  update: (id, pecaData) => api.put(`/pecas?id=${id}`, pecaData),
+  delete: (id) => api.delete(`/pecas?id=${id}`),
 };
 
 export const motivosAtendimentoAPI = {
@@ -267,13 +262,24 @@ export const motivosPendenciaAPI = {
 
 export const tiposPecasAPI = {
   getAll: (params = {}) => {
-    return api.get("/tipos_pecas", { params });
+    // Garante paginação padrão se não vier nos filtros
+    const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
+    return api.get("/tipos_pecas", {
+      params: {
+        nro_pagina,
+        qtde_registros,
+        ...filtros,
+      },
+    });
   },
   getAllWithInactive: (params = {}) => {
+    const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
     return api.get("/tipos_pecas", {
       params: {
         incluir_inativos: "S",
-        ...params,
+        nro_pagina,
+        qtde_registros,
+        ...filtros,
       },
     });
   },

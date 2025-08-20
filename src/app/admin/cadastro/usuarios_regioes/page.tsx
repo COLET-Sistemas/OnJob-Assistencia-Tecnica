@@ -1,7 +1,7 @@
 "use client";
 
 import { usuariosRegioesAPI } from "@/api/api";
-import { Loading } from "@/components/Loading";
+import { Loading } from "@/components/LoadingPersonalizado";
 import { TableList } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
