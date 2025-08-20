@@ -5,13 +5,17 @@ import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { TipoPeca } from "@/types/admin/cadastro/tipos_pecas";
 import { useCallback, useEffect, useState } from "react";
+
+// Extensão do tipo TipoPeca para incluir codigo_erp
+interface TipoPecaExtended extends TipoPeca {
+  codigo_erp: string;
+}
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
 import { tiposPecasAPI } from "@/api/api";
-import { Package } from "lucide-react";
 
 // Interface dos filtros específicos para tipos de peças
 interface TiposPecasFilters {
@@ -35,7 +39,7 @@ interface PaginacaoInfo {
 }
 
 interface TiposPecasResponse {
-  dados: TipoPeca[];
+  tipos_pecas: TipoPecaExtended[];
   total_paginas: number;
   total_registros: number;
 }
@@ -65,7 +69,7 @@ const CadastroTiposPecas = () => {
     registrosPorPagina: 20,
   });
 
-  const fetchTiposPecas = useCallback(async (): Promise<TipoPeca[]> => {
+  const fetchTiposPecas = useCallback(async (): Promise<TipoPecaExtended[]> => {
     const params: Record<string, string | number> = {
       nro_pagina: paginacao.paginaAtual,
       qtde_registros: paginacao.registrosPorPagina,
@@ -86,14 +90,14 @@ const CadastroTiposPecas = () => {
       totalRegistros: response.total_registros,
     }));
 
-    return response.dados;
+    return response.tipos_pecas;
   }, [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]);
 
   const {
     data: tiposPecas,
     loading,
     refetch,
-  } = useDataFetch<TipoPeca[]>(fetchTiposPecas, [fetchTiposPecas]);
+  } = useDataFetch<TipoPecaExtended[]>(fetchTiposPecas, [fetchTiposPecas]);
 
   const handlePageChange = useCallback((novaPagina: number) => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: novaPagina }));
@@ -125,27 +129,24 @@ const CadastroTiposPecas = () => {
   const columns = [
     {
       header: "Código ERP",
-      accessor: "codigo_erp" as keyof TipoPeca,
-      render: (tipoPeca: TipoPeca) => (
-        <div className="text-sm text-gray-900 flex items-center gap-2">
-          <Package size={16} className="text-[var(--primary)]" />
+      accessor: "codigo_erp" as keyof TipoPecaExtended,
+      render: (tipoPeca: TipoPecaExtended) => (
+        <div className="text-sm font-semibold text-gray-900">
           {tipoPeca.codigo_erp}
         </div>
       ),
     },
     {
       header: "Descrição",
-      accessor: "descricao" as keyof TipoPeca,
-      render: (tipoPeca: TipoPeca) => (
-        <div className="text-sm font-semibold text-gray-900">
-          {tipoPeca.descricao}
-        </div>
+      accessor: "descricao" as keyof TipoPecaExtended,
+      render: (tipoPeca: TipoPecaExtended) => (
+        <div className="text-sm text-gray-900">{tipoPeca.descricao}</div>
       ),
     },
     {
       header: "Status",
-      accessor: "situacao" as keyof TipoPeca,
-      render: (tipoPeca: TipoPeca) => (
+      accessor: "situacao" as keyof TipoPecaExtended,
+      render: (tipoPeca: TipoPecaExtended) => (
         <TableStatusColumn status={tipoPeca.situacao} />
       ),
     },
@@ -160,7 +161,7 @@ const CadastroTiposPecas = () => {
     }
   };
 
-  const renderActions = (tipoPeca: TipoPeca) => (
+  const renderActions = (tipoPeca: TipoPecaExtended) => (
     <div className="flex gap-2">
       <EditButton
         id={tipoPeca.id_tipo_peca}

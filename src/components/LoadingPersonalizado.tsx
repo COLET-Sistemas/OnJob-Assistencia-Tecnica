@@ -13,7 +13,7 @@ interface LoadingSpinnerProps {
     fullScreen?: boolean;
     showText?: boolean;
     className?: string;
-    preventScroll?: boolean; // Controls whether to prevent scrolling when fullScreen is true
+    preventScroll?: boolean;
 }
 
 const sizeMap: Record<LoadingSize, string> = {
