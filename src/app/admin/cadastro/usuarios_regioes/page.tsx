@@ -165,8 +165,6 @@ function CadastroUsuarios() {
         keyField="id_usuario"
         columns={columns}
         renderActions={renderActions}
-        newItemLink="/admin/cadastro/usuarios/novo"
-        newItemLabel="Novo Usuário"
       />
     </>
   );

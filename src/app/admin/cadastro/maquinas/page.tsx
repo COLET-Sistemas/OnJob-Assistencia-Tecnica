@@ -121,15 +121,9 @@ const CadastroMaquinas = () => {
     [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]
   );
 
-  // Carregamento inicial e quando filtros são aplicados
   useEffect(() => {
     carregarMaquinas(filtrosAplicados, 1);
   }, [filtrosAplicados, carregarMaquinas]);
-
-  // Carregamento inicial
-  useEffect(() => {
-    carregarMaquinas();
-  }, []);
 
   // Handler para mudar a página
   const mudarPagina = useCallback(

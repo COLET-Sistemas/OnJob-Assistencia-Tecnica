@@ -9,9 +9,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface EditarRegiaoProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 const EditarRegiao = ({ params }: EditarRegiaoProps) => {
@@ -21,11 +21,23 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
   const [loading, setLoading] = useState(true);
   const [savingData, setSavingData] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(
+    null
+  );
 
   // Set page title when component mounts
   useEffect(() => {
     setTitle("Editar Região");
   }, [setTitle]);
+
+  // Resolve params promise
+  useEffect(() => {
+    const resolveParams = async () => {
+      const resolved = await params;
+      setResolvedParams(resolved);
+    };
+    resolveParams();
+  }, [params]);
 
   // Inicializar formulário com valores padrão
   const [formData, setFormData] = useState<FormData>({
@@ -69,10 +81,12 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
 
   // Carregar dados da região
   useEffect(() => {
+    if (!resolvedParams) return;
+
     const carregarRegiao = async () => {
       setLoading(true);
       try {
-        const id = parseInt(params.id);
+        const id = parseInt(resolvedParams.id);
         const regiao = await regioesAPI.getById(id);
         const dadosRegiao = Array.isArray(regiao) ? regiao[0] : regiao;
         if (!dadosRegiao) throw new Error("Região não encontrada");
@@ -95,7 +109,7 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
       }
     };
     carregarRegiao();
-  }, [params.id, router]);
+  }, [resolvedParams, router]);
 
   // Manipular mudanças nos campos do formulário
   const handleInputChange = (
@@ -142,14 +156,14 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!resolvedParams || !validateForm()) {
       return;
     }
 
     setSavingData(true);
 
     try {
-      const id = parseInt(params.id);
+      const id = parseInt(resolvedParams.id);
       await regioesAPI.update(id, formData);
       alert("Região atualizada com sucesso!");
       router.push("/admin/cadastro/regioes");
@@ -161,7 +175,7 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
     }
   };
 
-  if (loading) {
+  if (!resolvedParams || loading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
         <span className="text-[#7C54BD] text-lg font-semibold">
