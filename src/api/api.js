@@ -1,31 +1,3 @@
-// Tipos de Peças API
-export const tiposPecasAPI = {
-  getAll: (params = {}) => {
-    const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
-    return api.get("/tipos_pecas", {
-      params: {
-        nro_pagina,
-        qtde_registros,
-        ...filtros,
-      },
-    });
-  },
-  getAllWithInactive: (params = {}) => {
-    const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
-    return api.get("/tipos_pecas", {
-      params: {
-        incluir_inativos: "S",
-        nro_pagina,
-        qtde_registros,
-        ...filtros,
-      },
-    });
-  },
-  getById: (id) => api.get("/tipos_pecas", { params: { id } }),
-  create: (tipoPecaData) => api.post("/tipos_pecas", tipoPecaData),
-  update: (id, tipoPecaData) => api.put(`/tipos_pecas/${id}`, tipoPecaData),
-  delete: (id) => api.delete(`/tipos_pecas/${id}`),
-};
 export const ordensServicoAPI = {
   getPendentes: (params = {}) =>
     api.get("/ordens_servico", { params: { ...params } }),
@@ -256,21 +228,59 @@ export const pecasAPI = {
 };
 
 export const motivosAtendimentoAPI = {
-  getAll: () => api.get("/motivos_atendimento"),
+  getAll: (params = {}) => {
+    return api.get("/motivos_atendimento", { params });
+  },
+  getAllWithInactive: (params = {}) => {
+    return api.get("/motivos_atendimento", {
+      params: {
+        incluir_inativos: "S",
+        ...params,
+      },
+    });
+  },
   getById: (id) => api.get("/motivos_atendimento", { params: { id } }),
   create: (motivoData) => api.post("/motivos_atendimento", motivoData),
-  update: (id, motivoData) => api.put(`/motivos_atendimento/${id}`, motivoData),
-  delete: (id) => api.delete(`/motivos_atendimento/${id}`),
+  update: (id, motivoData) =>
+    api.put(`/motivos_atendimento?id=${id}`, motivoData),
+  delete: (id) => api.delete(`/motivos_atendimento?id=${id}`),
 };
 
 export const motivosPendenciaAPI = {
-  getAll: () => api.get("/motivos_pendencia_os"),
-  getAllWithInactive: () => api.get("/motivos_pendencia_os?incluir_inativos=S"),
+  getAll: (params = {}) => {
+    return api.get("/motivos_pendencia_os", { params });
+  },
+  getAllWithInactive: (params = {}) => {
+    return api.get("/motivos_pendencia_os", {
+      params: {
+        incluir_inativos: "S",
+        ...params,
+      },
+    });
+  },
   getById: (id) => api.get("/motivos_pendencia_os", { params: { id } }),
   create: (motivoData) => api.post("/motivos_pendencia_os", motivoData),
   update: (id, motivoData) =>
-    api.put(`/motivos_pendencia_os/${id}`, motivoData),
-  delete: (id) => api.delete(`/motivos_pendencia_os/${id}`),
+    api.put(`/motivos_pendencia_os?id=${id}`, motivoData),
+  delete: (id) => api.delete(`/motivos_pendencia_os?id=${id}`),
+};
+
+export const tiposPecasAPI = {
+  getAll: (params = {}) => {
+    return api.get("/tipos_pecas", { params });
+  },
+  getAllWithInactive: (params = {}) => {
+    return api.get("/tipos_pecas", {
+      params: {
+        incluir_inativos: "S",
+        ...params,
+      },
+    });
+  },
+  getById: (id) => api.get("/tipos_pecas", { params: { id } }),
+  create: (tipoPecaData) => api.post("/tipos_pecas", tipoPecaData),
+  update: (id, tipoPecaData) => api.put(`/tipos_pecas?id=${id}`, tipoPecaData),
+  delete: (id) => api.delete(`/tipos_pecas?id=${id}`),
 };
 
 export const usuariosRegioesAPI = {

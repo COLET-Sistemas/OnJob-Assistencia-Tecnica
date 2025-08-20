@@ -1,19 +1,16 @@
 "use client";
-import { regioesAPI } from "@/api/api";
 import { Loading } from "@/components/Loading";
-import {
-  TableList,
-  TableStatusColumn,
-  FilterPanel,
-} from "@/components/admin/common";
-import ListHeader from "@/components/admin/common/ListHeader";
+import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { Regiao } from "@/types/admin/cadastro/regioes";
-import { MapPin } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
+import PageHeader from "@/components/admin/ui/PageHeader";
+import { useRegioesFilters } from "@/hooks/useSpecificFilters";
+import { regioesAPI } from "@/api/api";
+import { MapPin } from "lucide-react";
 
 const CadastroRegioes = () => {
   const { setTitle } = useTitle();
@@ -22,127 +19,37 @@ const CadastroRegioes = () => {
     setTitle("Regiões");
   }, [setTitle]);
 
-  // Filtros
-  const [showFilterPanel, setShowFilterPanel] = useState(false);
-  const [filters, setFilters] = useState({
-    nome: "",
-    uf: "",
-    atendida_empresa: "",
-    incluir_inativos: "",
-  });
-  const [appliedFilters, setAppliedFilters] = useState({
-    nome: "",
-    uf: "",
-    atendida_empresa: "",
-    incluir_inativos: "",
-  });
+  const {
+    showFilters,
+    filtrosPainel,
+    filtrosAplicados,
+    activeFiltersCount,
+    handleFiltroChange,
+    limparFiltros,
+    aplicarFiltros,
+    toggleFilters,
+  } = useRegioesFilters();
 
-  // Função para buscar dados com filtros
-  const fetchRegioes = () => {
+  const fetchRegioes = useCallback(async () => {
     const params: Record<string, string> = {};
-    if (appliedFilters.nome) params.nome = appliedFilters.nome;
-    if (appliedFilters.uf) params.uf = appliedFilters.uf;
-    if (appliedFilters.atendida_empresa === "true") {
+    if (filtrosAplicados.nome) params.nome = filtrosAplicados.nome;
+    if (filtrosAplicados.uf) params.uf = filtrosAplicados.uf;
+    if (filtrosAplicados.atendida_empresa === "true") {
       params.atendida_empresa = "true";
-    } else if (appliedFilters.atendida_empresa === "false") {
+    } else if (filtrosAplicados.atendida_empresa === "false") {
       params.atendida_empresa = "false";
     }
-    // Só aplica incluir_inativos se o filtro estiver ativo
-    if (appliedFilters.incluir_inativos === "true") {
+    if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
-    }
-    return regioesAPI.getAll(params);
-  };
+
+    return await regioesAPI.getAll(params);
+  }, [filtrosAplicados]);
 
   const {
     data: regioes,
     loading,
     refetch,
-  } = useDataFetch<Regiao[]>(fetchRegioes, [appliedFilters]);
-  const ufOptions = [
-    { value: "", label: "Todas" },
-    { value: "AC", label: "AC" },
-    { value: "AL", label: "AL" },
-    { value: "AP", label: "AP" },
-    { value: "AM", label: "AM" },
-    { value: "BA", label: "BA" },
-    { value: "CE", label: "CE" },
-    { value: "DF", label: "DF" },
-    { value: "ES", label: "ES" },
-    { value: "GO", label: "GO" },
-    { value: "MA", label: "MA" },
-    { value: "MT", label: "MT" },
-    { value: "MS", label: "MS" },
-    { value: "MG", label: "MG" },
-    { value: "PA", label: "PA" },
-    { value: "PB", label: "PB" },
-    { value: "PR", label: "PR" },
-    { value: "PE", label: "PE" },
-    { value: "PI", label: "PI" },
-    { value: "RJ", label: "RJ" },
-    { value: "RN", label: "RN" },
-    { value: "RS", label: "RS" },
-    { value: "RO", label: "RO" },
-    { value: "RR", label: "RR" },
-    { value: "SC", label: "SC" },
-    { value: "SP", label: "SP" },
-    { value: "SE", label: "SE" },
-    { value: "TO", label: "TO" },
-  ];
-
-  // Opções de filtro para o FilterPanel
-  const filterOptions = [
-    {
-      id: "nome",
-      label: "Nome",
-      type: "text" as const,
-      placeholder: "Filtrar por nome",
-    },
-    {
-      id: "uf",
-      label: "UF",
-      type: "select" as const,
-      options: ufOptions,
-    },
-    {
-      id: "atendida_empresa",
-      label: "Atendida pela empresa",
-      type: "select" as const,
-      options: [
-        { value: "", label: "Todos" },
-        { value: "true", label: "Sim" },
-        { value: "false", label: "Não" },
-      ],
-    },
-    {
-      id: "incluir_inativos",
-      label: "Incluir inativos",
-      type: "checkbox" as const,
-    },
-  ];
-  // Renderizar painel de filtros
-  const renderFilterPanel = () =>
-    showFilterPanel && (
-      <FilterPanel
-        title="Filtros"
-        pageName="Regiões"
-        filterOptions={filterOptions}
-        filterValues={filters}
-        onFilterChange={(key, value) =>
-          setFilters((f) => ({ ...f, [key]: value }))
-        }
-        onClearFilters={() =>
-          setFilters({
-            nome: "",
-            uf: "",
-            atendida_empresa: "",
-            incluir_inativos: "",
-          })
-        }
-        onClose={() => setShowFilterPanel(false)}
-        onApplyFilters={() => setAppliedFilters(filters)}
-      />
-    );
+  } = useDataFetch<Regiao[]>(fetchRegioes, [fetchRegioes]);
 
   if (loading) {
     return (
@@ -166,7 +73,6 @@ const CadastroRegioes = () => {
     ),
   };
 
-  // Definir as colunas da tabela
   const columns = [
     {
       header: "Nome da Região",
@@ -214,23 +120,10 @@ const CadastroRegioes = () => {
       ),
     },
     {
-      header: "Situação",
+      header: "Status",
       accessor: "situacao" as keyof Regiao,
       render: (regiao: Regiao) => (
-        <TableStatusColumn
-          status={regiao.situacao}
-          mapping={{
-            A: {
-              label: "Ativo",
-              className:
-                "bg-[var(--secondary-green)]/10 text-green-800 border border-green-200",
-            },
-            I: {
-              label: "Inativo",
-              className: "bg-red-50 text-red-700 border border-red-100",
-            },
-          }}
-        />
+        <TableStatusColumn status={regiao.situacao} />
       ),
     },
     {
@@ -248,9 +141,7 @@ const CadastroRegioes = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await import("@/api/api").then((mod) =>
-        mod.default.delete(`/regioes?id=${id}`)
-      );
+      await regioesAPI.delete(id);
       await refetch();
     } catch {
       alert("Erro ao excluir região.");
@@ -260,7 +151,6 @@ const CadastroRegioes = () => {
   const renderActions = (regiao: Regiao) => (
     <div className="flex gap-2">
       <EditButton id={regiao.id} editRoute="/admin/cadastro/regioes/editar" />
-
       <DeleteButton
         id={regiao.id}
         onDelete={handleDelete}
@@ -271,14 +161,85 @@ const CadastroRegioes = () => {
     </div>
   );
 
-  // Contar filtros ativos (exceto os vazios)
-  const activeFiltersCount = Object.values(filters).filter(
-    (value) => value && value !== ""
-  ).length;
+  const ufOptions = [
+    { value: "", label: "Todas" },
+    { value: "AC", label: "AC" },
+    { value: "AL", label: "AL" },
+    { value: "AP", label: "AP" },
+    { value: "AM", label: "AM" },
+    { value: "BA", label: "BA" },
+    { value: "CE", label: "CE" },
+    { value: "DF", label: "DF" },
+    { value: "ES", label: "ES" },
+    { value: "GO", label: "GO" },
+    { value: "MA", label: "MA" },
+    { value: "MT", label: "MT" },
+    { value: "MS", label: "MS" },
+    { value: "MG", label: "MG" },
+    { value: "PA", label: "PA" },
+    { value: "PB", label: "PB" },
+    { value: "PR", label: "PR" },
+    { value: "PE", label: "PE" },
+    { value: "PI", label: "PI" },
+    { value: "RJ", label: "RJ" },
+    { value: "RN", label: "RN" },
+    { value: "RS", label: "RS" },
+    { value: "RO", label: "RO" },
+    { value: "RR", label: "RR" },
+    { value: "SC", label: "SC" },
+    { value: "SP", label: "SP" },
+    { value: "SE", label: "SE" },
+    { value: "TO", label: "TO" },
+  ];
+
+  const filterOptions = [
+    {
+      id: "nome",
+      label: "Nome",
+      type: "text" as const,
+      placeholder: "Buscar por nome...",
+    },
+    {
+      id: "uf",
+      label: "UF",
+      type: "select" as const,
+      options: ufOptions,
+    },
+    {
+      id: "atendida_empresa",
+      label: "Atendida pela empresa",
+      type: "select" as const,
+      options: [
+        { value: "", label: "Todos" },
+        { value: "true", label: "Sim" },
+        { value: "false", label: "Não" },
+      ],
+    },
+    {
+      id: "incluir_inativos",
+      label: "Incluir Inativos",
+      type: "checkbox" as const,
+    },
+  ];
+
+  const itemCount = regioes ? regioes.length : 0;
 
   return (
     <>
-      {renderFilterPanel()}
+      <PageHeader
+        title="Lista de Regiões"
+        config={{
+          type: "list",
+          itemCount: itemCount,
+          onFilterToggle: toggleFilters,
+          showFilters: showFilters,
+          activeFiltersCount: activeFiltersCount,
+          newButton: {
+            label: "Nova Região",
+            link: "/admin/cadastro/regioes/novo",
+          },
+        }}
+      />
       <TableList
         title="Lista de Regiões"
         items={regioes || []}
@@ -286,17 +247,13 @@ const CadastroRegioes = () => {
         columns={columns}
         renderActions={renderActions}
         emptyStateProps={emptyStateProps}
-        customHeader={
-          <ListHeader
-            title="Lista de Regiões"
-            itemCount={regioes?.length || 0}
-            onFilterToggle={() => setShowFilterPanel((v) => !v)}
-            showFilters={showFilterPanel}
-            newButtonLink="/admin/cadastro/regioes/novo"
-            newButtonLabel="Nova Região"
-            activeFiltersCount={activeFiltersCount}
-          />
-        }
+        showFilter={showFilters}
+        filterOptions={filterOptions}
+        filterValues={filtrosPainel}
+        onFilterChange={handleFiltroChange}
+        onClearFilters={limparFiltros}
+        onApplyFilters={aplicarFiltros}
+        onFilterToggle={toggleFilters}
       />
     </>
   );

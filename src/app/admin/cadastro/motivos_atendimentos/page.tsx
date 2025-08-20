@@ -4,10 +4,12 @@ import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { MotivoAtendimento } from "@/types/admin/cadastro/motivos_atendimento";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
+import { useMotivosFilters } from "@/hooks/useSpecificFilters";
+import { motivosAtendimentoAPI } from "@/api/api";
 
 const CadastroMotivosAtendimento = () => {
   const { setTitle } = useTitle();
@@ -16,28 +18,16 @@ const CadastroMotivosAtendimento = () => {
     setTitle("Motivos de Atendimento");
   }, [setTitle]);
 
-  const [showFilters, setShowFilters] = useState(false);
-  const [filtrosPainel, setFiltrosPainel] = useState<{
-    descricao: string;
-    incluir_inativos: string;
-  }>({ descricao: "", incluir_inativos: "" });
-  const [filtrosAplicados, setFiltrosAplicados] = useState<{
-    descricao: string;
-    incluir_inativos: string;
-  }>({ descricao: "", incluir_inativos: "" });
-
-  const handleFiltroChange = useCallback((campo: string, valor: string) => {
-    setFiltrosPainel((prev) => ({ ...prev, [campo]: valor }));
-  }, []);
-
-  const limparFiltros = useCallback(() => {
-    setFiltrosPainel({ descricao: "", incluir_inativos: "" });
-  }, []);
-
-  const aplicarFiltros = useCallback(() => {
-    setFiltrosAplicados({ ...filtrosPainel });
-    setShowFilters(false);
-  }, [filtrosPainel]);
+  const {
+    showFilters,
+    filtrosPainel,
+    filtrosAplicados,
+    activeFiltersCount,
+    handleFiltroChange,
+    limparFiltros,
+    aplicarFiltros,
+    toggleFilters,
+  } = useMotivosFilters();
 
   const fetchMotivos = useCallback(async () => {
     const params: Record<string, string> = {};
@@ -45,9 +35,7 @@ const CadastroMotivosAtendimento = () => {
       params.descricao = filtrosAplicados.descricao;
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
-    return await import("@/api/api").then((mod) =>
-      mod.default.get("/motivos_atendimento", { params })
-    );
+    return await motivosAtendimentoAPI.getAll(params);
   }, [filtrosAplicados]);
 
   const {
@@ -88,9 +76,7 @@ const CadastroMotivosAtendimento = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await import("@/api/api").then((mod) =>
-        mod.default.delete(`/motivos_atendimento?id=${id}`)
-      );
+      await motivosAtendimentoAPI.delete(id);
       await refetch();
     } catch {
       alert("Erro ao excluir motivo.");
@@ -127,9 +113,6 @@ const CadastroMotivosAtendimento = () => {
     },
   ];
 
-  const activeFiltersCount =
-    Object.values(filtrosAplicados).filter(Boolean).length;
-
   const itemCount = motivosAtendimento ? motivosAtendimento.length : 0;
 
   return (
@@ -139,7 +122,7 @@ const CadastroMotivosAtendimento = () => {
         config={{
           type: "list",
           itemCount: itemCount,
-          onFilterToggle: () => setShowFilters(!showFilters),
+          onFilterToggle: toggleFilters,
           showFilters: showFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
@@ -160,7 +143,7 @@ const CadastroMotivosAtendimento = () => {
         onFilterChange={handleFiltroChange}
         onClearFilters={limparFiltros}
         onApplyFilters={aplicarFiltros}
-        onFilterToggle={() => setShowFilters(!showFilters)}
+        onFilterToggle={toggleFilters}
       />
     </>
   );

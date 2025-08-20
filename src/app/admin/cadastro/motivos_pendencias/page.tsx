@@ -4,10 +4,13 @@ import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { MotivoPendencia } from "@/types/admin/cadastro/motivos_pendencia";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
+import { useMotivosFilters } from "../../../../hooks/useSpecificFilters";
+import { motivosPendenciaAPI } from "@/api/api";
+
 const CadastroMotivosPendencia = () => {
   const { setTitle } = useTitle();
 
@@ -15,28 +18,16 @@ const CadastroMotivosPendencia = () => {
     setTitle("Motivos de Pendências");
   }, [setTitle]);
 
-  const [showFilters, setShowFilters] = useState(false);
-  const [filtrosPainel, setFiltrosPainel] = useState<{
-    descricao: string;
-    incluir_inativos: string;
-  }>({ descricao: "", incluir_inativos: "" });
-  const [filtrosAplicados, setFiltrosAplicados] = useState<{
-    descricao: string;
-    incluir_inativos: string;
-  }>({ descricao: "", incluir_inativos: "" });
-
-  const handleFiltroChange = useCallback((campo: string, valor: string) => {
-    setFiltrosPainel((prev) => ({ ...prev, [campo]: valor }));
-  }, []);
-
-  const limparFiltros = useCallback(() => {
-    setFiltrosPainel({ descricao: "", incluir_inativos: "" });
-  }, []);
-
-  const aplicarFiltros = useCallback(() => {
-    setFiltrosAplicados({ ...filtrosPainel });
-    setShowFilters(false);
-  }, [filtrosPainel]);
+  const {
+    showFilters,
+    filtrosPainel,
+    filtrosAplicados,
+    activeFiltersCount,
+    handleFiltroChange,
+    limparFiltros,
+    aplicarFiltros,
+    toggleFilters,
+  } = useMotivosFilters();
 
   const fetchMotivos = useCallback(async () => {
     const params: Record<string, string> = {};
@@ -44,9 +35,7 @@ const CadastroMotivosPendencia = () => {
       params.descricao = filtrosAplicados.descricao;
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
-    return await import("@/api/api").then((mod) =>
-      mod.default.get("/motivos_pendencia_os", { params })
-    );
+    return await motivosPendenciaAPI.getAll(params);
   }, [filtrosAplicados]);
 
   const {
@@ -87,9 +76,7 @@ const CadastroMotivosPendencia = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await import("@/api/api").then((mod) =>
-        mod.default.delete(`/motivos_pendencia_os?id=${id}`)
-      );
+      await motivosPendenciaAPI.delete(id);
       await refetch();
     } catch {
       alert("Erro ao excluir motivo.");
@@ -126,10 +113,8 @@ const CadastroMotivosPendencia = () => {
     },
   ];
 
-  const activeFiltersCount =
-    Object.values(filtrosAplicados).filter(Boolean).length;
-
   const itemCount = motivos ? motivos.length : 0;
+
   return (
     <>
       <PageHeader
@@ -137,7 +122,7 @@ const CadastroMotivosPendencia = () => {
         config={{
           type: "list",
           itemCount: itemCount,
-          onFilterToggle: () => setShowFilters(!showFilters),
+          onFilterToggle: toggleFilters,
           showFilters: showFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
@@ -158,7 +143,7 @@ const CadastroMotivosPendencia = () => {
         onFilterChange={handleFiltroChange}
         onClearFilters={limparFiltros}
         onApplyFilters={aplicarFiltros}
-        onFilterToggle={() => setShowFilters(!showFilters)}
+        onFilterToggle={toggleFilters}
       />
     </>
   );

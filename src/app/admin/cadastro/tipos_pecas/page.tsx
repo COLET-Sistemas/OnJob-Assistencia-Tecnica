@@ -4,11 +4,12 @@ import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { TipoPeca } from "@/types/admin/cadastro/tipos_pecas";
-import { useCallback, useEffect, useState } from "react";
-import api from "@/api/httpClient";
+import { useCallback, useEffect } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
+import { useTiposPecasFilters } from "@/hooks/useSpecificFilters";
+import { tiposPecasAPI } from "@/api/api";
 
 const CadastroTiposPecas = () => {
   const { setTitle } = useTitle();
@@ -17,28 +18,16 @@ const CadastroTiposPecas = () => {
     setTitle("Tipos de Peças");
   }, [setTitle]);
 
-  const [showFilters, setShowFilters] = useState(false);
-  const [filtrosPainel, setFiltrosPainel] = useState<{
-    descricao: string;
-    incluir_inativos: string;
-  }>({ descricao: "", incluir_inativos: "" });
-  const [filtrosAplicados, setFiltrosAplicados] = useState<{
-    descricao: string;
-    incluir_inativos: string;
-  }>({ descricao: "", incluir_inativos: "" });
-
-  const handleFiltroChange = useCallback((campo: string, valor: string) => {
-    setFiltrosPainel((prev) => ({ ...prev, [campo]: valor }));
-  }, []);
-
-  const limparFiltros = useCallback(() => {
-    setFiltrosPainel({ descricao: "", incluir_inativos: "" });
-  }, []);
-
-  const aplicarFiltros = useCallback(() => {
-    setFiltrosAplicados({ ...filtrosPainel });
-    setShowFilters(false);
-  }, [filtrosPainel]);
+  const {
+    showFilters,
+    filtrosPainel,
+    filtrosAplicados,
+    activeFiltersCount,
+    handleFiltroChange,
+    limparFiltros,
+    aplicarFiltros,
+    toggleFilters,
+  } = useTiposPecasFilters();
 
   const fetchTiposPecas = useCallback(async () => {
     const params: Record<string, string> = {};
@@ -47,11 +36,8 @@ const CadastroTiposPecas = () => {
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
 
-    const response = await api.get<{ tipos_pecas: TipoPeca[] }>(
-      "/tipos_pecas",
-      { params }
-    );
-    return response.tipos_pecas;
+    const response = await tiposPecasAPI.getAll(params);
+    return response.tipos_pecas; 
   }, [filtrosAplicados]);
 
   const {
@@ -92,9 +78,7 @@ const CadastroTiposPecas = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await import("@/api/api").then((mod) =>
-        mod.default.delete(`/tipos_pecas?id=${id}`)
-      );
+      await tiposPecasAPI.delete(id);
       await refetch();
     } catch {
       alert("Erro ao excluir tipo de peça.");
@@ -131,9 +115,6 @@ const CadastroTiposPecas = () => {
     },
   ];
 
-  const activeFiltersCount =
-    Object.values(filtrosAplicados).filter(Boolean).length;
-
   const itemCount = tiposPecas ? tiposPecas.length : 0;
 
   return (
@@ -143,7 +124,7 @@ const CadastroTiposPecas = () => {
         config={{
           type: "list",
           itemCount: itemCount,
-          onFilterToggle: () => setShowFilters(!showFilters),
+          onFilterToggle: toggleFilters,
           showFilters: showFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
@@ -164,7 +145,7 @@ const CadastroTiposPecas = () => {
         onFilterChange={handleFiltroChange}
         onClearFilters={limparFiltros}
         onApplyFilters={aplicarFiltros}
-        onFilterToggle={() => setShowFilters(!showFilters)}
+        onFilterToggle={toggleFilters}
       />
     </>
   );

@@ -1,57 +1,51 @@
 "use client";
-
-import { usuariosAPI } from "@/api/api";
 import { Loading } from "@/components/Loading";
-import {
-  ActionButton,
-  TableList,
-  TableStatusColumn,
-  ListHeader,
-} from "@/components/admin/common";
+import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import { Usuario } from "@/types/admin/cadastro/usuarios";
-import { Mail, ShieldCheck, Trash2 } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect } from "react";
+import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
+import PageHeader from "@/components/admin/ui/PageHeader";
+import { useFilters } from "@/hooks/useFilters";
+import { usuariosAPI } from "@/api/api";
+import { Mail, ShieldCheck } from "lucide-react";
+
+// Interface dos filtros específicos para usuários
+interface UsuariosFilters {
+  [key: string]: string;
+  nome: string;
+  login: string;
+  email: string;
+  incluir_inativos: string;
+}
+
+const INITIAL_USUARIOS_FILTERS: UsuariosFilters = {
+  nome: "",
+  login: "",
+  email: "",
+  incluir_inativos: "",
+};
 
 const CadastroUsuario = () => {
   const { setTitle } = useTitle();
 
-  // Configurar o título da página
   useEffect(() => {
     setTitle("Usuários");
   }, [setTitle]);
 
-  // Filtros
-  const [showFilters, setShowFilters] = useState(false);
-  const [filtrosPainel, setFiltrosPainel] = useState({
-    nome: "",
-    login: "",
-    email: "",
-    incluir_inativos: "",
-  });
-  const [filtrosAplicados, setFiltrosAplicados] = useState({
-    nome: "",
-    login: "",
-    email: "",
-    incluir_inativos: "",
-  });
+  const {
+    showFilters,
+    filtrosPainel,
+    filtrosAplicados,
+    activeFiltersCount,
+    handleFiltroChange,
+    limparFiltros,
+    aplicarFiltros,
+    toggleFilters,
+  } = useFilters(INITIAL_USUARIOS_FILTERS);
 
-  const handleFiltroChange = useCallback((campo: string, valor: string) => {
-    setFiltrosPainel((prev) => ({ ...prev, [campo]: valor }));
-  }, []);
-
-  const limparFiltros = useCallback(() => {
-    setFiltrosPainel({ nome: "", login: "", email: "", incluir_inativos: "" });
-  }, []);
-
-  const aplicarFiltros = useCallback(() => {
-    setFiltrosAplicados({ ...filtrosPainel });
-    setShowFilters(false);
-  }, [filtrosPainel]);
-
-  // Buscar usuários com filtros
   const fetchUsuarios = useCallback(async () => {
     const params: Record<string, string> = {};
     if (filtrosAplicados.nome) params.nome = filtrosAplicados.nome;
@@ -59,6 +53,7 @@ const CadastroUsuario = () => {
     if (filtrosAplicados.email) params.email = filtrosAplicados.email;
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
+
     return await usuariosAPI.getAll(params);
   }, [filtrosAplicados]);
 
@@ -67,9 +62,6 @@ const CadastroUsuario = () => {
     loading,
     refetch,
   } = useDataFetch<Usuario[]>(fetchUsuarios, [fetchUsuarios]);
-
-  // Estado para exclusão
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   if (loading) {
     return (
@@ -82,7 +74,6 @@ const CadastroUsuario = () => {
     );
   }
 
-  // Definir as colunas da tabela
   const columns = [
     {
       header: "Login",
@@ -153,33 +144,28 @@ const CadastroUsuario = () => {
     },
   ];
 
-  // Função de exclusão
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Tem certeza que deseja excluir este usuário?")) return;
-    setDeletingId(id);
     try {
       await usuariosAPI.delete(id);
       await refetch();
     } catch {
       alert("Erro ao excluir usuário.");
-    } finally {
-      setDeletingId(null);
     }
   };
 
   const renderActions = (usuario: Usuario) => (
     <div className="flex gap-2">
       <EditButton id={usuario.id} editRoute="/admin/cadastro/usuarios/editar" />
-      <ActionButton
-        onClick={() => handleDelete(usuario.id)}
-        icon={<Trash2 size={14} />}
-        label={deletingId === usuario.id ? "Excluindo..." : "Excluir"}
-        variant="secondary"
+      <DeleteButton
+        id={usuario.id}
+        onDelete={handleDelete}
+        confirmText="Deseja realmente excluir este usuário?"
+        confirmTitle="Exclusão de Usuário"
+        itemName={`${usuario.nome} (${usuario.login})`}
       />
     </div>
   );
 
-  // Opções de filtro
   const filterOptions = [
     {
       id: "nome",
@@ -206,37 +192,39 @@ const CadastroUsuario = () => {
     },
   ];
 
-  const activeFiltersCount =
-    Object.values(filtrosAplicados).filter(Boolean).length;
+  const itemCount = usuarios ? usuarios.length : 0;
 
   return (
-    <TableList
-      title="Lista de Usuários"
-      items={usuarios || []}
-      keyField="id"
-      columns={columns}
-      renderActions={renderActions}
-      newItemLink="/admin/cadastro/usuarios/novo"
-      newItemLabel="Novo Usuário"
-      showFilter={showFilters}
-      filterOptions={filterOptions}
-      filterValues={filtrosPainel}
-      onFilterChange={handleFiltroChange}
-      onClearFilters={limparFiltros}
-      onApplyFilters={aplicarFiltros}
-      onFilterToggle={() => setShowFilters(!showFilters)}
-      customHeader={
-        <ListHeader
-          title="Lista de Usuários"
-          itemCount={usuarios?.length || 0}
-          onFilterToggle={() => setShowFilters(!showFilters)}
-          showFilters={showFilters}
-          newButtonLink="/admin/cadastro/usuarios/novo"
-          newButtonLabel="Novo Usuário"
-          activeFiltersCount={activeFiltersCount}
-        />
-      }
-    />
+    <>
+      <PageHeader
+        title="Lista de Usuários"
+        config={{
+          type: "list",
+          itemCount: itemCount,
+          onFilterToggle: toggleFilters,
+          showFilters: showFilters,
+          activeFiltersCount: activeFiltersCount,
+          newButton: {
+            label: "Novo Usuário",
+            link: "/admin/cadastro/usuarios/novo",
+          },
+        }}
+      />
+      <TableList
+        title="Lista de Usuários"
+        items={usuarios || []}
+        keyField="id"
+        columns={columns}
+        renderActions={renderActions}
+        showFilter={showFilters}
+        filterOptions={filterOptions}
+        filterValues={filtrosPainel}
+        onFilterChange={handleFiltroChange}
+        onClearFilters={limparFiltros}
+        onApplyFilters={aplicarFiltros}
+        onFilterToggle={toggleFilters}
+      />
+    </>
   );
 };
 
