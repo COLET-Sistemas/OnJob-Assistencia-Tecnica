@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import packageInfo from "../../package.json";
 
 // ✅ Import da função utilitária
 import { criptografarSenha } from "@/utils/cryptoPassword";
@@ -36,6 +37,7 @@ interface Empresa {
 interface LoginResponse {
   token: string;
   nome_usuario: string;
+  id_usuario: number;
   email: string;
   perfil: {
     interno: boolean;
@@ -45,6 +47,7 @@ interface LoginResponse {
     admin: boolean;
   };
   empresa?: Empresa;
+  versao_api?: string | number;
 }
 
 interface LoginRequest {
@@ -104,7 +107,7 @@ export default function LoginPage() {
     try {
       const loginData: LoginRequest = {
         login,
-        senha_criptografada: criptografarSenha(senha), // ✅ usando função do utils
+        senha_criptografada: criptografarSenha(senha),
       };
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
@@ -150,8 +153,14 @@ export default function LoginPage() {
         localStorage.setItem("usuario", login);
         localStorage.setItem("email", authData.email);
         localStorage.setItem("nome_usuario", authData.nome_usuario);
+        localStorage.setItem("id_usuario", String(authData.id_usuario));
+          localStorage.setItem("versao_api", String(authData.versao_api));
         localStorage.setItem("perfil", JSON.stringify(authData.perfil));
         localStorage.setItem("token", authData.token);
+        localStorage.setItem(
+          "id_empresa",
+          String(authData.empresa?.id_empresa)
+        );
         if (authData.empresa) {
           localStorage.setItem("nome_bd", authData.empresa.nome_bd || "");
           const enderecoCompleto = [
@@ -200,8 +209,14 @@ export default function LoginPage() {
         localStorage.setItem("usuario", login);
         localStorage.setItem("email", authData.email);
         localStorage.setItem("nome_usuario", authData.nome_usuario);
+        localStorage.setItem("id_usuario", String(authData.id_usuario));
+          localStorage.setItem("versao_api", String(authData.versao_api));
         localStorage.setItem("perfil", JSON.stringify(authData.perfil));
         localStorage.setItem("token", authData.token);
+        localStorage.setItem(
+          "id_empresa",
+          String(authData.empresa?.id_empresa)
+        );
         if (authData.empresa) {
           localStorage.setItem("nome_bd", authData.empresa.nome_bd || "");
           const enderecoCompleto = [
@@ -486,7 +501,8 @@ export default function LoginPage() {
 
           <div className="mt-10 pt-6 border-t border-gray-200 text-center">
             <p className="text-gray-500 text-xs">
-              © 2025 OnJob Sistemas. Todos os direitos reservados.
+              © 2025 OnJob Sistemas. Todos os direitos reservados - Versão{" "}
+              {packageInfo.version}
             </p>
           </div>
         </div>

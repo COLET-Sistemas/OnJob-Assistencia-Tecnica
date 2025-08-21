@@ -110,6 +110,7 @@ const CadastroMotivosPendencia = () => {
       id: "incluir_inativos",
       label: "Incluir Inativos",
       type: "checkbox" as const,
+      placeholder: "Incluir pendências inativas",
     },
   ];
 

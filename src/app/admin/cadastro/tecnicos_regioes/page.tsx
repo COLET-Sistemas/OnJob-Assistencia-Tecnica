@@ -3,20 +3,28 @@ import { Loading } from "@/components/LoadingPersonalizado";
 import { TableList } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
-import type { UsuarioRegiao } from "@/types/admin/cadastro/usuarios";
-import { useCallback, useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useUsuariosRegioesFilters } from "@/hooks/useSpecificFilters";
-import { usuariosRegioesAPI } from "@/api/api";
-import { format, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Calendar, MapPin } from "lucide-react";
+import { usuariosRegioesAPI, usuariosAPI, regioesAPI } from "@/api/api";
+import { MapPin } from "lucide-react";
 
-// Define a type for the grouped user with regions
-interface UsuarioAgrupado extends UsuarioRegiao {
-  regioes: { id_regiao: number; nome_regiao: string }[];
+// Novo tipo refletindo o retorno da API
+interface UsuarioComRegioes {
+  id_usuario: number;
+  nome_usuario: string;
+  regioes: {
+    id_regiao: number;
+    nome_regiao: string;
+    data_cadastro: string;
+  }[];
+}
+
+interface OpcaoSelect {
+  value: string;
+  label: string;
 }
 
 const CadastroUsuariosRegioes = () => {
@@ -37,23 +45,52 @@ const CadastroUsuariosRegioes = () => {
     toggleFilters,
   } = useUsuariosRegioesFilters();
 
-  // Função para formatar a data
-  const formatarData = (dataString: string) => {
-    try {
-      const data = parseISO(dataString);
-      return format(data, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-    } catch {
-      return dataString;
-    }
-  };
+  // Buscar lista de técnicos
+  // Definindo tipo para usuário retornado pela API
+  interface UsuarioAPI {
+    id_usuario: number;
+    nome_usuario: string;
+    // outros campos se necessário
+  }
+
+  const { data: tecnicos, loading: loadingTecnicos } = useDataFetch<
+    OpcaoSelect[]
+  >(async () => {
+    const res: UsuarioAPI[] = await usuariosAPI.getAll({
+      incluir_inativos: "S",
+      apenas_tecnicos: "S",
+    });
+    return res.map((u: UsuarioAPI) => ({
+      value: String(u.id_usuario),
+      label: u.nome_usuario,
+    }));
+  }, []);
+
+  // Definindo tipo para região retornada pela API
+  interface RegiaoAPI {
+    id_regiao: number;
+    nome_regiao: string;
+    // outros campos se necessário
+  }
+
+  const { data: regioes, loading: loadingRegioes } = useDataFetch<
+    OpcaoSelect[]
+  >(async () => {
+    const res: RegiaoAPI[] = await regioesAPI.getAll();
+    return res.map((r: RegiaoAPI) => ({
+      value: String(r.id_regiao),
+      label: r.nome_regiao,
+    }));
+  }, []);
 
   const fetchUsuariosRegioes = useCallback(async () => {
     const params: Record<string, string> = {};
-    if (filtrosAplicados.nome_usuario)
-      params.nome_usuario = filtrosAplicados.nome_usuario;
-    if (filtrosAplicados.nome_regiao)
-      params.nome_regiao = filtrosAplicados.nome_regiao;
-    if (filtrosAplicados.incluir_inativos) params.incluir_inativos = "S";
+    if (filtrosAplicados.id_usuario) {
+      params.id_usuario = filtrosAplicados.id_usuario;
+    }
+    if (filtrosAplicados.id_regiao) {
+      params.id_regiao = filtrosAplicados.id_regiao;
+    }
     return await usuariosRegioesAPI.getAll(params);
   }, [filtrosAplicados]);
 
@@ -61,38 +98,11 @@ const CadastroUsuariosRegioes = () => {
     data: usuariosRegioes,
     loading,
     refetch,
-  } = useDataFetch<UsuarioRegiao[]>(fetchUsuariosRegioes, [
+  } = useDataFetch<UsuarioComRegioes[]>(fetchUsuariosRegioes, [
     fetchUsuariosRegioes,
   ]);
 
-  const usuariosAgrupados = usuariosRegioes
-    ? usuariosRegioes.reduce(
-        (
-          acc: {
-            [key: number]: UsuarioAgrupado;
-          },
-          item: UsuarioRegiao
-        ) => {
-          if (!acc[item.id_usuario]) {
-            acc[item.id_usuario] = {
-              ...item,
-              regioes: [
-                { id_regiao: item.id_regiao, nome_regiao: item.nome_regiao },
-              ],
-            };
-          } else {
-            acc[item.id_usuario].regioes.push({
-              id_regiao: item.id_regiao,
-              nome_regiao: item.nome_regiao,
-            });
-          }
-          return acc;
-        },
-        {}
-      )
-    : {};
-
-  if (loading) {
+  if (loading || loadingTecnicos || loadingRegioes) {
     return (
       <Loading
         fullScreen={true}
@@ -106,8 +116,8 @@ const CadastroUsuariosRegioes = () => {
   const columns = [
     {
       header: "Usuário",
-      accessor: "nome_usuario" as keyof UsuarioAgrupado,
-      render: (usuario: UsuarioAgrupado) => (
+      accessor: "nome_usuario" as keyof UsuarioComRegioes,
+      render: (usuario: UsuarioComRegioes) => (
         <div className="text-sm font-semibold text-gray-900">
           {usuario.nome_usuario}
         </div>
@@ -115,8 +125,8 @@ const CadastroUsuariosRegioes = () => {
     },
     {
       header: "Regiões",
-      accessor: "regioes" as keyof UsuarioAgrupado,
-      render: (usuario: UsuarioAgrupado) => (
+      accessor: "regioes" as keyof UsuarioComRegioes,
+      render: (usuario: UsuarioComRegioes) => (
         <div className="flex flex-wrap gap-2">
           {usuario.regioes.map((regiao) => (
             <span
@@ -133,16 +143,6 @@ const CadastroUsuariosRegioes = () => {
         </div>
       ),
     },
-    {
-      header: "Data de Cadastro",
-      accessor: "data_cadastro" as keyof UsuarioAgrupado,
-      render: (usuario: UsuarioAgrupado) => (
-        <div className="text-sm text-[var(--neutral-graphite)] flex items-center gap-1.5">
-          <Calendar size={16} className="text-[var(--primary)]" />
-          {formatarData(usuario.data_cadastro)}
-        </div>
-      ),
-    },
   ];
 
   const handleDelete = async (id: number) => {
@@ -154,7 +154,7 @@ const CadastroUsuariosRegioes = () => {
     }
   };
 
-  const renderActions = (usuario: UsuarioAgrupado) => (
+  const renderActions = (usuario: UsuarioComRegioes) => (
     <div className="flex gap-2">
       <EditButton
         id={usuario.id_usuario}
@@ -170,32 +170,39 @@ const CadastroUsuariosRegioes = () => {
     </div>
   );
 
+  // filtros agora são selects
   const filterOptions = [
     {
-      id: "nome_usuario",
-      label: "Nome do Usuário",
-      type: "text" as const,
-      placeholder: "Buscar por nome do usuário...",
+      id: "id_usuario",
+      label: "Técnico",
+      type: "select" as const,
+      options: tecnicos ?? [],
+      placeholder: "Selecione um técnico...",
     },
     {
-      id: "nome_regiao",
-      label: "Nome da Região",
-      type: "text" as const,
-      placeholder: "Buscar por nome da região...",
-    },
-    {
-      id: "incluir_inativos",
-      label: "Incluir Inativos",
-      type: "checkbox" as const,
+      id: "id_regiao",
+      label: "Região",
+      type: "select" as const,
+      options: regioes ?? [],
+      placeholder: "Selecione uma região...",
     },
   ];
 
-  const itemCount = Object.keys(usuariosAgrupados).length;
+  // Ordena a lista por nome_usuario (case insensitive)
+  const usuariosRegioesOrdenados = (usuariosRegioes ?? [])
+    .slice()
+    .sort((a, b) =>
+      a.nome_usuario.localeCompare(b.nome_usuario, "pt-BR", {
+        sensitivity: "base",
+      })
+    );
+
+  const itemCount = usuariosRegioesOrdenados.length;
 
   return (
     <>
       <PageHeader
-        title="Lista de Técninos Xs Regiões"
+        title="Lista de Técninos X Regiões"
         config={{
           type: "list",
           itemCount: itemCount,
@@ -210,7 +217,7 @@ const CadastroUsuariosRegioes = () => {
       />
       <TableList
         title="Lista de Técnicos X Regiões"
-        items={Object.values(usuariosAgrupados) as UsuarioAgrupado[]}
+        items={usuariosRegioesOrdenados}
         keyField="id_usuario"
         columns={columns}
         renderActions={renderActions}

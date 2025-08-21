@@ -3,14 +3,13 @@ import { Loading } from "@/components/LoadingPersonalizado";
 import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import type { Maquina, MaquinaResponse } from "@/types/admin/cadastro/maquinas";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useMaquinasFilters } from "@/hooks/useSpecificFilters";
 import { maquinasAPI } from "@/api/api";
 
-// Helper function to consistently format dates on both server and client
 const formatDate = (dateString: string): string => {
   if (!dateString) return "-";
   const date = new Date(dateString);
@@ -25,6 +24,9 @@ const CadastroMaquinas = () => {
   const [maquinas, setMaquinas] = useState<Maquina[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingData, setLoadingData] = useState(false);
+
+  // Ref para controlar se é uma mudança de filtro ou mudança de página
+  const isFilterChangeRef = useRef(false);
 
   // Estado para controle de paginação
   const [paginacao, setPaginacao] = useState({
@@ -121,14 +123,31 @@ const CadastroMaquinas = () => {
     [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]
   );
 
+  // useEffect separado para carregamento inicial
   useEffect(() => {
     carregarMaquinas(filtrosAplicados, 1);
+  }, []); // Executa apenas na montagem do componente
+
+  // useEffect para mudanças de filtros - sempre volta para página 1
+  useEffect(() => {
+    if (isFilterChangeRef.current) {
+      carregarMaquinas(filtrosAplicados, 1);
+      isFilterChangeRef.current = false;
+    }
   }, [filtrosAplicados, carregarMaquinas]);
 
   // Handler para mudar a página
   const mudarPagina = useCallback(
     (novaPagina: number) => {
       if (novaPagina < 1 || novaPagina > paginacao.totalPaginas) return;
+
+      // Atualiza o estado da paginação primeiro
+      setPaginacao((prev) => ({
+        ...prev,
+        paginaAtual: novaPagina,
+      }));
+
+      // Carrega os dados da nova página
       carregarMaquinas(filtrosAplicados, novaPagina);
     },
     [filtrosAplicados, paginacao.totalPaginas, carregarMaquinas]
@@ -136,14 +155,24 @@ const CadastroMaquinas = () => {
 
   // Handler customizado para aplicar filtros
   const handleAplicarFiltros = useCallback(() => {
+    isFilterChangeRef.current = true;
     aplicarFiltros();
-    // carregarMaquinas será chamado automaticamente pelo useEffect quando filtrosAplicados mudar
+    // Reset da página atual para 1 quando filtros são aplicados
+    setPaginacao((prev) => ({
+      ...prev,
+      paginaAtual: 1,
+    }));
   }, [aplicarFiltros]);
 
   // Handler customizado para limpar filtros
   const handleLimparFiltros = useCallback(() => {
+    isFilterChangeRef.current = true;
     limparFiltros();
-    // carregarMaquinas será chamado automaticamente pelo useEffect quando filtrosAplicados mudar
+    // Reset da página atual para 1 quando filtros são limpos
+    setPaginacao((prev) => ({
+      ...prev,
+      paginaAtual: 1,
+    }));
   }, [limparFiltros]);
 
   if (loading) {
@@ -163,25 +192,14 @@ const CadastroMaquinas = () => {
       accessor: "numero_serie" as keyof Maquina,
       render: (maquina: Maquina) => (
         <div className="flex flex-col">
-          <div className="text-sm font-semibold text-gray-900">
-            {maquina.numero_serie}
+          <div className="text-sm text-gray-900 mt-1 line-clamp-1 ">
+            {maquina.descricao}
           </div>
-          <div
-            className="text-xs text-gray-600 mt-1 max-w-[200px] line-clamp-1"
-            title={maquina.descricao}
-          >
-            {maquina.descricao || "-"}
+          <div className="text-xs text-gray-600">
+            <span className="font-bold">{maquina.numero_serie}</span> -{" "}
+            {maquina.modelo}
           </div>
         </div>
-      ),
-    },
-    {
-      header: "Modelo",
-      accessor: "modelo" as keyof Maquina,
-      render: (maquina: Maquina) => (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[var(--secondary-yellow)]/10 text-[var(--dark-navy)] border border-[var(--secondary-yellow)]/20">
-          {maquina.modelo}
-        </span>
       ),
     },
     {
@@ -276,6 +294,7 @@ const CadastroMaquinas = () => {
       id: "incluir_inativos",
       label: "Incluir Inativos",
       type: "checkbox" as const,
+      placeholder: "Incluir máquinas inativas",
     },
   ];
 
@@ -386,6 +405,7 @@ const CadastroMaquinas = () => {
                       setPaginacao((prev) => ({
                         ...prev,
                         registrosPorPagina: novoValor,
+                        paginaAtual: 1, // Reset para página 1 ao mudar quantidade
                       }));
                       carregarMaquinas(filtrosAplicados, 1, novoValor);
                     }}

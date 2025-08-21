@@ -6,6 +6,8 @@ import {
   LogOut,
   Maximize,
   Menu,
+  ScrollText,
+  UsersRound,
   Minimize,
   UserCircle,
 } from "lucide-react";
@@ -100,6 +102,9 @@ export default function Navbar({
     localStorage.removeItem("usuario");
     localStorage.removeItem("endereco_empresa");
     localStorage.removeItem("nome_bd");
+    localStorage.removeItem("id_usuario");
+    localStorage.removeItem("id_empresa");
+    localStorage.removeItem("versao_api");
 
     window.location.href = "/";
   };
@@ -211,7 +216,6 @@ export default function Navbar({
                   className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7C54BD] transition-all duration-150 cursor-pointer group"
                   onClick={() => {
                     setDropdownOpen(false);
-                    console.log("Ir para perfil");
                   }}
                 >
                   <UserCircle
@@ -219,6 +223,32 @@ export default function Navbar({
                     className="mr-3 text-gray-500 group-hover:text-[#7C54BD] transition-colors duration-150"
                   />
                   <span className="font-medium">Perfil</span>
+                </button>
+
+                <button
+                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7C54BD] transition-all duration-150 cursor-pointer group"
+                  onClick={() => {
+                    setDropdownOpen(false);
+                  }}
+                >
+                  <ScrollText
+                    size={18}
+                    className="mr-3 text-gray-500 group-hover:text-[#7C54BD] transition-colors duration-150"
+                  />
+                  <span className="font-medium">Licença de Uso</span>
+                </button>
+
+                <button
+                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7C54BD] transition-all duration-150 cursor-pointer group"
+                  onClick={() => {
+                    setDropdownOpen(false);
+                  }}
+                >
+                  <UsersRound
+                    size={18}
+                    className="mr-3 text-gray-500 group-hover:text-[#7C54BD] transition-colors duration-150"
+                  />
+                  <span className="font-medium">Gerenciar Usuários</span>
                 </button>
 
                 <div className="border-t border-gray-100 my-1"></div>

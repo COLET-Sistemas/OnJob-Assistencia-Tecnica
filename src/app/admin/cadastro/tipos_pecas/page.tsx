@@ -220,6 +220,7 @@ const CadastroTiposPecas = () => {
       id: "incluir_inativos",
       label: "Incluir Inativos",
       type: "checkbox" as const,
+      placeholder: "Incluir tipos peças inativas",
     },
   ];
 

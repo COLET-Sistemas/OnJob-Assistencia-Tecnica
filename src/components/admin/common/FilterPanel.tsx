@@ -237,7 +237,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                                 : "text-gray-800"
                             }`}
                           >
-                            Incluir clientes inativos
+                            {option.placeholder || "Incluir inativos"}
                           </span>
                         </div>
                         <div className="flex items-center">

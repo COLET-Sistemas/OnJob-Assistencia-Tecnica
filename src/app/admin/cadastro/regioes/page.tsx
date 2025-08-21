@@ -219,6 +219,7 @@ const CadastroRegioes = () => {
       id: "incluir_inativos",
       label: "Incluir Inativos",
       type: "checkbox" as const,
+      placeholder: "Incluir regiões inativas",
     },
   ];
 

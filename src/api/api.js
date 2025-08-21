@@ -118,19 +118,32 @@ const api = {
   },
 };
 
-// Funções específicas para diferentes recursos
 export const clientesAPI = {
   getAll: (params = {}) => {
-    console.log(
-      "clientesAPI.getAll chamado com params:",
-      JSON.stringify(params)
-    );
-    return api.get("/clientes", { params });
+    const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
+    return api.get("/clientes", {
+      params: {
+        nro_pagina,
+        qtde_registros,
+        ...filtros,
+      },
+    });
   },
-  getById: (id) => api.get(`/clientes/${id}`),
+  getAllWithInactive: (params = {}) => {
+    const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
+    return api.get("/clientes", {
+      params: {
+        incluir_inativos: "S",
+        nro_pagina,
+        qtde_registros,
+        ...filtros,
+      },
+    });
+  },
+  getById: (id) => api.get("/clientes", { params: { id } }),
   create: (clienteData) => api.post("/clientes", clienteData),
-  update: (id, clienteData) => api.put(`/clientes/${id}`, clienteData),
-  delete: (id) => api.delete(`/clientes/${id}`),
+  update: (id, clienteData) => api.put(`/clientes?id=${id}`, clienteData),
+  delete: (id) => api.delete(`/clientes?id=${id}`),
 };
 
 export const maquinasAPI = {
@@ -195,7 +208,6 @@ export const regioesAPI = {
 
 export const pecasAPI = {
   getAll: (params = {}) => {
-    // Garante paginação padrão se não vier nos filtros
     const { nro_pagina = 1, qtde_registros = 20, ...filtros } = params;
     return api.get("/pecas", {
       params: {

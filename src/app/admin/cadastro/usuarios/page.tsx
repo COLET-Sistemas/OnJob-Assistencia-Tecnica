@@ -189,6 +189,7 @@ const CadastroUsuario = () => {
       id: "incluir_inativos",
       label: "Incluir Inativos",
       type: "checkbox" as const,
+      placeholder: "Incluir usuários inativos",
     },
   ];
 

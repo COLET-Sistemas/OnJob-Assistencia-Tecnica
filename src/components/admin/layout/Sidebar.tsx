@@ -7,7 +7,6 @@ import {
   ClipboardList,
   Home,
   MapPin,
-  ScrollText,
   Settings,
   Search,
   UserPlus,
@@ -17,7 +16,6 @@ import {
   ClipboardEdit,
   FileCog,
   UsersRound,
-  User,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -93,22 +91,16 @@ const menuItems: MenuItem[] = [
         path: "/admin/cadastro/maquinas",
       },
       {
-        key: "motivos_atendimentos",
-        label: "Motivos Atendimentos",
-        icon: ClipboardList,
-        path: "/admin/cadastro/motivos_atendimentos",
-      },
-      {
-        key: "motivos_pendencias",
-        label: "Motivos Pendências",
-        icon: AlertTriangle,
-        path: "/admin/cadastro/motivos_pendencias",
-      },
-      {
         key: "pecas",
         label: "Peças",
         icon: Wrench,
         path: "/admin/cadastro/pecas",
+      },
+      {
+        key: "tipos_pecas",
+        label: "Tipos Peças",
+        icon: Tag,
+        path: "/admin/cadastro/tipos_pecas",
       },
       {
         key: "regioes",
@@ -123,30 +115,16 @@ const menuItems: MenuItem[] = [
         path: "/admin/cadastro/tecnicos_regioes",
       },
       {
-        key: "tipos_pecas",
-        label: "Tipos Peças",
-        icon: Tag,
-        path: "/admin/cadastro/tipos_pecas",
-      },
-    ],
-  },
-  {
-    key: "central_administracao",
-    label: "Administração",
-    icon: FilePlus,
-    path: "/admin/administracao",
-    submenu: [
-      {
-        key: "licencas",
-        label: "Licença de uso",
-        icon: ScrollText,
-        path: "/admin/administracao/licencas",
+        key: "motivos_atendimentos",
+        label: "Motivos Atendimentos",
+        icon: ClipboardList,
+        path: "/admin/cadastro/motivos_atendimentos",
       },
       {
-        key: "usuarios",
-        label: "Usuários",
-        icon: User,
-        path: "/admin/cadastro/usuarios",
+        key: "motivos_pendencias",
+        label: "Motivos Pendências",
+        icon: AlertTriangle,
+        path: "/admin/cadastro/motivos_pendencias",
       },
     ],
   },
@@ -158,7 +136,6 @@ export default function Sidebar({ isOpen }: SidebarProps) {
   const findActiveMenuKey = React.useCallback(
     (path: string, items: MenuItem[]): string | null => {
       for (const item of items) {
-        // Verificar se o item atual corresponde ao path
         if (item.path && path.startsWith(item.path)) {
           return item.key;
         }
@@ -502,19 +479,28 @@ export default function Sidebar({ isOpen }: SidebarProps) {
 
         <div className="border-t border-white/10 p-4 mt-auto">
           {isOpen ? (
-            <div className="flex items-center space-x-3 bg-[#7C54BD] p-3 rounded-lg border border-white/20">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <Cog size={18} className="text-[#F6C647]" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-white/80">
-                  {typeof window !== "undefined"
-                    ? localStorage.getItem("nome_bd") || "Nome BD não definido"
-                    : "Nome BD não disponível"}
-                </p>
-                <p className="text-xs font-medium text-white">
-                  Versão {packageInfo.version}
-                </p>
+            <div className="flex flex-col space-y-1 bg-[#7C54BD] p-3 rounded-lg border border-white/20">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <Cog size={18} className="text-[#F6C647]" />
+                </div>
+                <div className="flex flex-col">
+                  <p className="text-sm font-medium text-white/80">
+                    {typeof window !== "undefined"
+                      ? localStorage.getItem("nome_bd") ||
+                        "Nome BD não definido"
+                      : "Nome BD não disponível"}
+                  </p>
+                  <p className="text-xs font-medium text-white">
+                    Versão APP: {packageInfo.version}
+                  </p>
+                  <p className="text-xs font-medium text-white">
+                    Versão API:{" "}
+                    {typeof window !== "undefined"
+                      ? localStorage.getItem("versao_api") || "não definido"
+                      : "não disponível"}
+                  </p>
+                </div>
               </div>
             </div>
           ) : (
