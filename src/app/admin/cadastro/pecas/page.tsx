@@ -3,28 +3,26 @@ import { Loading } from "@/components/LoadingPersonalizado";
 import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
-import type { Maquina } from "@/types/admin/cadastro/maquinas";
+import type { Peca } from "@/types/admin/cadastro/pecas";
 import { useCallback, useEffect, useState } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
-import { maquinasAPI } from "@/api/api";
-import { Settings } from "lucide-react";
+import { pecasAPI } from "@/api/api";
+import { Package } from "lucide-react";
 
-// Interface dos filtros específicos para máquinas
-interface MaquinasFilters {
-  numero_serie: string;
-  modelo: string;
+// Interface dos filtros específicos para peças
+interface PecasFilters {
+  codigo: string;
   descricao: string;
   incluir_inativos: string;
   [key: string]: string;
 }
 
-const INITIAL_MAQUINAS_FILTERS: MaquinasFilters = {
-  numero_serie: "",
-  modelo: "",
+const INITIAL_PECAS_FILTERS: PecasFilters = {
+  codigo: "",
   descricao: "",
   incluir_inativos: "",
 };
@@ -36,28 +34,17 @@ interface PaginacaoInfo {
   registrosPorPagina: number;
 }
 
-interface MaquinasResponse {
-  dados: Maquina[];
+interface PecasResponse {
+  dados: Peca[];
   total_paginas: number;
   total_registros: number;
-  pagina_atual: number;
-  registros_por_pagina: number;
 }
 
-const formatDate = (dateString: string): string => {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "-";
-  return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
-    .toString()
-    .padStart(2, "0")}/${date.getFullYear()}`;
-};
-
-const CadastroMaquinas = () => {
+const CadastroPecas = () => {
   const { setTitle } = useTitle();
 
   useEffect(() => {
-    setTitle("Máquinas");
+    setTitle("Peças");
   }, [setTitle]);
 
   const {
@@ -69,7 +56,7 @@ const CadastroMaquinas = () => {
     limparFiltros,
     aplicarFiltros,
     toggleFilters,
-  } = useFilters(INITIAL_MAQUINAS_FILTERS);
+  } = useFilters(INITIAL_PECAS_FILTERS);
 
   const [paginacao, setPaginacao] = useState<PaginacaoInfo>({
     paginaAtual: 1,
@@ -78,69 +65,34 @@ const CadastroMaquinas = () => {
     registrosPorPagina: 25,
   });
 
-  const fetchMaquinas = useCallback(async (): Promise<Maquina[]> => {
+  const fetchPecas = useCallback(async (): Promise<Peca[]> => {
     const params: Record<string, string | number> = {
       nro_pagina: paginacao.paginaAtual,
       qtde_registros: paginacao.registrosPorPagina,
     };
 
-    // Adiciona os filtros
-    if (
-      filtrosAplicados.numero_serie &&
-      filtrosAplicados.numero_serie.trim() !== ""
-    ) {
-      params.numero_serie = filtrosAplicados.numero_serie.trim();
-    }
-    if (filtrosAplicados.modelo && filtrosAplicados.modelo.trim() !== "") {
-      params.modelo = filtrosAplicados.modelo.trim();
-    }
-    if (
-      filtrosAplicados.descricao &&
-      filtrosAplicados.descricao.trim() !== ""
-    ) {
-      params.descricao = filtrosAplicados.descricao.trim();
-    }
-    if (filtrosAplicados.incluir_inativos === "true") {
+    if (filtrosAplicados.codigo) params.codigo = filtrosAplicados.codigo;
+    if (filtrosAplicados.descricao)
+      params.descricao = filtrosAplicados.descricao;
+    if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
-    }
 
-    let response: MaquinasResponse | Maquina[];
+    const response: PecasResponse = await pecasAPI.getAll(params);
 
-    if (filtrosAplicados.incluir_inativos === "true") {
-      response = await maquinasAPI.getAllWithInactive(params);
-    } else {
-      response = await maquinasAPI.getAll(params);
-    }
+    setPaginacao((prev) => ({
+      ...prev,
+      totalPaginas: response.total_paginas,
+      totalRegistros: response.total_registros,
+    }));
 
-    // Verifica se a resposta tem o formato paginado
-    if (response && typeof response === "object" && "dados" in response) {
-      const paginatedResponse = response as MaquinasResponse;
-
-      setPaginacao((prev) => ({
-        ...prev,
-        totalPaginas: paginatedResponse.total_paginas || 1,
-        totalRegistros: paginatedResponse.total_registros || 0,
-      }));
-
-      return paginatedResponse.dados || [];
-    } else {
-      // Fallback para o formato antigo
-      const maquinasArray = response as Maquina[];
-
-      setPaginacao((prev) => ({
-        ...prev,
-        totalRegistros: maquinasArray?.length || 0,
-      }));
-
-      return maquinasArray || [];
-    }
+    return response.dados;
   }, [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]);
 
   const {
-    data: maquinas,
+    data: pecas,
     loading,
     refetch,
-  } = useDataFetch<Maquina[]>(fetchMaquinas, [fetchMaquinas]);
+  } = useDataFetch<Peca[]>(fetchPecas, [fetchPecas]);
 
   const handlePageChange = useCallback((novaPagina: number) => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: novaPagina }));
@@ -163,7 +115,7 @@ const CadastroMaquinas = () => {
       <Loading
         fullScreen={true}
         preventScroll={false}
-        text="Carregando máquinas..."
+        text="Carregando peças..."
         size="large"
       />
     );
@@ -171,96 +123,73 @@ const CadastroMaquinas = () => {
 
   const columns = [
     {
-      header: "Máquina",
-      accessor: "numero_serie" as keyof Maquina,
-      render: (maquina: Maquina) => (
-        <div className="flex items-start gap-2">
-          <Settings
-            size={16}
-            className="text-[var(--primary)] mt-1 flex-shrink-0"
-          />
-          <div className="flex flex-col">
-            <div className="text-sm text-gray-900 mt-1 line-clamp-1">
-              {maquina.descricao}
-            </div>
-            <div className="text-xs text-gray-600">
-              <span className="font-bold">{maquina.numero_serie}</span> -{" "}
-              {maquina.modelo}
-            </div>
-          </div>
+      header: "Código",
+      accessor: "codigo_peca" as keyof Peca,
+      render: (peca: Peca) => (
+        <div className="text-sm text-gray-900 flex items-center gap-2">
+          <Package size={16} className="text-[var(--primary)]" />
+          {peca.codigo_peca}
         </div>
       ),
     },
     {
-      header: "Cliente Atual",
-      accessor: "cliente_atual" as keyof Maquina,
-      render: (maquina: Maquina) => (
-        <span className="text-sm text-gray-600">
-          {maquina.cliente_atual?.nome_fantasia || "-"}
-        </span>
+      header: "Descrição",
+      accessor: "descricao" as keyof Peca,
+      render: (peca: Peca) => (
+        <div className="text-sm text-gray-900">{peca.descricao}</div>
       ),
     },
     {
-      header: "Data 1ª Venda",
-      accessor: "data_1a_venda" as keyof Maquina,
-      render: (maquina: Maquina) => (
-        <span className="text-sm text-gray-600">
-          {formatDate(maquina.data_1a_venda)}
-        </span>
+      header: "Tipo de Peça",
+      accessor: "tipo_peca" as keyof Peca,
+      render: (peca: Peca) => (
+        <div className="text-sm text-gray-900">{peca.tipo_peca}</div>
       ),
     },
     {
-      header: "Nota Fiscal",
-      accessor: "nota_fiscal_venda" as keyof Maquina,
-      render: (maquina: Maquina) => (
-        <span className="text-sm text-gray-600 font-medium">
-          {maquina.nota_fiscal_venda || "-"}
-        </span>
-      ),
-    },
-    {
-      header: "Data Final Garantia",
-      accessor: "data_final_garantia" as keyof Maquina,
-      render: (maquina: Maquina) => (
-        <span className="text-sm text-gray-600">
-          {formatDate(maquina.data_final_garantia)}
+      header: "Unidade de Medida",
+      accessor: "unidade_medida" as keyof Peca,
+      render: (peca: Peca) => (
+        <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-[var(--secondary-yellow)]/20 text-[var(--dark-navy)] border border-[var(--secondary-yellow)]/30">
+          {peca.unidade_medida}
         </span>
       ),
     },
     {
       header: "Status",
-      accessor: "situacao" as keyof Maquina,
-      render: (maquina: Maquina) => (
-        <TableStatusColumn status={maquina.situacao} />
-      ),
+      accessor: "situacao" as keyof Peca,
+      render: (peca: Peca) => <TableStatusColumn status={peca.situacao} />,
     },
   ];
 
   const handleDelete = async (id: number) => {
     try {
-      await maquinasAPI.delete(id);
+      await pecasAPI.delete(id);
       await refetch();
     } catch {
-      alert("Erro ao excluir máquina.");
+      alert("Erro ao excluir essa peça.");
     }
   };
 
-  const renderActions = (maquina: Maquina) => (
+  const renderActions = (peca: Peca) => (
     <div className="flex gap-2">
-      <EditButton id={maquina.id} editRoute="/admin/cadastro/maquinas/editar" />
+      <EditButton id={peca.id} editRoute="/admin/cadastro/pecas/editar" />
       <DeleteButton
-        id={maquina.id}
+        id={peca.id}
         onDelete={handleDelete}
-        confirmText="Deseja realmente excluir esta máquina?"
-        confirmTitle="Exclusão de Máquina"
-        itemName={`${maquina.numero_serie} - ${
-          maquina.descricao || "Sem descrição"
-        }`}
+        confirmText="Deseja realmente excluir esta peça?"
+        confirmTitle="Exclusão de Peça"
+        itemName={`${peca.codigo_peca}`}
       />
     </div>
   );
 
   const handleFiltroChangeCustom = (campo: string, valor: string) => {
+    // Converter código para maiúsculo
+    if (campo === "codigo" && typeof valor === "string") {
+      valor = valor.toUpperCase();
+    }
+
     // Converter checkbox para string
     if (campo === "incluir_inativos") {
       valor = valor === "true" ? "true" : "";
@@ -271,35 +200,29 @@ const CadastroMaquinas = () => {
 
   const filterOptions = [
     {
-      id: "numero_serie",
-      label: "Número de Série",
+      id: "codigo",
+      label: "Código",
       type: "text" as const,
-      placeholder: "Buscar por número de série...",
-    },
-    {
-      id: "modelo",
-      label: "Modelo",
-      type: "text" as const,
-      placeholder: "Buscar por modelo...",
+      placeholder: "Digite o código da peça...",
     },
     {
       id: "descricao",
       label: "Descrição",
       type: "text" as const,
-      placeholder: "Buscar por descrição...",
+      placeholder: "Digite a descrição da peça...",
     },
     {
       id: "incluir_inativos",
       label: "Incluir Inativos",
       type: "checkbox" as const,
-      placeholder: "Incluir máquinas inativas",
+      placeholder: "Incluir peças inativas",
     },
   ];
 
   return (
     <>
       <PageHeader
-        title="Lista de Máquinas"
+        title="Lista de Peças"
         config={{
           type: "list",
           itemCount: paginacao.totalRegistros,
@@ -307,15 +230,14 @@ const CadastroMaquinas = () => {
           showFilters: showFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
-            label: "Nova Máquina",
-            link: "/admin/cadastro/maquinas/novo",
+            label: "Nova Peça",
+            link: "/admin/cadastro/pecas/novo",
           },
         }}
       />
-
       <TableList
-        title="Lista de Máquinas"
-        items={maquinas || []}
+        title="Lista de Peças"
+        items={pecas || []}
         keyField="id"
         columns={columns}
         renderActions={renderActions}
@@ -327,11 +249,10 @@ const CadastroMaquinas = () => {
         onApplyFilters={aplicarFiltros}
         onFilterToggle={toggleFilters}
         emptyStateProps={{
-          title: "Nenhuma máquina encontrada",
-          description: "Comece cadastrando uma nova máquina.",
+          title: "Nenhuma peça encontrada",
+          description: "Comece cadastrando uma nova peça.",
         }}
       />
-
       <Pagination
         currentPage={paginacao.paginaAtual}
         totalPages={paginacao.totalPaginas}
@@ -346,4 +267,4 @@ const CadastroMaquinas = () => {
   );
 };
 
-export default CadastroMaquinas;
+export default CadastroPecas;

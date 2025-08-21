@@ -5,6 +5,7 @@ import { Building2, MapPin, Users, Shield, Package } from "lucide-react";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { Loading } from "@/components/LoadingPersonalizado";
 import packageInfo from "../../../../../package.json";
+import { useTitle } from "@/context/TitleContext";
 
 interface EmpresaData {
   razao_social: string;
@@ -42,6 +43,12 @@ const ConsultaEmpresa: React.FC = () => {
     versaoApi: "",
   });
   const [loading, setLoading] = useState(true);
+
+  const { setTitle } = useTitle();
+
+  useEffect(() => {
+    setTitle("Empresa / Licenças / Versões");
+  }, [setTitle]);
 
   useEffect(() => {
     carregarDadosEmpresa();
@@ -140,15 +147,12 @@ const ConsultaEmpresa: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <PageHeader
-          title="Informações da Empresa"
-          config={{ type: "form", backLink: "/dashboard" }}
-        />
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loading fullScreen={false} text="Carregando informações..." />
-        </div>
-      </div>
+      <Loading
+        fullScreen={true}
+        preventScroll={false}
+        text="Carregando motivos de atendimento..."
+        size="large"
+      />
     );
   }
 

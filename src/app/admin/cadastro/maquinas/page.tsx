@@ -172,14 +172,14 @@ const CadastroMaquinas = () => {
       accessor: "numero_serie" as keyof Maquina,
       render: (maquina: Maquina) => (
         <div className="flex items-start gap-2">
-
           <div className="flex flex-col">
             <div className="text-sm text-gray-900 mt-1 line-clamp-1">
               {maquina.descricao}
             </div>
-            <div className="text-xs text-gray-600">
-              <span className="font-bold">{maquina.numero_serie}</span> -{" "}
-              {maquina.modelo}
+            <div className=" text-gray-600">
+              <span className="font-bold text-sm">{maquina.numero_serie}</span>
+              {" -  "}
+              <span className=" text-xs">{maquina.modelo}</span>
             </div>
           </div>
         </div>

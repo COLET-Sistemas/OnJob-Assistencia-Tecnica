@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin } from "lucide-react";
+import { MapPinCheck, MapPinned } from "lucide-react";
 import type { Cliente } from "@/types/admin/cadastro/clientes";
 
 interface LocationButtonProps {
@@ -51,8 +51,8 @@ const LocationButton = ({
         title="Definir localização geográfica"
         type="button"
       >
-        <MapPin size={15} />
-        {!iconOnly && <span>Delimitar</span>}
+        <MapPinCheck size={16} />
+        {!iconOnly && <span>Ajustar</span>}
       </button>
     );
   }
@@ -71,19 +71,7 @@ const LocationButton = ({
         className={`${baseClasses} bg-blue-500/10 hover:bg-blue-500/20 text-blue-500`}
         title="Traçar rota até o cliente"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
-        </svg>
+        <MapPinned size={16} />
         {!iconOnly && <span>Rota</span>}
       </a>
     );
