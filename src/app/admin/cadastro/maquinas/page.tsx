@@ -29,7 +29,7 @@ const CadastroMaquinas = () => {
   // Estado para controle de paginação
   const [paginacao, setPaginacao] = useState({
     paginaAtual: 1,
-    registrosPorPagina: 20,
+    registrosPorPagina: 25,
     totalPaginas: 1,
     totalRegistros: 0,
   });

@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Home,
   MapPin,
+  ScrollText,
   Settings,
   Search,
   UserPlus,
@@ -69,19 +70,13 @@ const menuItems: MenuItem[] = [
     path: "/admin/relatorios",
   },
   // {
-  //   key: "cadastros_link",
-  //   label: "Cadastros",
-  //   icon: FilePlus,
-  //   path: "/admin/cadastro",
+  //   key: "cadastros_section",
+  //   label: "Central de Cadastros",
+  //   isSection: true,
   // },
   {
-    key: "cadastros_section",
-    label: "Cadastros",
-    isSection: true,
-  },
-  {
     key: "central_cadastro",
-    label: "Central de Cadastro",
+    label: "Cadastros",
     icon: FilePlus,
     path: "/admin/cadastro",
     submenu: [
@@ -125,13 +120,27 @@ const menuItems: MenuItem[] = [
         key: "usuarios_regioes",
         label: "Técnicos x Regiões",
         icon: UsersRound,
-        path: "/admin/cadastro/usuarios_regioes",
+        path: "/admin/cadastro/tecnicos_regioes",
       },
       {
         key: "tipos_pecas",
         label: "Tipos Peças",
         icon: Tag,
         path: "/admin/cadastro/tipos_pecas",
+      },
+    ],
+  },
+  {
+    key: "central_administracao",
+    label: "Administração",
+    icon: FilePlus,
+    path: "/admin/administracao",
+    submenu: [
+      {
+        key: "licencas",
+        label: "Licença de uso",
+        icon: ScrollText,
+        path: "/admin/administracao/licencas",
       },
       {
         key: "usuarios",

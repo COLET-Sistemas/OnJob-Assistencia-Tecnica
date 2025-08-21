@@ -87,7 +87,7 @@ const CadastroCliente = () => {
     paginaAtual: 1,
     totalPaginas: 1,
     totalRegistros: 0,
-    registrosPorPagina: 20,
+    registrosPorPagina: 25,
   });
 
   // Configure the page title

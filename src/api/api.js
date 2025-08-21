@@ -290,11 +290,21 @@ export const tiposPecasAPI = {
 };
 
 export const usuariosRegioesAPI = {
-  getAll: () => api.get("/usuarios_regioes"),
-  getById: (id) => api.get(`/usuarios_regioes/${id}`),
-  create: (data) => api.post("/usuarios_regioes", data),
-  update: (id, data) => api.put(`/usuarios_regioes/${id}`, data),
-  delete: (id) => api.delete(`/usuarios_regioes/${id}`),
+  getAll: (params = {}) => {
+    return api.get("/usuarios_regioes", { params });
+  },
+  getAllWithInactive: (params = {}) => {
+    return api.get("/usuarios_regioes", {
+      params: {
+        incluir_inativos: "S",
+        ...params,
+      },
+    });
+  },
+  getById: (id) => api.get("/usuarios_regioes", { params: { id } }),
+  create: (motivoData) => api.post("/usuarios_regioes", motivoData),
+  update: (id, motivoData) => api.put(`/usuarios_regioes?id=${id}`, motivoData),
+  delete: (id) => api.delete(`/usuarios_regioes?id=${id}`),
 };
 
 export default api;

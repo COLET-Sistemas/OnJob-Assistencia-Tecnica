@@ -1,29 +1,41 @@
 "use client";
-
-import { usuariosRegioesAPI } from "@/api/api";
 import { Loading } from "@/components/LoadingPersonalizado";
 import { TableList } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
-import { UsuarioRegiao } from "@/types/admin/cadastro/usuarios";
+import type { UsuarioRegiao } from "@/types/admin/cadastro/usuarios";
+import { useCallback, useEffect } from "react";
+import { DeleteButton } from "@/components/admin/ui/DeleteButton";
+import { EditButton } from "@/components/admin/ui/EditButton";
+import PageHeader from "@/components/admin/ui/PageHeader";
+import { useUsuariosRegioesFilters } from "@/hooks/useSpecificFilters";
+import { usuariosRegioesAPI } from "@/api/api";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar, MapPin } from "lucide-react";
-import { useEffect } from "react";
-import { EditButton } from "@/components/admin/ui/EditButton";
 
 // Define a type for the grouped user with regions
 interface UsuarioAgrupado extends UsuarioRegiao {
   regioes: { id_regiao: number; nome_regiao: string }[];
 }
 
-function CadastroUsuarios() {
+const CadastroUsuariosRegioes = () => {
   const { setTitle } = useTitle();
 
-  // Configurar o título da página
   useEffect(() => {
-    setTitle("Usuários Regiões");
+    setTitle("Técnicos X Regiões");
   }, [setTitle]);
+
+  const {
+    showFilters,
+    filtrosPainel,
+    filtrosAplicados,
+    activeFiltersCount,
+    handleFiltroChange,
+    limparFiltros,
+    aplicarFiltros,
+    toggleFilters,
+  } = useUsuariosRegioesFilters();
 
   // Função para formatar a data
   const formatarData = (dataString: string) => {
@@ -31,19 +43,28 @@ function CadastroUsuarios() {
       const data = parseISO(dataString);
       return format(data, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     } catch {
-      // Returning original string if date parsing fails
       return dataString;
     }
   };
 
-  // Usar o hook customizado para carregar os dados
+  const fetchUsuariosRegioes = useCallback(async () => {
+    const params: Record<string, string> = {};
+    if (filtrosAplicados.nome_usuario)
+      params.nome_usuario = filtrosAplicados.nome_usuario;
+    if (filtrosAplicados.nome_regiao)
+      params.nome_regiao = filtrosAplicados.nome_regiao;
+    if (filtrosAplicados.incluir_inativos) params.incluir_inativos = "S";
+    return await usuariosRegioesAPI.getAll(params);
+  }, [filtrosAplicados]);
+
   const {
     data: usuariosRegioes,
     loading,
-    error,
-  } = useDataFetch<UsuarioRegiao[]>(() => usuariosRegioesAPI.getAll(), []);
+    refetch,
+  } = useDataFetch<UsuarioRegiao[]>(fetchUsuariosRegioes, [
+    fetchUsuariosRegioes,
+  ]);
 
-  // Agrupa usuários por ID para evitar repetição na listagem
   const usuariosAgrupados = usuariosRegioes
     ? usuariosRegioes.reduce(
         (
@@ -76,13 +97,12 @@ function CadastroUsuarios() {
       <Loading
         fullScreen={true}
         preventScroll={false}
-        text="Carregando usuários..."
+        text="Carregando técnicos x regiões..."
         size="large"
       />
     );
   }
 
-  // Definir as colunas da tabela
   const columns = [
     {
       header: "Usuário",
@@ -125,49 +145,85 @@ function CadastroUsuarios() {
     },
   ];
 
-  // Renderizar as ações para cada item
+  const handleDelete = async (id: number) => {
+    try {
+      await usuariosRegioesAPI.delete(id);
+      await refetch();
+    } catch {
+      alert("Erro ao excluir usuário região.");
+    }
+  };
+
   const renderActions = (usuario: UsuarioAgrupado) => (
-    <EditButton
-      id={usuario.id_usuario}
-      editRoute="/admin/cadastro/usuarios/editar"
-    />
+    <div className="flex gap-2">
+      <EditButton
+        id={usuario.id_usuario}
+        editRoute="/admin/cadastro/usuarios_regioes/editar"
+      />
+      <DeleteButton
+        id={usuario.id_usuario}
+        onDelete={handleDelete}
+        confirmText="Deseja realmente excluir este usuário região?"
+        confirmTitle="Exclusão de Usuário Região"
+        itemName={`${usuario.nome_usuario}`}
+      />
+    </div>
   );
 
-  // Mostrar mensagem de erro se houver algum problema
-  const errorMessage = error ? (
-    <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 m-4 rounded-lg">
-      <p className="flex items-center gap-2">
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          ></path>
-        </svg>
-        Falha ao carregar dados. Verifique sua conexão e tente novamente.
-      </p>
-    </div>
-  ) : null;
+  const filterOptions = [
+    {
+      id: "nome_usuario",
+      label: "Nome do Usuário",
+      type: "text" as const,
+      placeholder: "Buscar por nome do usuário...",
+    },
+    {
+      id: "nome_regiao",
+      label: "Nome da Região",
+      type: "text" as const,
+      placeholder: "Buscar por nome da região...",
+    },
+    {
+      id: "incluir_inativos",
+      label: "Incluir Inativos",
+      type: "checkbox" as const,
+    },
+  ];
+
+  const itemCount = Object.keys(usuariosAgrupados).length;
 
   return (
     <>
-      {errorMessage}
+      <PageHeader
+        title="Lista de Técninos Xs Regiões"
+        config={{
+          type: "list",
+          itemCount: itemCount,
+          onFilterToggle: toggleFilters,
+          showFilters: showFilters,
+          activeFiltersCount: activeFiltersCount,
+          newButton: {
+            label: "Novo Usuário Região",
+            link: "/admin/cadastro/usuarios_regioes/novo",
+          },
+        }}
+      />
       <TableList
-        title="Lista de Usuários Regiões"
+        title="Lista de Técnicos X Regiões"
         items={Object.values(usuariosAgrupados) as UsuarioAgrupado[]}
         keyField="id_usuario"
         columns={columns}
         renderActions={renderActions}
+        showFilter={showFilters}
+        filterOptions={filterOptions}
+        filterValues={filtrosPainel}
+        onFilterChange={handleFiltroChange}
+        onClearFilters={limparFiltros}
+        onApplyFilters={aplicarFiltros}
+        onFilterToggle={toggleFilters}
       />
     </>
   );
-}
+};
 
-export default CadastroUsuarios;
+export default CadastroUsuariosRegioes;

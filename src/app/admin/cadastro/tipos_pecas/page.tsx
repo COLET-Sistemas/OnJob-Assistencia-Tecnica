@@ -39,7 +39,13 @@ interface PaginacaoInfo {
 }
 
 interface TiposPecasResponse {
-  tipos_pecas: TipoPecaExtended[];
+  dados: Array<{
+    id: number;
+    codigo_erp: string;
+    descricao: string;
+    situacao: string;
+    // outros campos se houver
+  }>;
   total_paginas: number;
   total_registros: number;
 }
@@ -66,7 +72,7 @@ const CadastroTiposPecas = () => {
     paginaAtual: 1,
     totalPaginas: 1,
     totalRegistros: 0,
-    registrosPorPagina: 20,
+    registrosPorPagina: 25,
   });
 
   const fetchTiposPecas = useCallback(async (): Promise<TipoPecaExtended[]> => {
@@ -90,7 +96,13 @@ const CadastroTiposPecas = () => {
       totalRegistros: response.total_registros,
     }));
 
-    return response.tipos_pecas;
+    // Mapear os dados para o formato esperado pela tabela
+    return response.dados.map((item) => ({
+      id_tipo_peca: item.id,
+      codigo_erp: item.codigo_erp,
+      descricao: item.descricao,
+      situacao: item.situacao as "A" | "I",
+    }));
   }, [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]);
 
   const {

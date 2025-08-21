@@ -62,7 +62,7 @@ const CadastroPecas = () => {
     paginaAtual: 1,
     totalPaginas: 1,
     totalRegistros: 0,
-    registrosPorPagina: 20,
+    registrosPorPagina: 25,
   });
 
   const fetchPecas = useCallback(async (): Promise<Peca[]> => {
@@ -137,6 +137,13 @@ const CadastroPecas = () => {
       accessor: "descricao" as keyof Peca,
       render: (peca: Peca) => (
         <div className="text-sm text-gray-900">{peca.descricao}</div>
+      ),
+    },
+    {
+      header: "Tipo de Peça",
+      accessor: "tipo_peca" as keyof Peca,
+      render: (peca: Peca) => (
+        <div className="text-sm text-gray-900">{peca.tipo_peca}</div>
       ),
     },
     {
