@@ -1,6 +1,11 @@
 "use client";
 import { Loading } from "@/components/LoadingPersonalizado";
-import { TableList, TableStatusColumn } from "@/components/admin/common";
+import { User } from "lucide-react";
+import {
+  TableList,
+  TableStatusColumn,
+  LocationPicker,
+} from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { Cliente } from "@/types/admin/cadastro/clientes";
@@ -12,6 +17,8 @@ import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
 import { clientesAPI } from "@/api/api";
 import { MapPin } from "lucide-react";
+import LocationButton from "@/components/admin/ui/LocationButton"; // Importa o componente
+import api from "@/api/api";
 
 // Interface dos filtros específicos para clientes
 interface ClientesFilters {
@@ -45,6 +52,9 @@ const CadastroClientes = () => {
   const [expandedClienteId, setExpandedClienteId] = useState<number | null>(
     null
   );
+  // Estados para o modal de localização
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
   // Helper function to safely get client ID
   const getClienteId = (cliente: Cliente): number => {
@@ -123,6 +133,43 @@ const CadastroClientes = () => {
       return result;
     });
   }, []);
+
+  // Handlers para o LocationButton
+  const openLocationModal = useCallback((cliente: Cliente) => {
+    setSelectedCliente(cliente);
+    setShowLocationModal(true);
+  }, []);
+
+  const saveClienteLocation = useCallback(
+    async (latitude: number, longitude: number) => {
+      if (!selectedCliente) return;
+
+      try {
+        const clientId = getClienteId(selectedCliente);
+
+        await api.patch(`/clientes/geo?id=${clientId}`, {
+          latitude: Number(latitude),
+          longitude: Number(longitude),
+        });
+
+        setShowLocationModal(false);
+        await refetch(); // Recarrega os dados
+        alert("Localização atualizada com sucesso!");
+      } catch (error) {
+        console.error("Error updating location:", error);
+        alert("Erro ao atualizar localização. Tente novamente.");
+      }
+    },
+    [selectedCliente, refetch]
+  );
+
+  // Recupera o endereço da empresa do localStorage
+  const getEnderecoEmpresa = () => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("endereco_empresa") || "";
+    }
+    return "";
+  };
 
   if (loading) {
     return (
@@ -235,12 +282,12 @@ const CadastroClientes = () => {
             type="button"
             disabled={!hasContatos}
           >
-            {/* <User
+            <User
               size={16}
               className={
                 hasContatos ? "text-[var(--neutral-graphite)]" : "text-gray-400"
               }
-            /> */}
+            />
             <span
               className={
                 hasContatos ? "text-[var(--primary)]" : "text-gray-400"
@@ -273,6 +320,13 @@ const CadastroClientes = () => {
 
     return (
       <div className="flex gap-2">
+        {/* Usando o componente LocationButton */}
+        <LocationButton
+          cliente={cliente}
+          onDefineLocation={openLocationModal}
+          enderecoEmpresa={getEnderecoEmpresa()}
+        />
+
         <EditButton id={clientId} editRoute="/admin/cadastro/clientes/editar" />
         <DeleteButton
           id={clientId}
@@ -346,131 +400,6 @@ const CadastroClientes = () => {
     },
   ];
 
-  // Function to render expanded contacts
-  const renderExpandedRow = (cliente: Cliente) => {
-    if (!cliente.contatos) return null;
-
-    return (
-      <div className="border-t border-[var(--primary)]/10 pt-4 px-2">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {cliente.contatos.map((contato) => (
-            <div
-              key={contato.id_contato}
-              className="border border-gray-100 rounded-xl p-3 bg-white shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1"
-            >
-              <div className="flex justify-between items-center pb-1.5 border-b border-gray-100">
-                <div className="font-semibold text-gray-900 truncate">
-                  {contato.nome_completo || contato.nome}
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <div
-                      className={`w-2.5 h-2.5 rounded-full ${
-                        contato.situacao === "A" ? "bg-green-500" : "bg-red-500"
-                      }`}
-                    ></div>
-                    <span
-                      className={`text-xs font-medium ${
-                        contato.situacao === "A"
-                          ? "text-green-700"
-                          : "text-red-700"
-                      }`}
-                    >
-                      {contato.situacao === "A" ? "Ativo" : "Inativo"}
-                    </span>
-                  </div>
-                  {contato.recebe_aviso_os ? (
-                    <div className="flex items-center gap-1">
-                      <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
-                      <span className="text-xs font-medium text-yellow-700">
-                        Aviso OS
-                      </span>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-              <div className="pt-3">
-                <div className="flex flex-wrap gap-2">
-                  {contato.telefone && (
-                    <div className="text-sm bg-gray-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-gray-100 hover:bg-gray-100 transition-colors">
-                      <svg
-                        className="w-4 h-4 text-[var(--primary)] flex-shrink-0"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                      </svg>
-                      <span className="truncate max-w-[140px] text-gray-700">
-                        {contato.telefone}
-                      </span>
-                    </div>
-                  )}
-
-                  {contato.whatsapp && (
-                    <a
-                      href={`https://wa.me/${contato.whatsapp.replace(
-                        /\D/g,
-                        ""
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm bg-[var(--secondary-green)]/5 px-3 py-1.5 rounded-md flex items-center gap-2 border border-[var(--secondary-green)]/20 hover:bg-[var(--secondary-green)]/10 transition-colors"
-                    >
-                      <svg
-                        className="w-4 h-4 text-[var(--secondary-green)] flex-shrink-0"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                      </svg>
-                      <span className="truncate max-w-[140px] text-gray-700">
-                        {contato.whatsapp}
-                      </span>
-                    </a>
-                  )}
-
-                  {contato.email && (
-                    <a
-                      href={`mailto:${contato.email}`}
-                      className="text-sm bg-blue-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-blue-100 hover:bg-blue-100 hover:text-blue-600 transition-colors"
-                    >
-                      <svg
-                        className="w-4 h-4 text-blue-500 flex-shrink-0"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                      </svg>
-                      <span className="truncate max-w-[180px] text-gray-700">
-                        {contato.email}
-                      </span>
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
       <PageHeader
@@ -493,9 +422,6 @@ const CadastroClientes = () => {
         keyField="id"
         columns={columns}
         renderActions={renderActions}
-        renderExpandedRow={renderExpandedRow}
-        expandedRowId={expandedClienteId}
-        onRowExpand={toggleExpand}
         showFilter={showFilters}
         filterOptions={filterOptions}
         filterValues={filtrosPainel}
@@ -518,6 +444,20 @@ const CadastroClientes = () => {
         recordsPerPageOptions={[10, 20, 25, 50, 100]}
         showRecordsPerPage={true}
       />
+
+      {/* Modal de Localização */}
+      {selectedCliente && (
+        <LocationPicker
+          isOpen={showLocationModal}
+          onClose={() => setShowLocationModal(false)}
+          initialLat={selectedCliente.latitude || null}
+          initialLng={selectedCliente.longitude || null}
+          address={`${selectedCliente.endereco}, ${selectedCliente.numero}, ${
+            selectedCliente.cidade
+          }, ${selectedCliente.uf}, ${selectedCliente.cep || ""}`}
+          onLocationSelected={saveClienteLocation}
+        />
+      )}
     </>
   );
 };

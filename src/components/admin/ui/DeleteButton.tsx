@@ -9,7 +9,7 @@ type DeleteButtonProps = {
   confirmTitle?: string;
   label?: string;
   className?: string;
-  itemName?: string; 
+  itemName?: string;
 };
 
 export const DeleteButton = ({
@@ -52,6 +52,7 @@ export const DeleteButton = ({
       <button
         onClick={handleClick}
         disabled={isLoading}
+        title={label}
         className={`
           inline-flex items-center px-3 py-1.5 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] rounded-lg transition-colors gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
           ${className}

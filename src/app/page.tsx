@@ -154,7 +154,7 @@ export default function LoginPage() {
         localStorage.setItem("email", authData.email);
         localStorage.setItem("nome_usuario", authData.nome_usuario);
         localStorage.setItem("id_usuario", String(authData.id_usuario));
-          localStorage.setItem("versao_api", String(authData.versao_api));
+        localStorage.setItem("versao_api", String(authData.versao_api));
         localStorage.setItem("perfil", JSON.stringify(authData.perfil));
         localStorage.setItem("token", authData.token);
         localStorage.setItem(
@@ -163,6 +163,11 @@ export default function LoginPage() {
         );
         if (authData.empresa) {
           localStorage.setItem("nome_bd", authData.empresa.nome_bd || "");
+          localStorage.setItem(
+            "razao_social",
+            authData.empresa.razao_social || ""
+          );
+          localStorage.setItem("cnpj", authData.empresa.cnpj || "");
           const enderecoCompleto = [
             authData.empresa.endereco,
             authData.empresa.numero,
@@ -173,6 +178,19 @@ export default function LoginPage() {
             .filter(Boolean)
             .join(", ");
           localStorage.setItem("endereco_empresa", enderecoCompleto);
+          // Salvar coordenadas como objeto
+          localStorage.setItem(
+            "coordenadas",
+            JSON.stringify({
+              latitude: authData.empresa.latitude,
+              longitude: authData.empresa.longitude,
+            })
+          );
+          // Salvar licenca_demo como boolean
+          localStorage.setItem(
+            "licenca_demo",
+            JSON.stringify(!!authData.empresa.licenca_demo)
+          );
         }
         router.push("/admin/dashboard");
       } else {
@@ -210,7 +228,7 @@ export default function LoginPage() {
         localStorage.setItem("email", authData.email);
         localStorage.setItem("nome_usuario", authData.nome_usuario);
         localStorage.setItem("id_usuario", String(authData.id_usuario));
-          localStorage.setItem("versao_api", String(authData.versao_api));
+        localStorage.setItem("versao_api", String(authData.versao_api));
         localStorage.setItem("perfil", JSON.stringify(authData.perfil));
         localStorage.setItem("token", authData.token);
         localStorage.setItem(
@@ -219,6 +237,11 @@ export default function LoginPage() {
         );
         if (authData.empresa) {
           localStorage.setItem("nome_bd", authData.empresa.nome_bd || "");
+          localStorage.setItem(
+            "razao_social",
+            authData.empresa.razao_social || ""
+          );
+          localStorage.setItem("cnpj", authData.empresa.cnpj || "");
           const enderecoCompleto = [
             authData.empresa.endereco,
             authData.empresa.numero,
@@ -229,6 +252,17 @@ export default function LoginPage() {
             .filter(Boolean)
             .join(", ");
           localStorage.setItem("endereco_empresa", enderecoCompleto);
+          localStorage.setItem(
+            "coordenadas",
+            JSON.stringify({
+              latitude: authData.empresa.latitude,
+              longitude: authData.empresa.longitude,
+            })
+          );
+          localStorage.setItem(
+            "licenca_demo",
+            JSON.stringify(!!authData.empresa.licenca_demo)
+          );
         }
         router.push("/tecnico/dashboard");
       } else {
