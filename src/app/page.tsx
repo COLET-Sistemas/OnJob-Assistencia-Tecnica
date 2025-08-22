@@ -29,9 +29,13 @@ interface Empresa {
   cidade: string;
   uf: string;
   cep: string;
-  latitude: string;
-  longitude: string;
+  latitude: number;
+  longitude: number;
   licenca_demo: boolean;
+  usuarios_ativos?: number;
+  usuarios_cadastrados?: number;
+  usuarios_licenciados?: number;
+  data_validade?: string;
 }
 
 interface LoginResponse {
@@ -150,47 +154,36 @@ export default function LoginPage() {
       }
 
       if (hasAdminAccess(authData.perfil)) {
-        localStorage.setItem("usuario", login);
+        // Dados principais fora do objeto empresa
         localStorage.setItem("email", authData.email);
-        localStorage.setItem("nome_usuario", authData.nome_usuario);
         localStorage.setItem("id_usuario", String(authData.id_usuario));
-        localStorage.setItem("versao_api", String(authData.versao_api));
-        localStorage.setItem("perfil", JSON.stringify(authData.perfil));
+        localStorage.setItem("nome_usuario", authData.nome_usuario);
         localStorage.setItem("token", authData.token);
-        localStorage.setItem(
-          "id_empresa",
-          String(authData.empresa?.id_empresa)
-        );
+        localStorage.setItem("perfil", JSON.stringify(authData.perfil));
+        localStorage.setItem("versao_api", String(authData.versao_api));
+
+        // Objeto empresa completo
         if (authData.empresa) {
-          localStorage.setItem("nome_bd", authData.empresa.nome_bd || "");
-          localStorage.setItem(
-            "razao_social",
-            authData.empresa.razao_social || ""
-          );
-          localStorage.setItem("cnpj", authData.empresa.cnpj || "");
-          const enderecoCompleto = [
-            authData.empresa.endereco,
-            authData.empresa.numero,
-            authData.empresa.bairro,
-            authData.empresa.cidade,
-            authData.empresa.uf,
-          ]
-            .filter(Boolean)
-            .join(", ");
-          localStorage.setItem("endereco_empresa", enderecoCompleto);
-          // Salvar coordenadas como objeto
-          localStorage.setItem(
-            "coordenadas",
-            JSON.stringify({
-              latitude: authData.empresa.latitude,
-              longitude: authData.empresa.longitude,
-            })
-          );
-          // Salvar licenca_demo como boolean
-          localStorage.setItem(
-            "licenca_demo",
-            JSON.stringify(!!authData.empresa.licenca_demo)
-          );
+          const empresaObj = {
+            nome_bd: authData.empresa.nome_bd || "",
+            razao_social: authData.empresa.razao_social || "",
+            id_empresa: authData.empresa.id_empresa,
+            cnpj: authData.empresa.cnpj || "",
+            usuarios_ativos: authData.empresa.usuarios_ativos || 0,
+            usuarios_cadastrados: authData.empresa.usuarios_cadastrados || 0,
+            usuarios_licenciados: authData.empresa.usuarios_licenciados || 0,
+            latitude: Number(authData.empresa.latitude) || "",
+            longitude: Number(authData.empresa.longitude) || "",
+            data_validade: authData.empresa.data_validade || "",
+            licenca_demo: !!authData.empresa.licenca_demo,
+            cep: authData.empresa.cep || "",
+            bairro: authData.empresa.bairro || "",
+            cidade: authData.empresa.cidade || "",
+            endereco: authData.empresa.endereco || "",
+            numero: authData.empresa.numero || "",
+            uf: authData.empresa.uf || "",
+          };
+          localStorage.setItem("empresa", JSON.stringify(empresaObj));
         }
         router.push("/admin/dashboard");
       } else {
@@ -224,45 +217,36 @@ export default function LoginPage() {
       }
 
       if (hasTechAccess(authData.perfil)) {
-        localStorage.setItem("usuario", login);
+        // Dados principais fora do objeto empresa
         localStorage.setItem("email", authData.email);
-        localStorage.setItem("nome_usuario", authData.nome_usuario);
         localStorage.setItem("id_usuario", String(authData.id_usuario));
-        localStorage.setItem("versao_api", String(authData.versao_api));
-        localStorage.setItem("perfil", JSON.stringify(authData.perfil));
+        localStorage.setItem("nome_usuario", authData.nome_usuario);
         localStorage.setItem("token", authData.token);
-        localStorage.setItem(
-          "id_empresa",
-          String(authData.empresa?.id_empresa)
-        );
+        localStorage.setItem("perfil", JSON.stringify(authData.perfil));
+        localStorage.setItem("versao_api", String(authData.versao_api));
+
+        // Objeto empresa completo
         if (authData.empresa) {
-          localStorage.setItem("nome_bd", authData.empresa.nome_bd || "");
-          localStorage.setItem(
-            "razao_social",
-            authData.empresa.razao_social || ""
-          );
-          localStorage.setItem("cnpj", authData.empresa.cnpj || "");
-          const enderecoCompleto = [
-            authData.empresa.endereco,
-            authData.empresa.numero,
-            authData.empresa.bairro,
-            authData.empresa.cidade,
-            authData.empresa.uf,
-          ]
-            .filter(Boolean)
-            .join(", ");
-          localStorage.setItem("endereco_empresa", enderecoCompleto);
-          localStorage.setItem(
-            "coordenadas",
-            JSON.stringify({
-              latitude: authData.empresa.latitude,
-              longitude: authData.empresa.longitude,
-            })
-          );
-          localStorage.setItem(
-            "licenca_demo",
-            JSON.stringify(!!authData.empresa.licenca_demo)
-          );
+          const empresaObj = {
+            nome_bd: authData.empresa.nome_bd || "",
+            razao_social: authData.empresa.razao_social || "",
+            id_empresa: authData.empresa.id_empresa,
+            cnpj: authData.empresa.cnpj || "",
+            usuarios_ativos: authData.empresa.usuarios_ativos || 0,
+            usuarios_cadastrados: authData.empresa.usuarios_cadastrados || 0,
+            usuarios_licenciados: authData.empresa.usuarios_licenciados || 0,
+            latitude: authData.empresa.latitude || "",
+            longitude: authData.empresa.longitude || "",
+            data_validade: authData.empresa.data_validade || "",
+            licenca_demo: !!authData.empresa.licenca_demo,
+            cep: authData.empresa.cep || "",
+            bairro: authData.empresa.bairro || "",
+            cidade: authData.empresa.cidade || "",
+            endereco: authData.empresa.endereco || "",
+            numero: authData.empresa.numero || "",
+            uf: authData.empresa.uf || "",
+          };
+          localStorage.setItem("empresa", JSON.stringify(empresaObj));
         }
         router.push("/tecnico/dashboard");
       } else {

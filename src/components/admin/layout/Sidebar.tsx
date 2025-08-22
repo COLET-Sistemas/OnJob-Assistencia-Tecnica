@@ -487,8 +487,20 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                 <div className="flex flex-col">
                   <p className="text-sm font-medium text-white/80">
                     {typeof window !== "undefined"
-                      ? localStorage.getItem("nome_bd") ||
-                        "Nome BD não definido"
+                      ? (() => {
+                          const empresaStr = localStorage.getItem("empresa");
+                          if (empresaStr) {
+                            try {
+                              const empresaObj = JSON.parse(empresaStr);
+                              return (
+                                empresaObj.nome_bd || "Nome BD não definido"
+                              );
+                            } catch {
+                              return "Nome BD inválido";
+                            }
+                          }
+                          return "Nome BD não definido";
+                        })()
                       : "Nome BD não disponível"}
                   </p>
                   <p className="text-xs font-medium text-white">

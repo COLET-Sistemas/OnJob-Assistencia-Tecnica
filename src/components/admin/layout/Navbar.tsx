@@ -96,19 +96,12 @@ export default function Navbar({
 
   const handleLogout = () => {
     localStorage.removeItem("email");
-    localStorage.removeItem("nome_usuario");
-    localStorage.removeItem("perfil");
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario");
-    localStorage.removeItem("endereco_empresa");
-    localStorage.removeItem("nome_bd");
     localStorage.removeItem("id_usuario");
-    localStorage.removeItem("id_empresa");
+    localStorage.removeItem("nome_usuario");
+    localStorage.removeItem("token");
+    localStorage.removeItem("perfil");
     localStorage.removeItem("versao_api");
-    localStorage.removeItem("coordenadas");
-    localStorage.removeItem("licenca_demo");
-    localStorage.removeItem("razao_social");
-    localStorage.removeItem("cnpj");
+    localStorage.removeItem("empresa");
 
     window.location.href = "/";
   };
