@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { Building2, Users, Shield, Package } from "lucide-react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { Building2, Users, Package } from "lucide-react";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { Loading } from "@/components/LoadingPersonalizado";
 import MapComponent from "@/components/admin/ui/MapComponent";
@@ -27,70 +27,140 @@ const ConsultaEmpresa: React.FC = () => {
 
   const { setTitle } = useTitle();
 
+  // Definir o título da página apenas uma vez
   useEffect(() => {
     setTitle("Empresa / Licenças / Versões");
   }, [setTitle]);
 
   useEffect(() => {
-    carregarDadosEmpresa();
-    carregarVersoes();
+    const fetchEmpresa = async () => {
+      try {
+        const empresa = getEmpresaFromStorage();
+
+        if (empresa) {
+          setEmpresaData(empresa);
+        } else {
+          console.warn("Dados da empresa não encontrados no localStorage");
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados da empresa:", error);
+      }
+    };
+
+    const fetchVersoes = async () => {
+      try {
+        const versaoApi = localStorage.getItem("versao_api") || "";
+        const versaoApp =
+          process.env.NEXT_PUBLIC_APP_VERSION || packageInfo.version;
+        setVersaoInfo({
+          versaoApp,
+          versaoApi,
+        });
+      } catch (error) {
+        console.error("Erro ao carregar versões:", error);
+      }
+    };
+
+    const carregarDados = async () => {
+      try {
+        await Promise.all([fetchEmpresa(), fetchVersoes()]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarDados();
   }, []);
 
-  const carregarDadosEmpresa = () => {
-    try {
-      // Usar a função utilitária para recuperar dados da empresa
-      const empresa = getEmpresaFromStorage();
+  const enderecoCompleto = useMemo(
+    () => (empresaData ? formatEmpresaAddress(empresaData) : ""),
+    [empresaData]
+  );
 
-      if (empresa) {
-        setEmpresaData(empresa);
-      } else {
-        console.warn("Dados da empresa não encontrados no localStorage");
-      }
-    } catch (error) {
-      console.error("Erro ao carregar dados da empresa:", error);
-    }
-  };
+  const EmpresaInfoCard = useCallback(
+    ({
+      label,
+      value,
+      icon,
+    }: {
+      label: string;
+      value: string | null | undefined;
+      icon?: React.ReactNode;
+    }) => (
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {label}
+        </label>
+        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 transition-all duration-300 hover:border-gray-300 hover:shadow-sm">
+          <span className="text-black font-semibold flex items-center gap-2">
+            {icon}
+            {value || "Não informado"}
+          </span>
+        </div>
+      </div>
+    ),
+    []
+  );
 
-  const carregarVersoes = async () => {
-    try {
-      const versaoApi = localStorage.getItem("versao_api") || "";
-      const versaoApp = process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0";
-      setVersaoInfo({
-        versaoApp,
-        versaoApi,
-      });
-    } catch (error) {
-      console.error("Erro ao carregar versões:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const LicencaCard = useCallback(
+    ({
+      label,
+      value,
+      bgColor,
+      textColor,
+    }: {
+      label: string;
+      value: number | undefined;
+      bgColor: string;
+      textColor: string;
+    }) => (
+      <div
+        className={`flex justify-between items-center p-4 ${bgColor} rounded-lg border transition-all duration-300 hover:shadow-md`}
+      >
+        <span className="font-medium text-gray-700">{label}</span>
+        <span className={`text-2xl font-bold ${textColor}`}>
+          {value !== undefined ? value : "-"}
+        </span>
+      </div>
+    ),
+    []
+  );
 
-  // Usar a função utilitária para formatar endereço
-  const enderecoCompleto = empresaData ? formatEmpresaAddress(empresaData) : "";
+  // Componente de skeleton para carregamento
+  const EmpresaInfoSkeleton = () => (
+    <div className="animate-pulse space-y-4">
+      <div className="h-5 w-32 bg-gray-200 rounded mb-2"></div>
+      <div className="h-12 bg-gray-200 rounded-lg"></div>
+      <div className="h-5 w-24 bg-gray-200 rounded mb-2"></div>
+      <div className="h-12 bg-gray-200 rounded-lg"></div>
+      <div className="h-5 w-40 bg-gray-200 rounded mb-2"></div>
+      <div className="h-12 bg-gray-200 rounded-lg"></div>
+    </div>
+  );
 
-  if (loading) {
-    return (
-      <Loading
-        fullScreen={true}
-        preventScroll={false}
-        text="Carregando informações da empresa..."
-        size="large"
-      />
-    );
-  }
+  const LicencaSkeleton = () => (
+    <div className="animate-pulse space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="h-16 bg-gray-200 rounded-lg"></div>
+        <div className="h-16 bg-gray-200 rounded-lg"></div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="h-16 bg-gray-200 rounded-lg"></div>
+        <div className="h-16 bg-gray-200 rounded-lg"></div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen p-2">
+    <>
       <PageHeader
         title="Informações da Empresa"
         config={{ type: "form", backLink: "admin/dashboard" }}
       />
 
-      <div className="max-w-8xl mx-auto space-y-6">
-        {/* Dados da Empresa */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center gap-3 mb-6">
+      <div className="max-w-8xl mx-auto space-y-8">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 transition-all duration-300 hover:shadow-md">
+          <div className="flex items-center gap-3 mb-6 pb-3 border-b border-slate-100">
             <Building2 className="h-6 w-6 text-[var(--primary)]" />
             <h3 className="text-lg font-semibold text-[var(--neutral-graphite)]">
               Dados da Empresa
@@ -98,160 +168,147 @@ const ConsultaEmpresa: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Informações da empresa */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Razão Social
-                </label>
-                <div className="p-3 bg-gray-50 rounded-lg border">
-                  <span className="text-black font-semibold">
-                    {empresaData?.razao_social || "Não informado"}
-                  </span>
-                </div>
-              </div>
+            <div className="space-y-2">
+              {loading ? (
+                <EmpresaInfoSkeleton />
+              ) : (
+                <>
+                  <EmpresaInfoCard
+                    label="Razão Social"
+                    value={empresaData?.razao_social}
+                  />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  CNPJ
-                </label>
-                <div className="p-3 bg-gray-50 rounded-lg border">
-                  <span className="text-black font-semibold">
-                    {empresaData?.cnpj || ""}
-                  </span>
-                </div>
-              </div>
+                  <EmpresaInfoCard label="CNPJ" value={empresaData?.cnpj} />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Endereço Completo
-                </label>
-                <div className="p-3 bg-gray-50 rounded-lg border">
-                  <span className="text-black font-semibold">
-                    {enderecoCompleto || "Não informado"}
-                  </span>
-                </div>
-              </div>
+                  <EmpresaInfoCard
+                    label="Endereço Completo"
+                    value={enderecoCompleto}
+                  />
 
-              {/* Coordenadas */}
-              {empresaData?.latitude && empresaData?.longitude && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Coordenadas
-                  </label>
-                  <div className="p-3 bg-gray-50 rounded-lg border">
-                    <span className="text-black font-semibold">
-                      {empresaData.latitude.toFixed(6)},{" "}
-                      {empresaData.longitude.toFixed(6)}
-                    </span>
-                  </div>
-                </div>
+                  {empresaData?.latitude && empresaData?.longitude && (
+                    <EmpresaInfoCard
+                      label="Coordenadas"
+                      value={`${empresaData.latitude.toFixed(
+                        6
+                      )}, ${empresaData.longitude.toFixed(6)}`}
+                    />
+                  )}
+                </>
               )}
             </div>
 
-            {/* Mapa usando o MapComponent */}
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Localização no Mapa
               </label>
 
-              <MapComponent
-                height="320px"
-                zoom={17}
-                showAddress={false}
-                className="border border-gray-300 shadow-sm"
-              />
+              {loading ? (
+                <div className="h-[320px] w-full rounded-lg flex items-center justify-center bg-gray-50 border">
+                  <Loading
+                    size="medium"
+                    text="Carregando mapa..."
+                    preventScroll={false}
+                  />
+                </div>
+              ) : (
+                <div className="transition-all duration-300 rounded-lg overflow-hidden hover:shadow-lg">
+                  <MapComponent
+                    height="320px"
+                    zoom={17}
+                    showAddress={false}
+                    className="border border-gray-300 rounded-lg"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Licença e Versão */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Licença */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center gap-3 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-10 gap-6">
+          <div className="md:col-span-6 bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-3 mb-6 pb-3 border-b border-slate-100">
               <Users className="h-6 w-6 text-[var(--primary)]" />
               <h3 className="text-lg font-semibold text-[var(--neutral-graphite)]">
                 Licença
               </h3>
             </div>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <span className="font-medium text-gray-700">
-                  Usuários Licenciados
-                </span>
-                <span className="text-2xl font-bold text-blue-600">
-                  {empresaData?.usuarios_licenciados}
-                </span>
-              </div>
 
-              <div className="flex justify-between items-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                <span className="font-medium text-gray-700">
-                  Usuários Ativos
-                </span>
-                <span className="text-2xl font-bold text-yellow-600">
-                  {empresaData?.usuarios_ativos}
-                </span>
-              </div>
+            {loading ? (
+              <LicencaSkeleton />
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <LicencaCard
+                    label="Usuários Licenciados"
+                    value={empresaData?.usuarios_licenciados}
+                    bgColor="bg-green-50 border-green-200"
+                    textColor="text-green-600"
+                  />
 
-              <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg border border-green-200">
-                <span className="font-medium text-gray-700">
-                  Usuários Cadastrados
-                </span>
-                <span className="text-2xl font-bold text-green-600">
-                  {empresaData?.usuarios_cadastrados}
-                </span>
-              </div>
+                  <LicencaCard
+                    label="Usuários Ativos"
+                    value={empresaData?.usuarios_ativos}
+                    bgColor="bg-green-50 border-green-200"
+                    textColor="text-green-600"
+                  />
+                </div>
 
-              {/* Data de validade da licença */}
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <span className="font-medium text-gray-700">
-                  Data de validade da licença
-                </span>
-                <span className="text-lg font-bold text-gray-700">
-                  {empresaData?.data_validade ?? "Data não informada"}
-                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <LicencaCard
+                    label="Usuários Cadastrados"
+                    value={empresaData?.usuarios_cadastrados}
+                    bgColor="bg-yellow-50 border-yellow-200"
+                    textColor="text-yellow-600"
+                  />
+
+                  <div className="flex justify-between items-center p-4 bg-yellow-50 rounded-lg border border-yellow-200 transition-all duration-300 hover:shadow-md">
+                    <span className="font-medium text-gray-700 flex items-center gap-2">
+                      Data de validade
+                    </span>
+                    <span className="text-lg font-bold text-yellow-700">
+                      {empresaData?.data_validade ?? "Data não informada"}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Versão */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center gap-3 mb-6">
+          <div className="md:col-span-4 bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-3 mb-6 pb-3 border-b border-slate-100">
               <Package className="h-6 w-6 text-[var(--primary)]" />
               <h3 className="text-lg font-semibold text-[var(--neutral-graphite)]">
                 Versões
               </h3>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <span className="font-medium text-gray-700">
-                  Versão da Aplicação
-                </span>
-                <span className="text-lg font-bold text-purple-600">
-                  {packageInfo.version}
-                </span>
-              </div>
+            {loading ? (
+              <LicencaSkeleton />
+            ) : (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-4 bg-purple-50 rounded-lg border border-purple-200 transition-all duration-300 hover:shadow-md">
+                  <span className="font-medium text-gray-700">
+                    Versão da Aplicação
+                  </span>
+                  <span className="text-lg font-bold text-purple-600">
+                    {packageInfo.version}
+                  </span>
+                </div>
 
-              <div className="flex justify-between items-center p-4 bg-orange-50 rounded-lg border border-orange-200">
-                <span className="font-medium text-gray-700">Versão da API</span>
-                <span className="text-lg font-bold text-orange-600">
-                  {versaoInfo.versaoApi}
-                </span>
-              </div>
-
-              <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Sistema atualizado e funcionando corretamente
+                <div className="flex justify-between items-center p-4 bg-purple-50 rounded-lg border border-purple-200 transition-all duration-300 hover:shadow-md">
+                  <span className="font-medium text-gray-700">
+                    Versão da API
+                  </span>
+                  <span className="text-lg font-bold text-purple-600">
+                    {versaoInfo.versaoApi || "N/A"}
+                  </span>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

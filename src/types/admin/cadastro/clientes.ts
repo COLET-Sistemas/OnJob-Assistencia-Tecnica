@@ -1,9 +1,10 @@
 import { Regiao } from "./regioes";
 
 export type ClienteContato = {
-  id_contato: number;
+  id: number;
   nome_completo?: string;
   nome?: string;
+  cargo?: string;
   telefone: string;
   whatsapp?: string;
   email: string;
@@ -14,6 +15,7 @@ export type ClienteContato = {
 export interface Cliente {
   id?: number;
   id_cliente?: number;
+  codigo_erp?: string;
   nome_fantasia: string;
   razao_social: string;
   cnpj: string;
