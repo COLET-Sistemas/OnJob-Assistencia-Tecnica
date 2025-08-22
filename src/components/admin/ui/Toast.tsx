@@ -48,7 +48,7 @@ export const Toast: React.FC<ToastProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  
+
   // Handle client-side only logic
   useEffect(() => {
     setIsMounted(true);
@@ -104,7 +104,6 @@ export const Toast: React.FC<ToastProps> = ({
       <div className="flex-shrink-0">
         <Icon className={`h-5 w-5 ${style.iconColor}`} />
       </div>
-
 
       <div className="flex-1 min-w-0">
         <h4 className="font-medium text-sm">{title}</h4>

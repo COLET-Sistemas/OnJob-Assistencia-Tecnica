@@ -1,6 +1,6 @@
 "use client";
 
-import { ToastProvider } from './ToastContainer';
+import { ToastProvider } from "./ToastContainer";
 
 export default function ClientToastProvider({
   children,
