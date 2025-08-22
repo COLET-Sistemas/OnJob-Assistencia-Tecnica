@@ -5,6 +5,7 @@ import {
   useState,
   useCallback,
   ReactNode,
+  useId,
 } from "react";
 import { Toast, ToastProps } from "../ui/Toast";
 
@@ -32,14 +33,15 @@ interface ToastProviderProps {
 
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastProps[]>([]);
-
+  const idPrefix = useId();
+  
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
   const showToast = useCallback(
     (toast: Omit<ToastProps, "id" | "onClose">) => {
-      const id = Math.random().toString(36).substring(7);
+      const id = `${idPrefix}-${Date.now()}`;
       const newToast: ToastProps = {
         ...toast,
         id,
@@ -48,7 +50,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
 
       setToasts((prev) => [...prev, newToast]);
     },
-    [removeToast]
+    [removeToast, idPrefix]
   );
 
   const showSuccess = useCallback(
@@ -91,7 +93,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     >
       {children}
 
-      <div className="fixed top-4 right-4 z-50 space-y-2">
+      <div className="fixed top-4 right-4 z-50 space-y-2" id="toast-container">
         {toasts.map((toast) => (
           <Toast key={toast.id} {...toast} />
         ))}

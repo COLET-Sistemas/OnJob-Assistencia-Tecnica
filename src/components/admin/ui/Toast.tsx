@@ -47,11 +47,18 @@ export const Toast: React.FC<ToastProps> = ({
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Handle client-side only logic
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const style = toastStyles[type];
   const Icon = style.icon;
 
   useEffect(() => {
+    // Delay initial animation to prevent hydration mismatch
     const enterTimer = setTimeout(() => setIsVisible(true), 10);
 
     const close = () => {
@@ -78,6 +85,7 @@ export const Toast: React.FC<ToastProps> = ({
     }, 300);
   };
 
+  // Only render animation effects on client-side
   return (
     <div
       className={`
@@ -85,7 +93,7 @@ export const Toast: React.FC<ToastProps> = ({
         transition-all duration-300 ease-out transform
         ${style.container}
         ${
-          isVisible && !isExiting
+          isMounted && isVisible && !isExiting
             ? "translate-x-0 opacity-100"
             : "translate-x-full opacity-0"
         }
@@ -117,12 +125,14 @@ export const Toast: React.FC<ToastProps> = ({
       </button>
 
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 rounded-b-lg overflow-hidden">
-        <div
-          className="h-full bg-current opacity-30 rounded-b-lg"
-          style={{
-            animation: `toast-progress ${duration}ms linear`,
-          }}
-        />
+        {isMounted && (
+          <div
+            className="h-full bg-current opacity-30 rounded-b-lg"
+            style={{
+              animation: `toast-progress ${duration}ms linear`,
+            }}
+          />
+        )}
       </div>
 
       <style jsx>{`

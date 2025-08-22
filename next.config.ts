@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   images: {
     domains: ["maps.googleapis.com"],
   },
+  // Configure allowed development origins for cross-origin requests
+  allowedDevOrigins: ["10.0.0.151", "10.0.1.14", "10.0.0.154"],
   async headers() {
     return [
       {
