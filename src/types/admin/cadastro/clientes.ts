@@ -35,6 +35,7 @@ export interface Cliente {
 export interface FormData {
   id?: number;
   id_cliente?: number;
+  codigo_erp?: string;
   nome_fantasia: string;
   razao_social: string;
   cnpj: string;

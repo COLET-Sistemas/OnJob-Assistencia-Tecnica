@@ -52,10 +52,10 @@ const CadastrarCliente = () => {
     cep: "",
     cidade: "",
     uf: "RS",
-    latitude: "",
-    longitude: "",
+    latitude: undefined,
+    longitude: undefined,
     situacao: "A",
-    id_regiao: 0,
+    regiao: undefined,
   });
 
   // Carregar as regiões disponíveis - usando useRef para evitar duplo disparo no Strict Mode
@@ -252,17 +252,11 @@ const CadastrarCliente = () => {
   const handleLocationSelected = (lat: number, lng: number) => {
     setFormData((prev) => ({
       ...prev,
-      latitude: lat.toString(),
-      longitude: lng.toString(),
+      latitude: lat,
+      longitude: lng,
     }));
-    // Garantir que o preview do mapa esteja visível
     setShowMapPreview(true);
-
-    // Já mostramos um toast sobre localização encontrada, aqui mostramos um diferente
-    // sobre a atualização das coordenadas
     toast.success("Coordenadas atualizadas com sucesso!");
-
-    // Consideramos que o usuário já viu a mensagem sobre localização encontrada
     setHasShownLocationToast(true);
   };
 
@@ -286,9 +280,10 @@ const CadastrarCliente = () => {
     } else if (name === "cnpj") {
       setFormData((prev) => ({ ...prev, [name]: formatarCNPJ(value) }));
     } else if (name === "id_regiao") {
-      // Converte para number e valida
+      // Atualiza o campo regiao com o objeto Regiao correspondente
       const regiaoId = parseInt(value, 10);
-      setFormData((prev) => ({ ...prev, [name]: regiaoId }));
+      const regiaoSelecionada = regioes.find((r) => r.id === regiaoId);
+      setFormData((prev) => ({ ...prev, regiao: regiaoSelecionada }));
     } else if (name === "numero") {
       setFormData((prev) => ({ ...prev, [name]: value }));
 
@@ -363,12 +358,12 @@ const CadastrarCliente = () => {
     if (!formData.uf) errors.uf = "Campo obrigatório";
 
     // Validação aprimorada para região
-    if (!formData.id_regiao || formData.id_regiao === 0) {
+    if (!formData.regiao || !formData.regiao.id) {
       errors.id_regiao = "Selecione uma região válida";
     } else {
       // Verifica se a região selecionada ainda existe e está ativa
       const regiaoExiste = regioes.find(
-        (r) => r.id === formData.id_regiao && r.situacao === "A"
+        (r) => r.id === formData.regiao?.id && r.situacao === "A"
       );
       if (!regiaoExiste) {
         errors.id_regiao = "Região selecionada não é válida";
@@ -394,8 +389,15 @@ const CadastrarCliente = () => {
       // Formatar dados para envio
       const clienteData = {
         ...formData,
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+        latitude:
+          typeof formData.latitude === "string"
+            ? parseFloat(formData.latitude)
+            : formData.latitude ?? null,
+        longitude:
+          typeof formData.longitude === "string"
+            ? parseFloat(formData.longitude)
+            : formData.longitude ?? null,
+        id_regiao: formData.regiao?.id ?? null,
       };
 
       // Enviar para a API
@@ -565,7 +567,7 @@ const CadastrarCliente = () => {
                 <select
                   id="id_regiao"
                   name="id_regiao"
-                  value={formData.id_regiao}
+                  value={formData.regiao?.id || 0}
                   onChange={handleInputChange}
                   className={`w-full p-2 border ${
                     formErrors.id_regiao ? "border-red-500" : "border-gray-300"
@@ -924,10 +926,20 @@ const CadastrarCliente = () => {
               {/* Lado direito - Mapa Estático */}
               <div className="flex flex-col gap-2">
                 <div className="h-[250px] relative rounded-md overflow-hidden shadow-md">
-                  {showMapPreview && formData.latitude && formData.longitude ? (
+                  {showMapPreview &&
+                  formData.latitude !== undefined &&
+                  formData.longitude !== undefined ? (
                     <StaticMap
-                      latitude={parseFloat(formData.latitude)}
-                      longitude={parseFloat(formData.longitude)}
+                      latitude={
+                        typeof formData.latitude === "string"
+                          ? parseFloat(formData.latitude)
+                          : formData.latitude
+                      }
+                      longitude={
+                        typeof formData.longitude === "string"
+                          ? parseFloat(formData.longitude)
+                          : formData.longitude
+                      }
                       className="h-full"
                     />
                   ) : (
@@ -993,8 +1005,16 @@ const CadastrarCliente = () => {
       <LocationPicker
         isOpen={mapOpen}
         onClose={() => setMapOpen(false)}
-        initialLat={formData.latitude ? parseFloat(formData.latitude) : null}
-        initialLng={formData.longitude ? parseFloat(formData.longitude) : null}
+        initialLat={
+          typeof formData.latitude === "string"
+            ? parseFloat(formData.latitude)
+            : formData.latitude ?? null
+        }
+        initialLng={
+          typeof formData.longitude === "string"
+            ? parseFloat(formData.longitude)
+            : formData.longitude ?? null
+        }
         address={`${formData.endereco}, ${formData.numero}, ${formData.cidade}, ${formData.uf}, ${formData.cep}, Brasil`}
         onLocationSelected={handleLocationSelected}
       />
