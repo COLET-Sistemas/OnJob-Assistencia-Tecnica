@@ -126,17 +126,6 @@ const CadastroRegioes = () => {
         <TableStatusColumn status={regiao.situacao} />
       ),
     },
-    {
-      header: "Data Cadastro",
-      accessor: "data_cadastro" as keyof Regiao,
-      render: (regiao: Regiao) => (
-        <span className="text-xs text-gray-500">
-          {regiao.data_cadastro
-            ? regiao.data_cadastro.replace(/:\d{2}$/, "")
-            : "-"}
-        </span>
-      ),
-    },
   ];
 
   const handleDelete = async (id: number) => {

@@ -157,7 +157,7 @@ const ConsultaEmpresa: React.FC = () => {
 
               <MapComponent
                 height="320px"
-                zoom={18}
+                zoom={17}
                 showAddress={false}
                 className="border border-gray-300 shadow-sm"
               />
@@ -220,7 +220,7 @@ const ConsultaEmpresa: React.FC = () => {
             <div className="flex items-center gap-3 mb-6">
               <Package className="h-6 w-6 text-[var(--primary)]" />
               <h3 className="text-lg font-semibold text-[var(--neutral-graphite)]">
-                Versão
+                Versões
               </h3>
             </div>
 
