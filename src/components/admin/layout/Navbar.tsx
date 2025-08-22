@@ -11,7 +11,31 @@ import {
   Minimize,
   UserCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
+
+// Separate component for the title that will re-render independently
+const PageTitle = memo(function PageTitle({
+  fallbackTitle = "",
+}: {
+  fallbackTitle?: string;
+}) {
+  const titleContext = useTitle();
+  const displayTitle = titleContext.title || fallbackTitle || "";
+  return (
+    <h4
+      className="font-semibold flex items-center"
+      style={{
+        color: "#374151",
+        fontSize: "22px",
+        fontWeight: 600,
+        marginLeft: "8px",
+        letterSpacing: 0,
+      }}
+    >
+      {displayTitle}
+    </h4>
+  );
+});
 
 interface NavbarProps {
   sidebarOpen: boolean;
@@ -19,13 +43,7 @@ interface NavbarProps {
   title?: string;
 }
 
-export default function Navbar({
-  sidebarOpen,
-  setSidebarOpen,
-  title,
-}: NavbarProps) {
-  const titleContext = useTitle();
-  const displayTitle = titleContext.title || title || "";
+function NavbarComponent({ sidebarOpen, setSidebarOpen, title }: NavbarProps) {
   const [nomeUsuario, setNomeUsuario] = useState("Usuário");
 
   useEffect(() => {
@@ -107,7 +125,7 @@ export default function Navbar({
   };
 
   return (
-    <header className="bg-[#F9F7F7] shadow-xl px-6 py-5">
+    <header className="bg-transparent backdrop-blur-sm px-6 py-5 sticky top-0 z-30">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 px-2">
           <button
@@ -134,18 +152,7 @@ export default function Navbar({
               />
             )}
           </button>
-          <h4
-            className="font-semibold flex items-center"
-            style={{
-              color: "#374151",
-              fontSize: "22px",
-              fontWeight: 600,
-              marginLeft: "8px",
-              letterSpacing: 0,
-            }}
-          >
-            {displayTitle}
-          </h4>
+          <PageTitle fallbackTitle={title} />
         </div>
 
         <div className="flex items-center space-x-5">
@@ -273,3 +280,6 @@ export default function Navbar({
     </header>
   );
 }
+
+// Export the memoized version of the component to prevent unnecessary re-renders
+export default memo(NavbarComponent);
