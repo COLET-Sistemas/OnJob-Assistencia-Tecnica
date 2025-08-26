@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Loading } from "@/components/LoadingPersonalizado";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 interface PageProps {
   params: Promise<{
@@ -24,6 +25,7 @@ const EditarMotivoAtendimento = (props: PageProps) => {
   const id = parseInt(params.id);
   const router = useRouter();
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
   const [savingData, setSavingData] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<FormData>({
@@ -53,7 +55,10 @@ const EditarMotivoAtendimento = (props: PageProps) => {
         }
       } catch (error) {
         console.error("Erro ao carregar motivo de atendimento:", error);
-        alert("Erro ao carregar dados. Por favor, tente novamente.");
+        showError(
+          "Erro ao carregar dados",
+          "Não foi possível carregar os dados do motivo. Tente novamente."
+        );
         router.push("/admin/cadastro/motivos_atendimentos");
       } finally {
         setLoading(false);
@@ -61,7 +66,7 @@ const EditarMotivoAtendimento = (props: PageProps) => {
     };
 
     carregarDados();
-  }, [id, router]);
+  }, [id, router, showError]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -108,10 +113,17 @@ const EditarMotivoAtendimento = (props: PageProps) => {
       });
 
       router.push("/admin/cadastro/motivos_atendimentos");
+
+      showSuccess(
+        "Atualização realizada!",
+        "Motivo de atendimento atualizado com sucesso."
+      );
     } catch (error) {
       console.error("Erro ao atualizar motivo de atendimento:", error);
-      alert(
-        "Erro ao atualizar motivo de atendimento. Verifique os dados e tente novamente."
+
+      showError(
+        "Erro ao atualizar",
+        "Não foi possível atualizar o motivo de atendimento. Tente novamente."
       );
     } finally {
       setSavingData(false);
@@ -123,7 +135,7 @@ const EditarMotivoAtendimento = (props: PageProps) => {
       <Loading
         fullScreen={true}
         preventScroll={false}
-        text="Carregando motivos de pendência..."
+        text="Carregando motivos de atendimento..."
         size="large"
       />
     );

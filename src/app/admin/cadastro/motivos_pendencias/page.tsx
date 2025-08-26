@@ -10,9 +10,11 @@ import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useMotivosFilters } from "../../../../hooks/useSpecificFilters";
 import { motivosPendenciaAPI } from "@/api/api";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 const CadastroMotivosPendencia = () => {
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     setTitle("Motivos de Pendências");
@@ -78,8 +80,15 @@ const CadastroMotivosPendencia = () => {
     try {
       await motivosPendenciaAPI.delete(id);
       await refetch();
+      showSuccess(
+        "Exclusão realizada!",
+        "Motivo de pendência excluído com sucesso."
+      );
     } catch {
-      alert("Erro ao excluir motivo.");
+      showError(
+        "Erro ao excluir",
+        "Não foi possível excluir o motivo de pendência. Tente novamente."
+      );
     }
   };
 

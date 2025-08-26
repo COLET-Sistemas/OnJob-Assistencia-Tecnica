@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Loading } from "@/components/LoadingPersonalizado";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 interface PageProps {
   params: Promise<{
@@ -24,8 +25,8 @@ const EditarMotivoPendencia = (props: PageProps) => {
   const id = parseInt(params.id);
   const router = useRouter();
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
   const [savingData, setSavingData] = useState(false);
-
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<FormData>({
     descricao: "",
@@ -54,7 +55,10 @@ const EditarMotivoPendencia = (props: PageProps) => {
         }
       } catch (error) {
         console.error("Erro ao carregar motivo de pendencia:", error);
-        alert("Erro ao carregar dados. Por favor, tente novamente.");
+        showError(
+          "Erro ao carregar dados",
+          "Não foi possível carregar os dados do motivo. Tente novamente."
+        );
         router.push("/admin/cadastro/motivos_pendencias");
       } finally {
         setLoading(false);
@@ -62,7 +66,7 @@ const EditarMotivoPendencia = (props: PageProps) => {
     };
 
     carregarDados();
-  }, [id, router]);
+  }, [id, router, showError]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -109,10 +113,17 @@ const EditarMotivoPendencia = (props: PageProps) => {
       });
 
       router.push("/admin/cadastro/motivos_pendencias");
+
+      showSuccess(
+        "Atualização realizada!",
+        "Motivo de pendência atualizado com sucesso."
+      );
     } catch (error) {
       console.error("Erro ao atualizar motivo de pendência:", error);
-      alert(
-        "Erro ao atualizar motivo de pendência. Verifique os dados e tente novamente."
+
+      showError(
+        "Erro ao atualizar",
+        "Não foi possível atualizar o motivo de pendência. Tente novamente."
       );
     } finally {
       setSavingData(false);
@@ -157,7 +168,7 @@ const EditarMotivoPendencia = (props: PageProps) => {
                   type="text"
                   id="descricao"
                   name="descricao"
-                  placeholder="Descrição do motivo de atendimento"
+                  placeholder="Descrição do motivo de pendência"
                   value={formData.descricao}
                   onChange={handleInputChange}
                   className={`w-full p-2 border ${
@@ -204,7 +215,7 @@ const EditarMotivoPendencia = (props: PageProps) => {
         {/* Botões */}
         <div className="mt-8 flex justify-end space-x-3">
           <Link
-            href="/admin/cadastro/motivos_atendimentos"
+            href="/admin/cadastro/motivos_pendencias"
             className="px-5 py-2 bg-gray-100 text-[#7C54BD] rounded-md hover:bg-gray-200 transition-colors shadow-sm hover:shadow-md"
           >
             Cancelar

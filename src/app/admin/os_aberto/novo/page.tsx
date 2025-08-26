@@ -8,12 +8,12 @@ import PageHeader from "@/components/admin/ui/PageHeader";
 import { clientesService } from "@/api/services/clientesService";
 import { maquinasService } from "@/api/services/maquinasService";
 import { motivosPendenciaService } from "@/api/services/motivosPendenciaService";
-import { regioesService } from "@/api/services/regioesService";
 import { ordensServicoService } from "@/api/services/ordensServicoService";
+import { usuariosService } from "@/api/services/usuariosService";
 import { Cliente, ClienteContato } from "@/types/admin/cadastro/clientes";
 import { MotivoPendencia } from "@/types/admin/cadastro/motivos_pendencia";
-import { Regiao } from "@/types/admin/cadastro/regioes";
 import { Maquina } from "@/types/admin/cadastro/maquinas";
+import { Usuario } from "@/types/admin/cadastro/usuarios";
 
 interface ClienteOption {
   value: number;
@@ -23,6 +23,8 @@ interface ClienteOption {
 interface MaquinaOption {
   value: number;
   label: string;
+  isInWarranty?: boolean;
+  data_final_garantia?: string;
 }
 
 interface MotivoPendenciaOption {
@@ -30,7 +32,7 @@ interface MotivoPendenciaOption {
   label: string;
 }
 
-interface RegiaoOption {
+interface TecnicoOption {
   value: number;
   label: string;
 }
@@ -55,10 +57,8 @@ const NovaOrdemServico = () => {
   const [selectedMaquina, setSelectedMaquina] = useState<MaquinaOption | null>(
     null
   );
-  const [regioesOptions, setRegioesOptions] = useState<RegiaoOption[]>([]);
-  const [selectedRegiao, setSelectedRegiao] = useState<RegiaoOption | null>(
-    null
-  );
+  const [maquinaInput, setMaquinaInput] = useState("");
+  const [isSearchingMaquinas, setIsSearchingMaquinas] = useState(false);
   const [motivosPendenciaOptions, setMotivosPendenciaOptions] = useState<
     MotivoPendenciaOption[]
   >([]);
@@ -77,8 +77,11 @@ const NovaOrdemServico = () => {
   const [customContatoTelefone, setCustomContatoTelefone] = useState("");
   const [customContatoWhatsapp, setCustomContatoWhatsapp] = useState("");
   const [useCustomContato, setUseCustomContato] = useState(false);
+  const [tecnicosOptions, setTecnicosOptions] = useState<TecnicoOption[]>([]);
+  const [selectedTecnico, setSelectedTecnico] = useState<TecnicoOption | null>(null);
+  const [loadingTecnicos, setLoadingTecnicos] = useState(false);
 
-  // Carregar dados iniciais (motivos de pendência e regiões)
+  // Carregar dados iniciais (motivos de pendência, técnicos e regiões)
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsLoading(true);
@@ -95,13 +98,20 @@ const NovaOrdemServico = () => {
         );
         setMotivosPendenciaOptions(motivosPendenciaOpts);
 
-        // Carregar regiões
-        const regioesData = await regioesService.getAll({ situacao: "A" });
-        const regioesOpts = regioesData.map((regiao: Regiao) => ({
-          value: regiao.id,
-          label: regiao.nome,
+        // Carregar técnicos
+        setLoadingTecnicos(true);
+        const tecnicosData = await usuariosService.getAll({
+          apenas_tecnicos: "s",
+          situacao: "A",
+        });
+        const tecnicosOpts = tecnicosData.map((tecnico: Usuario) => ({
+          value: tecnico.id,
+          label: tecnico.nome,
         }));
-        setRegioesOptions(regioesOpts);
+        setTecnicosOptions(tecnicosOpts);
+        setLoadingTecnicos(false);
+
+        // Região removida conforme solicitação
       } catch (error) {
         console.error("Erro ao carregar dados iniciais:", error);
       } finally {
@@ -140,28 +150,86 @@ const NovaOrdemServico = () => {
     }
   };
 
+  // Buscar máquinas pelo número de série
+  const handleMaquinaInputChange = (inputValue: string) => {
+    setMaquinaInput(inputValue);
+
+    if (inputValue.length >= 3 && !isSearchingMaquinas) {
+      setIsSearchingMaquinas(true);
+      searchMaquinas(inputValue);
+    }
+  };
+
+  const searchMaquinas = async (term: string) => {
+    try {
+      const response = await maquinasService.searchByNumeroSerie(term);
+
+      // Mapear máquinas para opções
+      const options = response.dados.map((maquina: Maquina) => {
+        // Verificar se está na garantia (data_final_garantia maior que hoje)
+        const isInWarranty = maquina.data_final_garantia && 
+          new Date(maquina.data_final_garantia) > new Date();
+          
+        return {
+          value: maquina.id || 0,
+          label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
+          isInWarranty,
+          data_final_garantia: maquina.data_final_garantia || "",
+        };
+      });
+
+        // Adicionar a opção de buscar outra máquina
+        options.push({
+          value: -1,
+          label: "Buscar outra máquina...",
+          isInWarranty: false,
+          data_final_garantia: "",
+        });
+        setMaquinaOptions(options);
+    } catch (error) {
+      console.error("Erro ao buscar máquinas:", error);
+    } finally {
+      setIsSearchingMaquinas(false);
+    }
+  };
+
   // Carregar máquinas e contatos do cliente selecionado
   const handleClienteChange = async (selectedOption: ClienteOption | null) => {
     setSelectedCliente(selectedOption);
     setSelectedMaquina(null);
     setSelectedContato(null);
+    setMaquinaInput("");
 
     if (selectedOption) {
       // Carregar máquinas do cliente
       setLoadingMaquinas(true);
       try {
-        // Assumindo que existe um endpoint para buscar máquinas por cliente
-        const maquinasResponse = await maquinasService.getAll(1, 100);
-        // Filtramos as máquinas do cliente selecionado
-        const maquinasDoCliente = maquinasResponse.dados.filter(
-          (maquina: Maquina) =>
-            maquina.cliente_atual.id_cliente === selectedOption.value
+        // Buscar máquinas usando o id do cliente
+        const maquinasResponse = await maquinasService.getByClienteId(
+          selectedOption.value,
+          15
         );
 
-        const options = maquinasDoCliente.map((maquina: Maquina) => ({
-          value: maquina.id || 0,
-          label: `${maquina.numero_serie} - ${maquina.modelo || ""}`,
-        }));
+        const options = maquinasResponse.dados.map((maquina: Maquina) => {
+          // Verificar se está na garantia (data_final_garantia maior que hoje)
+          const isInWarranty = maquina.data_final_garantia && 
+            new Date(maquina.data_final_garantia) > new Date();
+          
+          return {
+            value: maquina.id || 0,
+            label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
+            isInWarranty,
+            data_final_garantia: maquina.data_final_garantia || "",
+          };
+        });
+
+        // Adiciona uma opção para buscar outras máquinas
+        options.push({
+          value: -1,
+          label: "Buscar outra máquina...",
+          isInWarranty: false,
+          data_final_garantia: "",
+        });
 
         setMaquinaOptions(options);
       } catch (error) {
@@ -209,7 +277,7 @@ const NovaOrdemServico = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedCliente || !selectedMaquina || !selectedRegiao) {
+    if (!selectedCliente || !selectedMaquina) {
       alert("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
@@ -223,7 +291,7 @@ const NovaOrdemServico = () => {
         id_motivo_atendimento: number; // This field is required by the API
         id_motivo_pendencia?: number;
         comentarios: string;
-        id_regiao: number;
+        id_tecnico?: number; // Optional technician ID
         id_contato?: number;
         contato_nome?: string;
         contato_email?: string;
@@ -234,7 +302,6 @@ const NovaOrdemServico = () => {
         id_maquina: selectedMaquina.value,
         id_motivo_atendimento: 1, // Providing a default value since this field is required
         comentarios: comentarios,
-        id_regiao: selectedRegiao.value,
       };
 
       // Adicionar informações de contato
@@ -266,6 +333,11 @@ const NovaOrdemServico = () => {
       // Adicionar motivo de pendência, se selecionado
       if (selectedMotivoPendencia) {
         osData.id_motivo_pendencia = selectedMotivoPendencia.value;
+      }
+      
+      // Adicionar técnico, se selecionado
+      if (selectedTecnico) {
+        osData.id_tecnico = selectedTecnico.value;
       }
 
       await ordensServicoService.create(osData);
@@ -319,6 +391,35 @@ const NovaOrdemServico = () => {
         "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
       zIndex: 9999,
     }),
+  };
+
+  // Componente personalizado para formatação das opções de máquina com badge
+  const MachineOptionFormatter = ({ 
+    data, 
+    ...props 
+  }: { 
+    data: MaquinaOption; 
+    innerProps?: React.HTMLAttributes<HTMLDivElement>;
+    [key: string]: unknown;
+  }) => {
+    const isInWarranty = data.isInWarranty;
+    
+    return (
+      <div {...props} className="flex items-center justify-between w-full">
+        <span>{data.label}</span>
+        {isInWarranty !== undefined && (
+          <span 
+            className={`text-xs px-2 py-1 rounded-full ml-2 ${
+              isInWarranty 
+                ? "bg-green-100 text-green-800" 
+                : "bg-red-100 text-red-800"
+            }`}
+          >
+            {isInWarranty ? "Em garantia" : "Sem garantia"}
+          </span>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -457,16 +558,30 @@ const NovaOrdemServico = () => {
                     : "Selecione uma máquina"
                   : "Selecione um cliente primeiro"
               }
+              inputValue={maquinaInput}
+              onInputChange={handleMaquinaInputChange}
               options={maquinaOptions}
               value={selectedMaquina}
-              onChange={setSelectedMaquina}
+              onChange={(option) => {
+                if (option && option.value === -1) {
+                  // Usuário selecionou "Buscar outra máquina..."
+                  setSelectedMaquina(null);
+                  setMaquinaInput(""); // Limpar o campo de busca
+                } else {
+                  setSelectedMaquina(option);
+                }
+              }}
               isDisabled={!selectedCliente || loadingMaquinas}
-              isLoading={loadingMaquinas}
+              isLoading={loadingMaquinas || isSearchingMaquinas}
+              isSearchable={true}
               styles={customSelectStyles}
+              formatOptionLabel={MachineOptionFormatter}
               className="react-select-container"
               classNamePrefix="react-select"
-              noOptionsMessage={() =>
-                "Nenhuma máquina encontrada para este cliente"
+              noOptionsMessage={({ inputValue }) =>
+                inputValue.length < 3
+                  ? "Digite pelo menos 3 caracteres para buscar uma máquina..."
+                  : "Nenhuma máquina encontrada"
               }
             />
           </div>
@@ -487,23 +602,27 @@ const NovaOrdemServico = () => {
               noOptionsMessage={() => "Nenhum motivo de pendência cadastrado"}
             />
           </div>
-
-          {/* Região */}
+          
+          {/* Técnico */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Região <span className="text-red-500">*</span>
+              Técnico
             </label>
             <Select
-              placeholder="Selecione a região"
-              options={regioesOptions}
-              value={selectedRegiao}
-              onChange={setSelectedRegiao}
+              placeholder="Selecione o técnico (opcional)"
+              options={tecnicosOptions}
+              value={selectedTecnico}
+              onChange={setSelectedTecnico}
+              isLoading={loadingTecnicos}
+              isClearable={true}
               styles={customSelectStyles}
               className="react-select-container"
               classNamePrefix="react-select"
-              noOptionsMessage={() => "Nenhuma região cadastrada"}
+              noOptionsMessage={() => "Nenhum técnico encontrado"}
             />
           </div>
+
+          {/* Região removida conforme solicitação */}
 
           {/* Comentários */}
           <div>

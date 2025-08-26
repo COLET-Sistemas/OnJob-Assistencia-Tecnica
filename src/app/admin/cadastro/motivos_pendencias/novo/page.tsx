@@ -9,7 +9,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import PageHeader from "@/components/admin/ui/PageHeader";
 
-// Interfaces separadas para melhor organização
 interface FormData {
   descricao: string;
 }
@@ -225,11 +224,11 @@ const CadastrarMotivoPendencia: React.FC = () => {
           descricao: formData.descricao.trim(),
         });
 
-        router.push("/admin/cadastro/motivos_atendimentos");
+        router.push("/admin/cadastro/motivos_pendencias");
 
         showSuccess(
           "Cadastro realizado!",
-          "Motivo de atendimento cadastrado com sucesso."
+          "Motivo de pendência cadastrado com sucesso."
         );
       } catch (error) {
         console.error("Erro ao cadastrar motivo de atendimento:", error);
