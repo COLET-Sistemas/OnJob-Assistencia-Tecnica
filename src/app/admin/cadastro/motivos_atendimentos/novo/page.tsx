@@ -220,7 +220,7 @@ const CadastrarMotivoAtendimento: React.FC = () => {
       setIsSubmitting(true);
 
       try {
-        await motivosAtendimentoAPI.create({
+        const response = await motivosAtendimentoAPI.create({
           descricao: formData.descricao.trim(),
         });
 
@@ -228,15 +228,14 @@ const CadastrarMotivoAtendimento: React.FC = () => {
 
         showSuccess(
           "Cadastro realizado!",
-          "Motivo de atendimento cadastrado com sucesso."
+          response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
         );
       } catch (error) {
         console.error("Erro ao cadastrar motivo de atendimento:", error);
 
-        // Mostrar toast de erro
         showError(
           "Erro ao cadastrar",
-          "Não foi possível cadastrar o motivo de atendimento. Tente novamente."
+          error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
         );
       } finally {
         setIsSubmitting(false);

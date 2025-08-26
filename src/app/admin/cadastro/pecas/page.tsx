@@ -12,6 +12,7 @@ import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
 import { pecasAPI } from "@/api/api";
 import { Package } from "lucide-react";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 // Interface dos filtros específicos para peças
 interface PecasFilters {
@@ -42,6 +43,7 @@ interface PecasResponse {
 
 const CadastroPecas = () => {
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     setTitle("Peças");
@@ -164,10 +166,19 @@ const CadastroPecas = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await pecasAPI.delete(id);
+      const response = await pecasAPI.delete(id);
+      showSuccess(
+        "Sucesso",
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+      );
       await refetch();
-    } catch {
-      alert("Erro ao excluir essa peça.");
+    } catch (error) {
+      console.error("Erro ao excluir peça:", error);
+
+      showError(
+        "Erro ao excluir",
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+      );
     }
   };
 

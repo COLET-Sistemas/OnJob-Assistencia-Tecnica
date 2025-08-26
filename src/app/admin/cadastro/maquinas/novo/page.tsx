@@ -8,6 +8,7 @@ interface ClienteAPIResult {
 
 import { maquinasAPI, clientesAPI } from "@/api/api";
 import { useTitle } from "@/context/TitleContext";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ interface FormData {
 const CadastrarMaquina = () => {
   const router = useRouter();
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
   const [savingData, setSavingData] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -130,7 +132,7 @@ const CadastrarMaquina = () => {
     setSavingData(true);
 
     try {
-      await maquinasAPI.create({
+      const response = await maquinasAPI.create({
         numero_serie: formData.numero_serie,
         descricao: formData.descricao,
         modelo: formData.modelo,
@@ -139,10 +141,18 @@ const CadastrarMaquina = () => {
         nota_fiscal_venda: formData.nota_fiscal_venda,
         data_final_garantia: formData.data_final_garantia,
       });
+      showSuccess(
+        "Sucesso", 
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+      );
       router.push("/admin/cadastro/maquinas");
     } catch (error) {
       console.error("Erro ao cadastrar máquina:", error);
-      alert("Erro ao cadastrar máquina. Verifique os dados e tente novamente.");
+      
+      showError(
+        "Erro ao cadastrar",
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+      );
     } finally {
       setSavingData(false);
     }

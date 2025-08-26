@@ -7,10 +7,12 @@ import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 const CadastrarRegiao = () => {
   const router = useRouter();
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
   const [savingData, setSavingData] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -111,12 +113,21 @@ const CadastrarRegiao = () => {
     setSavingData(true);
 
     try {
-      await regioesAPI.create(formData);
-      alert("Região cadastrada com sucesso!");
+      const response = await regioesAPI.create(formData);
+
       router.push("/admin/cadastro/regioes");
+
+      showSuccess(
+        "Cadastro realizado!",
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+      );
     } catch (error) {
       console.error("Erro ao cadastrar região:", error);
-      alert("Erro ao cadastrar região. Por favor, tente novamente.");
+
+      showError(
+        "Erro ao cadastrar",
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+      );
     } finally {
       setSavingData(false);
     }

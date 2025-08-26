@@ -221,7 +221,7 @@ const CadastrarTipoPeca: React.FC = () => {
       setIsSubmitting(true);
 
       try {
-        await tiposPecasAPI.create({
+        const response = await tiposPecasAPI.create({
           descricao: formData.descricao.trim(),
         });
 
@@ -229,15 +229,14 @@ const CadastrarTipoPeca: React.FC = () => {
 
         showSuccess(
           "Cadastro realizado!",
-          "Tipo de peça cadastrado com sucesso."
+          response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
         );
       } catch (error) {
         console.error("Erro ao cadastrar tipo de peça:", error);
 
-        // Mostrar toast de erro
         showError(
           "Erro ao cadastrar",
-          "Não foi possível cadastrar o tipo de peça. Tente novamente."
+          error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
         );
       } finally {
         setIsSubmitting(false);

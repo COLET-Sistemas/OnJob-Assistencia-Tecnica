@@ -2,6 +2,7 @@
 import { Loading } from "@/components/LoadingPersonalizado";
 import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 import { useDataFetch } from "@/hooks";
 import type { Maquina } from "@/types/admin/cadastro/maquinas";
 import { useCallback, useEffect, useState } from "react";
@@ -53,6 +54,7 @@ const formatDate = (dateString: string): string => {
 
 const CadastroMaquinas = () => {
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     setTitle("Máquinas");
@@ -232,10 +234,19 @@ const CadastroMaquinas = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await maquinasAPI.delete(id);
+      const response = await maquinasAPI.delete(id);
+      showSuccess(
+        "Sucesso", 
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+      );
       await refetch();
-    } catch {
-      alert("Erro ao excluir máquina.");
+    } catch (error) {
+      console.error("Erro ao excluir máquina:", error);
+
+      showError(
+        "Erro ao excluir",
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+      );
     }
   };
 

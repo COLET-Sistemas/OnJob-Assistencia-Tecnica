@@ -11,8 +11,14 @@ import { Toast, ToastProps } from "../ui/Toast";
 
 interface ToastContextType {
   showToast: (toast: Omit<ToastProps, "id" | "onClose">) => void;
-  showSuccess: (title: string, message?: string) => void;
-  showError: (title: string, message?: string) => void;
+  showSuccess: (
+    title: string,
+    message?: string | Record<string, unknown>
+  ) => void;
+  showError: (
+    title: string,
+    message?: string | Record<string, unknown>
+  ) => void;
   showWarning: (title: string, message?: string) => void;
   showInfo: (title: string, message?: string) => void;
 }
@@ -54,15 +60,43 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   );
 
   const showSuccess = useCallback(
-    (title: string, message?: string) => {
-      showToast({ type: "success", title, message });
+    (title: string, message?: string | Record<string, unknown>) => {
+      // Se message é um objeto da API, extrair a mensagem
+      let finalMessage = message;
+      if (message && typeof message === "object") {
+        if ("mensagem" in message && typeof message.mensagem === "string") {
+          finalMessage = message.mensagem;
+        } else if (
+          "message" in message &&
+          typeof message.message === "string"
+        ) {
+          finalMessage = message.message;
+        } else {
+          finalMessage = undefined;
+        }
+      }
+      showToast({ type: "success", title, message: finalMessage as string });
     },
     [showToast]
   );
 
   const showError = useCallback(
-    (title: string, message?: string) => {
-      showToast({ type: "error", title, message });
+    (title: string, message?: string | Record<string, unknown>) => {
+      // Se message é um objeto de erro da API, extrair a mensagem
+      let finalMessage = message;
+      if (message && typeof message === "object") {
+        if ("mensagem" in message && typeof message.mensagem === "string") {
+          finalMessage = message.mensagem;
+        } else if (
+          "message" in message &&
+          typeof message.message === "string"
+        ) {
+          finalMessage = message.message;
+        } else {
+          finalMessage = "Ocorreu um erro inesperado. Tente novamente.";
+        }
+      }
+      showToast({ type: "error", title, message: finalMessage as string });
     },
     [showToast]
   );

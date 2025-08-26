@@ -2,6 +2,7 @@
 
 import api from "@/api/api";
 import { useTitle } from "@/context/TitleContext";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
@@ -39,6 +40,7 @@ const EditarPeca = () => {
   const id = params.id;
   const router = useRouter();
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
   const [savingData, setSavingData] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<FormData>({
@@ -76,14 +78,14 @@ const EditarPeca = () => {
         }
       } catch (error) {
         console.error("Erro ao carregar peça:", error);
-        alert("Erro ao carregar dados. Por favor, tente novamente.");
+        showError("Erro ao carregar dados", error as Record<string, unknown>);
         router.push("/admin/cadastro/pecas");
       } finally {
         setLoading(false);
       }
     };
     if (id) carregarDados();
-  }, [id, router]);
+  }, [id, router, showError]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -123,16 +125,24 @@ const EditarPeca = () => {
     }
     setSavingData(true);
     try {
-      await api.put(`/pecas?id=${id}`, {
+      const response = await api.put(`/pecas?id=${id}`, {
         codigo_peca: formData.codigo_peca,
         descricao: formData.descricao,
         situacao: formData.situacao,
         unidade_medida: formData.unidade_medida,
       });
+      showSuccess(
+        "Sucesso",
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+      );
       router.push("/admin/cadastro/pecas");
     } catch (error) {
       console.error("Erro ao atualizar peça:", error);
-      alert("Erro ao atualizar peça. Verifique os dados e tente novamente.");
+
+      showError(
+        "Erro ao atualizar",
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+      );
     } finally {
       setSavingData(false);
     }

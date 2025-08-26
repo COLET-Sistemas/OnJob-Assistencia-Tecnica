@@ -7,6 +7,7 @@ import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 interface EditarRegiaoProps {
   params: Promise<{
@@ -17,6 +18,7 @@ interface EditarRegiaoProps {
 const EditarRegiao = ({ params }: EditarRegiaoProps) => {
   const router = useRouter();
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [savingData, setSavingData] = useState(false);
@@ -102,14 +104,19 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
         });
       } catch (error) {
         console.error("Erro ao carregar região:", error);
-        alert("Erro ao carregar dados da região. Verifique se o ID é válido.");
+
+        showError(
+          "Erro ao carregar dados",
+          "Não foi possível carregar os dados da região. Verifique se o ID é válido."
+        );
+
         router.push("/admin/cadastro/regioes");
       } finally {
         setLoading(false);
       }
     };
     carregarRegiao();
-  }, [resolvedParams, router]);
+  }, [resolvedParams, router, showError]);
 
   // Manipular mudanças nos campos do formulário
   const handleInputChange = (
@@ -164,12 +171,21 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
 
     try {
       const id = parseInt(resolvedParams.id);
-      await regioesAPI.update(id, formData);
-      alert("Região atualizada com sucesso!");
+      const response = await regioesAPI.update(id, formData);
+
       router.push("/admin/cadastro/regioes");
+
+      showSuccess(
+        "Atualização realizada!",
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+      );
     } catch (error) {
       console.error("Erro ao atualizar região:", error);
-      alert("Erro ao atualizar região. Por favor, tente novamente.");
+
+      showError(
+        "Erro ao atualizar",
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+      );
     } finally {
       setSavingData(false);
     }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2, X } from "lucide-react";
+import { Ban, X } from "lucide-react";
 
 type DeleteButtonProps = {
   id: number;
@@ -16,9 +16,9 @@ export const DeleteButton = ({
   id,
   onDelete,
   loading = false,
-  confirmText = "Tem certeza que deseja excluir este item?",
-  confirmTitle = "Confirmar Exclusão",
-  label = "Excluir",
+  confirmText = "Tem certeza que deseja inativar este item?",
+  confirmTitle = "Confirmar Inativação",
+  label = "Inativar",
   className = "",
   itemName = "",
 }: DeleteButtonProps) => {
@@ -35,7 +35,7 @@ export const DeleteButton = ({
       await onDelete(id);
       setShowModal(false);
     } catch (error) {
-      console.error("Erro ao excluir:", error);
+      console.error("Erro ao inativar:", error);
     } finally {
       setLocalLoading(false);
     }
@@ -58,8 +58,8 @@ export const DeleteButton = ({
           ${className}
         `.trim()}
       >
-        <Trash2 size={15} />
-        {isLoading ? "Excluindo..." : label}
+        <Ban size={15} />
+        {isLoading ? "Inativando..." : label}
       </button>
 
       {showModal && (
@@ -87,7 +87,7 @@ export const DeleteButton = ({
             <div className="p-6">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                  <Trash2 size={20} className="text-red-600" />
+                  <Ban size={20} className="text-red-600" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-600 mb-2">{confirmText}</p>
@@ -116,7 +116,7 @@ export const DeleteButton = ({
                 {localLoading && (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 )}
-                {localLoading ? "Excluindo..." : "Confirmar Exclusão"}
+                {localLoading ? "Inativando..." : "Confirmar Inativação"}
               </button>
             </div>
           </div>

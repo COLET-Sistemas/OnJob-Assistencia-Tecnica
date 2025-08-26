@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Loading } from "@/components/LoadingPersonalizado";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 interface PageProps {
   params: Promise<{
@@ -24,6 +25,7 @@ const EditarTipoPeca = (props: PageProps) => {
   const id = parseInt(params.id);
   const router = useRouter();
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
   const [savingData, setSavingData] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<FormData>({
@@ -57,7 +59,12 @@ const EditarTipoPeca = (props: PageProps) => {
         }
       } catch (error) {
         console.error("Erro ao carregar tipo de peça:", error);
-        alert("Erro ao carregar dados. Por favor, tente novamente.");
+
+        showError(
+          "Erro ao carregar dados",
+          "Não foi possível carregar os dados do tipo de peça. Tente novamente."
+        );
+
         router.push("/admin/cadastro/tipos_pecas");
       } finally {
         setLoading(false);
@@ -65,7 +72,7 @@ const EditarTipoPeca = (props: PageProps) => {
     };
 
     carregarDados();
-  }, [id, router]);
+  }, [id, router, showError]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -106,16 +113,23 @@ const EditarTipoPeca = (props: PageProps) => {
     setSavingData(true);
 
     try {
-      await api.put(`/tipos_pecas?id=${id}`, {
+      const response = await api.put(`/tipos_pecas?id=${id}`, {
         descricao: formData.descricao,
         situacao: formData.situacao,
       });
 
       router.push("/admin/cadastro/tipos_pecas");
+
+      showSuccess(
+        "Atualização realizada!",
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+      );
     } catch (error) {
       console.error("Erro ao atualizar tipo de peça:", error);
-      alert(
-        "Erro ao atualizar tipo de peça. Verifique os dados e tente novamente."
+
+      showError(
+        "Erro ao atualizar",
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
       );
     } finally {
       setSavingData(false);

@@ -2,6 +2,7 @@
 
 import { pecasAPI } from "@/api/api";
 import { useTitle } from "@/context/TitleContext";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,6 +20,7 @@ interface FormData {
 const CadastrarPeca = () => {
   const router = useRouter();
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
   const [savingData, setSavingData] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -106,12 +108,19 @@ const CadastrarPeca = () => {
         situacao: "A",
       };
 
-      await pecasAPI.create(pecaData);
-      alert("Peça cadastrada com sucesso!");
+      const response = await pecasAPI.create(pecaData);
+      showSuccess(
+        "Sucesso",
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+      );
       router.push("/admin/cadastro/pecas");
     } catch (error) {
       console.error("Erro ao cadastrar peça:", error);
-      alert("Erro ao cadastrar peça. Por favor, tente novamente.");
+
+      showError(
+        "Erro ao cadastrar",
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+      );
     } finally {
       setSavingData(false);
     }

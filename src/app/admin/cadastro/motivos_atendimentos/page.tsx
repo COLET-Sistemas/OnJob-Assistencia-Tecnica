@@ -78,16 +78,19 @@ const CadastroMotivosAtendimento = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await motivosAtendimentoAPI.delete(id);
+      const response = await motivosAtendimentoAPI.delete(id);
       await refetch();
+
       showSuccess(
         "Exclusão realizada!",
-        "Motivo de atendimento excluído com sucesso."
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
       );
-    } catch {
+    } catch (error) {
+      console.error("Erro ao excluir motivo de atendimento:", error);
+
       showError(
         "Erro ao excluir",
-        "Não foi possível excluir o motivo de atendimento. Tente novamente."
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
       );
     }
   };

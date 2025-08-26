@@ -11,9 +11,11 @@ import PageHeader from "@/components/admin/ui/PageHeader";
 import { useRegioesFilters } from "@/hooks/useSpecificFilters";
 import { regioesAPI } from "@/api/api";
 import { MapPin } from "lucide-react";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 const CadastroRegioes = () => {
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     setTitle("Regiões");
@@ -130,10 +132,20 @@ const CadastroRegioes = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await regioesAPI.delete(id);
+      const response = await regioesAPI.delete(id);
       await refetch();
-    } catch {
-      alert("Erro ao excluir região.");
+
+      showSuccess(
+        "Exclusão realizada!",
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+      );
+    } catch (error) {
+      console.error("Erro ao excluir região:", error);
+
+      showError(
+        "Erro ao excluir",
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+      );
     }
   };
 

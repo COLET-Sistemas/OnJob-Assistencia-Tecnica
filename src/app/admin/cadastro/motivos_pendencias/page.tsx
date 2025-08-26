@@ -78,16 +78,19 @@ const CadastroMotivosPendencia = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await motivosPendenciaAPI.delete(id);
+      const response = await motivosPendenciaAPI.delete(id);
       await refetch();
+
       showSuccess(
         "Exclusão realizada!",
-        "Motivo de pendência excluído com sucesso."
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
       );
-    } catch {
+    } catch (error) {
+      console.error("Erro ao excluir motivo de pendência:", error);
+
       showError(
         "Erro ao excluir",
-        "Não foi possível excluir o motivo de pendência. Tente novamente."
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
       );
     }
   };

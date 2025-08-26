@@ -5,6 +5,7 @@ import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { TipoPeca } from "@/types/admin/cadastro/tipos_pecas";
 import { useCallback, useEffect, useState } from "react";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 // Extensão do tipo TipoPeca para incluir codigo_erp
 interface TipoPecaExtended extends TipoPeca {
@@ -52,6 +53,7 @@ interface TiposPecasResponse {
 
 const CadastroTiposPecas = () => {
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     setTitle("Tipos de Peças");
@@ -166,10 +168,20 @@ const CadastroTiposPecas = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await tiposPecasAPI.delete(id);
+      const response = await tiposPecasAPI.delete(id);
       await refetch();
-    } catch {
-      alert("Erro ao excluir tipo de peça.");
+
+      showSuccess(
+        "Exclusão realizada!",
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+      );
+    } catch (error) {
+      console.error("Erro ao excluir tipo de peça:", error);
+
+      showError(
+        "Erro ao excluir",
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+      );
     }
   };
 

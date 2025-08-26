@@ -107,7 +107,7 @@ const EditarMotivoAtendimento = (props: PageProps) => {
     setSavingData(true);
 
     try {
-      await api.put(`/motivos_atendimento?id=${id}`, {
+      const response = await api.put(`/motivos_atendimento?id=${id}`, {
         descricao: formData.descricao,
         situacao: formData.situacao,
       });
@@ -116,14 +116,14 @@ const EditarMotivoAtendimento = (props: PageProps) => {
 
       showSuccess(
         "Atualização realizada!",
-        "Motivo de atendimento atualizado com sucesso."
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
       );
     } catch (error) {
       console.error("Erro ao atualizar motivo de atendimento:", error);
 
       showError(
         "Erro ao atualizar",
-        "Não foi possível atualizar o motivo de atendimento. Tente novamente."
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
       );
     } finally {
       setSavingData(false);
