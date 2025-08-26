@@ -5,13 +5,13 @@ import { Loading } from "@/components/LoadingPersonalizado";
 import LocationPicker from "@/components/admin/common/LocationPicker";
 import StaticMap from "@/components/admin/common/StaticMap";
 import { useTitle } from "@/context/TitleContext";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 import { FormData } from "@/types/admin/cadastro/clientes";
 import { formatDocumento } from "@/utils/formatters";
 import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import toast from "react-hot-toast";
 
 // Interface para tipagem das regiões
 interface Regiao {
@@ -28,6 +28,7 @@ interface Regiao {
 const CadastrarCliente = () => {
   const router = useRouter();
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(false);
   const [savingData, setSavingData] = useState(false);
   const [regioes, setRegioes] = useState<Regiao[]>([]);
@@ -76,13 +77,13 @@ const CadastrarCliente = () => {
         setRegioes(regioesAtivas);
       } catch (error) {
         console.error("Erro ao carregar regiões:", error);
-        toast.error("Erro ao carregar regiões. Tente novamente.");
+        showError("Erro ao carregar regiões", error as Record<string, unknown>);
       } finally {
         setLoading(false);
       }
     };
     carregarRegioes();
-  }, []);
+  }, [showError]);
 
   useEffect(() => {
     if (formData.latitude && formData.longitude) {
@@ -175,7 +176,8 @@ const CadastrarCliente = () => {
       }
     } catch (error) {
       console.error("Erro ao buscar CEP:", error);
-      alert(
+      showError(
+        "Erro ao buscar CEP",
         "Não foi possível buscar o endereço pelo CEP. Por favor, digite manualmente."
       );
     }
@@ -208,7 +210,8 @@ const CadastrarCliente = () => {
       !formData.cidade ||
       !formData.uf
     ) {
-      toast.error(
+      showError(
+        "Campos obrigatórios",
         "Preencha o endereço, número, cidade e UF para obter as coordenadas."
       );
       return;
@@ -244,7 +247,7 @@ const CadastrarCliente = () => {
       setMapOpen(true);
     } catch (error) {
       console.error("Erro ao atualizar coordenadas:", error);
-      toast.error("Erro ao buscar coordenadas. Por favor, tente novamente.");
+      showError("Erro ao buscar coordenadas", error as Record<string, unknown>);
     }
   };
 
@@ -256,7 +259,7 @@ const CadastrarCliente = () => {
       longitude: lng,
     }));
     setShowMapPreview(true);
-    toast.success("Coordenadas atualizadas com sucesso!");
+    showSuccess("Sucesso", "Coordenadas atualizadas com sucesso!");
     setHasShownLocationToast(true);
   };
 
@@ -316,8 +319,9 @@ const CadastrarCliente = () => {
 
                 // Mostrar toast apenas se não foi mostrado antes
                 if (!hasShownLocationToast) {
-                  toast.success(
-                    "Localização encontrada! Visualize no mapa à direita."
+                  showSuccess(
+                    "Localização encontrada",
+                    "Visualize no mapa à direita."
                   );
                   setHasShownLocationToast(true);
                 }
@@ -401,13 +405,22 @@ const CadastrarCliente = () => {
       };
 
       // Enviar para a API
-      await clientesAPI.create(clienteData);
+      const response = await clientesAPI.create(clienteData);
+
+      showSuccess(
+        "Sucesso",
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+      );
 
       // Redirecionar para a lista de clientes
       router.push("/admin/cadastro/clientes");
     } catch (error) {
       console.error("Erro ao cadastrar cliente:", error);
-      alert("Erro ao cadastrar cliente. Verifique os dados e tente novamente.");
+
+      showError(
+        "Erro ao cadastrar",
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+      );
     } finally {
       setSavingData(false);
     }

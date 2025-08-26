@@ -78,7 +78,9 @@ const NovaOrdemServico = () => {
   const [customContatoWhatsapp, setCustomContatoWhatsapp] = useState("");
   const [useCustomContato, setUseCustomContato] = useState(false);
   const [tecnicosOptions, setTecnicosOptions] = useState<TecnicoOption[]>([]);
-  const [selectedTecnico, setSelectedTecnico] = useState<TecnicoOption | null>(null);
+  const [selectedTecnico, setSelectedTecnico] = useState<TecnicoOption | null>(
+    null
+  );
   const [loadingTecnicos, setLoadingTecnicos] = useState(false);
 
   // Carregar dados iniciais (motivos de pendência, técnicos e regiões)
@@ -165,27 +167,30 @@ const NovaOrdemServico = () => {
       const response = await maquinasService.searchByNumeroSerie(term);
 
       // Mapear máquinas para opções
-      const options = response.dados.map((maquina: Maquina) => {
+      const machineOptions = response.dados.map((maquina: Maquina) => {
         // Verificar se está na garantia (data_final_garantia maior que hoje)
-        const isInWarranty = maquina.data_final_garantia && 
+        const isInWarranty =
+          maquina.data_final_garantia &&
           new Date(maquina.data_final_garantia) > new Date();
-          
+
         return {
           value: maquina.id || 0,
           label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
           isInWarranty,
           data_final_garantia: maquina.data_final_garantia || "",
-        };
+        } as MaquinaOption;
       });
 
-        // Adicionar a opção de buscar outra máquina
-        options.push({
-          value: -1,
-          label: "Buscar outra máquina...",
-          isInWarranty: false,
-          data_final_garantia: "",
-        });
-        setMaquinaOptions(options);
+      // Adicionar a opção de buscar outra máquina
+      machineOptions.push({
+        value: -1,
+        label: "Buscar outra máquina...",
+        isInWarranty: false,
+        data_final_garantia: "",
+      } as MaquinaOption);
+
+      // Explicitly cast the array to MaquinaOption[]
+      setMaquinaOptions(machineOptions as MaquinaOption[]);
     } catch (error) {
       console.error("Erro ao buscar máquinas:", error);
     } finally {
@@ -210,28 +215,32 @@ const NovaOrdemServico = () => {
           15
         );
 
-        const options = maquinasResponse.dados.map((maquina: Maquina) => {
-          // Verificar se está na garantia (data_final_garantia maior que hoje)
-          const isInWarranty = maquina.data_final_garantia && 
-            new Date(maquina.data_final_garantia) > new Date();
-          
-          return {
-            value: maquina.id || 0,
-            label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
-            isInWarranty,
-            data_final_garantia: maquina.data_final_garantia || "",
-          };
-        });
+        const machineOptions = maquinasResponse.dados.map(
+          (maquina: Maquina) => {
+            // Verificar se está na garantia (data_final_garantia maior que hoje)
+            const isInWarranty =
+              maquina.data_final_garantia &&
+              new Date(maquina.data_final_garantia) > new Date();
+
+            return {
+              value: maquina.id || 0,
+              label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
+              isInWarranty,
+              data_final_garantia: maquina.data_final_garantia || "",
+            } as MaquinaOption;
+          }
+        );
 
         // Adiciona uma opção para buscar outras máquinas
-        options.push({
+        machineOptions.push({
           value: -1,
           label: "Buscar outra máquina...",
           isInWarranty: false,
           data_final_garantia: "",
-        });
+        } as MaquinaOption);
 
-        setMaquinaOptions(options);
+        // Explicitly cast the array to MaquinaOption[]
+        setMaquinaOptions(machineOptions as MaquinaOption[]);
       } catch (error) {
         console.error("Erro ao carregar máquinas:", error);
       } finally {
@@ -297,11 +306,13 @@ const NovaOrdemServico = () => {
         contato_email?: string;
         contato_telefone?: string;
         contato_whatsapp?: string;
+        id_regiao: number; // Adding id_regiao as it's required by OSForm
       } = {
         id_cliente: selectedCliente.value,
         id_maquina: selectedMaquina.value,
         id_motivo_atendimento: 1, // Providing a default value since this field is required
         comentarios: comentarios,
+        id_regiao: 1, // Adding a required id_regiao field with a default value
       };
 
       // Adicionar informações de contato
@@ -334,7 +345,7 @@ const NovaOrdemServico = () => {
       if (selectedMotivoPendencia) {
         osData.id_motivo_pendencia = selectedMotivoPendencia.value;
       }
-      
+
       // Adicionar técnico, se selecionado
       if (selectedTecnico) {
         osData.id_tecnico = selectedTecnico.value;
@@ -394,24 +405,21 @@ const NovaOrdemServico = () => {
   };
 
   // Componente personalizado para formatação das opções de máquina com badge
-  const MachineOptionFormatter = ({ 
-    data, 
-    ...props 
-  }: { 
-    data: MaquinaOption; 
-    innerProps?: React.HTMLAttributes<HTMLDivElement>;
-    [key: string]: unknown;
-  }) => {
+  const MachineOptionFormatter = (
+    data: MaquinaOption,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    formatOptionLabelMeta: { context: "menu" | "value" }
+  ) => {
     const isInWarranty = data.isInWarranty;
-    
+
     return (
-      <div {...props} className="flex items-center justify-between w-full">
+      <div className="flex items-center justify-between w-full">
         <span>{data.label}</span>
         {isInWarranty !== undefined && (
-          <span 
+          <span
             className={`text-xs px-2 py-1 rounded-full ml-2 ${
-              isInWarranty 
-                ? "bg-green-100 text-green-800" 
+              isInWarranty
+                ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
             }`}
           >
@@ -562,7 +570,7 @@ const NovaOrdemServico = () => {
               onInputChange={handleMaquinaInputChange}
               options={maquinaOptions}
               value={selectedMaquina}
-              onChange={(option) => {
+              onChange={(option: MaquinaOption | null) => {
                 if (option && option.value === -1) {
                   // Usuário selecionou "Buscar outra máquina..."
                   setSelectedMaquina(null);
@@ -575,6 +583,10 @@ const NovaOrdemServico = () => {
               isLoading={loadingMaquinas || isSearchingMaquinas}
               isSearchable={true}
               styles={customSelectStyles}
+              getOptionValue={(option: MaquinaOption) =>
+                option.value?.toString()
+              }
+              getOptionLabel={(option: MaquinaOption) => option.label}
               formatOptionLabel={MachineOptionFormatter}
               className="react-select-container"
               classNamePrefix="react-select"
@@ -602,7 +614,7 @@ const NovaOrdemServico = () => {
               noOptionsMessage={() => "Nenhum motivo de pendência cadastrado"}
             />
           </div>
-          
+
           {/* Técnico */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

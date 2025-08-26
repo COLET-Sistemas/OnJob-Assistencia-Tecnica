@@ -142,13 +142,13 @@ const CadastrarMaquina = () => {
         data_final_garantia: formData.data_final_garantia,
       });
       showSuccess(
-        "Sucesso", 
+        "Sucesso",
         response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
       );
       router.push("/admin/cadastro/maquinas");
     } catch (error) {
       console.error("Erro ao cadastrar máquina:", error);
-      
+
       showError(
         "Erro ao cadastrar",
         error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem

@@ -236,7 +236,7 @@ const CadastroMaquinas = () => {
     try {
       const response = await maquinasAPI.delete(id);
       showSuccess(
-        "Sucesso", 
+        "Sucesso",
         response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
       );
       await refetch();

@@ -226,17 +226,11 @@ const CadastrarMotivoAtendimento: React.FC = () => {
 
         router.push("/admin/cadastro/motivos_atendimentos");
 
-        showSuccess(
-          "Cadastro realizado!",
-          response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
-        );
+        showSuccess("Cadastro realizado!", response);
       } catch (error) {
         console.error("Erro ao cadastrar motivo de atendimento:", error);
 
-        showError(
-          "Erro ao cadastrar",
-          error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
-        );
+        showError("Erro ao cadastrar", error as Record<string, unknown>);
       } finally {
         setIsSubmitting(false);
       }

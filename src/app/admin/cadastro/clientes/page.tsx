@@ -7,6 +7,7 @@ import {
   LocationPicker,
 } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 import { useDataFetch } from "@/hooks";
 import type { Cliente } from "@/types/admin/cadastro/clientes";
 import { useCallback, useEffect, useState } from "react";
@@ -49,6 +50,7 @@ interface ClientesResponse {
 
 const CadastroClientes = () => {
   const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
   const [expandedClienteId, setExpandedClienteId] = useState<number | null>(
     null
   );
@@ -147,20 +149,26 @@ const CadastroClientes = () => {
       try {
         const clientId = getClienteId(selectedCliente);
 
-        await api.patch(`/clientes/geo?id=${clientId}`, {
+        const response = await api.patch(`/clientes/geo?id=${clientId}`, {
           latitude: Number(latitude),
           longitude: Number(longitude),
         });
 
         setShowLocationModal(false);
         await refetch(); // Recarrega os dados
-        alert("Localização atualizada com sucesso!");
+        showSuccess(
+          "Sucesso",
+          response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+        );
       } catch (error) {
         console.error("Error updating location:", error);
-        alert("Erro ao atualizar localização. Tente novamente.");
+        showError(
+          "Erro ao atualizar localização",
+          error as Record<string, unknown>
+        );
       }
     },
-    [selectedCliente, refetch]
+    [selectedCliente, refetch, showSuccess, showError]
   );
 
   // Recupera o endereço da empresa do localStorage
@@ -308,10 +316,19 @@ const CadastroClientes = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await clientesAPI.delete(id);
+      const response = await clientesAPI.delete(id);
+      showSuccess(
+        "Sucesso",
+        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+      );
       await refetch();
-    } catch {
-      alert("Erro ao excluir este cliente.");
+    } catch (error) {
+      console.error("Erro ao excluir cliente:", error);
+
+      showError(
+        "Erro ao excluir",
+        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+      );
     }
   };
 
