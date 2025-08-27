@@ -1,6 +1,7 @@
 "use client";
 
 import api from "@/api/api";
+import { tiposPecasService } from "@/api/services";
 import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { Save } from "lucide-react";
@@ -13,32 +14,22 @@ import {
   InputField,
   SelectField,
   LoadingButton,
+  CustomSelect,
 } from "@/components/admin/form";
-
-const unidadesMedida = [
-  { value: "PC", label: "Peça" },
-  { value: "UN", label: "Unidade" },
-  { value: "KG", label: "Quilograma" },
-  { value: "G", label: "Grama" },
-  { value: "L", label: "Litro" },
-  { value: "ML", label: "Mililitro" },
-  { value: "M", label: "Metro" },
-  { value: "CM", label: "Centímetro" },
-  { value: "MM", label: "Milímetro" },
-  { value: "M²", label: "Metro Quadrado" },
-  { value: "M³", label: "Metro Cúbico" },
-];
-
-const situacoes = [
-  { value: "A", label: "Ativo" },
-  { value: "I", label: "Inativo" },
-];
+import { UNIDADES_MEDIDA, SITUACOES } from "@/utils/constants";
 
 interface FormData {
   codigo_peca: string;
   descricao: string;
   situacao: string;
   unidade_medida: string;
+  id_tipo_peca?: number;
+}
+
+import { OptionType } from "@/components/admin/form/CustomSelect";
+
+interface TipoPecaOption extends OptionType {
+  value: number;
 }
 
 const EditarPeca = () => {
@@ -57,9 +48,73 @@ const EditarPeca = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  // Estados para o tipo de peça
+  const [tipoPecaInput, setTipoPecaInput] = useState("");
+  const [tipoPecaOptions, setTipoPecaOptions] = useState<TipoPecaOption[]>([]);
+  const [selectedTipoPeca, setSelectedTipoPeca] =
+    useState<TipoPecaOption | null>(null);
+  const [isSearchingTipoPeca, setIsSearchingTipoPeca] = useState(false);
+
   useEffect(() => {
     setTitle("Peças");
   }, [setTitle]);
+
+  // Função para buscar tipos de peça quando o input tiver pelo menos 3 caracteres
+  const handleTipoPecaInputChange = (inputValue: string) => {
+    setTipoPecaInput(inputValue);
+
+    if (inputValue.length >= 3 && !isSearchingTipoPeca) {
+      setIsSearchingTipoPeca(true);
+      searchTiposPeca(inputValue);
+    }
+  };
+
+  const searchTiposPeca = async (term: string) => {
+    try {
+      const response = await tiposPecasService.search(term);
+
+      const options = response.dados.map((tipoPeca) => ({
+        // Ensure id is a number by using Number() conversion if needed
+        value: Number(tipoPeca.id),
+        label: tipoPeca.descricao,
+      }));
+
+      setTipoPecaOptions(options);
+    } catch (error) {
+      console.error("Erro ao buscar tipos de peça:", error);
+    } finally {
+      setIsSearchingTipoPeca(false);
+    }
+  };
+
+  const handleTipoPecaChange = (selectedOption: OptionType | null) => {
+    // Cast to TipoPecaOption if not null and value is a number
+    const typedOption =
+      selectedOption && typeof selectedOption.value === "number"
+        ? (selectedOption as TipoPecaOption)
+        : null;
+
+    setSelectedTipoPeca(typedOption);
+
+    if (typedOption) {
+      setFormData((prev) => ({ ...prev, id_tipo_peca: typedOption.value }));
+
+      // Limpar erro se existir
+      if (formErrors.id_tipo_peca) {
+        setFormErrors((prev) => {
+          const updated = { ...prev };
+          delete updated.id_tipo_peca;
+          return updated;
+        });
+      }
+    } else {
+      setFormData((prev) => {
+        const updated = { ...prev };
+        delete updated.id_tipo_peca;
+        return updated;
+      });
+    }
+  };
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -78,7 +133,16 @@ const EditarPeca = () => {
             descricao: peca.descricao,
             situacao: peca.situacao,
             unidade_medida: peca.unidade_medida,
+            id_tipo_peca: peca.id_tipo_peca,
           });
+
+          // Se tiver tipo_peca, configura o select
+          if (peca.id_tipo_peca && peca.tipo_peca) {
+            setSelectedTipoPeca({
+              value: Number(peca.id_tipo_peca), // Ensure id is a number
+              label: peca.tipo_peca,
+            });
+          }
         } else {
           throw new Error("Peça não encontrada");
         }
@@ -119,6 +183,8 @@ const EditarPeca = () => {
     if (!formData.descricao) errors.descricao = "Campo obrigatório";
     if (!formData.situacao) errors.situacao = "Campo obrigatório";
     if (!formData.unidade_medida) errors.unidade_medida = "Campo obrigatório";
+    if (!formData.id_tipo_peca)
+      errors.id_tipo_peca = "Selecione um tipo de peça";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -136,6 +202,7 @@ const EditarPeca = () => {
         descricao: formData.descricao,
         situacao: formData.situacao,
         unidade_medida: formData.unidade_medida,
+        id_tipo_peca: formData.id_tipo_peca,
       });
       showSuccess(
         "Sucesso",
@@ -153,6 +220,8 @@ const EditarPeca = () => {
       setSavingData(false);
     }
   };
+
+  // Custom styles are now imported from CustomSelect component
 
   if (loading) {
     return (
@@ -221,7 +290,7 @@ const EditarPeca = () => {
                       onChange={handleInputChange}
                       error={formErrors.situacao}
                       required
-                      options={situacoes}
+                      options={SITUACOES}
                     />
                   </div>
 
@@ -234,7 +303,30 @@ const EditarPeca = () => {
                       onChange={handleInputChange}
                       error={formErrors.unidade_medida}
                       required
-                      options={unidadesMedida}
+                      options={UNIDADES_MEDIDA}
+                    />
+                  </div>
+
+                  {/* Tipo de Peça */}
+                  <div className="md:col-span-12 mt-4">
+                    <CustomSelect
+                      id="tipo_peca"
+                      label="Tipo de Peça"
+                      required
+                      placeholder="Digite pelo menos 3 caracteres para buscar..."
+                      inputValue={tipoPecaInput}
+                      onInputChange={handleTipoPecaInputChange}
+                      onChange={handleTipoPecaChange}
+                      options={tipoPecaOptions}
+                      value={selectedTipoPeca}
+                      isLoading={isSearchingTipoPeca}
+                      error={formErrors.id_tipo_peca}
+                      minCharsToSearch={3}
+                      noOptionsMessageFn={({ inputValue }) =>
+                        inputValue.length < 3
+                          ? "Digite pelo menos 3 caracteres para buscar..."
+                          : "Nenhum tipo de peça encontrado"
+                      }
                     />
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { pecasAPI } from "@/api/api";
+import { tiposPecasService } from "@/api/services";
 import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { Save } from "lucide-react";
@@ -13,6 +14,8 @@ import {
   SelectField,
   LoadingButton,
 } from "@/components/admin/form";
+import CustomSelect, { OptionType } from "@/components/admin/form/CustomSelect";
+import { UNIDADES_MEDIDA } from "@/utils/constants";
 
 // Interface para o formulário
 interface FormData {
@@ -20,6 +23,13 @@ interface FormData {
   descricao: string;
   unidade_medida: string;
   situacao?: string;
+  id_tipo_peca?: number;
+}
+
+// Define TipoPecaOption to ensure type compatibility with CustomSelect's OptionType
+// but also enforce that value is always a number for our specific use case
+interface TipoPecaOption extends Omit<OptionType, "value"> {
+  value: number;
 }
 
 const CadastrarPeca = () => {
@@ -28,6 +38,13 @@ const CadastrarPeca = () => {
   const { showSuccess, showError } = useToast();
   const [savingData, setSavingData] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Estados para o tipo de peça
+  const [tipoPecaInput, setTipoPecaInput] = useState("");
+  const [tipoPecaOptions, setTipoPecaOptions] = useState<TipoPecaOption[]>([]);
+  const [selectedTipoPeca, setSelectedTipoPeca] =
+    useState<TipoPecaOption | null>(null);
+  const [isSearchingTipoPeca, setIsSearchingTipoPeca] = useState(false);
 
   useEffect(() => {
     setTitle("Peças");
@@ -39,19 +56,64 @@ const CadastrarPeca = () => {
     unidade_medida: "UN",
   });
 
-  const unidadesMedida = [
-    "PC",
-    "UN",
-    "KG",
-    "G",
-    "L",
-    "ML",
-    "M",
-    "CM",
-    "MM",
-    "M²",
-    "M³",
-  ];
+  // Função para buscar tipos de peça quando o input tiver pelo menos 3 caracteres
+  const handleTipoPecaInputChange = (inputValue: string) => {
+    setTipoPecaInput(inputValue);
+
+    if (inputValue.length >= 3 && !isSearchingTipoPeca) {
+      setIsSearchingTipoPeca(true);
+      searchTiposPeca(inputValue);
+    }
+  };
+
+  const searchTiposPeca = async (term: string) => {
+    try {
+      const response = await tiposPecasService.search(term);
+
+      const options = response.dados.map(
+        (tipoPeca) =>
+          ({
+            value: tipoPeca.id,
+            label: tipoPeca.descricao,
+          } as TipoPecaOption)
+      );
+
+      setTipoPecaOptions(options);
+    } catch (error) {
+      console.error("Erro ao buscar tipos de peça:", error);
+    } finally {
+      setIsSearchingTipoPeca(false);
+    }
+  };
+
+  const handleTipoPecaChange = (selectedOption: OptionType | null) => {
+    // Convert OptionType to TipoPecaOption if not null
+    const tipoPecaOption = selectedOption
+      ? ({
+          ...selectedOption,
+          value: Number(selectedOption.value),
+        } as TipoPecaOption)
+      : null;
+
+    setSelectedTipoPeca(tipoPecaOption);
+
+    if (tipoPecaOption) {
+      setFormData((prev) => ({ ...prev, id_tipo_peca: tipoPecaOption.value }));
+
+      // Limpar erro se existir
+      if (formErrors.id_tipo_peca) {
+        setFormErrors((prev) => ({ ...prev, id_tipo_peca: "" }));
+      }
+    } else {
+      setFormData((prev) => {
+        const updated = { ...prev };
+        delete updated.id_tipo_peca;
+        return updated;
+      });
+    }
+  };
+
+  // Custom styles are now imported from CustomSelect component
 
   // Manipular mudanças nos campos do formulário
   const handleInputChange = (
@@ -92,6 +154,10 @@ const CadastrarPeca = () => {
       errors.unidade_medida = "Unidade de medida é obrigatória";
     }
 
+    if (!formData.id_tipo_peca) {
+      errors.id_tipo_peca = "Selecione um tipo de peça";
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -101,6 +167,7 @@ const CadastrarPeca = () => {
     e.preventDefault();
 
     if (!validateForm()) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -187,10 +254,30 @@ const CadastrarPeca = () => {
                       onChange={handleInputChange}
                       error={formErrors.unidade_medida}
                       required
-                      options={unidadesMedida.map((unidade) => ({
-                        value: unidade,
-                        label: unidade,
-                      }))}
+                      options={UNIDADES_MEDIDA}
+                    />
+                  </div>
+
+                  {/* Tipo de Peça */}
+                  <div className="md:col-span-12 mt-4">
+                    <CustomSelect
+                      id="tipo_peca"
+                      label="Tipo de Peça"
+                      required
+                      placeholder="Digite pelo menos 3 caracteres para buscar..."
+                      inputValue={tipoPecaInput}
+                      onInputChange={handleTipoPecaInputChange}
+                      onChange={handleTipoPecaChange}
+                      options={tipoPecaOptions}
+                      value={selectedTipoPeca}
+                      isLoading={isSearchingTipoPeca}
+                      error={formErrors.id_tipo_peca}
+                      minCharsToSearch={3}
+                      noOptionsMessageFn={({ inputValue }) =>
+                        inputValue.length < 3
+                          ? "Digite pelo menos 3 caracteres para buscar..."
+                          : "Nenhum tipo de peça encontrado"
+                      }
                     />
                   </div>
                 </div>

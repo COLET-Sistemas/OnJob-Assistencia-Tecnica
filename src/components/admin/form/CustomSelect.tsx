@@ -1,0 +1,142 @@
+import React from "react";
+import Select, { StylesConfig } from "react-select";
+
+export interface OptionType {
+  value: string | number;
+  label: string;
+}
+
+export const getCustomSelectStyles = (): StylesConfig<OptionType, false> => {
+  return {
+    control: (
+      provided: Record<string, unknown>,
+      state: { isFocused: boolean }
+    ) => ({
+      ...provided,
+      borderColor: state.isFocused ? "var(--primary)" : "#e2e8f0",
+      boxShadow: state.isFocused ? "0 0 0 1px var(--primary)" : "none",
+      "&:hover": {
+        borderColor: state.isFocused ? "var(--primary)" : "#cbd5e0",
+      },
+      borderRadius: "0.5rem", // rounded-lg
+      minHeight: "48px", // py-3 equivalent
+      padding: "0",
+    }),
+    placeholder: (provided: Record<string, unknown>) => ({
+      ...provided,
+      color: "#94a3b8", // text-slate-400
+    }),
+    valueContainer: (provided: Record<string, unknown>) => ({
+      ...provided,
+      padding: "0 16px", // px-4
+    }),
+    input: (provided: Record<string, unknown>) => ({
+      ...provided,
+      color: "#0f172a", // text-slate-900
+    }),
+    singleValue: (provided: Record<string, unknown>) => ({
+      ...provided,
+      color: "#0f172a", // text-slate-900
+    }),
+    option: (
+      provided: Record<string, unknown>,
+      state: { isSelected: boolean; isFocused: boolean }
+    ) => ({
+      ...provided,
+      backgroundColor: state.isSelected
+        ? "var(--primary)"
+        : state.isFocused
+        ? "rgba(124, 84, 189, 0.1)"
+        : "transparent",
+      color: state.isSelected ? "white" : "#0f172a", // text-slate-900
+      cursor: "pointer",
+    }),
+    menu: (provided: Record<string, unknown>) => ({
+      ...provided,
+      borderRadius: "0.5rem", // rounded-lg
+      boxShadow:
+        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+      zIndex: 99999, // Increased to ensure it's on top of everything
+    }),
+    menuPortal: (provided: Record<string, unknown>) => ({
+      ...provided,
+      zIndex: 99999, // Also ensuring the portal has high z-index
+    }),
+  };
+};
+
+interface CustomSelectProps {
+  id: string;
+  label: string;
+  required?: boolean;
+  placeholder: string;
+  inputValue: string;
+  onInputChange: (newValue: string) => void;
+  onChange: (selectedOption: OptionType | null) => void;
+  options: OptionType[];
+  value: OptionType | null;
+  isLoading: boolean;
+  error?: string;
+  minCharsToSearch?: number;
+  noOptionsMessageFn?: (obj: { inputValue: string }) => string;
+}
+
+const CustomSelect: React.FC<CustomSelectProps> = ({
+  id,
+  label,
+  required = false,
+  placeholder,
+  inputValue,
+  onInputChange,
+  onChange,
+  options,
+  value,
+  isLoading,
+  error,
+  minCharsToSearch = 3,
+  noOptionsMessageFn,
+}) => {
+  const defaultNoOptionsMessage = ({ inputValue }: { inputValue: string }) =>
+    inputValue.length < minCharsToSearch
+      ? `Digite pelo menos ${minCharsToSearch} caracteres para buscar...`
+      : "Nenhum resultado encontrado";
+
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="block text-md font-medium text-slate-700 mb-1"
+      >
+        {label}
+        {required && (
+          <span className="text-red-500 ml-1" aria-label="obrigatório">
+            *
+          </span>
+        )}
+      </label>
+      <Select
+        id={id}
+        placeholder={placeholder}
+        inputValue={inputValue}
+        onInputChange={onInputChange}
+        onChange={onChange}
+        options={options}
+        value={value}
+        isLoading={isLoading}
+        isSearchable={true}
+        isClearable={true}
+        noOptionsMessage={noOptionsMessageFn || defaultNoOptionsMessage}
+        styles={getCustomSelectStyles()}
+        className={`react-select-container ${error ? "is-invalid" : ""}`}
+        classNamePrefix="react-select"
+        menuPortalTarget={
+          typeof document !== "undefined" ? document.body : undefined
+        }
+        menuPosition="fixed"
+      />
+      {error && <div className="text-red-500 text-sm mt-1">{error}</div>}
+    </div>
+  );
+};
+
+export default CustomSelect;
