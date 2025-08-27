@@ -132,92 +132,86 @@ const CadastrarPeca = () => {
   };
 
   return (
-    <div className="px-2">
-      <div className="max-w-8xl mx-auto">
-        <PageHeader
-          title="Cadastro de Peças"
-          config={{
-            type: "form",
-            backLink: "/admin/cadastro/pecas",
-            backLabel: "Voltar para lista de peças",
-          }}
-        />
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl border-t-4 border-[var(--primary)]">
-          <form onSubmit={handleSubmit} className="p-8">
-            {/* Se houver erros, mostrar alerta */}
-            {Object.keys(formErrors).length > 0 && (
-              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md shadow-sm">
-                <h4 className="font-medium mb-1 text-red-700">
-                  Por favor, corrija os seguintes erros:
-                </h4>
-                <ul className="list-disc list-inside">
-                  {Object.entries(formErrors).map(([field, message]) => (
-                    <li key={field}>{message}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+    <>
+      <PageHeader
+        title="Cadastro de Peça"
+        config={{
+          type: "form",
+          backLink: "/admin/cadastro/pecas",
+          backLabel: "Voltar para lista de peças",
+        }}
+      />
 
-            {/* Informações básicas da peça */}
+      <main>
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+          noValidate
+        >
+          <div className="p-8">
+            <section>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                  {/* Código da peça */}
+                  <div className="md:col-span-3">
+                    <InputField
+                      label="Código da Peça"
+                      name="codigo_peca"
+                      value={formData.codigo_peca}
+                      onChange={handleInputChange}
+                      error={formErrors.codigo_peca}
+                      placeholder="Ex: RBB-PRFT"
+                      required
+                    />
+                  </div>
 
-            <div className="mb-6">
-              <div className="flex flex-wrap gap-4">
-                {/* Código da peça */}
-                <div className="w-[20%]">
-                  <InputField
-                    label="Código da Peça"
-                    name="codigo_peca"
-                    value={formData.codigo_peca}
-                    onChange={handleInputChange}
-                    error={formErrors.codigo_peca}
-                    placeholder="Ex: RBB-PRFT"
-                    required
-                  />
-                </div>
+                  {/* Descrição */}
+                  <div className="md:col-span-6">
+                    <InputField
+                      label="Descrição"
+                      name="descricao"
+                      value={formData.descricao}
+                      onChange={handleInputChange}
+                      error={formErrors.descricao}
+                      placeholder="Ex: Rebimboca da Parafuseta"
+                      required
+                    />
+                  </div>
 
-                {/* Descrição */}
-                <div className="flex-1">
-                  <InputField
-                    label="Descrição"
-                    name="descricao"
-                    value={formData.descricao}
-                    onChange={handleInputChange}
-                    error={formErrors.descricao}
-                    placeholder="Ex: Rebimboca da Parafuseta"
-                    required
-                  />
-                </div>
-
-                {/* Unidade de Medida */}
-                <div className="w-[15%]">
-                  <SelectField
-                    label="Unidade"
-                    name="unidade_medida"
-                    value={formData.unidade_medida}
-                    onChange={handleInputChange}
-                    error={formErrors.unidade_medida}
-                    required
-                    options={unidadesMedida.map((unidade) => ({
-                      value: unidade,
-                      label: unidade,
-                    }))}
-                  />
+                  {/* Unidade de Medida */}
+                  <div className="md:col-span-3">
+                    <SelectField
+                      label="Unidade"
+                      name="unidade_medida"
+                      value={formData.unidade_medida}
+                      onChange={handleInputChange}
+                      error={formErrors.unidade_medida}
+                      required
+                      options={unidadesMedida.map((unidade) => ({
+                        value: unidade,
+                        label: unidade,
+                      }))}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            </section>
+          </div>
 
-            {/* Botões do formulário */}
-            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+          {/* Footer com botões */}
+          <footer className="bg-slate-50 px-8 py-6 border-t border-slate-200">
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
               <Link
                 href="/admin/cadastro/pecas"
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-200 font-medium flex items-center gap-2"
+                className="px-6 py-3 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-colors text-center font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
               >
                 Cancelar
               </Link>
+
               <LoadingButton
                 type="submit"
                 isLoading={savingData}
-                className="bg-[var(--primary)] text-white hover:bg-[var(--primary)]/90"
+                className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
                 <span className="flex items-center justify-center gap-2">
                   <Save className="h-4 w-4" />
@@ -225,10 +219,10 @@ const CadastrarPeca = () => {
                 </span>
               </LoadingButton>
             </div>
-          </form>
-        </div>
-      </div>
-    </div>
+          </footer>
+        </form>
+      </main>
+    </>
   );
 };
 

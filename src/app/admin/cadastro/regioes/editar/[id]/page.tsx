@@ -224,151 +224,132 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
           className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
           noValidate
         >
-          {/* Se houver erros, mostrar alerta */}
-          {Object.keys(formErrors).length > 0 && (
-            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md shadow-sm">
-              <h4 className="font-medium mb-1 text-red-700">
-                Por favor, corrija os seguintes erros:
-              </h4>
-              <ul className="list-disc list-inside">
-                {Object.entries(formErrors).map(([field, message]) => (
-                  <li key={field}>{message}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Informações básicas da região */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-[#7C54BD] border-b-2 border-[#F6C647] pb-2 inline-block mb-4">
-              Informações da Região
-            </h2>
-            {/* Nome e Descrição na mesma linha */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              {/* Nome da região */}
-              <div>
-                <InputField
-                  label="Nome da Região"
-                  name="nome"
-                  value={formData.nome}
-                  error={formErrors.nome}
-                  placeholder="Nome da região"
-                  required
-                  onChange={handleInputChange}
-                  className="p-2"
-                />
-              </div>
-
-              {/* Descrição */}
-              <div>
-                <InputField
-                  label="Descrição"
-                  name="descricao"
-                  value={formData.descricao}
-                  error={formErrors.descricao}
-                  placeholder="Descrição detalhada da região"
-                  required
-                  onChange={handleInputChange}
-                  className="p-2"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* UF */}
-              <div>
-                <SelectField
-                  label="UF"
-                  name="uf"
-                  value={formData.uf}
-                  error={formErrors.uf}
-                  required
-                  onChange={handleInputChange}
-                  className="p-2"
-                  options={ufs.map((uf) => ({ value: uf, label: uf }))}
-                />
-              </div>
-
-              {/* Situação */}
-              <div>
-                <SelectField
-                  label="Situação"
-                  name="situacao"
-                  value={formData.situacao}
-                  onChange={handleInputChange}
-                  className="p-2"
-                  options={[
-                    { value: "A", label: "Ativo" },
-                    { value: "I", label: "Inativo" },
-                  ]}
-                />
-              </div>
-
-              {/* Atendida pela empresa (Sim/Não) */}
-              <div className="flex flex-col justify-end h-full">
-                <label
-                  htmlFor="atendida_empresa"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Região atendida pela empresa
-                </label>
-                <div className="flex items-center gap-4 mt-1">
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      id="atendida_empresa_sim"
-                      name="atendida_empresa"
-                      type="radio"
-                      checked={formData.atendida_empresa === true}
-                      onChange={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          atendida_empresa: true,
-                        }))
-                      }
-                      className="h-4 w-4 text-[#7C54BD] focus:ring-[#7C54BD] border-gray-300 rounded"
+          <div className="p-8">
+            <section>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Nome da região */}
+                  <div>
+                    <InputField
+                      label="Nome da Região"
+                      name="nome"
+                      value={formData.nome}
+                      error={formErrors.nome}
+                      placeholder="Ex: Porto Alegre, Região Sul, etc."
+                      required
+                      onChange={handleInputChange}
                     />
-                    <span className="ml-2 text-sm text-gray-900">Sim</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      id="atendida_empresa_nao"
-                      name="atendida_empresa"
-                      type="radio"
-                      checked={formData.atendida_empresa === false}
-                      onChange={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          atendida_empresa: false,
-                        }))
-                      }
-                      className="h-4 w-4 text-[#7C54BD] focus:ring-[#7C54BD] border-gray-300 rounded"
+                  </div>
+
+                  {/* Descrição */}
+                  <div>
+                    <InputField
+                      label="Descrição"
+                      name="descricao"
+                      value={formData.descricao}
+                      error={formErrors.descricao}
+                      placeholder="Descrição detalhada da região"
+                      required
+                      onChange={handleInputChange}
                     />
-                    <span className="ml-2 text-sm text-gray-900">Não</span>
-                  </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* UF */}
+                  <div>
+                    <SelectField
+                      label="UF"
+                      name="uf"
+                      value={formData.uf}
+                      error={formErrors.uf}
+                      required
+                      onChange={handleInputChange}
+                      options={ufs.map((uf) => ({ value: uf, label: uf }))}
+                    />
+                  </div>
+
+                  {/* Situação */}
+                  <div>
+                    <SelectField
+                      label="Situação"
+                      name="situacao"
+                      value={formData.situacao}
+                      onChange={handleInputChange}
+                      options={[
+                        { value: "A", label: "Ativo" },
+                        { value: "I", label: "Inativo" },
+                      ]}
+                    />
+                  </div>
+
+                  {/* Atendida pela empresa (Sim/Não) */}
+                  <div className="flex flex-col pt-7">
+                    <span className="block text-sm font-medium text-slate-700 mb-2">
+                      Região atendida pela empresa
+                    </span>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          id="atendida_empresa_sim"
+                          name="atendida_empresa"
+                          type="radio"
+                          checked={formData.atendida_empresa === true}
+                          onChange={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              atendida_empresa: true,
+                            }))
+                          }
+                          className="h-4 w-4 text-[var(--primary)] focus:ring-[var(--primary)] border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-900">Sim</span>
+                      </label>
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          id="atendida_empresa_nao"
+                          name="atendida_empresa"
+                          type="radio"
+                          checked={formData.atendida_empresa === false}
+                          onChange={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              atendida_empresa: false,
+                            }))
+                          }
+                          className="h-4 w-4 text-[var(--primary)] focus:ring-[var(--primary)] border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-900">Não</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            </section>
           </div>
 
-          {/* Botões de ação */}
-          <div className="mt-8 flex justify-end space-x-3 border-t border-gray-100 pt-6">
-            <Link
-              href="/admin/cadastro/regioes"
-              className="px-5 py-2 bg-gray-100 text-[#7C54BD] rounded-md hover:bg-gray-200 transition-colors shadow-sm hover:shadow-md"
-            >
-              Cancelar
-            </Link>
-            <LoadingButton
-              type="submit"
-              isLoading={savingData}
-              className="px-5 py-2 bg-[#7C54BD] text-white rounded-md hover:bg-[#6743a1] shadow-sm hover:shadow-md"
-            >
-              <span className="flex items-center">
-                <Save size={18} className="mr-2" />
-                Atualizar Região
-              </span>
-            </LoadingButton>
-          </div>
+          {/* Footer com botões */}
+          <footer className="bg-slate-50 px-8 py-6 border-t border-slate-200">
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+              <Link
+                href="/admin/cadastro/regioes"
+                className="px-6 py-3 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-colors text-center font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+              >
+                Cancelar
+              </Link>
+
+              <LoadingButton
+                type="submit"
+                isLoading={savingData}
+                className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <Save className="h-4 w-4" />
+                  <span>Atualizar</span>
+                </span>
+              </LoadingButton>
+            </div>
+          </footer>
         </form>
       </main>
     </>

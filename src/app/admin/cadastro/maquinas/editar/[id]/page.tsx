@@ -1,4 +1,5 @@
 "use client";
+
 // Interface para cliente retornado pela API
 interface ClienteAPIResult {
   id_cliente: number;
@@ -11,8 +12,8 @@ import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { Save } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { InputField, LoadingButton } from "@/components/admin/form";
 
@@ -27,17 +28,15 @@ interface FormData {
   data_final_garantia: string;
 }
 
-const CadastrarMaquina = () => {
+const EditarMaquina = () => {
   const router = useRouter();
+  const { id } = useParams();
+  const maquinaId = Array.isArray(id) ? id[0] : id;
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
   const [savingData, setSavingData] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-  // Set page title when component mounts
-  useEffect(() => {
-    setTitle("Cadastro de Máquina");
-  }, [setTitle]);
 
   const [formData, setFormData] = useState<FormData>({
     numero_serie: "",
@@ -55,6 +54,54 @@ const CadastrarMaquina = () => {
   >([]);
   const [clienteInput, setClienteInput] = useState("");
   const [clienteLoading, setClienteLoading] = useState(false);
+
+  // Set page title when component mounts
+  useEffect(() => {
+    setTitle("Edição de Máquina");
+  }, [setTitle]);
+
+  // Carregar dados da máquina
+  const fetchMaquina = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await maquinasAPI.getById(maquinaId);
+
+      if (!data) {
+        throw new Error("Máquina não encontrada");
+      }
+
+      setFormData({
+        numero_serie: data.numero_serie || "",
+        descricao: data.descricao || "",
+        modelo: data.modelo || "",
+        id_cliente_atual: data.id_cliente_atual || null,
+        data_1a_venda: data.data_1a_venda
+          ? new Date(data.data_1a_venda).toISOString().split("T")[0]
+          : "",
+        nota_fiscal_venda: data.nota_fiscal_venda || "",
+        data_final_garantia: data.data_final_garantia
+          ? new Date(data.data_final_garantia).toISOString().split("T")[0]
+          : "",
+      });
+
+      // Se tiver cliente, carregar os dados do cliente
+      if (data.id_cliente_atual && data.cliente_atual) {
+        setClienteInput(data.cliente_atual.nome_fantasia || "");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar máquina:", error);
+      showError("Erro", "Não foi possível carregar os dados da máquina");
+      router.push("/admin/cadastro/maquinas");
+    } finally {
+      setLoading(false);
+    }
+  }, [maquinaId, router, showError]);
+
+  useEffect(() => {
+    if (maquinaId) {
+      fetchMaquina();
+    }
+  }, [maquinaId, fetchMaquina]);
 
   // Manipular mudanças nos campos do formulário
   const handleInputChange = (
@@ -134,7 +181,7 @@ const CadastrarMaquina = () => {
     setSavingData(true);
 
     try {
-      const response = await maquinasAPI.create({
+      const response = await maquinasAPI.update(maquinaId, {
         numero_serie: formData.numero_serie,
         descricao: formData.descricao,
         modelo: formData.modelo,
@@ -149,10 +196,10 @@ const CadastrarMaquina = () => {
       );
       router.push("/admin/cadastro/maquinas");
     } catch (error) {
-      console.error("Erro ao cadastrar máquina:", error);
+      console.error("Erro ao atualizar máquina:", error);
 
       showError(
-        "Erro ao cadastrar",
+        "Erro ao atualizar",
         error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
       );
     } finally {
@@ -160,10 +207,19 @@ const CadastrarMaquina = () => {
     }
   };
 
+  // Mostrar carregando enquanto busca dados
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin h-8 w-8 border-4 border-violet-700 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
   return (
     <>
       <PageHeader
-        title="Cadastro de Máquina"
+        title="Edição de Máquina"
         config={{
           type: "form",
           backLink: "/admin/cadastro/maquinas",
@@ -359,4 +415,4 @@ const CadastrarMaquina = () => {
   );
 };
 
-export default CadastrarMaquina;
+export default EditarMaquina;

@@ -103,7 +103,7 @@ const CadastrarMotivoPendencia: React.FC = () => {
 
   // Definir título da página e focar no input
   useEffect(() => {
-    setTitle("Motivos de Pendências");
+    setTitle("Motivo de Pendência");
     descricaoInputRef.current?.focus();
   }, [setTitle]);
 
@@ -187,23 +187,13 @@ const CadastrarMotivoPendencia: React.FC = () => {
         >
           <div className="p-8">
             <section>
-              <header className="mb-6">
-                <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-[var(--primary)] rounded-full" />
-                  Informações do Motivo
-                </h2>
-                <p className="text-slate-600 text-sm mt-1">
-                  Preencha os dados abaixo para cadastrar o motivo de pendência.
-                </p>
-              </header>
-
               <div className="space-y-6">
                 <InputField
-                  label="Descrição da Pendência"
+                  label="Descrição do Motivo"
                   name="descricao"
                   value={formData.descricao}
                   error={formErrors.descricao}
-                  placeholder="Ex: Verificar o placeholeder Sugestão..."
+                  placeholder="Ex: Aguardando peças, Falta de ferramentas, Cliente ausente..."
                   required
                   onChange={handleInputChange}
                   inputRef={descricaoInputRef}
@@ -225,7 +215,7 @@ const CadastrarMotivoPendencia: React.FC = () => {
               <LoadingButton
                 type="submit"
                 isLoading={isSubmitting}
-                className="bg-violet-600 text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
+                className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
                 <span className="flex items-center justify-center gap-2">
                   <Save className="h-4 w-4" />

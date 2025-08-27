@@ -8,6 +8,12 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Loading } from "@/components/LoadingPersonalizado";
+import PageHeader from "@/components/admin/ui/PageHeader";
+import {
+  InputField,
+  SelectField,
+  LoadingButton,
+} from "@/components/admin/form";
 
 const unidadesMedida = [
   { value: "PC", label: "Peça" },
@@ -52,7 +58,7 @@ const EditarPeca = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setTitle("Editar Peça");
+    setTitle("Peças");
   }, [setTitle]);
 
   useEffect(() => {
@@ -160,160 +166,107 @@ const EditarPeca = () => {
   }
 
   return (
-    <div className="px-2">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-lg shadow-lg p-6 transition-all duration-300 hover:shadow-xl border-t-4 border-[#7C54BD]"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4 md:col-span-2">
-            <h2 className="text-lg font-semibold text-[#7C54BD] border-b-2 border-[#F6C647] pb-2 inline-block">
-              Informações da Peça
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Código da Peça */}
-              <div>
-                <label
-                  htmlFor="codigo_peca"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Código da Peça<span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="codigo_peca"
-                  name="codigo_peca"
-                  placeholder="Código da peça"
-                  value={formData.codigo_peca}
-                  onChange={handleInputChange}
-                  className={`w-full p-2 border ${
-                    formErrors.codigo_peca
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
-                />
-                {formErrors.codigo_peca && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {formErrors.codigo_peca}
-                  </p>
-                )}
+    <>
+      <PageHeader
+        title="Editar Peça"
+        config={{
+          type: "form",
+          backLink: "/admin/cadastro/pecas",
+          backLabel: "Voltar para lista de peças",
+        }}
+      />
+
+      <main>
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+          noValidate
+        >
+          <div className="p-8">
+            <section>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                  {/* Código da peça */}
+                  <div className="md:col-span-3">
+                    <InputField
+                      label="Código da Peça"
+                      name="codigo_peca"
+                      value={formData.codigo_peca}
+                      onChange={handleInputChange}
+                      error={formErrors.codigo_peca}
+                      placeholder="Ex: RBB-PRFT"
+                      required
+                    />
+                  </div>
+
+                  {/* Descrição */}
+                  <div className="md:col-span-5">
+                    <InputField
+                      label="Descrição"
+                      name="descricao"
+                      value={formData.descricao}
+                      onChange={handleInputChange}
+                      error={formErrors.descricao}
+                      placeholder="Ex: Rebimboca da Parafuseta"
+                      required
+                    />
+                  </div>
+
+                  {/* Situação */}
+                  <div className="md:col-span-2">
+                    <SelectField
+                      label="Situação"
+                      name="situacao"
+                      value={formData.situacao}
+                      onChange={handleInputChange}
+                      error={formErrors.situacao}
+                      required
+                      options={situacoes}
+                    />
+                  </div>
+
+                  {/* Unidade de Medida */}
+                  <div className="md:col-span-2">
+                    <SelectField
+                      label="Unidade"
+                      name="unidade_medida"
+                      value={formData.unidade_medida}
+                      onChange={handleInputChange}
+                      error={formErrors.unidade_medida}
+                      required
+                      options={unidadesMedida}
+                    />
+                  </div>
+                </div>
               </div>
-              {/* Descrição */}
-              <div>
-                <label
-                  htmlFor="descricao"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Descrição<span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="descricao"
-                  name="descricao"
-                  placeholder="Descrição da peça"
-                  value={formData.descricao}
-                  onChange={handleInputChange}
-                  className={`w-full p-2 border ${
-                    formErrors.descricao ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
-                />
-                {formErrors.descricao && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {formErrors.descricao}
-                  </p>
-                )}
-              </div>
-              {/* Situação */}
-              <div>
-                <label
-                  htmlFor="situacao"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Situação<span className="text-red-500 ml-1">*</span>
-                </label>
-                <select
-                  id="situacao"
-                  name="situacao"
-                  value={formData.situacao}
-                  onChange={handleInputChange}
-                  className={`w-full p-2 h-[42px] border ${
-                    formErrors.situacao ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black`}
-                >
-                  {situacoes.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.situacao && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {formErrors.situacao}
-                  </p>
-                )}
-              </div>
-              {/* Unidade de Medida */}
-              <div>
-                <label
-                  htmlFor="unidade_medida"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Unidade de Medida<span className="text-red-500 ml-1">*</span>
-                </label>
-                <select
-                  id="unidade_medida"
-                  name="unidade_medida"
-                  value={formData.unidade_medida}
-                  onChange={handleInputChange}
-                  className={`w-full p-2 h-[42px] border ${
-                    formErrors.unidade_medida
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black`}
-                >
-                  {unidadesMedida.map((u) => (
-                    <option key={u.value} value={u.value}>
-                      {u.value}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.unidade_medida && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {formErrors.unidade_medida}
-                  </p>
-                )}
-              </div>
-            </div>
+            </section>
           </div>
-        </div>
-        {/* Botões */}
-        <div className="mt-8 flex justify-end space-x-3">
-          <Link
-            href="/admin/cadastro/pecas"
-            className="px-5 py-2 bg-gray-100 text-[#7C54BD] rounded-md hover:bg-gray-200 transition-colors shadow-sm hover:shadow-md"
-          >
-            Cancelar
-          </Link>
-          <button
-            type="submit"
-            disabled={savingData}
-            className="px-5 py-2 bg-[#7C54BD] text-white rounded-md hover:bg-[#6743a1] transition-all flex items-center shadow-sm hover:shadow-md"
-          >
-            {savingData ? (
-              <>
-                <span className="mr-2">Salvando</span>
-                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-              </>
-            ) : (
-              <>
-                <Save size={18} className="mr-2" />
-                Atualizar Peça
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-    </div>
+
+          {/* Footer com botões */}
+          <footer className="bg-slate-50 px-8 py-6 border-t border-slate-200">
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+              <Link
+                href="/admin/cadastro/pecas"
+                className="px-6 py-3 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-colors text-center font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+              >
+                Cancelar
+              </Link>
+
+              <LoadingButton
+                type="submit"
+                isLoading={savingData}
+                className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <Save className="h-4 w-4" />
+                  <span>Atualizar</span>
+                </span>
+              </LoadingButton>
+            </div>
+          </footer>
+        </form>
+      </main>
+    </>
   );
 };
 
