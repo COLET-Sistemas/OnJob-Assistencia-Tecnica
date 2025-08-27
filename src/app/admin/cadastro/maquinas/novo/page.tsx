@@ -4,6 +4,7 @@ interface ClienteAPIResult {
   id_cliente: number;
   nome_fantasia: string;
   razao_social: string;
+  codigo_erp?: string;
 }
 
 import { maquinasAPI, clientesAPI } from "@/api/api";
@@ -15,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { InputField, LoadingButton } from "@/components/admin/form";
+import CustomSelect, { OptionType } from "@/components/admin/form/CustomSelect";
 
 // Define interface for the form data
 interface FormData {
@@ -27,6 +29,12 @@ interface FormData {
   data_final_garantia: string;
 }
 
+// Define ClienteOption to ensure type compatibility with CustomSelect's OptionType
+interface ClienteOption extends Omit<OptionType, "value"> {
+  value: number;
+  razao_social?: string;
+}
+
 const CadastrarMaquina = () => {
   const router = useRouter();
   const { setTitle } = useTitle();
@@ -36,7 +44,7 @@ const CadastrarMaquina = () => {
 
   // Set page title when component mounts
   useEffect(() => {
-    setTitle("Cadastro de Máquina");
+    setTitle("Máquinas");
   }, [setTitle]);
 
   const [formData, setFormData] = useState<FormData>({
@@ -49,12 +57,13 @@ const CadastrarMaquina = () => {
     data_final_garantia: "",
   });
 
-  // Estado para clientes
-  const [clientes, setClientes] = useState<
-    Array<{ id: number; nome: string; razao_social: string }>
-  >([]);
+  // Estados para o cliente
   const [clienteInput, setClienteInput] = useState("");
-  const [clienteLoading, setClienteLoading] = useState(false);
+  const [clienteOptions, setClienteOptions] = useState<ClienteOption[]>([]);
+  const [selectedCliente, setSelectedCliente] = useState<ClienteOption | null>(
+    null
+  );
+  const [isSearchingCliente, setIsSearchingCliente] = useState(false);
 
   // Manipular mudanças nos campos do formulário
   const handleInputChange = (
@@ -76,34 +85,68 @@ const CadastrarMaquina = () => {
     }
   };
 
-  // Busca dinâmica de clientes
-  useEffect(() => {
-    const fetchClientes = async () => {
-      if (clienteInput.length < 3) {
-        setClientes([]);
-        return;
+  // Função para buscar clientes quando o input tiver pelo menos 3 caracteres
+  const handleClienteInputChange = (inputValue: string) => {
+    setClienteInput(inputValue);
+
+    if (inputValue.length >= 3 && !isSearchingCliente) {
+      setIsSearchingCliente(true);
+      searchClientes(inputValue);
+    }
+  };
+
+  const searchClientes = async (term: string) => {
+    try {
+      // Utiliza clientesAPI.getAll para buscar clientes por nome com parâmetro resumido=S
+      const data = await clientesAPI.getAll({
+        nome: term,
+        resumido: "S",
+        qtde_registros: 15,
+        nro_pagina: 1,
+      });
+
+      const options = Array.isArray(data?.dados)
+        ? (data.dados as ClienteAPIResult[]).map((c) => ({
+            value: c.id_cliente,
+            label: c.nome_fantasia,
+            razao_social: c.razao_social,
+          }))
+        : [];
+
+      setClienteOptions(options);
+    } catch (error) {
+      console.error("Erro ao buscar clientes:", error);
+      setClienteOptions([]);
+    } finally {
+      setIsSearchingCliente(false);
+    }
+  };
+
+  const handleClienteChange = (selectedOption: OptionType | null) => {
+    // Convert OptionType to ClienteOption if not null
+    const clienteOption = selectedOption
+      ? ({
+          ...selectedOption,
+          value: Number(selectedOption.value),
+        } as ClienteOption)
+      : null;
+
+    setSelectedCliente(clienteOption);
+
+    if (clienteOption) {
+      setFormData((prev) => ({
+        ...prev,
+        id_cliente_atual: clienteOption.value,
+      }));
+
+      // Limpar erro se existir
+      if (formErrors.id_cliente_atual) {
+        setFormErrors((prev) => ({ ...prev, id_cliente_atual: "" }));
       }
-      setClienteLoading(true);
-      try {
-        // Utiliza clientesAPI.getAll para buscar clientes por nome
-        const data = await clientesAPI.getAll({ nome: clienteInput });
-        // data.dados é o array de clientes
-        const lista = Array.isArray(data?.dados)
-          ? (data.dados as ClienteAPIResult[]).map((c) => ({
-              id: c.id_cliente,
-              nome: c.nome_fantasia,
-              razao_social: c.razao_social,
-            }))
-          : [];
-        setClientes(lista);
-      } catch {
-        setClientes([]);
-      } finally {
-        setClienteLoading(false);
-      }
-    };
-    fetchClientes();
-  }, [clienteInput]);
+    } else {
+      setFormData((prev) => ({ ...prev, id_cliente_atual: null }));
+    }
+  };
 
   // Validar formulário
   const validarFormulario = () => {
@@ -209,68 +252,26 @@ const CadastrarMaquina = () => {
                 </div>
 
                 {/* Cliente Atual */}
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-slate-700">
-                    Cliente Atual<span className="text-red-500 ml-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="id_cliente_atual"
-                    name="id_cliente_atual"
-                    placeholder="Digite ao menos 3 letras para buscar o cliente"
-                    value={clienteInput}
-                    onChange={(e) => {
-                      setClienteInput(e.target.value);
-                      setFormData((prev) => ({
-                        ...prev,
-                        id_cliente_atual: null,
-                      }));
-                    }}
-                    className={`w-full p-2.5 rounded-md border ${
-                      formErrors.id_cliente_atual
-                        ? "border-red-500 focus:ring-red-500"
-                        : "border-slate-300 focus:ring-violet-500"
-                    } focus:border-violet-500 focus:ring-2 shadow-sm`}
-                    autoComplete="off"
+                <div>
+                  <CustomSelect
+                    id="cliente_atual"
+                    label="Cliente Atual"
+                    required
+                    placeholder="Digite pelo menos 3 caracteres para buscar o cliente..."
+                    inputValue={clienteInput}
+                    onInputChange={handleClienteInputChange}
+                    onChange={handleClienteChange}
+                    options={clienteOptions}
+                    value={selectedCliente}
+                    isLoading={isSearchingCliente}
+                    error={formErrors.id_cliente_atual}
+                    minCharsToSearch={3}
+                    noOptionsMessageFn={({ inputValue }) =>
+                      inputValue.length < 3
+                        ? "Digite pelo menos 3 caracteres para buscar..."
+                        : "Nenhum cliente encontrado"
+                    }
                   />
-                  {clienteLoading && (
-                    <div className="text-xs text-slate-500 mt-1">
-                      Buscando clientes...
-                    </div>
-                  )}
-                  {clientes.length > 0 && (
-                    <ul className="border rounded-md bg-white shadow-md mt-1 max-h-40 overflow-y-auto z-10 relative">
-                      {clientes.map((cliente) => (
-                        <li
-                          key={cliente.id}
-                          className={`px-3 py-2 cursor-pointer hover:bg-violet-50 ${
-                            formData.id_cliente_atual === cliente.id
-                              ? "bg-violet-100 text-violet-800"
-                              : "text-slate-700"
-                          }`}
-                          onClick={() => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              id_cliente_atual: cliente.id,
-                            }));
-                            setClienteInput(cliente.nome);
-                            setClientes([]);
-                          }}
-                        >
-                          <span className="font-medium">{cliente.nome}</span>
-                          <span className="text-slate-500">
-                            {" "}
-                            - {cliente.razao_social}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {formErrors.id_cliente_atual && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {formErrors.id_cliente_atual}
-                    </p>
-                  )}
                 </div>
 
                 {/* Descrição */}

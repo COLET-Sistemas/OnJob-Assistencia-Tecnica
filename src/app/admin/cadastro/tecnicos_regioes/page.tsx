@@ -11,7 +11,6 @@ import { useUsuariosRegioesFilters } from "@/hooks/useSpecificFilters";
 import { usuariosRegioesAPI, usuariosAPI, regioesAPI } from "@/api/api";
 import { MapPin } from "lucide-react";
 
-// Novo tipo refletindo o retorno da API
 interface UsuarioComRegioes {
   id_usuario: number;
   nome_usuario: string;
@@ -45,12 +44,9 @@ const CadastroUsuariosRegioes = () => {
     toggleFilters,
   } = useUsuariosRegioesFilters();
 
-  // Buscar lista de técnicos
-  // Definindo tipo para usuário retornado pela API
   interface UsuarioAPI {
     id_usuario: number;
     nome_usuario: string;
-    // outros campos se necessário
   }
 
   const { data: tecnicos, loading: loadingTecnicos } = useDataFetch<
@@ -70,7 +66,6 @@ const CadastroUsuariosRegioes = () => {
   interface RegiaoAPI {
     id_regiao: number;
     nome_regiao: string;
-    // outros campos se necessário
   }
 
   const { data: regioes, loading: loadingRegioes } = useDataFetch<
@@ -158,7 +153,7 @@ const CadastroUsuariosRegioes = () => {
     <div className="flex gap-2">
       <EditButton
         id={usuario.id_usuario}
-        editRoute="/admin/cadastro/usuarios_regioes/editar"
+        editRoute="/admin/cadastro/tecnicos_regioes/editar"
       />
       <DeleteButton
         id={usuario.id_usuario}
@@ -202,7 +197,7 @@ const CadastroUsuariosRegioes = () => {
   return (
     <>
       <PageHeader
-        title="Lista de Técninos X Regiões"
+        title="Lista de Técnicos X Regiões"
         config={{
           type: "list",
           itemCount: itemCount,
@@ -210,8 +205,8 @@ const CadastroUsuariosRegioes = () => {
           showFilters: showFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
-            label: "Novo Usuário Região",
-            link: "/admin/cadastro/usuarios_regioes/novo",
+            label: "Novo Técnico x Região",
+            link: "/admin/cadastro/tecnicos_regioes/novo",
           },
         }}
       />

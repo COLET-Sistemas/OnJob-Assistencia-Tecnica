@@ -122,14 +122,14 @@ const EditarMotivoAtendimento = (props: PageProps) => {
 
       showSuccess(
         "Atualização realizada!",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+        response
       );
     } catch (error) {
       console.error("Erro ao atualizar motivo de atendimento:", error);
 
       showError(
         "Erro ao atualizar",
-        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+        error as Record<string, unknown> 
       );
     } finally {
       setSavingData(false);

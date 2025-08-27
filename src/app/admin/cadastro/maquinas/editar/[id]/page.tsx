@@ -5,6 +5,7 @@ interface ClienteAPIResult {
   id_cliente: number;
   nome_fantasia: string;
   razao_social: string;
+  codigo_erp?: string;
 }
 
 import { maquinasAPI, clientesAPI } from "@/api/api";
@@ -16,6 +17,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { InputField, LoadingButton } from "@/components/admin/form";
+import CustomSelect, { OptionType } from "@/components/admin/form/CustomSelect";
 
 // Define interface for the form data
 interface FormData {
@@ -26,6 +28,12 @@ interface FormData {
   data_1a_venda: string;
   nota_fiscal_venda: string;
   data_final_garantia: string;
+}
+
+// Define ClienteOption to ensure type compatibility with CustomSelect's OptionType
+interface ClienteOption extends Omit<OptionType, "value"> {
+  value: number;
+  razao_social?: string;
 }
 
 const EditarMaquina = () => {
@@ -48,12 +56,13 @@ const EditarMaquina = () => {
     data_final_garantia: "",
   });
 
-  // Estado para clientes
-  const [clientes, setClientes] = useState<
-    Array<{ id: number; nome: string; razao_social: string }>
-  >([]);
+  // Estados para o cliente
   const [clienteInput, setClienteInput] = useState("");
-  const [clienteLoading, setClienteLoading] = useState(false);
+  const [clienteOptions, setClienteOptions] = useState<ClienteOption[]>([]);
+  const [selectedCliente, setSelectedCliente] = useState<ClienteOption | null>(
+    null
+  );
+  const [isSearchingCliente, setIsSearchingCliente] = useState(false);
 
   // Set page title when component mounts
   useEffect(() => {
@@ -64,29 +73,122 @@ const EditarMaquina = () => {
   const fetchMaquina = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await maquinasAPI.getById(maquinaId);
+      const response = await maquinasAPI.getById(maquinaId);
 
-      if (!data) {
+      // Verifica se a resposta está no formato paginado ou direto
+      let maquinaData;
+      if (
+        response &&
+        "dados" in response &&
+        Array.isArray(response.dados) &&
+        response.dados.length > 0
+      ) {
+        // Formato paginado: { dados: [...] }
+        maquinaData = response.dados[0];
+        console.log("Dados da máquina (formato paginado):", maquinaData);
+      } else {
+        // Formato direto: o próprio objeto da máquina
+        maquinaData = response;
+        console.log("Dados da máquina (formato direto):", maquinaData);
+      }
+
+      if (!maquinaData) {
         throw new Error("Máquina não encontrada");
       }
 
+      // Debug info
+      console.log("Cliente atual:", maquinaData.cliente_atual);
+      console.log("ID do cliente:", maquinaData.id_cliente_atual);
+
       setFormData({
-        numero_serie: data.numero_serie || "",
-        descricao: data.descricao || "",
-        modelo: data.modelo || "",
-        id_cliente_atual: data.id_cliente_atual || null,
-        data_1a_venda: data.data_1a_venda
-          ? new Date(data.data_1a_venda).toISOString().split("T")[0]
+        numero_serie: maquinaData.numero_serie || "",
+        descricao: maquinaData.descricao || "",
+        modelo: maquinaData.modelo || "",
+        id_cliente_atual:
+          maquinaData.id_cliente_atual ||
+          maquinaData.cliente_atual?.id_cliente ||
+          null,
+        data_1a_venda: maquinaData.data_1a_venda
+          ? new Date(maquinaData.data_1a_venda).toISOString().split("T")[0]
           : "",
-        nota_fiscal_venda: data.nota_fiscal_venda || "",
-        data_final_garantia: data.data_final_garantia
-          ? new Date(data.data_final_garantia).toISOString().split("T")[0]
+        nota_fiscal_venda: maquinaData.nota_fiscal_venda || "",
+        data_final_garantia: maquinaData.data_final_garantia
+          ? new Date(maquinaData.data_final_garantia)
+              .toISOString()
+              .split("T")[0]
           : "",
       });
 
       // Se tiver cliente, carregar os dados do cliente
-      if (data.id_cliente_atual && data.cliente_atual) {
-        setClienteInput(data.cliente_atual.nome_fantasia || "");
+      if (maquinaData.cliente_atual) {
+        console.log("Configurando cliente a partir do objeto cliente_atual");
+        // O cliente está no objeto cliente_atual
+        const clienteId = maquinaData.cliente_atual.id_cliente;
+        const clienteNome = maquinaData.cliente_atual.nome_fantasia || "";
+
+        setClienteInput(clienteNome);
+
+        // Criar o objeto do cliente selecionado
+        const clienteOption = {
+          value: clienteId,
+          label: clienteNome,
+          razao_social: maquinaData.cliente_atual.razao_social || "",
+        };
+
+        // Configurar o cliente selecionado para o CustomSelect
+        setSelectedCliente(clienteOption);
+
+        // Adicionar o cliente às opções para garantir que ele apareça no dropdown
+        setClienteOptions([clienteOption]);
+
+        // Garantir que o ID do cliente esteja no formData
+        setFormData((prev) => ({
+          ...prev,
+          id_cliente_atual: clienteId,
+        }));
+      } else if (maquinaData.id_cliente_atual) {
+        console.log("Buscando cliente pelo ID:", maquinaData.id_cliente_atual);
+        // Se tiver apenas o ID do cliente, mas não o objeto cliente_atual,
+        // buscar os dados do cliente pela API
+        try {
+          const clienteData = await clientesAPI.getAll({
+            id: maquinaData.id_cliente_atual,
+          });
+
+          if (
+            clienteData &&
+            clienteData.dados &&
+            clienteData.dados.length > 0
+          ) {
+            const cliente = clienteData.dados[0];
+            console.log("Cliente encontrado pela API:", cliente);
+            const clienteNome = cliente.nome_fantasia || "";
+
+            setClienteInput(clienteNome);
+
+            // Criar o objeto do cliente
+            const clienteOption = {
+              value: cliente.id_cliente,
+              label: clienteNome,
+              razao_social: cliente.razao_social || "",
+            };
+
+            setSelectedCliente(clienteOption);
+
+            // Adicionar o cliente às opções para garantir que ele apareça no dropdown
+            setClienteOptions([clienteOption]);
+
+            // Garantir que o ID do cliente esteja no formData
+            setFormData((prev) => ({
+              ...prev,
+              id_cliente_atual: cliente.id_cliente,
+            }));
+          } else {
+            console.log("Cliente não encontrado pela API");
+          }
+        } catch (clienteError) {
+          console.error("Erro ao buscar dados do cliente:", clienteError);
+        }
       }
     } catch (error) {
       console.error("Erro ao buscar máquina:", error);
@@ -102,6 +204,13 @@ const EditarMaquina = () => {
       fetchMaquina();
     }
   }, [maquinaId, fetchMaquina]);
+
+  // Debug do estado do cliente selecionado
+  useEffect(() => {
+    console.log("Estado atual do cliente selecionado:", selectedCliente);
+    console.log("clienteInput:", clienteInput);
+    console.log("formData.id_cliente_atual:", formData.id_cliente_atual);
+  }, [selectedCliente, clienteInput, formData.id_cliente_atual]);
 
   // Manipular mudanças nos campos do formulário
   const handleInputChange = (
@@ -123,34 +232,68 @@ const EditarMaquina = () => {
     }
   };
 
-  // Busca dinâmica de clientes
-  useEffect(() => {
-    const fetchClientes = async () => {
-      if (clienteInput.length < 3) {
-        setClientes([]);
-        return;
+  // Função para buscar clientes quando o input tiver pelo menos 3 caracteres
+  const handleClienteInputChange = (inputValue: string) => {
+    setClienteInput(inputValue);
+
+    if (inputValue.length >= 3 && !isSearchingCliente) {
+      setIsSearchingCliente(true);
+      searchClientes(inputValue);
+    }
+  };
+
+  const searchClientes = async (term: string) => {
+    try {
+      // Utiliza clientesAPI.getAll para buscar clientes por nome com parâmetro resumido=S
+      const data = await clientesAPI.getAll({
+        nome: term,
+        resumido: "S",
+        qtde_registros: 15,
+        nro_pagina: 1,
+      });
+
+      const options = Array.isArray(data?.dados)
+        ? (data.dados as ClienteAPIResult[]).map((c) => ({
+            value: c.id_cliente,
+            label: c.nome_fantasia,
+            razao_social: c.razao_social,
+          }))
+        : [];
+
+      setClienteOptions(options);
+    } catch (error) {
+      console.error("Erro ao buscar clientes:", error);
+      setClienteOptions([]);
+    } finally {
+      setIsSearchingCliente(false);
+    }
+  };
+
+  const handleClienteChange = (selectedOption: OptionType | null) => {
+    // Convert OptionType to ClienteOption if not null
+    const clienteOption = selectedOption
+      ? ({
+          ...selectedOption,
+          value: Number(selectedOption.value),
+        } as ClienteOption)
+      : null;
+
+    setSelectedCliente(clienteOption);
+
+    if (clienteOption) {
+      setFormData((prev) => ({
+        ...prev,
+        id_cliente_atual: clienteOption.value,
+      }));
+
+      // Limpar erro se existir
+      if (formErrors.id_cliente_atual) {
+        setFormErrors((prev) => ({ ...prev, id_cliente_atual: "" }));
       }
-      setClienteLoading(true);
-      try {
-        // Utiliza clientesAPI.getAll para buscar clientes por nome
-        const data = await clientesAPI.getAll({ nome: clienteInput });
-        // data.dados é o array de clientes
-        const lista = Array.isArray(data?.dados)
-          ? (data.dados as ClienteAPIResult[]).map((c) => ({
-              id: c.id_cliente,
-              nome: c.nome_fantasia,
-              razao_social: c.razao_social,
-            }))
-          : [];
-        setClientes(lista);
-      } catch {
-        setClientes([]);
-      } finally {
-        setClienteLoading(false);
-      }
-    };
-    fetchClientes();
-  }, [clienteInput]);
+    } else {
+      setFormData((prev) => ({ ...prev, id_cliente_atual: null }));
+    }
+  };
 
   // Validar formulário
   const validarFormulario = () => {
@@ -265,68 +408,48 @@ const EditarMaquina = () => {
                 </div>
 
                 {/* Cliente Atual */}
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-slate-700">
-                    Cliente Atual<span className="text-red-500 ml-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="id_cliente_atual"
-                    name="id_cliente_atual"
-                    placeholder="Digite ao menos 3 letras para buscar o cliente"
-                    value={clienteInput}
-                    onChange={(e) => {
-                      setClienteInput(e.target.value);
-                      setFormData((prev) => ({
-                        ...prev,
-                        id_cliente_atual: null,
-                      }));
-                    }}
-                    className={`w-full p-2.5 rounded-md border ${
-                      formErrors.id_cliente_atual
-                        ? "border-red-500 focus:ring-red-500"
-                        : "border-slate-300 focus:ring-violet-500"
-                    } focus:border-violet-500 focus:ring-2 shadow-sm`}
-                    autoComplete="off"
-                  />
-                  {clienteLoading && (
-                    <div className="text-xs text-slate-500 mt-1">
-                      Buscando clientes...
+                <div>
+                  {/* Debug information */}
+                  {process.env.NODE_ENV === "development" && (
+                    <div className="mb-2 text-xs text-gray-500">
+                      <div>
+                        Cliente selecionado:{" "}
+                        {selectedCliente
+                          ? `${selectedCliente.label} (${selectedCliente.value})`
+                          : "nenhum"}
+                      </div>
+                      <div>
+                        ID do cliente no form: {formData.id_cliente_atual}
+                      </div>
                     </div>
                   )}
-                  {clientes.length > 0 && (
-                    <ul className="border rounded-md bg-white shadow-md mt-1 max-h-40 overflow-y-auto z-10 relative">
-                      {clientes.map((cliente) => (
-                        <li
-                          key={cliente.id}
-                          className={`px-3 py-2 cursor-pointer hover:bg-violet-50 ${
-                            formData.id_cliente_atual === cliente.id
-                              ? "bg-violet-100 text-violet-800"
-                              : "text-slate-700"
-                          }`}
-                          onClick={() => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              id_cliente_atual: cliente.id,
-                            }));
-                            setClienteInput(cliente.nome);
-                            setClientes([]);
-                          }}
-                        >
-                          <span className="font-medium">{cliente.nome}</span>
-                          <span className="text-slate-500">
-                            {" "}
-                            - {cliente.razao_social}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {formErrors.id_cliente_atual && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {formErrors.id_cliente_atual}
-                    </p>
-                  )}
+
+                  <CustomSelect
+                    id="cliente_atual"
+                    label="Cliente Atual"
+                    required
+                    placeholder="Digite pelo menos 3 caracteres para buscar o cliente..."
+                    inputValue={clienteInput}
+                    onInputChange={handleClienteInputChange}
+                    onChange={handleClienteChange}
+                    options={
+                      selectedCliente &&
+                      !clienteOptions.find(
+                        (option) => option.value === selectedCliente.value
+                      )
+                        ? [selectedCliente, ...clienteOptions]
+                        : clienteOptions
+                    }
+                    value={selectedCliente}
+                    isLoading={isSearchingCliente}
+                    error={formErrors.id_cliente_atual}
+                    minCharsToSearch={3}
+                    noOptionsMessageFn={({ inputValue }) =>
+                      inputValue.length < 3
+                        ? "Digite pelo menos 3 caracteres para buscar..."
+                        : "Nenhum cliente encontrado"
+                    }
+                  />
                 </div>
 
                 {/* Descrição */}

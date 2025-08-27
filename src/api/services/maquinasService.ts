@@ -48,7 +48,7 @@ class MaquinasService {
   }
 
   async getById(id: number | string): Promise<Maquina> {
-    return await api.get<Maquina>(`${this.baseUrl}/${id}`);
+    return await api.get<Maquina>(this.baseUrl, { params: { id } });
   }
 
   async create(data: MaquinaFormData): Promise<Maquina> {
@@ -59,11 +59,11 @@ class MaquinasService {
     id: number | string,
     data: Partial<MaquinaFormData>
   ): Promise<Maquina> {
-    return await api.put<Maquina>(`${this.baseUrl}/${id}`, data);
+    return await api.put<Maquina>(`${this.baseUrl}?id=${id}`, data);
   }
 
   async delete(id: number | string): Promise<void> {
-    await api.delete<void>(`${this.baseUrl}/${id}`);
+    await api.delete<void>(`${this.baseUrl}?id=${id}`);
   }
 }
 

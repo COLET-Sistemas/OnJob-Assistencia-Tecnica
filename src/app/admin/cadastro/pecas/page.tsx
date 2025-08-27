@@ -167,18 +167,12 @@ const CadastroPecas = () => {
   const handleDelete = async (id: number) => {
     try {
       const response = await pecasAPI.delete(id);
-      showSuccess(
-        "Sucesso",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
-      );
+      showSuccess("Sucesso", response);
       await refetch();
     } catch (error) {
       console.error("Erro ao excluir peça:", error);
 
-      showError(
-        "Erro ao excluir",
-        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
-      );
+      showError("Erro ao excluir", error as Record<string, unknown>);
     }
   };
 

@@ -168,10 +168,10 @@ export const maquinasAPI = {
       },
     });
   },
-  getById: (id) => api.get(`/maquinas/${id}`),
+  getById: (id) => api.get("/maquinas", { params: { id } }),
   create: (maquinaData) => api.post("/maquinas", maquinaData),
-  update: (id, maquinaData) => api.put(`/maquinas/${id}`, maquinaData),
-  delete: (id) => api.delete(`/maquinas/${id}`),
+  update: (id, maquinaData) => api.put(`/maquinas?id=${id}`, maquinaData),
+  delete: (id) => api.delete(`/maquinas?id=${id}`),
 };
 
 export const usuariosAPI = {

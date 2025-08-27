@@ -82,15 +82,15 @@ const CadastroMotivosAtendimento = () => {
       await refetch();
 
       showSuccess(
-        "Exclusão realizada!",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+        "Inativação realizada!",
+        response 
       );
     } catch (error) {
       console.error("Erro ao excluir motivo de atendimento:", error);
 
       showError(
-        "Erro ao excluir",
-        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+        "Erro ao inativar",
+        error as Record<string, unknown> 
       );
     }
   };
