@@ -41,7 +41,7 @@ const EditarMotivoAtendimento = (props: PageProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setTitle("Editar Motivo de Atendimento");
+    setTitle("Motivos de Atendimentos");
   }, [setTitle]);
 
   useEffect(() => {

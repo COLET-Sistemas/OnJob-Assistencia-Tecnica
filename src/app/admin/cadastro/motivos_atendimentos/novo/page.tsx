@@ -103,7 +103,7 @@ const CadastrarMotivoAtendimento: React.FC = () => {
 
   // Definir título da página e focar no input
   useEffect(() => {
-    setTitle("Motivo de Atendimento");
+    setTitle("Motivos de Atendimentos");
     descricaoInputRef.current?.focus();
   }, [setTitle]);
 

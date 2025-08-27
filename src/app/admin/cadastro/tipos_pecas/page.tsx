@@ -45,7 +45,6 @@ interface TiposPecasResponse {
     codigo_erp: string;
     descricao: string;
     situacao: string;
-    // outros campos se houver
   }>;
   total_paginas: number;
   total_registros: number;

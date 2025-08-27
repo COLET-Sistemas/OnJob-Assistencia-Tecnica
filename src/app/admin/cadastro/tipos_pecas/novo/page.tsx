@@ -13,6 +13,7 @@ import { InputField, LoadingButton } from "@/components/admin/form";
 // Interfaces separadas para melhor organização
 interface FormData {
   descricao: string;
+  codigo_erp: string;
 }
 
 interface FormErrors {
@@ -37,9 +38,13 @@ const useFormValidation = () => {
   const validateForm = useCallback((formData: FormData): FormValidation => {
     const errors: FormErrors = {};
 
-    // Validar apenas se o campo não está vazio
+    // Validar se os campos obrigatórios não estão vazios
     if (!formData.descricao.trim()) {
       errors.descricao = MESSAGES.required;
+    }
+
+    if (!formData.codigo_erp.trim()) {
+      errors.codigo_erp = MESSAGES.required;
     }
 
     return {
@@ -59,7 +64,10 @@ const CadastrarTipoPeca: React.FC = () => {
   const { showSuccess, showError } = useToast();
 
   // Estados
-  const [formData, setFormData] = useState<FormData>({ descricao: "" });
+  const [formData, setFormData] = useState<FormData>({
+    descricao: "",
+    codigo_erp: "",
+  });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -111,6 +119,7 @@ const CadastrarTipoPeca: React.FC = () => {
       try {
         const response = await tiposPecasAPI.create({
           descricao: formData.descricao.trim(),
+          codigo_erp: formData.codigo_erp.trim(),
         });
 
         router.push("/admin/cadastro/tipos_pecas");
@@ -153,6 +162,16 @@ const CadastrarTipoPeca: React.FC = () => {
           <div className="p-8">
             <section>
               <div className="space-y-6">
+                <InputField
+                  label="Código ERP"
+                  name="codigo_erp"
+                  value={formData.codigo_erp}
+                  error={formErrors.codigo_erp}
+                  placeholder="Ex: PECA001..."
+                  required
+                  onChange={handleInputChange}
+                />
+
                 <InputField
                   label="Descrição do Tipo"
                   name="descricao"

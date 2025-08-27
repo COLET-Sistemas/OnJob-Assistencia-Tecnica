@@ -41,7 +41,7 @@ const EditarMotivoPendencia = (props: PageProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setTitle("Editar Motivo de Pendência");
+    setTitle("Motivos de Pendências");
   }, [setTitle]);
 
   useEffect(() => {

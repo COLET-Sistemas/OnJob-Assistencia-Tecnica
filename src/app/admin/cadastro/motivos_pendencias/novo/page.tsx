@@ -103,7 +103,7 @@ const CadastrarMotivoPendencia: React.FC = () => {
 
   // Definir título da página e focar no input
   useEffect(() => {
-    setTitle("Motivo de Pendência");
+    setTitle("Motivos de Pendências");
     descricaoInputRef.current?.focus();
   }, [setTitle]);
 

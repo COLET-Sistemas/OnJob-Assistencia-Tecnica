@@ -17,7 +17,7 @@ const CadastroMotivosAtendimento = () => {
   const { showSuccess, showError } = useToast();
 
   useEffect(() => {
-    setTitle("Motivos de Atendimento");
+    setTitle("Motivos de Atendimentos");
   }, [setTitle]);
 
   const {

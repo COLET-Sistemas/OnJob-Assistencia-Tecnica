@@ -23,6 +23,7 @@ interface PageProps {
 
 interface FormData {
   descricao: string;
+  codigo_erp: string;
   situacao: string;
 }
 
@@ -36,12 +37,13 @@ const EditarTipoPeca = (props: PageProps) => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<FormData>({
     descricao: "",
+    codigo_erp: "",
     situacao: "A",
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setTitle("Editar Tipo de Peça");
+    setTitle("Tipos de Peças");
   }, [setTitle]);
 
   useEffect(() => {
@@ -50,14 +52,11 @@ const EditarTipoPeca = (props: PageProps) => {
       try {
         const response = await api.get(`/tipos_pecas?id=${id}`);
 
-        if (
-          response &&
-          response.tipos_pecas &&
-          response.tipos_pecas.length > 0
-        ) {
-          const tipoPeca = response.tipos_pecas[0];
+        if (response && response.dados && response.dados.length > 0) {
+          const tipoPeca = response.dados[0];
           setFormData({
             descricao: tipoPeca.descricao,
+            codigo_erp: tipoPeca.codigo_erp || "",
             situacao: tipoPeca.situacao,
           });
         } else {
@@ -102,6 +101,7 @@ const EditarTipoPeca = (props: PageProps) => {
     const errors: Record<string, string> = {};
 
     if (!formData.descricao) errors.descricao = "Campo obrigatório";
+    if (!formData.codigo_erp) errors.codigo_erp = "Campo obrigatório";
     if (!formData.situacao) errors.situacao = "Campo obrigatório";
 
     setFormErrors(errors);
@@ -121,22 +121,17 @@ const EditarTipoPeca = (props: PageProps) => {
     try {
       const response = await api.put(`/tipos_pecas?id=${id}`, {
         descricao: formData.descricao,
+        codigo_erp: formData.codigo_erp,
         situacao: formData.situacao,
       });
 
       router.push("/admin/cadastro/tipos_pecas");
 
-      showSuccess(
-        "Atualização realizada!",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
-      );
+      showSuccess("Atualização realizada!", response);
     } catch (error) {
       console.error("Erro ao atualizar tipo de peça:", error);
 
-      showError(
-        "Erro ao atualizar",
-        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
-      );
+      showError("Erro ao atualizar", error as Record<string, unknown>);
     } finally {
       setSavingData(false);
     }
@@ -173,6 +168,17 @@ const EditarTipoPeca = (props: PageProps) => {
           <div className="p-8">
             <section>
               <div className="space-y-6">
+                {/* Código ERP */}
+                <InputField
+                  label="Código ERP"
+                  name="codigo_erp"
+                  value={formData.codigo_erp}
+                  error={formErrors.codigo_erp}
+                  placeholder="Ex: PECA001..."
+                  required
+                  onChange={handleInputChange}
+                />
+
                 {/* Descrição */}
                 <InputField
                   label="Descrição do Tipo"
