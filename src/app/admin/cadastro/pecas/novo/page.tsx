@@ -8,6 +8,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
+import {
+  InputField,
+  SelectField,
+  LoadingButton,
+} from "@/components/admin/form";
 
 // Interface para o formulário
 interface FormData {
@@ -159,97 +164,44 @@ const CadastrarPeca = () => {
               <div className="flex flex-wrap gap-4">
                 {/* Código da peça */}
                 <div className="w-[20%]">
-                  <label
-                    htmlFor="codigo_peca"
-                    className="block text-sm font-medium text-[var(--primary)] mb-1"
-                  >
-                    Código da Peça<span className="text-red-500 ml-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="codigo_peca"
+                  <InputField
+                    label="Código da Peça"
                     name="codigo_peca"
                     value={formData.codigo_peca}
                     onChange={handleInputChange}
-                    className={`w-full p-2 border h-[38px] ${
-                      formErrors.codigo_peca
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all duration-200 shadow-sm text-black placeholder:text-gray-400`}
+                    error={formErrors.codigo_peca}
                     placeholder="Ex: RBB-PRFT"
+                    required
                   />
-                  {formErrors.codigo_peca && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {formErrors.codigo_peca}
-                    </p>
-                  )}
                 </div>
 
                 {/* Descrição */}
                 <div className="flex-1">
-                  <label
-                    htmlFor="descricao"
-                    className="block text-sm font-medium text-[var(--primary)] mb-1"
-                  >
-                    Descrição<span className="text-red-500 ml-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="descricao"
+                  <InputField
+                    label="Descrição"
                     name="descricao"
                     value={formData.descricao}
                     onChange={handleInputChange}
-                    className={`w-full p-2 border h-[38px] ${
-                      formErrors.descricao
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all duration-200 shadow-sm text-black placeholder:text-gray-400`}
-                    placeholder="Ex: Rebinboca da Parafuseta"
+                    error={formErrors.descricao}
+                    placeholder="Ex: Rebimboca da Parafuseta"
+                    required
                   />
-                  {formErrors.descricao && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {formErrors.descricao}
-                    </p>
-                  )}
                 </div>
 
                 {/* Unidade de Medida */}
                 <div className="w-[15%]">
-                  <label
-                    htmlFor="unidade_medida"
-                    className="block text-sm font-medium text-[var(--primary)] mb-1"
-                  >
-                    Unidade<span className="text-red-500 ml-1">*</span>
-                  </label>
-                  <select
-                    id="unidade_medida"
+                  <SelectField
+                    label="Unidade"
                     name="unidade_medida"
                     value={formData.unidade_medida}
                     onChange={handleInputChange}
-                    className={`w-full p-2 border h-[38px] ${
-                      formErrors.unidade_medida
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all duration-200 shadow-sm text-black appearance-none`}
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                      backgroundPosition: "right 0.5rem center",
-                      backgroundRepeat: "no-repeat",
-                      backgroundSize: "1.5em 1.5em",
-                      paddingRight: "2.5rem",
-                    }}
-                  >
-                    {unidadesMedida.map((unidade) => (
-                      <option key={unidade} value={unidade}>
-                        {unidade}
-                      </option>
-                    ))}
-                  </select>
-                  {formErrors.unidade_medida && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {formErrors.unidade_medida}
-                    </p>
-                  )}
+                    error={formErrors.unidade_medida}
+                    required
+                    options={unidadesMedida.map((unidade) => ({
+                      value: unidade,
+                      label: unidade,
+                    }))}
+                  />
                 </div>
               </div>
             </div>
@@ -262,16 +214,16 @@ const CadastrarPeca = () => {
               >
                 Cancelar
               </Link>
-              <button
+              <LoadingButton
                 type="submit"
-                disabled={savingData}
-                className={`px-4 py-2 bg-[var(--primary)] text-white rounded-md hover:bg-[var(--primary)]/90 transition-colors duration-200 font-medium flex items-center gap-2 ${
-                  savingData ? "opacity-70 cursor-not-allowed" : ""
-                }`}
+                isLoading={savingData}
+                className="bg-[var(--primary)] text-white hover:bg-[var(--primary)]/90"
               >
-                <Save size={18} />
-                {savingData ? "Salvando..." : "Salvar"}
-              </button>
+                <span className="flex items-center justify-center gap-2">
+                  <Save className="h-4 w-4" />
+                  <span>Salvar</span>
+                </span>
+              </LoadingButton>
             </div>
           </form>
         </div>

@@ -8,6 +8,12 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Loading } from "@/components/LoadingPersonalizado";
 import { useToast } from "@/components/admin/ui/ToastContainer";
+import {
+  InputField,
+  SelectField,
+  LoadingButton,
+} from "@/components/admin/form";
+import PageHeader from "@/components/admin/ui/PageHeader";
 
 interface PageProps {
   params: Promise<{
@@ -142,104 +148,82 @@ const EditarMotivoPendencia = (props: PageProps) => {
   }
 
   return (
-    <div className="px-2">
-      {/* Formulário */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-lg shadow-lg p-6 transition-all duration-300 hover:shadow-xl border-t-4 border-[#7C54BD]"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Informações principais */}
-          <div className="space-y-4 md:col-span-2">
-            <h2 className="text-lg font-semibold text-[#7C54BD] border-b-2 border-[#F6C647] pb-2 inline-block">
-              Informações do Motivo de Pendência OS
-            </h2>
+    <>
+      <PageHeader
+        title="Editar Motivo de Pendência"
+        config={{
+          type: "form",
+          backLink: "/admin/cadastro/motivos_pendencias",
+          backLabel: "Voltar para lista de motivos de pendência",
+        }}
+      />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Descrição */}
-              <div>
-                <label
-                  htmlFor="descricao"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Descrição<span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="descricao"
-                  name="descricao"
-                  placeholder="Descrição do motivo de pendência"
-                  value={formData.descricao}
-                  onChange={handleInputChange}
-                  className={`w-full p-2 border ${
-                    formErrors.descricao ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm placeholder:text-gray-400 text-black`}
-                />
-                {formErrors.descricao && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {formErrors.descricao}
-                  </p>
-                )}
-              </div>
+      <main>
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+          noValidate
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Informações principais */}
+            <div className="space-y-4 md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Descrição */}
+                <div>
+                  <InputField
+                    label="Descrição"
+                    name="descricao"
+                    value={formData.descricao}
+                    error={formErrors.descricao}
+                    placeholder="Descrição do motivo de pendência"
+                    required
+                    onChange={handleInputChange}
+                    className="p-2 focus:ring-[#7C54BD] focus:border-transparent shadow-sm placeholder:text-gray-400 text-black"
+                  />
+                </div>
 
-              {/* Situação */}
-              <div>
-                <label
-                  htmlFor="situacao"
-                  className="block text-sm font-medium text-[#7C54BD] mb-1"
-                >
-                  Situação<span className="text-red-500 ml-1">*</span>
-                </label>
-                <select
-                  id="situacao"
-                  name="situacao"
-                  value={formData.situacao}
-                  onChange={handleInputChange}
-                  className={`w-full p-2 h-[42px] border ${
-                    formErrors.situacao ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:ring-2 focus:ring-[#7C54BD] focus:border-transparent transition-all duration-200 shadow-sm text-black`}
-                >
-                  <option value="A">Ativo</option>
-                  <option value="I">Inativo</option>
-                </select>
-                {formErrors.situacao && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {formErrors.situacao}
-                  </p>
-                )}
+                {/* Situação */}
+                <div>
+                  <SelectField
+                    label="Situação"
+                    name="situacao"
+                    value={formData.situacao}
+                    options={[
+                      { value: "A", label: "Ativo" },
+                      { value: "I", label: "Inativo" },
+                    ]}
+                    error={formErrors.situacao}
+                    required
+                    onChange={handleInputChange}
+                    className="p-2 h-[42px] focus:ring-[#7C54BD] focus:border-transparent shadow-sm"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Botões */}
-        <div className="mt-8 flex justify-end space-x-3">
-          <Link
-            href="/admin/cadastro/motivos_pendencias"
-            className="px-5 py-2 bg-gray-100 text-[#7C54BD] rounded-md hover:bg-gray-200 transition-colors shadow-sm hover:shadow-md"
-          >
-            Cancelar
-          </Link>
-          <button
-            type="submit"
-            disabled={savingData}
-            className="px-5 py-2 bg-[#7C54BD] text-white rounded-md hover:bg-[#6743a1] transition-all flex items-center shadow-sm hover:shadow-md"
-          >
-            {savingData ? (
-              <>
-                <span className="mr-2">Salvando</span>
-                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-              </>
-            ) : (
-              <>
+          {/* Botões */}
+          <div className="mt-8 flex justify-end space-x-3">
+            <Link
+              href="/admin/cadastro/motivos_pendencias"
+              className="px-5 py-2 bg-gray-100 text-[#7C54BD] rounded-md hover:bg-gray-200 transition-colors shadow-sm hover:shadow-md"
+            >
+              Cancelar
+            </Link>
+            <LoadingButton
+              type="submit"
+              isLoading={savingData}
+              className="px-5 py-2 bg-[#7C54BD] text-white rounded-md hover:bg-[#6743a1] shadow-sm hover:shadow-md"
+            >
+              <span className="flex items-center">
                 <Save size={18} className="mr-2" />
                 Atualizar Motivo
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-    </div>
+              </span>
+            </LoadingButton>
+          </div>
+        </form>
+      </main>
+    </>
   );
 };
 

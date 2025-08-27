@@ -2,12 +2,13 @@
 
 import { motivosAtendimentoAPI } from "@/api/api";
 import { useTitle } from "@/context/TitleContext";
-import { Save, AlertCircle, Loader2 } from "lucide-react";
+import { Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import PageHeader from "@/components/admin/ui/PageHeader";
+import { InputField } from "@/components/admin/form";
 
 interface FormData {
   descricao: string;
@@ -84,83 +85,6 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
     <span className={isLoading ? "opacity-0" : "opacity-100"}>{children}</span>
   </button>
 );
-
-// Componente de Campo de Input
-interface InputFieldProps {
-  label: string;
-  name: string;
-  value: string;
-  error?: string;
-  placeholder?: string;
-  required?: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  inputRef?: React.RefObject<HTMLInputElement>;
-}
-
-const InputField: React.FC<InputFieldProps> = ({
-  label,
-  name,
-  value,
-  error,
-  placeholder,
-  required = false,
-  onChange,
-  inputRef,
-}) => {
-  const inputId = `input-${name}`;
-  const errorId = `error-${name}`;
-
-  return (
-    <div className="space-y-1">
-      <label
-        htmlFor={inputId}
-        className="block text-sm font-medium text-slate-700 transition-colors"
-      >
-        {label}
-        {required && (
-          <span className="text-red-500 ml-1" aria-label="obrigatório">
-            *
-          </span>
-        )}
-      </label>
-
-      <div className="relative">
-        <input
-          type="text"
-          id={inputId}
-          name={name}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          className={`
-            w-full px-4 py-3 rounded-lg border transition-all duration-200
-            focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500
-            placeholder:text-slate-400 text-slate-900
-            ${
-              error
-                ? "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20"
-                : "border-slate-300 bg-white hover:border-slate-400"
-            }
-          `}
-          aria-describedby={error ? errorId : undefined}
-          aria-invalid={!!error}
-          ref={inputRef}
-        />
-      </div>
-
-      {error && (
-        <div
-          id={errorId}
-          role="alert"
-          className="flex items-center gap-1 text-sm text-red-600 animate-in fade-in slide-in-from-top-1 duration-200"
-        >
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-    </div>
-  );
-};
 
 // Componente principal
 const CadastrarMotivoAtendimento: React.FC = () => {
@@ -257,17 +181,6 @@ const CadastrarMotivoAtendimento: React.FC = () => {
         >
           <div className="p-8">
             <section>
-              <header className="mb-6">
-                <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-[var(--primary)] rounded-full" />
-                  Informações do Motivo
-                </h2>
-                <p className="text-slate-600 text-sm mt-1">
-                  Preencha os dados abaixo para cadastrar o motivo de
-                  atendimento
-                </p>
-              </header>
-
               <div className="space-y-6">
                 <InputField
                   label="Descrição do Motivo"

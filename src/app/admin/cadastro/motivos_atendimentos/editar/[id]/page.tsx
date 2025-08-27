@@ -2,13 +2,18 @@
 
 import api from "@/api/api";
 import { useTitle } from "@/context/TitleContext";
-import { Save, AlertCircle, Loader2 } from "lucide-react";
+import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Loading } from "@/components/LoadingPersonalizado";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import PageHeader from "@/components/admin/ui/PageHeader";
+import {
+  InputField,
+  SelectField,
+  LoadingButton,
+} from "@/components/admin/form";
 
 interface PageProps {
   params: Promise<{
@@ -161,113 +166,31 @@ const EditarMotivoAtendimento = (props: PageProps) => {
         >
           <div className="p-8">
             <section>
-              <header className="mb-6">
-                <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-[var(--primary)] rounded-full" />
-                  Informações do Motivo
-                </h2>
-                <p className="text-slate-600 text-sm mt-1">
-                  Edite os dados do motivo de atendimento
-                </p>
-              </header>
-
               <div className="space-y-6">
                 {/* Descrição */}
-                <div className="space-y-1">
-                  <label
-                    htmlFor="descricao"
-                    className="block text-sm font-medium text-slate-700 transition-colors"
-                  >
-                    Descrição do Motivo
-                    <span
-                      className="text-red-500 ml-1"
-                      aria-label="obrigatório"
-                    >
-                      *
-                    </span>
-                  </label>
-
-                  <div className="relative">
-                    <input
-                      type="text"
-                      id="descricao"
-                      name="descricao"
-                      value={formData.descricao}
-                      onChange={handleInputChange}
-                      placeholder="Ex: Solicitação de informações, Reclamação, Sugestão..."
-                      className={`
-                        w-full px-4 py-3 rounded-lg border transition-all duration-200
-                        focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500
-                        placeholder:text-slate-400 text-slate-900
-                        ${
-                          formErrors.descricao
-                            ? "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20"
-                            : "border-slate-300 bg-white hover:border-slate-400"
-                        }
-                      `}
-                      aria-invalid={!!formErrors.descricao}
-                    />
-                  </div>
-
-                  {formErrors.descricao && (
-                    <div
-                      role="alert"
-                      className="flex items-center gap-1 text-sm text-red-600 animate-in fade-in slide-in-from-top-1 duration-200"
-                    >
-                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                      <span>{formErrors.descricao}</span>
-                    </div>
-                  )}
-                </div>
+                <InputField
+                  label="Descrição do Motivo"
+                  name="descricao"
+                  value={formData.descricao}
+                  error={formErrors.descricao}
+                  placeholder="Ex: Solicitação de informações, Reclamação, Sugestão..."
+                  required
+                  onChange={handleInputChange}
+                />
 
                 {/* Situação */}
-                <div className="space-y-1">
-                  <label
-                    htmlFor="situacao"
-                    className="block text-sm font-medium text-slate-700 transition-colors"
-                  >
-                    Situação
-                    <span
-                      className="text-red-500 ml-1"
-                      aria-label="obrigatório"
-                    >
-                      *
-                    </span>
-                  </label>
-
-                  <div className="relative">
-                    <select
-                      id="situacao"
-                      name="situacao"
-                      value={formData.situacao}
-                      onChange={handleInputChange}
-                      className={`
-                        w-full px-4 py-3 rounded-lg border transition-all duration-200
-                        focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500
-                        text-slate-900
-                        ${
-                          formErrors.situacao
-                            ? "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20"
-                            : "border-slate-300 bg-white hover:border-slate-400"
-                        }
-                      `}
-                      aria-invalid={!!formErrors.situacao}
-                    >
-                      <option value="A">Ativo</option>
-                      <option value="I">Inativo</option>
-                    </select>
-                  </div>
-
-                  {formErrors.situacao && (
-                    <div
-                      role="alert"
-                      className="flex items-center gap-1 text-sm text-red-600 animate-in fade-in slide-in-from-top-1 duration-200"
-                    >
-                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                      <span>{formErrors.situacao}</span>
-                    </div>
-                  )}
-                </div>
+                <SelectField
+                  label="Situação"
+                  name="situacao"
+                  value={formData.situacao}
+                  options={[
+                    { value: "A", label: "Ativo" },
+                    { value: "I", label: "Inativo" },
+                  ]}
+                  error={formErrors.situacao}
+                  required
+                  onChange={handleInputChange}
+                />
               </div>
             </section>
           </div>
@@ -282,23 +205,16 @@ const EditarMotivoAtendimento = (props: PageProps) => {
                 Cancelar
               </Link>
 
-              <button
+              <LoadingButton
                 type="submit"
-                disabled={savingData}
-                className="relative px-6 py-3 rounded-lg font-medium transition-all duration-200 bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                isLoading={savingData}
+                className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-                {savingData && (
-                  <Loader2 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-5 w-5 animate-spin" />
-                )}
-                <span
-                  className={`${
-                    savingData ? "opacity-0" : "opacity-100"
-                  } flex items-center justify-center gap-2`}
-                >
+                <span className="flex items-center justify-center gap-2">
                   <Save className="h-4 w-4" />
                   <span>Atualizar</span>
                 </span>
-              </button>
+              </LoadingButton>
             </div>
           </footer>
         </form>
