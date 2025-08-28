@@ -10,7 +10,7 @@ import {
   TextAreaField,
   DateTimeField,
   MachineOption,
-  type MachineOptionType
+  type MachineOptionType,
 } from "@/components/admin/form";
 import { clientesService } from "@/api/services/clientesService";
 import { maquinasService } from "@/api/services/maquinasService";
@@ -367,7 +367,6 @@ const NovaOrdemServico = () => {
       const osData: {
         id_cliente: number;
         id_maquina: number;
-        id_motivo_atendimento: number;
         id_motivo_pendencia?: number;
         descricao_problema: string;
         origem_abertura: string;
@@ -383,18 +382,15 @@ const NovaOrdemServico = () => {
         whatsapp_contato_abertura?: string;
         email_contato_abertura?: string;
         id_regiao: number;
-        comentarios: string; // Required by OSForm
       } = {
         id_cliente: selectedCliente.value,
         id_maquina: selectedMaquina.value,
-        id_motivo_atendimento: 1, // Providing a default value since this field is required
         descricao_problema: descricaoProblema,
-        origem_abertura: "interna", // Always set to "interna"
+        origem_abertura: "I",
         forma_abertura: formaAbertura.value,
         em_garantia: selectedMaquina.isInWarranty || false,
         data_agendada: formattedDate,
-        id_regiao: 1, // Adding a required id_regiao field with a default value
-        comentarios: descricaoProblema, // Adding this to satisfy the OSForm type, using descricaoProblema as the value
+        id_regiao: 1,
       };
 
       // Adicionar informações de contato com os novos campos
@@ -446,7 +442,14 @@ const NovaOrdemServico = () => {
         osData.id_usuario_tecnico = selectedTecnico.value;
       }
 
-      await ordensServicoService.create(osData);
+      // Add the missing required fields to satisfy the OSForm interface
+      const osDataToSubmit = {
+        ...osData,
+        id_motivo_atendimento: 1, // Adding a default value
+        comentarios: descricaoProblema // Using the problem description as comments
+      };
+      
+      await ordensServicoService.create(osDataToSubmit);
       router.push("/admin/os_aberto");
     } catch (error) {
       console.error("Erro ao criar ordem de serviço:", error);
@@ -686,7 +689,7 @@ const NovaOrdemServico = () => {
                         : "#cbd5e0",
                     },
                     borderRadius: "0.5rem",
-                  })
+                  }),
                 }}
                 formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
                 className="react-select-container"
