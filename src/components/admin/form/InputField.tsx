@@ -8,6 +8,8 @@ interface InputFieldProps {
   error?: string;
   placeholder?: string;
   required?: boolean;
+  readOnly?: boolean;
+  disabled?: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   inputRef?: React.RefObject<HTMLInputElement>;
   type?: string;
@@ -21,6 +23,8 @@ const InputField: React.FC<InputFieldProps> = ({
   error,
   placeholder,
   required = false,
+  readOnly = false,
+  disabled = false,
   onChange,
   inputRef,
   type = "text",
@@ -51,6 +55,8 @@ const InputField: React.FC<InputFieldProps> = ({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
+          readOnly={readOnly}
+          disabled={disabled}
           className={`
             w-full px-4 py-3 rounded-lg border transition-all duration-200
             focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500
@@ -60,6 +66,8 @@ const InputField: React.FC<InputFieldProps> = ({
                 ? "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20"
                 : "border-slate-300 bg-white hover:border-slate-400"
             }
+            ${readOnly ? "bg-slate-50 text-slate-600" : ""}
+            ${disabled ? "bg-slate-100 text-slate-500 cursor-not-allowed" : ""}
             ${className}
           `}
           aria-describedby={error ? errorId : undefined}

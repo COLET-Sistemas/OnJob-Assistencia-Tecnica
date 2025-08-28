@@ -40,9 +40,24 @@ const apiRequest = async (endpoint, options = {}) => {
     const response = await fetch(url, config);
 
     if (!response.ok) {
-      throw new Error(
-        `Erro na requisição: ${response.status} - ${response.statusText}`
-      );
+      const errorText = await response.text();
+
+      try {
+        const errorData = JSON.parse(errorText);
+        const apiMessage =
+          (errorData?.erro && errorData.erro.trim()) ||
+          (errorData?.error && errorData.error.trim()) ||
+          (errorData?.message && errorData.message.trim()) ||
+          (errorData?.mensagem && errorData.mensagem.trim());
+
+        if (apiMessage) {
+          throw new Error(apiMessage);
+        }
+
+        throw new Error("Erro inesperado na requisição");
+      } catch {
+        throw new Error(errorText || "Erro inesperado na requisição");
+      }
     }
 
     return response.json();

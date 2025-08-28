@@ -13,7 +13,7 @@ import {
   LoadingButton,
 } from "@/components/admin/form";
 import { FormData } from "@/types/admin/cadastro/clientes";
-import { formatDocumento } from "@/utils/formatters";
+import { formatDocumento, validarDocumento } from "@/utils/formatters";
 import { buscarCEP, formatarCEP } from "@/utils/cepAPI";
 import { ESTADOS } from "@/utils/constants";
 import { Save, MapPin } from "lucide-react";
@@ -44,10 +44,10 @@ interface FormValidation {
 
 // Constants para facilitar manutenção
 const MESSAGES = {
-  success: "Cliente cadastrado com sucesso!",
+  success: "Cadastro realizado!",
   error: "Erro ao cadastrar cliente. Verifique os dados e tente novamente.",
   required: "Este campo é obrigatório",
-  invalidCNPJ: "CNPJ inválido",
+  invalidCNPJ: "CPF/CNPJ inválido",
   invalidCEP: "CEP inválido",
   invalidRegion: "Selecione uma região válida",
 } as const;
@@ -60,7 +60,7 @@ const useFormValidation = () => {
     if (!formData.nome_fantasia.trim())
       errors.nome_fantasia = MESSAGES.required;
     if (!formData.razao_social.trim()) errors.razao_social = MESSAGES.required;
-    if (!formData.cnpj || formData.cnpj.length < 18)
+    if (!formData.cnpj || !validarDocumento(formData.cnpj))
       errors.cnpj = MESSAGES.invalidCNPJ;
     if (!formData.endereco.trim()) errors.endereco = MESSAGES.required;
     if (!formData.numero.trim()) errors.numero = MESSAGES.required;
@@ -97,14 +97,13 @@ const CadastrarCliente: React.FC = () => {
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [mapOpen, setMapOpen] = useState(false);
   const [showMapPreview, setShowMapPreview] = useState(false);
-  const [hasShownLocationToast, setHasShownLocationToast] = useState(false);
 
   // Refs
   const nomeFantasiaRef = useRef<HTMLInputElement>(null!);
 
   // Definir título da página e focar no primeiro input
   useEffect(() => {
-    setTitle("Cadastro de Cliente");
+    setTitle("Clientes");
     nomeFantasiaRef.current?.focus();
   }, [setTitle]);
 
@@ -257,38 +256,32 @@ const CadastrarCliente: React.FC = () => {
     ) {
       showError(
         "Campos obrigatórios",
-        "Preencha o endereço, número, cidade e UF para obter as coordenadas."
+        "Preencha o cep, endereço, número, cidade e UF para obter as coordenadas."
       );
       return;
     }
 
     try {
-      // Se não temos coordenadas ainda, tentar buscá-las
-      if (!formData.latitude || !formData.longitude) {
-        // Buscar coordenadas iniciais para posicionar o mapa
-        const coordenadas = await buscarCoordenadas(
-          formData.endereco,
-          formData.numero,
-          formData.cidade,
-          formData.uf,
-          formData.cep
-        );
+      // Buscar coordenadas apenas quando o usuário clicar no botão
+      const coordenadas = await buscarCoordenadas(
+        formData.endereco,
+        formData.numero,
+        formData.cidade,
+        formData.uf,
+        formData.cep
+      );
 
-        // Se encontramos coordenadas, atualizamos o formulário primeiro
-        if (coordenadas) {
-          setFormData((prev) => ({
-            ...prev,
-            latitude: coordenadas.latitude,
-            longitude: coordenadas.longitude,
-          }));
-          setShowMapPreview(true);
-
-          // Consideramos que o usuário já viu a mensagem sobre localização encontrada
-          setHasShownLocationToast(true);
-        }
+      // Se encontramos coordenadas, atualizamos o formulário
+      if (coordenadas) {
+        setFormData((prev) => ({
+          ...prev,
+          latitude: coordenadas.latitude,
+          longitude: coordenadas.longitude,
+        }));
+        setShowMapPreview(true);
       }
 
-      // Abrir o mapa para ajuste fino, independente de ter encontrado coordenadas iniciais ou não
+      // Abrir o mapa para ajuste fino
       setMapOpen(true);
     } catch (error) {
       console.error("Erro ao atualizar coordenadas:", error);
@@ -305,7 +298,6 @@ const CadastrarCliente: React.FC = () => {
     }));
     setShowMapPreview(true);
     showSuccess("Sucesso", "Coordenadas atualizadas com sucesso!");
-    setHasShownLocationToast(true);
   };
 
   // Manipular mudanças nos campos do formulário de forma otimizada
@@ -340,56 +332,11 @@ const CadastrarCliente: React.FC = () => {
       } else if (name === "numero") {
         setFormData((prev) => ({ ...prev, [name]: value }));
 
-        // Se o número for preenchido e temos o endereço completo, tenta buscar as coordenadas
-        if (
-          value &&
-          formData.endereco &&
-          formData.cidade &&
-          formData.uf &&
-          formData.cep
-        ) {
-          // Tentamos buscar coordenadas automaticamente e então abrimos o mapa para o ajuste fino
-          setTimeout(() => {
-            buscarCoordenadas(
-              formData.endereco,
-              value,
-              formData.cidade,
-              formData.uf,
-              formData.cep
-            )
-              .then((coordenadas) => {
-                if (coordenadas) {
-                  setFormData((prev) => ({
-                    ...prev,
-                    latitude: coordenadas.latitude,
-                    longitude: coordenadas.longitude,
-                  }));
-                  // Mostrar o preview do mapa em vez de abrir o modal automaticamente
-                  setShowMapPreview(true);
-
-                  // Mostrar toast apenas se não foi mostrado antes
-                  if (!hasShownLocationToast) {
-                    showSuccess(
-                      "Localização encontrada",
-                      "Visualize no mapa à direita."
-                    );
-                    setHasShownLocationToast(true);
-                  }
-                }
-              })
-              .catch((err) =>
-                console.error(
-                  "Erro ao buscar coordenadas automaticamente:",
-                  err
-                )
-              );
-          }, 1000);
-        }
+        // Removido: busca automática de coordenadas
+        // As coordenadas agora são buscadas apenas quando o usuário clicar em "Definir Localização no Mapa"
       } else {
         setFormData((prev) => ({ ...prev, [name]: value }));
-      }
-
-      // Limpar erro do campo quando usuário digitar (apenas se já existe erro)
+      } // Limpar erro do campo quando usuário digitar (apenas se já existe erro)
       if (formErrors[name]) {
         setFormErrors((prev) => {
           const updated = { ...prev };
@@ -398,14 +345,7 @@ const CadastrarCliente: React.FC = () => {
         });
       }
     },
-    [
-      formErrors,
-      regioes,
-      formData,
-      showSuccess,
-      hasShownLocationToast,
-      buscarCEPFormulario,
-    ]
+    [formErrors, regioes, buscarCEPFormulario]
   );
 
   // Validar formulário usando o hook personalizado
@@ -428,9 +368,20 @@ const CadastrarCliente: React.FC = () => {
       setIsSubmitting(true);
 
       try {
-        // Formatar dados para envio
+        // Formatar dados para envio conforme esperado pela API
         const clienteData = {
-          ...formData,
+          codigo_erp: formData.codigo_erp || null,
+          nome_fantasia: formData.nome_fantasia,
+          razao_social: formData.razao_social,
+          cnpj: formData.cnpj,
+          endereco: formData.endereco,
+          numero: formData.numero,
+          complemento: formData.complemento || null,
+          bairro: formData.bairro,
+          cep: formData.cep,
+          cidade: formData.cidade,
+          uf: formData.uf,
+          id_regiao: formData.regiao?.id ?? null,
           latitude:
             typeof formData.latitude === "string"
               ? parseFloat(formData.latitude)
@@ -439,7 +390,7 @@ const CadastrarCliente: React.FC = () => {
             typeof formData.longitude === "string"
               ? parseFloat(formData.longitude)
               : formData.longitude ?? null,
-          id_regiao: formData.regiao?.id ?? null,
+          situacao: formData.situacao,
         };
 
         // Enviar para a API
@@ -451,7 +402,19 @@ const CadastrarCliente: React.FC = () => {
       } catch (error) {
         console.error("Erro ao cadastrar cliente:", error);
 
-        showError("Erro ao cadastrar", error as Record<string, unknown>);
+        // Verificar se o erro contém uma mensagem específica da API
+        if (error && typeof error === "object" && "erro" in error) {
+          showError("Erro ao cadastrar", error.erro as string);
+        } else if (error && typeof error === "object" && "message" in error) {
+          showError("Erro ao cadastrar", error.message as string);
+        } else if (typeof error === "string") {
+          showError("Erro ao cadastrar", error);
+        } else {
+          showError(
+            "Erro ao cadastrar",
+            "Ocorreu um erro ao cadastrar o cliente. Tente novamente."
+          );
+        }
       } finally {
         setIsSubmitting(false);
       }
@@ -488,20 +451,6 @@ const CadastrarCliente: React.FC = () => {
           noValidate
         >
           <div className="p-8">
-            {/* Se houver erros, mostrar alerta */}
-            {Object.keys(formErrors).length > 0 && (
-              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md shadow-sm">
-                <h4 className="font-medium mb-1 text-red-700">
-                  Por favor, corrija os seguintes erros:
-                </h4>
-                <ul className="list-disc list-inside">
-                  {Object.entries(formErrors).map(([field, message]) => (
-                    <li key={field}>{message}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
             {/* Informações principais */}
             <section className="space-y-6 mb-8">
               <h2 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-3">
@@ -537,7 +486,7 @@ const CadastrarCliente: React.FC = () => {
                   name="cnpj"
                   value={formData.cnpj}
                   error={formErrors.cnpj}
-                  placeholder="00.000.000/0000-00"
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
                   required
                   onChange={handleInputChange}
                 />
@@ -676,16 +625,30 @@ const CadastrarCliente: React.FC = () => {
                     Definir Localização no Mapa
                   </button>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <InputField
+                      label="Latitude"
+                      name="latitude"
+                      value={formData.latitude?.toString() || ""}
+                      placeholder="Ex: -30.0346"
+                      onChange={handleInputChange}
+                      readOnly
+                    />
+
+                    <InputField
+                      label="Longitude"
+                      name="longitude"
+                      value={formData.longitude?.toString() || ""}
+                      placeholder="Ex: -51.2177"
+                      onChange={handleInputChange}
+                      readOnly
+                    />
+                  </div>
+
                   {formData.latitude && formData.longitude && (
                     <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                       <p className="text-sm text-green-700 font-medium mb-1">
-                        Coordenadas definidas:
-                      </p>
-                      <p className="text-xs text-green-600">
-                        Latitude: {formData.latitude}
-                      </p>
-                      <p className="text-xs text-green-600">
-                        Longitude: {formData.longitude}
+                        ✅ Coordenadas definidas
                       </p>
                     </div>
                   )}
