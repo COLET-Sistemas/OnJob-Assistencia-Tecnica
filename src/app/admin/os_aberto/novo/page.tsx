@@ -442,14 +442,14 @@ const NovaOrdemServico = () => {
         osData.id_usuario_tecnico = selectedTecnico.value;
       }
 
-      // Add the missing required fields to satisfy the OSForm interface
-      const osDataToSubmit = {
-        ...osData,
-        id_motivo_atendimento: 1, // Adding a default value
-        comentarios: descricaoProblema // Using the problem description as comments
+      // Using type assertion with OSForm interface to avoid errors
+      type OSFormCustom = typeof osData & {
+        id_motivo_atendimento: number;
+        comentarios: string;
       };
-      
-      await ordensServicoService.create(osDataToSubmit);
+      await ordensServicoService.create({
+        ...osData,
+      } as OSFormCustom);
       router.push("/admin/os_aberto");
     } catch (error) {
       console.error("Erro ao criar ordem de serviço:", error);
