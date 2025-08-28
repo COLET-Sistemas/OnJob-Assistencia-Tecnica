@@ -59,8 +59,11 @@ const SelectField: React.FC<SelectFieldProps> = ({
           aria-describedby={error ? errorId : undefined}
           aria-invalid={!!error}
         >
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
+          {options.map((option, index) => (
+            <option
+              key={`${name}-option-${option.value}-${index}`}
+              value={option.value}
+            >
               {option.label}
             </option>
           ))}
