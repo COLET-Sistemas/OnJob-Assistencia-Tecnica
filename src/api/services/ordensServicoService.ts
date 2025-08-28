@@ -36,7 +36,6 @@ interface OSDetalhada extends OSItem {
     id: number;
     descricao: string;
   };
-  comentarios: string;
   comentarios_pendencia?: string;
   regiao: {
     id: number;
@@ -81,8 +80,6 @@ interface OSFilterParams
 interface OSForm {
   id_cliente: number;
   id_maquina: number;
-  id_motivo_atendimento: number;
-  comentarios: string;
   id_regiao: number;
 }
 
