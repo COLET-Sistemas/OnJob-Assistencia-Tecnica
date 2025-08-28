@@ -492,9 +492,11 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                           if (empresaStr) {
                             try {
                               const empresaObj = JSON.parse(empresaStr);
-                              return (
-                                empresaObj.nome_bd || "Nome BD não definido"
-                              );
+                              const nomeBd =
+                                empresaObj.nome_bd || "Nome BD não definido";
+                              return nomeBd.includes(":")
+                                ? nomeBd.split(":").pop() 
+                                : nomeBd;
                             } catch {
                               return "Nome BD inválido";
                             }
@@ -503,6 +505,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                         })()
                       : "Nome BD não disponível"}
                   </p>
+
                   <p className="text-xs font-medium text-white">
                     Versão APP: {packageInfo.version}
                   </p>

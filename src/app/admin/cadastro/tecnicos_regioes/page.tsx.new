@@ -6,7 +6,7 @@ import { useDataFetch } from "@/hooks";
 import { useEffect, useCallback } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
-import PageHeaderNoFilters from "@/components/admin/ui/PageHeaderNoFilters";
+import PageHeader from "@/components/admin/ui/PageHeader";
 import { usuariosRegioesAPI } from "@/api/api";
 import { MapPin } from "lucide-react";
 
@@ -118,7 +118,7 @@ const CadastroUsuariosRegioes = () => {
 
   return (
     <>
-      <PageHeaderNoFilters
+      <PageHeader
         title="Lista de Técnicos X Regiões"
         config={{
           type: "list",

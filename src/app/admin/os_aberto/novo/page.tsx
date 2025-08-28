@@ -2,9 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
 import { LoadingSpinner as Loading } from "@/components/LoadingPersonalizado";
 import PageHeader from "@/components/admin/ui/PageHeader";
+import {
+  CustomSelect,
+  TextAreaField,
+  DateTimeField,
+  MachineOption,
+  type MachineOptionType
+} from "@/components/admin/form";
 import { clientesService } from "@/api/services/clientesService";
 import { maquinasService } from "@/api/services/maquinasService";
 import { motivosPendenciaService } from "@/api/services/motivosPendenciaService";
@@ -15,33 +22,33 @@ import { MotivoPendencia } from "@/types/admin/cadastro/motivos_pendencia";
 import { Maquina } from "@/types/admin/cadastro/maquinas";
 import { Usuario } from "@/types/admin/cadastro/usuarios";
 
-interface ClienteOption {
+import { OptionType } from "@/components/admin/form/CustomSelect";
+
+interface ClienteOption extends OptionType {
   value: number;
-  label: string;
 }
 
-interface MaquinaOption {
+interface MaquinaOption extends MachineOptionType {
   value: number;
-  label: string;
-  isInWarranty?: boolean;
-  data_final_garantia?: string;
 }
 
-interface MotivoPendenciaOption {
+interface MotivoPendenciaOption extends OptionType {
   value: number;
-  label: string;
 }
 
-interface TecnicoOption {
+interface TecnicoOption extends OptionType {
   value: number;
-  label: string;
 }
 
-interface ContatoOption {
+interface ContatoOption extends OptionType {
   value: number;
-  label: string;
   contato: ClienteContato;
   isCustom?: boolean;
+}
+
+interface FormaAberturaOption extends OptionType {
+  value: string;
+  label: string;
 }
 
 const NovaOrdemServico = () => {
@@ -64,7 +71,17 @@ const NovaOrdemServico = () => {
   >([]);
   const [selectedMotivoPendencia, setSelectedMotivoPendencia] =
     useState<MotivoPendenciaOption | null>(null);
-  const [comentarios, setComentarios] = useState("");
+  const [descricaoProblema, setDescricaoProblema] = useState("");
+  const [formaAbertura, setFormaAbertura] = useState<FormaAberturaOption>({
+    value: "telefone",
+    label: "Telefone",
+  });
+  const [dataAgendada, setDataAgendada] = useState("2025-06-14T09:00:00");
+  const formaAberturaOptions: FormaAberturaOption[] = [
+    { value: "email", label: "Email" },
+    { value: "telefone", label: "Telefone" },
+    { value: "whatsapp", label: "WhatsApp" },
+  ];
   const [isSearchingClientes, setIsSearchingClientes] = useState(false);
   const [loadingMaquinas, setLoadingMaquinas] = useState(false);
   const [contatoOptions, setContatoOptions] = useState<ContatoOption[]>([]);
@@ -82,6 +99,36 @@ const NovaOrdemServico = () => {
     null
   );
   const [loadingTecnicos, setLoadingTecnicos] = useState(false);
+
+  // Adaptadores de tipo para os handlers de mudança de select
+  const handleClienteSelectChange = (option: OptionType | null) => {
+    handleClienteChange(option as ClienteOption | null);
+  };
+
+  const handleContatoSelectChange = (option: OptionType | null) => {
+    const contatoOption = option as ContatoOption | null;
+    setSelectedContato(contatoOption);
+    setUseCustomContato(contatoOption?.isCustom || false);
+  };
+
+  const handleMaquinaSelectChange = (option: OptionType | null) => {
+    const maquinaOption = option as MaquinaOption | null;
+    if (maquinaOption && maquinaOption.value === -1) {
+      // Usuário selecionou "Buscar outra máquina..."
+      setSelectedMaquina(null);
+      setMaquinaInput(""); // Limpar o campo de busca
+    } else {
+      setSelectedMaquina(maquinaOption);
+    }
+  };
+
+  const handleMotivoPendenciaSelectChange = (option: OptionType | null) => {
+    setSelectedMotivoPendencia(option as MotivoPendenciaOption | null);
+  };
+
+  const handleTecnicoSelectChange = (option: OptionType | null) => {
+    setSelectedTecnico(option as TecnicoOption | null);
+  };
 
   // Carregar dados iniciais (motivos de pendência, técnicos e regiões)
   useEffect(() => {
@@ -286,58 +333,105 @@ const NovaOrdemServico = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedCliente || !selectedMaquina) {
-      alert("Por favor, preencha todos os campos obrigatórios.");
+    if (!selectedCliente || !selectedMaquina || !descricaoProblema.trim()) {
+      alert(
+        "Por favor, preencha todos os campos obrigatórios: Cliente, Máquina e Descrição do Problema."
+      );
+      return;
+    }
+
+    if (!formaAbertura || !formaAbertura.value) {
+      alert("Por favor, selecione uma forma de abertura válida.");
+      return;
+    }
+
+    // Validar se o contato foi selecionado
+    if (!selectedContato) {
+      alert("Por favor, selecione um contato.");
+      return;
+    }
+
+    // Validar se, para contato personalizado, pelo menos o nome foi informado
+    if (selectedContato.isCustom && !customContatoNome.trim()) {
+      alert("Por favor, informe pelo menos o nome do contato.");
       return;
     }
 
     setIsSaving(true);
 
     try {
+      // Formatar data_agendada para o formato correto: YYYY-MM-DD HH:MM:SS
+      const formattedDate = dataAgendada.replace("T", " ");
+
+      // Define complete type with all possible fields
       const osData: {
         id_cliente: number;
         id_maquina: number;
-        id_motivo_atendimento: number; // This field is required by the API
+        id_motivo_atendimento: number;
         id_motivo_pendencia?: number;
-        comentarios: string;
-        id_tecnico?: number; // Optional technician ID
+        descricao_problema: string;
+        origem_abertura: string;
+        forma_abertura: string;
+        em_garantia: boolean;
+        data_agendada: string;
+        id_tecnico?: number;
+        id_usuario_tecnico?: number;
         id_contato?: number;
-        contato_nome?: string;
-        contato_email?: string;
-        contato_telefone?: string;
-        contato_whatsapp?: string;
-        id_regiao: number; // Adding id_regiao as it's required by OSForm
+        id_contato_abertura?: number;
+        nome_contato_abertura?: string;
+        telefone_contato_abertura?: string;
+        whatsapp_contato_abertura?: string;
+        email_contato_abertura?: string;
+        id_regiao: number;
+        comentarios: string; // Required by OSForm
       } = {
         id_cliente: selectedCliente.value,
         id_maquina: selectedMaquina.value,
         id_motivo_atendimento: 1, // Providing a default value since this field is required
-        comentarios: comentarios,
+        descricao_problema: descricaoProblema,
+        origem_abertura: "interna", // Always set to "interna"
+        forma_abertura: formaAbertura.value,
+        em_garantia: selectedMaquina.isInWarranty || false,
+        data_agendada: formattedDate,
         id_regiao: 1, // Adding a required id_regiao field with a default value
+        comentarios: descricaoProblema, // Adding this to satisfy the OSForm type, using descricaoProblema as the value
       };
 
-      // Adicionar informações de contato
+      // Adicionar informações de contato com os novos campos
       if (selectedContato) {
         if (selectedContato.isCustom) {
           // Usando contato personalizado
           if (customContatoNome.trim()) {
-            osData.contato_nome = customContatoNome.trim();
+            osData.nome_contato_abertura = customContatoNome.trim();
 
             // Adicionar os novos campos personalizados
             if (customContatoEmail.trim()) {
-              osData.contato_email = customContatoEmail.trim();
+              osData.email_contato_abertura = customContatoEmail.trim();
             }
 
             if (customContatoTelefone.trim()) {
-              osData.contato_telefone = customContatoTelefone.trim();
+              osData.telefone_contato_abertura = customContatoTelefone.trim();
             }
 
             if (customContatoWhatsapp.trim()) {
-              osData.contato_whatsapp = customContatoWhatsapp.trim();
+              osData.whatsapp_contato_abertura = customContatoWhatsapp.trim();
             }
           }
         } else {
           // Usando contato da lista
           osData.id_contato = selectedContato.value;
+          osData.id_contato_abertura = selectedContato.value;
+          osData.nome_contato_abertura =
+            selectedContato.contato.nome ||
+            selectedContato.contato.nome_completo ||
+            "";
+          osData.telefone_contato_abertura =
+            selectedContato.contato.telefone || "";
+          osData.whatsapp_contato_abertura =
+            selectedContato.contato.whatsapp ||
+            selectedContato.contato.telefone ||
+            "";
+          osData.email_contato_abertura = selectedContato.contato.email || "";
         }
       }
 
@@ -349,6 +443,7 @@ const NovaOrdemServico = () => {
       // Adicionar técnico, se selecionado
       if (selectedTecnico) {
         osData.id_tecnico = selectedTecnico.value;
+        osData.id_usuario_tecnico = selectedTecnico.value;
       }
 
       await ordensServicoService.create(osData);
@@ -367,68 +462,7 @@ const NovaOrdemServico = () => {
     return <Loading fullScreen />;
   }
 
-  // Estilos customizados para o React Select
-  const customSelectStyles = {
-    control: (
-      provided: Record<string, unknown>,
-      state: { isFocused: boolean }
-    ) => ({
-      ...provided,
-      borderColor: state.isFocused ? "var(--primary)" : "#e2e8f0",
-      boxShadow: state.isFocused ? "0 0 0 1px var(--primary)" : "none",
-      "&:hover": {
-        borderColor: state.isFocused ? "var(--primary)" : "#cbd5e0",
-      },
-      borderRadius: "0.375rem",
-      padding: "2px",
-    }),
-    option: (
-      provided: Record<string, unknown>,
-      state: { isSelected: boolean; isFocused: boolean }
-    ) => ({
-      ...provided,
-      backgroundColor: state.isSelected
-        ? "var(--primary)"
-        : state.isFocused
-        ? "rgba(124, 84, 189, 0.1)"
-        : "transparent",
-      color: state.isSelected ? "white" : "var(--neutral-graphite)",
-      cursor: "pointer",
-    }),
-    menu: (provided: Record<string, unknown>) => ({
-      ...provided,
-      borderRadius: "0.375rem",
-      boxShadow:
-        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-      zIndex: 9999,
-    }),
-  };
-
-  // Componente personalizado para formatação das opções de máquina com badge
-  const MachineOptionFormatter = (
-    data: MaquinaOption,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    formatOptionLabelMeta: { context: "menu" | "value" }
-  ) => {
-    const isInWarranty = data.isInWarranty;
-
-    return (
-      <div className="flex items-center justify-between w-full">
-        <span>{data.label}</span>
-        {isInWarranty !== undefined && (
-          <span
-            className={`text-xs px-2 py-1 rounded-full ml-2 ${
-              isInWarranty
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
-          >
-            {isInWarranty ? "Em garantia" : "Sem garantia"}
-          </span>
-        )}
-      </div>
-    );
-  };
+  // Removendo estilos customizados e formatter, já que estamos usando o componente CustomSelect
 
   return (
     <div className="p-6">
@@ -443,38 +477,33 @@ const NovaOrdemServico = () => {
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Cliente */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cliente <span className="text-red-500">*</span>
-            </label>
-            <Select
+          {/* Primeira linha: Cliente e Contato */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Cliente */}
+            <CustomSelect
+              id="cliente"
+              label="Cliente"
+              required
               placeholder="Digite pelo menos 3 caracteres para buscar..."
               inputValue={clienteInput}
               onInputChange={handleClienteInputChange}
-              onChange={handleClienteChange}
+              onChange={handleClienteSelectChange}
               options={clienteOptions}
               value={selectedCliente}
               isLoading={isSearchingClientes}
-              isSearchable={true}
-              isClearable={true}
-              noOptionsMessage={({ inputValue }) =>
+              minCharsToSearch={3}
+              noOptionsMessageFn={({ inputValue }) =>
                 inputValue.length < 3
                   ? "Digite pelo menos 3 caracteres para buscar..."
                   : "Nenhum cliente encontrado"
               }
-              styles={customSelectStyles}
-              className="react-select-container"
-              classNamePrefix="react-select"
             />
-          </div>
 
-          {/* Contato */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contato
-            </label>
-            <Select
+            {/* Contato */}
+            <CustomSelect
+              id="contato"
+              label="Contato"
+              required
               placeholder={
                 selectedCliente
                   ? loadingContatos
@@ -484,17 +513,17 @@ const NovaOrdemServico = () => {
               }
               options={contatoOptions}
               value={selectedContato}
-              onChange={(option) => {
-                setSelectedContato(option);
-                setUseCustomContato(option?.isCustom || false);
-              }}
-              isDisabled={!selectedCliente || loadingContatos}
+              onChange={handleContatoSelectChange}
+              inputValue=""
+              onInputChange={() => {}}
               isLoading={loadingContatos}
-              styles={customSelectStyles}
-              className="react-select-container"
-              classNamePrefix="react-select"
-              noOptionsMessage={() =>
+              noOptionsMessageFn={() =>
                 "Nenhum contato encontrado para este cliente"
+              }
+              error={
+                selectedCliente && !selectedContato
+                  ? "Contato é obrigatório"
+                  : undefined
               }
             />
           </div>
@@ -504,15 +533,27 @@ const NovaOrdemServico = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome do Contato
+                  Nome do Contato <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={customContatoNome}
                   onChange={(e) => setCustomContatoNome(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                  className={`w-full px-3 py-2 border text-gray-900 rounded-md shadow-sm 
+                    focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] 
+                    ${
+                      !customContatoNome.trim()
+                        ? "border-red-300"
+                        : "border-gray-300"
+                    }`}
                   placeholder="Nome do contato"
+                  required
                 />
+                {!customContatoNome.trim() && (
+                  <p className="text-red-500 text-sm mt-1">
+                    Nome do contato é obrigatório
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -553,12 +594,13 @@ const NovaOrdemServico = () => {
             </div>
           )}
 
-          {/* Máquina */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Máquina <span className="text-red-500">*</span>
-            </label>
-            <Select
+          {/* Segunda linha: Máquina e Técnico */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Máquina */}
+            <CustomSelect
+              id="maquina"
+              label="Máquina"
+              required
               placeholder={
                 selectedCliente
                   ? loadingMaquinas
@@ -570,85 +612,108 @@ const NovaOrdemServico = () => {
               onInputChange={handleMaquinaInputChange}
               options={maquinaOptions}
               value={selectedMaquina}
-              onChange={(option: MaquinaOption | null) => {
-                if (option && option.value === -1) {
-                  // Usuário selecionou "Buscar outra máquina..."
-                  setSelectedMaquina(null);
-                  setMaquinaInput(""); // Limpar o campo de busca
-                } else {
-                  setSelectedMaquina(option);
-                }
-              }}
-              isDisabled={!selectedCliente || loadingMaquinas}
+              onChange={handleMaquinaSelectChange}
               isLoading={loadingMaquinas || isSearchingMaquinas}
-              isSearchable={true}
-              styles={customSelectStyles}
-              getOptionValue={(option: MaquinaOption) =>
-                option.value?.toString()
-              }
-              getOptionLabel={(option: MaquinaOption) => option.label}
-              formatOptionLabel={MachineOptionFormatter}
-              className="react-select-container"
-              classNamePrefix="react-select"
-              noOptionsMessage={({ inputValue }) =>
+              minCharsToSearch={3}
+              noOptionsMessageFn={({ inputValue }) =>
                 inputValue.length < 3
                   ? "Digite pelo menos 3 caracteres para buscar uma máquina..."
                   : "Nenhuma máquina encontrada"
               }
+              components={{ Option: MachineOption }}
             />
-          </div>
 
-          {/* Motivo de Pendência */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Motivo de Pendência
-            </label>
-            <Select
-              placeholder="Selecione o motivo de pendência"
-              options={motivosPendenciaOptions}
-              value={selectedMotivoPendencia}
-              onChange={setSelectedMotivoPendencia}
-              styles={customSelectStyles}
-              className="react-select-container"
-              classNamePrefix="react-select"
-              noOptionsMessage={() => "Nenhum motivo de pendência cadastrado"}
-            />
-          </div>
-
-          {/* Técnico */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Técnico
-            </label>
-            <Select
+            {/* Técnico */}
+            <CustomSelect
+              id="tecnico"
+              label="Técnico"
               placeholder="Selecione o técnico (opcional)"
               options={tecnicosOptions}
               value={selectedTecnico}
-              onChange={setSelectedTecnico}
+              onChange={handleTecnicoSelectChange}
+              inputValue=""
+              onInputChange={() => {}}
               isLoading={loadingTecnicos}
-              isClearable={true}
-              styles={customSelectStyles}
-              className="react-select-container"
-              classNamePrefix="react-select"
-              noOptionsMessage={() => "Nenhum técnico encontrado"}
+              noOptionsMessageFn={() => "Nenhum técnico encontrado"}
             />
           </div>
 
-          {/* Região removida conforme solicitação */}
+          {/* Terceira linha: Motivo de Pendência, Forma de Abertura e Data Agendada */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Motivo de Pendência */}
+            <CustomSelect
+              id="motivo-pendencia"
+              label="Motivo de Pendência"
+              placeholder="Selecione o motivo de pendência"
+              options={motivosPendenciaOptions}
+              value={selectedMotivoPendencia}
+              onChange={handleMotivoPendenciaSelectChange}
+              inputValue=""
+              onInputChange={() => {}}
+              isLoading={false}
+              noOptionsMessageFn={() => "Nenhum motivo de pendência cadastrado"}
+            />
 
-          {/* Comentários */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Comentários
-            </label>
-            <textarea
-              value={comentarios}
-              onChange={(e) => setComentarios(e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-              placeholder="Descreva o problema ou adicione informações relevantes para o atendimento"
+            {/* Forma de Abertura */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Forma de Abertura
+              </label>
+              <CreatableSelect
+                placeholder="Selecione ou digite uma forma de abertura"
+                options={formaAberturaOptions}
+                value={formaAbertura}
+                onChange={(newValue) => {
+                  if (newValue) {
+                    setFormaAbertura(newValue as FormaAberturaOption);
+                  } else {
+                    setFormaAbertura({ value: "telefone", label: "Telefone" });
+                  }
+                }}
+                styles={{
+                  // Using inline styles instead of getCustomSelectStyles() to match FormaAberturaOption type
+                  control: (provided, state) => ({
+                    ...provided,
+                    minHeight: "48px",
+                    height: "48px",
+                    borderColor: state.isFocused ? "var(--primary)" : "#e2e8f0",
+                    boxShadow: state.isFocused
+                      ? "0 0 0 1px var(--primary)"
+                      : "none",
+                    "&:hover": {
+                      borderColor: state.isFocused
+                        ? "var(--primary)"
+                        : "#cbd5e0",
+                    },
+                    borderRadius: "0.5rem",
+                  })
+                }}
+                formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
+            </div>
+
+            {/* Data Agendada */}
+            <DateTimeField
+              id="data-agendada"
+              label="Data Agendada"
+              value={dataAgendada}
+              onChange={(e) => setDataAgendada(e.target.value)}
+              required
             />
           </div>
+
+          {/* Descrição do Problema */}
+          <TextAreaField
+            id="descricao-problema"
+            label="Descrição do Problema"
+            value={descricaoProblema}
+            onChange={(e) => setDescricaoProblema(e.target.value)}
+            placeholder="Descreva detalhadamente o problema relatado pelo cliente"
+            required
+            rows={4}
+          />
 
           {/* Botões */}
           <div className="flex justify-end space-x-3">

@@ -1,12 +1,14 @@
 import React from "react";
-import Select, { StylesConfig } from "react-select";
+import Select, { StylesConfig, Props as SelectProps } from "react-select";
 
 export interface OptionType {
   value: string | number;
   label: string;
 }
 
-export const getCustomSelectStyles = (): StylesConfig<OptionType, false> => {
+export const getCustomSelectStyles = <
+  T extends OptionType = OptionType
+>(): StylesConfig<T, boolean> => {
   return {
     control: (
       provided: Record<string, unknown>,
@@ -79,6 +81,7 @@ interface CustomSelectProps {
   error?: string;
   minCharsToSearch?: number;
   noOptionsMessageFn?: (obj: { inputValue: string }) => string;
+  components?: SelectProps<OptionType>["components"]; // Allow custom components for react-select
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -95,6 +98,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   error,
   minCharsToSearch = 3,
   noOptionsMessageFn,
+  components,
 }) => {
   const defaultNoOptionsMessage = ({ inputValue }: { inputValue: string }) =>
     inputValue.length < minCharsToSearch
@@ -119,7 +123,14 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         placeholder={placeholder}
         inputValue={inputValue}
         onInputChange={onInputChange}
-        onChange={onChange}
+        onChange={(newValue) => {
+          // Safely cast the newValue to our expected type
+          if (newValue && "value" in newValue && "label" in newValue) {
+            onChange(newValue as OptionType);
+          } else {
+            onChange(null);
+          }
+        }}
         options={options}
         value={value}
         isLoading={isLoading}
@@ -133,6 +144,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           typeof document !== "undefined" ? document.body : undefined
         }
         menuPosition="fixed"
+        components={components}
       />
       {error && <div className="text-red-500 text-sm mt-1">{error}</div>}
     </div>

@@ -142,9 +142,6 @@ const EditarTecnicosRegioes: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tecnico, setTecnico] = useState<Usuario | null>(null);
   const [regioes, setRegioes] = useState<Regiao[]>([]);
-  const [existingAssociations, setExistingAssociations] = useState<
-    UsuarioRegiao[]
-  >([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Definir título da página e carregar dados iniciais
@@ -180,10 +177,6 @@ const EditarTecnicosRegioes: React.FC = () => {
         // Atualizar estados com os dados obtidos
         setTecnico(tecnicoResponse); // Armazenar apenas o técnico específico
         setRegioes(regioesResponse);
-
-        // Não precisamos verificar se o técnico existe, pois já temos o ID na URL e já buscamos o técnico
-        // Só precisamos processar as regiões associadas
-        setExistingAssociations(associacoesResponse || []);
 
         // Preparar regiões selecionadas com base nas associações existentes
         const regioesDoTecnico = (associacoesResponse || []).map(
@@ -254,37 +247,14 @@ const EditarTecnicosRegioes: React.FC = () => {
       setIsSubmitting(true);
 
       try {
-        // Primeiro, determinamos quais associações precisam ser removidas
-        const regioesIdsAtuais = formData.regioes.map((r) => Number(r.value));
-        const regioesIdsExistentes = existingAssociations.map(
-          (a) => a.id_regiao
-        );
+        // Extrair os ids das regiões selecionadas
+        const regioesIds = formData.regioes.map((r) => Number(r.value));
 
-        // Associações a remover (existem mas não estão no form)
-        const regioesParaRemover = existingAssociations.filter(
-          (assoc) => !regioesIdsAtuais.includes(assoc.id_regiao)
-        );
-
-        // Associações a adicionar (estão no form mas não existem)
-        const regioesParaAdicionar = regioesIdsAtuais.filter(
-          (id) => !regioesIdsExistentes.includes(id)
-        );
-
-        // Executa as remoções
-        const deletePromises = regioesParaRemover.map((assoc) =>
-          usuariosRegioesAPI.delete(assoc.id_regiao)
-        );
-
-        // Executa as adições
-        const createPromises = regioesParaAdicionar.map((idRegiao) =>
-          usuariosRegioesAPI.create({
-            id_usuario: formData.id_usuario!,
-            id_regiao: idRegiao,
-          })
-        );
-
-        // Aguarda todas as operações
-        await Promise.all([...deletePromises, ...createPromises]);
+        // Enviar uma única requisição com o id do usuário e todas as regiões
+        await usuariosRegioesAPI.update(formData.id_usuario!, {
+          id_usuario: formData.id_usuario!,
+          id_regiao: regioesIds,
+        });
 
         router.push("/admin/cadastro/tecnicos_regioes");
 
@@ -300,14 +270,7 @@ const EditarTecnicosRegioes: React.FC = () => {
         setIsSubmitting(false);
       }
     },
-    [
-      formData,
-      validateForm,
-      router,
-      showSuccess,
-      showError,
-      existingAssociations,
-    ]
+    [formData, validateForm, router, showSuccess, showError]
   );
 
   return (

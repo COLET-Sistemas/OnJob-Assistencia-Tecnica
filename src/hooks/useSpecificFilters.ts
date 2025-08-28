@@ -115,16 +115,14 @@ export const useTiposPecasFilters = () => {
   return useFilters(INITIAL_TIPOS_PECAS_FILTERS);
 };
 
-// 7. Para Usuários Regiões
+// 7. Para Usuários Regiões - Simplificado para filtrar apenas por região
 export interface UsuariosRegioesFilters {
   [key: string]: string;
-  nome_usuario: string;
   nome_regiao: string;
   incluir_inativos: string;
 }
 
 const INITIAL_USUARIOS_REGIOES_FILTERS: UsuariosRegioesFilters = {
-  nome_usuario: "",
   nome_regiao: "",
   incluir_inativos: "",
 };

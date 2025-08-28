@@ -215,15 +215,16 @@ const CadastrarTecnicosRegioes: React.FC = () => {
       setIsSubmitting(true);
 
       try {
-        // Criar associações para cada região selecionada
-        const promises = formData.regioes.map((regiao) =>
-          usuariosRegioesAPI.create({
-            id_usuario: formData.id_usuario!,
-            id_regiao: regiao.value as number,
-          })
+        // Extrair os ids das regiões selecionadas
+        const regioesIds = formData.regioes.map(
+          (regiao) => regiao.value as number
         );
 
-        await Promise.all(promises);
+        // Enviar uma única requisição com todas as regiões
+        await usuariosRegioesAPI.create({
+          id_usuario: formData.id_usuario!,
+          id_regiao: regioesIds,
+        });
 
         router.push("/admin/cadastro/tecnicos_regioes");
 
