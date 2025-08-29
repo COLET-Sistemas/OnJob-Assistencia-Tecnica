@@ -69,18 +69,21 @@ function TableList<T extends object>({
     <ListContainer>
       {customHeader}
 
-      {showFilter && filterOptions.length > 0 && (
-        <FilterPanel
-          title="Filtros"
-          pageName={title}
-          filterOptions={filterOptions}
-          filterValues={filterValues}
-          onFilterChange={onFilterChange}
-          onClearFilters={onClearFilters}
-          onClose={onFilterToggle}
-          onApplyFilters={onApplyFilters}
-        />
-      )}
+      {showFilter &&
+        filterOptions.length > 0 &&
+        typeof document !== "undefined" &&
+        document.body.getAttribute("data-filter-menu-closed") !== "true" && (
+          <FilterPanel
+            title="Filtros"
+            pageName={title}
+            filterOptions={filterOptions}
+            filterValues={filterValues}
+            onFilterChange={onFilterChange}
+            onClearFilters={onClearFilters}
+            onClose={onFilterToggle}
+            onApplyFilters={onApplyFilters}
+          />
+        )}
 
       <DataTable
         columns={finalColumns}

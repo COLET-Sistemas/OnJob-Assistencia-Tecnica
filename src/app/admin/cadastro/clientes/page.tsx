@@ -10,7 +10,7 @@ import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { useDataFetch } from "@/hooks";
 import type { Cliente } from "@/types/admin/cadastro/clientes";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
@@ -58,6 +58,11 @@ const CadastroClientes = () => {
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
 
+  // Controle de visibilidade do menu de filtros
+  const [localShowFilters, setLocalShowFilters] = useState(false);
+  // Ref para evitar que o menu reabra durante o recarregamento
+  const isReloadingRef = useRef(false);
+
   // Helper function to safely get client ID
   const getClienteId = (cliente: Cliente): number => {
     return cliente.id_cliente ?? cliente.id ?? 0;
@@ -85,7 +90,30 @@ const CadastroClientes = () => {
     registrosPorPagina: 25,
   });
 
+  // Funções de filtro modificadas para usar estado local
+  const handleApplyFilters = () => {
+    setLocalShowFilters(false); // Fecha o menu localmente
+    isReloadingRef.current = true; // Marca que vamos recarregar
+    aplicarFiltros(); // Aplica os filtros através do hook
+  };
+
+  const handleClearFilters = () => {
+    setLocalShowFilters(false); // Fecha o menu localmente
+    isReloadingRef.current = true; // Marca que vamos recarregar
+    limparFiltros(); // Limpa os filtros através do hook
+  };
+
+  const handleToggleFilters = () => {
+    if (!isReloadingRef.current) {
+      setLocalShowFilters(!localShowFilters); // Toggle local apenas se não estiver recarregando
+    }
+    toggleFilters(); // Toggle através do hook
+  };
+
   const fetchClientes = useCallback(async (): Promise<Cliente[]> => {
+    // Marcar que estamos recarregando
+    isReloadingRef.current = true;
+
     const params: Record<string, string | number> = {
       nro_pagina: paginacao.paginaAtual,
       qtde_registros: paginacao.registrosPorPagina,
@@ -96,15 +124,22 @@ const CadastroClientes = () => {
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
 
-    const response: ClientesResponse = await clientesAPI.getAll(params);
+    try {
+      const response: ClientesResponse = await clientesAPI.getAll(params);
 
-    setPaginacao((prev) => ({
-      ...prev,
-      totalPaginas: response.total_paginas,
-      totalRegistros: response.total_registros,
-    }));
+      setPaginacao((prev) => ({
+        ...prev,
+        totalPaginas: response.total_paginas,
+        totalRegistros: response.total_registros,
+      }));
 
-    return response.dados;
+      return response.dados;
+    } finally {
+      // Depois de recarregar, permitir mudanças no estado do menu
+      setTimeout(() => {
+        isReloadingRef.current = false;
+      }, 500); // pequeno delay para garantir que a renderização aconteça primeiro
+    }
   }, [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]);
 
   const {
@@ -128,6 +163,13 @@ const CadastroClientes = () => {
   useEffect(() => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [filtrosAplicados]);
+
+  // Effect para garantir que o menu permaneça fechado durante o recarregamento
+  useEffect(() => {
+    if (isReloadingRef.current) {
+      setLocalShowFilters(false);
+    }
+  }, [clientes]);
 
   const toggleExpand = useCallback((id: number | string) => {
     setExpandedClienteId((prevId) => {
@@ -317,6 +359,8 @@ const CadastroClientes = () => {
   const handleDelete = async (id: number) => {
     try {
       const response = await clientesAPI.delete(id);
+      setLocalShowFilters(false); // Garante que o menu esteja fechado após a exclusão
+      isReloadingRef.current = true; // Marca que vamos recarregar
       showSuccess(
         "Sucesso",
         response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
@@ -329,6 +373,10 @@ const CadastroClientes = () => {
         "Erro ao excluir",
         error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
       );
+    } finally {
+      setTimeout(() => {
+        isReloadingRef.current = false;
+      }, 500);
     }
   };
 
@@ -424,8 +472,8 @@ const CadastroClientes = () => {
         config={{
           type: "list",
           itemCount: paginacao.totalRegistros,
-          onFilterToggle: toggleFilters,
-          showFilters: showFilters,
+          onFilterToggle: handleToggleFilters,
+          showFilters: localShowFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
             label: "Novo Cliente",
@@ -439,13 +487,13 @@ const CadastroClientes = () => {
         keyField="id"
         columns={columns}
         renderActions={renderActions}
-        showFilter={showFilters}
+        showFilter={localShowFilters}
         filterOptions={filterOptions}
         filterValues={filtrosPainel}
         onFilterChange={handleFiltroChangeCustom}
-        onClearFilters={limparFiltros}
-        onApplyFilters={aplicarFiltros}
-        onFilterToggle={toggleFilters}
+        onClearFilters={handleClearFilters}
+        onApplyFilters={handleApplyFilters}
+        onFilterToggle={handleToggleFilters}
         emptyStateProps={{
           title: "Nenhum cliente encontrado",
           description: "Comece cadastrando um novo cliente.",

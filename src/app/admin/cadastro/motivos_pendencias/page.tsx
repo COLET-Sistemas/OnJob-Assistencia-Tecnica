@@ -4,7 +4,7 @@ import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { MotivoPendencia } from "@/types/admin/cadastro/motivos_pendencia";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
@@ -15,6 +15,8 @@ import { useToast } from "@/components/admin/ui/ToastContainer";
 const CadastroMotivosPendencia = () => {
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
+  const [localShowFilters, setLocalShowFilters] = useState(false);
+  const isReloadingRef = useRef(false);
 
   useEffect(() => {
     setTitle("Motivos de Pendências");
@@ -31,7 +33,15 @@ const CadastroMotivosPendencia = () => {
     toggleFilters,
   } = useMotivosFilters();
 
+  // Sincronizar estado local com o estado do hook quando não estiver recarregando
+  useEffect(() => {
+    if (!isReloadingRef.current) {
+      setLocalShowFilters(showFilters);
+    }
+  }, [showFilters]);
+
   const fetchMotivos = useCallback(async () => {
+    isReloadingRef.current = true;
     const params: Record<string, string> = {};
     if (filtrosAplicados.descricao)
       params.descricao = filtrosAplicados.descricao;
@@ -45,6 +55,13 @@ const CadastroMotivosPendencia = () => {
     loading,
     refetch,
   } = useDataFetch<MotivoPendencia[]>(fetchMotivos, [fetchMotivos]);
+
+  // Resetar o flag de recarregamento quando os dados são carregados
+  useEffect(() => {
+    if (!loading && isReloadingRef.current) {
+      isReloadingRef.current = false;
+    }
+  }, [loading]);
 
   if (loading) {
     return (
@@ -126,6 +143,21 @@ const CadastroMotivosPendencia = () => {
     },
   ];
 
+  const handleLocalToggleFilters = () => {
+    setLocalShowFilters((prev) => !prev);
+    toggleFilters();
+  };
+
+  const handleLocalApplyFilters = () => {
+    setLocalShowFilters(false);
+    aplicarFiltros();
+  };
+
+  const handleLocalClearFilters = () => {
+    setLocalShowFilters(false);
+    limparFiltros();
+  };
+
   const itemCount = motivos ? motivos.length : 0;
 
   return (
@@ -135,8 +167,8 @@ const CadastroMotivosPendencia = () => {
         config={{
           type: "list",
           itemCount: itemCount,
-          onFilterToggle: toggleFilters,
-          showFilters: showFilters,
+          onFilterToggle: handleLocalToggleFilters,
+          showFilters: localShowFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
             label: "Novo Motivo",
@@ -150,13 +182,13 @@ const CadastroMotivosPendencia = () => {
         keyField="id"
         columns={columns}
         renderActions={renderActions}
-        showFilter={showFilters}
+        showFilter={localShowFilters}
         filterOptions={filterOptions}
         filterValues={filtrosPainel}
         onFilterChange={handleFiltroChange}
-        onClearFilters={limparFiltros}
-        onApplyFilters={aplicarFiltros}
-        onFilterToggle={toggleFilters}
+        onClearFilters={handleLocalClearFilters}
+        onApplyFilters={handleLocalApplyFilters}
+        onFilterToggle={handleLocalToggleFilters}
       />
     </>
   );

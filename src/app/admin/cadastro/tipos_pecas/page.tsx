@@ -4,7 +4,7 @@ import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { TipoPeca } from "@/types/admin/cadastro/tipos_pecas";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 
 // Extensão do tipo TipoPeca para incluir codigo_erp
@@ -53,6 +53,8 @@ interface TiposPecasResponse {
 const CadastroTiposPecas = () => {
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
+  const [localShowFilters, setLocalShowFilters] = useState(false);
+  const isReloadingRef = useRef(false);
 
   useEffect(() => {
     setTitle("Tipos de Peças");
@@ -69,6 +71,13 @@ const CadastroTiposPecas = () => {
     toggleFilters,
   } = useFilters(INITIAL_TIPOS_PECAS_FILTERS);
 
+  // Sincronizar estado local com o estado do hook quando não estiver recarregando
+  useEffect(() => {
+    if (!isReloadingRef.current) {
+      setLocalShowFilters(showFilters);
+    }
+  }, [showFilters]);
+
   const [paginacao, setPaginacao] = useState<PaginacaoInfo>({
     paginaAtual: 1,
     totalPaginas: 1,
@@ -77,6 +86,7 @@ const CadastroTiposPecas = () => {
   });
 
   const fetchTiposPecas = useCallback(async (): Promise<TipoPecaExtended[]> => {
+    isReloadingRef.current = true;
     const params: Record<string, string | number> = {
       nro_pagina: paginacao.paginaAtual,
       qtde_registros: paginacao.registrosPorPagina,
@@ -111,6 +121,13 @@ const CadastroTiposPecas = () => {
     loading,
     refetch,
   } = useDataFetch<TipoPecaExtended[]>(fetchTiposPecas, [fetchTiposPecas]);
+
+  // Resetar o flag de recarregamento quando os dados são carregados
+  useEffect(() => {
+    if (!loading && isReloadingRef.current) {
+      isReloadingRef.current = false;
+    }
+  }, [loading]);
 
   const handlePageChange = useCallback((novaPagina: number) => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: novaPagina }));
@@ -214,6 +231,21 @@ const CadastroTiposPecas = () => {
     handleFiltroChange(campo, valor);
   };
 
+  const handleLocalToggleFilters = () => {
+    setLocalShowFilters((prev) => !prev);
+    toggleFilters();
+  };
+
+  const handleLocalApplyFilters = () => {
+    setLocalShowFilters(false);
+    aplicarFiltros();
+  };
+
+  const handleLocalClearFilters = () => {
+    setLocalShowFilters(false);
+    limparFiltros();
+  };
+
   const filterOptions = [
     {
       id: "codigo_erp",
@@ -242,8 +274,8 @@ const CadastroTiposPecas = () => {
         config={{
           type: "list",
           itemCount: paginacao.totalRegistros,
-          onFilterToggle: toggleFilters,
-          showFilters: showFilters,
+          onFilterToggle: handleLocalToggleFilters,
+          showFilters: localShowFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
             label: "Novo Tipo de Peça",
@@ -257,13 +289,13 @@ const CadastroTiposPecas = () => {
         keyField="id_tipo_peca"
         columns={columns}
         renderActions={renderActions}
-        showFilter={showFilters}
+        showFilter={localShowFilters}
         filterOptions={filterOptions}
         filterValues={filtrosPainel}
         onFilterChange={handleFiltroChangeCustom}
-        onClearFilters={limparFiltros}
-        onApplyFilters={aplicarFiltros}
-        onFilterToggle={toggleFilters}
+        onClearFilters={handleLocalClearFilters}
+        onApplyFilters={handleLocalApplyFilters}
+        onFilterToggle={handleLocalToggleFilters}
         emptyStateProps={{
           title: "Nenhum tipo de peça encontrado",
           description: "Comece cadastrando um novo tipo de peça.",

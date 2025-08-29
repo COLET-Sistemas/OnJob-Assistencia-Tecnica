@@ -14,7 +14,7 @@ const INITIAL_MOTIVOS_FILTERS: MotivosFilters = {
 };
 
 export const useMotivosFilters = () => {
-  return useFilters(INITIAL_MOTIVOS_FILTERS);
+  return useFilters(INITIAL_MOTIVOS_FILTERS, "filters_motivos_atendimento");
 };
 
 // 2. Para Regiões
@@ -34,7 +34,7 @@ const INITIAL_REGIOES_FILTERS: RegioesFilters = {
 };
 
 export const useRegioesFilters = () => {
-  return useFilters(INITIAL_REGIOES_FILTERS);
+  return useFilters(INITIAL_REGIOES_FILTERS, "filters_regioes");
 };
 
 // 3. Para Peças
@@ -54,7 +54,7 @@ const INITIAL_PECAS_FILTERS: PecasFilters = {
 };
 
 export const usePecasFilters = () => {
-  return useFilters(INITIAL_PECAS_FILTERS);
+  return useFilters(INITIAL_PECAS_FILTERS, "filters_pecas");
 };
 
 // 4. Para Máquinas
@@ -74,7 +74,7 @@ const INITIAL_MAQUINAS_FILTERS: MaquinasFilters = {
 };
 
 export const useMaquinasFilters = () => {
-  return useFilters(INITIAL_MAQUINAS_FILTERS);
+  return useFilters(INITIAL_MAQUINAS_FILTERS, "filters_maquinas");
 };
 
 // 5. Para Usuários
@@ -94,7 +94,7 @@ const INITIAL_USUARIOS_FILTERS: UsuariosFilters = {
 };
 
 export const useUsuariosFilters = () => {
-  return useFilters(INITIAL_USUARIOS_FILTERS);
+  return useFilters(INITIAL_USUARIOS_FILTERS, "filters_usuarios");
 };
 
 // 6. Para Tipo Peças
@@ -112,7 +112,7 @@ const INITIAL_TIPOS_PECAS_FILTERS: TiposPecasFilters = {
 };
 
 export const useTiposPecasFilters = () => {
-  return useFilters(INITIAL_TIPOS_PECAS_FILTERS);
+  return useFilters(INITIAL_TIPOS_PECAS_FILTERS, "filters_tipos_pecas");
 };
 
 // 7. Para Usuários Regiões - Simplificado para filtrar apenas por região
@@ -128,5 +128,8 @@ const INITIAL_USUARIOS_REGIOES_FILTERS: UsuariosRegioesFilters = {
 };
 
 export const useUsuariosRegioesFilters = () => {
-  return useFilters(INITIAL_USUARIOS_REGIOES_FILTERS);
+  return useFilters(
+    INITIAL_USUARIOS_REGIOES_FILTERS,
+    "filters_tecnicos_regioes"
+  );
 };

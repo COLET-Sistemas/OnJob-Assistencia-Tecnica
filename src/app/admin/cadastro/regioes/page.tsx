@@ -4,7 +4,7 @@ import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { Regiao } from "@/types/admin/cadastro/regioes";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
@@ -16,6 +16,10 @@ import { useToast } from "@/components/admin/ui/ToastContainer";
 const CadastroRegioes = () => {
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
+  // Adicionar um estado local para controlar a visibilidade do filtro
+  const [localShowFilters, setLocalShowFilters] = useState(false);
+  // Ref para evitar que o menu reabra durante o recarregamento
+  const isReloadingRef = useRef(false);
 
   useEffect(() => {
     setTitle("Regiões");
@@ -33,6 +37,9 @@ const CadastroRegioes = () => {
   } = useRegioesFilters();
 
   const fetchRegioes = useCallback(async () => {
+    // Marcar que estamos recarregando
+    isReloadingRef.current = true;
+
     const params: Record<string, string> = {};
     if (filtrosAplicados.nome) params.nome = filtrosAplicados.nome;
     if (filtrosAplicados.uf) params.uf = filtrosAplicados.uf;
@@ -44,7 +51,14 @@ const CadastroRegioes = () => {
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
 
-    return await regioesAPI.getAll(params);
+    try {
+      return await regioesAPI.getAll(params);
+    } finally {
+      // Depois de recarregar, permitir mudanças no estado do menu
+      setTimeout(() => {
+        isReloadingRef.current = false;
+      }, 500); // pequeno delay para garantir que a renderização aconteça primeiro
+    }
   }, [filtrosAplicados]);
 
   const {
@@ -52,6 +66,13 @@ const CadastroRegioes = () => {
     loading,
     refetch,
   } = useDataFetch<Regiao[]>(fetchRegioes, [fetchRegioes]);
+
+  // Effect para garantir que o menu permaneça fechado durante o recarregamento
+  useEffect(() => {
+    if (isReloadingRef.current) {
+      setLocalShowFilters(false);
+    }
+  }, [regioes]);
 
   if (loading) {
     return (
@@ -130,22 +151,46 @@ const CadastroRegioes = () => {
     },
   ];
 
+  // Funções de filtro modificadas para usar estado local
+  const handleApplyFilters = () => {
+    setLocalShowFilters(false); // Fecha o menu localmente
+    isReloadingRef.current = true; // Marca que vamos recarregar
+    aplicarFiltros(); // Aplica os filtros através do hook
+  };
+
+  const handleClearFilters = () => {
+    setLocalShowFilters(false); // Fecha o menu localmente
+    isReloadingRef.current = true; // Marca que vamos recarregar
+    limparFiltros(); // Limpa os filtros através do hook
+  };
+
+  const handleToggleFilters = () => {
+    if (!isReloadingRef.current) {
+      setLocalShowFilters(!localShowFilters); // Toggle local apenas se não estiver recarregando
+    }
+    toggleFilters(); // Toggle através do hook
+  };
+
   const handleDelete = async (id: number) => {
     try {
       const response = await regioesAPI.delete(id);
+      setLocalShowFilters(false); // Garante que o menu esteja fechado após a exclusão
+      isReloadingRef.current = true; // Marca que vamos recarregar
       await refetch();
-
       showSuccess(
         "Exclusão realizada!",
         response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
       );
     } catch (error) {
       console.error("Erro ao excluir região:", error);
-
       showError(
         "Erro ao excluir",
         error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
       );
+    } finally {
+      setTimeout(() => {
+        isReloadingRef.current = false;
+      }, 500);
     }
   };
 
@@ -233,8 +278,8 @@ const CadastroRegioes = () => {
         config={{
           type: "list",
           itemCount: itemCount,
-          onFilterToggle: toggleFilters,
-          showFilters: showFilters,
+          onFilterToggle: handleToggleFilters,
+          showFilters: localShowFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
             label: "Nova Região",
@@ -249,13 +294,13 @@ const CadastroRegioes = () => {
         columns={columns}
         renderActions={renderActions}
         emptyStateProps={emptyStateProps}
-        showFilter={showFilters}
+        showFilter={localShowFilters}
         filterOptions={filterOptions}
         filterValues={filtrosPainel}
         onFilterChange={handleFiltroChange}
-        onClearFilters={limparFiltros}
-        onApplyFilters={aplicarFiltros}
-        onFilterToggle={toggleFilters}
+        onClearFilters={handleClearFilters}
+        onApplyFilters={handleApplyFilters}
+        onFilterToggle={handleToggleFilters}
       />
     </>
   );

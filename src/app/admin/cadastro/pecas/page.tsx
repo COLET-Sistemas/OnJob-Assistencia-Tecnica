@@ -4,7 +4,7 @@ import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { Peca } from "@/types/admin/cadastro/pecas";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
@@ -44,6 +44,8 @@ interface PecasResponse {
 const CadastroPecas = () => {
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
+  const [localShowFilters, setLocalShowFilters] = useState(false);
+  const isReloadingRef = useRef(false);
 
   useEffect(() => {
     setTitle("Peças");
@@ -60,6 +62,13 @@ const CadastroPecas = () => {
     toggleFilters,
   } = useFilters(INITIAL_PECAS_FILTERS);
 
+  // Sincronizar estado local com o estado do hook quando não estiver recarregando
+  useEffect(() => {
+    if (!isReloadingRef.current) {
+      setLocalShowFilters(showFilters);
+    }
+  }, [showFilters]);
+
   const [paginacao, setPaginacao] = useState<PaginacaoInfo>({
     paginaAtual: 1,
     totalPaginas: 1,
@@ -68,6 +77,7 @@ const CadastroPecas = () => {
   });
 
   const fetchPecas = useCallback(async (): Promise<Peca[]> => {
+    isReloadingRef.current = true;
     const params: Record<string, string | number> = {
       nro_pagina: paginacao.paginaAtual,
       qtde_registros: paginacao.registrosPorPagina,
@@ -95,6 +105,13 @@ const CadastroPecas = () => {
     loading,
     refetch,
   } = useDataFetch<Peca[]>(fetchPecas, [fetchPecas]);
+
+  // Resetar o flag de recarregamento quando os dados são carregados
+  useEffect(() => {
+    if (!loading && isReloadingRef.current) {
+      isReloadingRef.current = false;
+    }
+  }, [loading]);
 
   const handlePageChange = useCallback((novaPagina: number) => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: novaPagina }));
@@ -203,6 +220,21 @@ const CadastroPecas = () => {
     handleFiltroChange(campo, valor);
   };
 
+  const handleLocalToggleFilters = () => {
+    setLocalShowFilters((prev) => !prev);
+    toggleFilters();
+  };
+
+  const handleLocalApplyFilters = () => {
+    setLocalShowFilters(false);
+    aplicarFiltros();
+  };
+
+  const handleLocalClearFilters = () => {
+    setLocalShowFilters(false);
+    limparFiltros();
+  };
+
   const filterOptions = [
     {
       id: "codigo",
@@ -231,8 +263,8 @@ const CadastroPecas = () => {
         config={{
           type: "list",
           itemCount: paginacao.totalRegistros,
-          onFilterToggle: toggleFilters,
-          showFilters: showFilters,
+          onFilterToggle: handleLocalToggleFilters,
+          showFilters: localShowFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
             label: "Nova Peça",
@@ -246,13 +278,13 @@ const CadastroPecas = () => {
         keyField="id"
         columns={columns}
         renderActions={renderActions}
-        showFilter={showFilters}
+        showFilter={localShowFilters}
         filterOptions={filterOptions}
         filterValues={filtrosPainel}
         onFilterChange={handleFiltroChangeCustom}
-        onClearFilters={limparFiltros}
-        onApplyFilters={aplicarFiltros}
-        onFilterToggle={toggleFilters}
+        onClearFilters={handleLocalClearFilters}
+        onApplyFilters={handleLocalApplyFilters}
+        onFilterToggle={handleLocalToggleFilters}
         emptyStateProps={{
           title: "Nenhuma peça encontrada",
           description: "Comece cadastrando uma nova peça.",
