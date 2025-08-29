@@ -1,6 +1,9 @@
+import { ordensServicoService } from "./services/ordensServicoService";
+
 export const ordensServicoAPI = {
   getPendentes: (params = {}) =>
     api.get("/ordens_servico", { params: { ...params } }),
+  getDashboard: (params = {}) => ordensServicoService.getDashboard(params),
 };
 
 const API_CONFIG = {

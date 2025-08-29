@@ -126,6 +126,18 @@ class OrdensServicoService {
     return api.get(`${this.baseUrl}?resumido=s&situacao=1,2,3,4,5`);
   }
 
+  async getDashboard(params = {}): Promise<{
+    total_registros: number;
+    total_paginas: number;
+    nro_pagina: number;
+    qtde_registros: number;
+    dados: Record<string, unknown>[]; // Tipo mais seguro que any
+  }> {
+    return api.get(`${this.baseUrl}`, {
+      params: { situacao: "1,2,3,4,5", resumido: "S", ...params },
+    });
+  }
+
   async getById(id: number): Promise<OSDetalhada> {
     return api.get<OSDetalhada>(`${this.baseUrl}/${id}`);
   }

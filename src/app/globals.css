@@ -2,27 +2,27 @@
 
 :root {
   /* Cores Principais */
-  --primary: #7C54BD;
+  --primary: #7c54bd;
   /* Roxo */
 
   /* Cores Secundárias */
-  --secondary-yellow: #F6C647;
+  --secondary-yellow: #f6c647;
   /* Amarela */
-  --secondary-green: #75FABD;
+  --secondary-green: #75fabd;
   /* Verde */
 
   /* Base Neutras */
-  --neutral-white: #FFFFFF;
+  --neutral-white: #ffffff;
   /* Branco */
-  --neutral-light-gray: #F4F4F4;
+  --neutral-light-gray: #f4f4f4;
   /* Cinza Claro */
-  --neutral-graphite: #2E2E2E;
+  --neutral-graphite: #2e2e2e;
   /* Grafite */
 
   /* Tons Escuros */
   --dark-black: #000000;
   /* Preto */
-  --dark-navy: #1E2A38;
+  --dark-navy: #1e2a38;
   /* Azul Marinho */
 
   /* Cores do sistema */
@@ -50,3 +50,27 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}

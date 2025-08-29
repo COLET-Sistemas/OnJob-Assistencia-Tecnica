@@ -518,6 +518,28 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-10 pt-6 border-t border-gray-200 text-center">
+            <div className="mb-4">
+              <a
+                href="/dashboard-panel"
+                className="inline-flex items-center text-sm text-[#7C54BD] hover:text-[#5A3B95] transition-colors"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mr-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+                  />
+                </svg>
+                Acessar Painel de Monitoramento
+              </a>
+            </div>
             <p className="text-gray-500 text-xs">
               © 2025 OnJob Sistemas. Todos os direitos reservados - Versão{" "}
               {packageInfo.version}

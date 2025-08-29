@@ -158,3 +158,27 @@ export function validarDocumento(documento: string): boolean {
   // Se não for nenhum dos dois formatos, é inválido
   return false;
 }
+
+/**
+ * Formata uma data ISO para o formato DD/MM/YYYY HH:MM
+ * @param dataISO String contendo a data em formato ISO
+ * @returns Data formatada ou string vazia se inválida
+ */
+export function formatarData(dataISO: string): string {
+  if (!dataISO) return "-";
+
+  try {
+    const data = new Date(dataISO);
+    if (isNaN(data.getTime())) return "-";
+
+    const dia = data.getDate().toString().padStart(2, "0");
+    const mes = (data.getMonth() + 1).toString().padStart(2, "0");
+    const ano = data.getFullYear();
+    const hora = data.getHours().toString().padStart(2, "0");
+    const minuto = data.getMinutes().toString().padStart(2, "0");
+
+    return `${dia}/${mes}/${ano} ${hora}:${minuto}`;
+  } catch {
+    return "-";
+  }
+}

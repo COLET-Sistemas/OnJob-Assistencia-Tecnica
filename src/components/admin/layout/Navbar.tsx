@@ -1,4 +1,5 @@
 import { useTitle } from "@/context/TitleContext";
+import Link from "next/link";
 import {
   Bell,
   ChevronDown,
@@ -10,6 +11,7 @@ import {
   UsersRound,
   Minimize,
   UserCircle,
+  LayoutDashboard,
 } from "lucide-react";
 import { useEffect, useState, memo } from "react";
 
@@ -167,6 +169,16 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen, title }: NavbarProps) {
               </span>
             </button>
           </div>
+          <Link
+            href="/dashboard-panel"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-700 hover:text-[#7C54BD] transition-colors p-1.5 hover:bg-gray-200 rounded-full cursor-pointer"
+            aria-label="Painel Dashboard"
+            title="Painel Dashboard"
+          >
+            <LayoutDashboard size={20} className="cursor-pointer" />
+          </Link>
           <button
             onClick={toggleFullScreen}
             className="text-gray-700 hover:text-[#7C54BD] transition-colors p-1.5 hover:bg-gray-200 rounded-full cursor-pointer"
