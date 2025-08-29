@@ -26,7 +26,6 @@ const CadastroRegioes = () => {
   }, [setTitle]);
 
   const {
-    showFilters,
     filtrosPainel,
     filtrosAplicados,
     activeFiltersCount,

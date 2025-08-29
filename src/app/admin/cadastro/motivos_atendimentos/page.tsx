@@ -25,7 +25,6 @@ const CadastroMotivosAtendimento = () => {
   }, [setTitle]);
 
   const {
-    showFilters,
     filtrosPainel,
     filtrosAplicados,
     activeFiltersCount,
@@ -33,7 +32,6 @@ const CadastroMotivosAtendimento = () => {
     limparFiltros,
     aplicarFiltros,
     toggleFilters,
-    forceMenuClosedOnNextLoad,
   } = useMotivosFilters();
 
   // Remova este effect pois queremos controlar o estado local independentemente
