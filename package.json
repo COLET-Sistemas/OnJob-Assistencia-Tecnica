@@ -1,6 +1,6 @@
 {
   "name": "colet_assist_tecnica",
-  "version": "0.20250829.1",
+  "version": "0.20250901.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",

@@ -13,9 +13,17 @@ const INITIAL_MOTIVOS_FILTERS: MotivosFilters = {
   incluir_inativos: "",
 };
 
-export const useMotivosFilters = () => {
+export const useMotivosAtendimentoFilters = () => {
   return useFilters(INITIAL_MOTIVOS_FILTERS, "filters_motivos_atendimento");
 };
+
+// 1.1 Para Motivos de Pendência
+export const useMotivosPendenciaFilters = () => {
+  return useFilters(INITIAL_MOTIVOS_FILTERS, "filters_motivos_pendencia");
+};
+
+// Para manter compatibilidade com código existente
+export const useMotivosFilters = useMotivosAtendimentoFilters;
 
 // 2. Para Regiões
 export interface RegioesFilters {

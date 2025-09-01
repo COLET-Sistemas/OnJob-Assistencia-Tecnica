@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
-import { useMotivosFilters } from "@/hooks/useSpecificFilters";
+import { useMotivosAtendimentoFilters } from "@/hooks/useSpecificFilters";
 import { motivosAtendimentoAPI } from "@/api/api";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 
@@ -32,7 +32,7 @@ const CadastroMotivosAtendimento = () => {
     limparFiltros,
     aplicarFiltros,
     toggleFilters,
-  } = useMotivosFilters();
+  } = useMotivosAtendimentoFilters();
 
   // Remova este effect pois queremos controlar o estado local independentemente
   // useEffect(() => {

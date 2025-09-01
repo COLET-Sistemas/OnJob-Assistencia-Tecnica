@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
-import { useMotivosFilters } from "../../../../hooks/useSpecificFilters";
+import { useMotivosPendenciaFilters } from "@/hooks/useSpecificFilters";
 import { motivosPendenciaAPI } from "@/api/api";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 
@@ -31,7 +31,7 @@ const CadastroMotivosPendencia = () => {
     limparFiltros,
     aplicarFiltros,
     toggleFilters,
-  } = useMotivosFilters();
+  } = useMotivosPendenciaFilters();
 
   // Sincronizar estado local com o estado do hook quando não estiver recarregando
   useEffect(() => {
