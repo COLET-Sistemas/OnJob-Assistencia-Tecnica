@@ -45,7 +45,7 @@ const menuItems: MenuItem[] = [
   },
   {
     key: "os_aberto",
-    label: "OSs em Aberto",
+    label: "Ordens de Serviço",
     icon: FileCog,
     path: "/admin/os_aberto",
   },
@@ -495,7 +495,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                               const nomeBd =
                                 empresaObj.nome_bd || "Nome BD não definido";
                               return nomeBd.includes(":")
-                                ? nomeBd.split(":").pop() 
+                                ? nomeBd.split(":").pop()
                                 : nomeBd;
                             } catch {
                               return "Nome BD inválido";

@@ -14,6 +14,7 @@ import {
   LoadingButton,
 } from "@/components/admin/form";
 import PageHeader from "@/components/admin/ui/PageHeader";
+import { LoadingSpinner } from "@/components/LoadingPersonalizado";
 
 interface EditarRegiaoProps {
   params: Promise<{
@@ -199,11 +200,13 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
 
   if (!resolvedParams || loading) {
     return (
-      <div className="flex items-center justify-center min-h-[200px]">
-        <span className="text-[#7C54BD] text-lg font-semibold">
-          Carregando dados da região...
-        </span>
-      </div>
+      <LoadingSpinner
+        text="Carregando dados da região..."
+        size="medium"
+        color="primary"
+        fullScreen={false}
+        className="min-h-[200px]"
+      />
     );
   }
 

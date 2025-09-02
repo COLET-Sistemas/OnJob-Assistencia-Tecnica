@@ -11,7 +11,7 @@ import {
   UsersRound,
   Minimize,
   UserCircle,
-  LayoutDashboard,
+  MonitorDot,
 } from "lucide-react";
 import { useEffect, useState, memo } from "react";
 
@@ -177,7 +177,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen, title }: NavbarProps) {
             aria-label="Painel Dashboard"
             title="Painel Dashboard"
           >
-            <LayoutDashboard size={20} className="cursor-pointer" />
+            <MonitorDot size={20} className="cursor-pointer" />
           </Link>
           <button
             onClick={toggleFullScreen}

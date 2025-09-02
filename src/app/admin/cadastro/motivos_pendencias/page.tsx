@@ -99,15 +99,15 @@ const CadastroMotivosPendencia = () => {
       await refetch();
 
       showSuccess(
-        "Exclusão realizada!",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+        "Inativação realizada!",
+        response 
       );
     } catch (error) {
-      console.error("Erro ao excluir motivo de pendência:", error);
+      console.error("Erro ao inativar motivo de pendência:", error);
 
       showError(
-        "Erro ao excluir",
-        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+        "Erro ao inativar",
+        error as Record<string, unknown>
       );
     }
   };
@@ -121,8 +121,8 @@ const CadastroMotivosPendencia = () => {
       <DeleteButton
         id={motivo.id}
         onDelete={handleDelete}
-        confirmText="Deseja realmente excluir este motivo de pendência?"
-        confirmTitle="Exclusão de Motivo de Pendência"
+        confirmText="Deseja realmente inativar este motivo de pendência?"
+        confirmTitle="Inativação de Motivo de Pendência"
         itemName={`${motivo.descricao}`}
       />
     </div>

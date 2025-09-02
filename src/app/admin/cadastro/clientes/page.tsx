@@ -358,19 +358,19 @@ const CadastroClientes = () => {
   const handleDelete = async (id: number) => {
     try {
       const response = await clientesAPI.delete(id);
-      setLocalShowFilters(false); // Garante que o menu esteja fechado após a exclusão
-      isReloadingRef.current = true; // Marca que vamos recarregar
+      setLocalShowFilters(false); 
+      isReloadingRef.current = true; 
       showSuccess(
         "Sucesso",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+        response 
       );
       await refetch();
     } catch (error) {
-      console.error("Erro ao excluir cliente:", error);
+      console.error("Erro ao inativar cliente:", error);
 
       showError(
-        "Erro ao excluir",
-        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+        "Erro ao inativar",
+        error as Record<string, unknown> 
       );
     } finally {
       setTimeout(() => {
@@ -395,8 +395,8 @@ const CadastroClientes = () => {
         <DeleteButton
           id={clientId}
           onDelete={handleDelete}
-          confirmText="Deseja realmente excluir este cliente?"
-          confirmTitle="Exclusão de Cliente"
+          confirmText="Deseja realmente inativar este cliente?"
+          confirmTitle="Inativação de Cliente"
           itemName={`${cliente.nome_fantasia || cliente.razao_social}`}
         />
       </div>

@@ -237,15 +237,15 @@ const CadastroMaquinas = () => {
       const response = await maquinasAPI.delete(id);
       showSuccess(
         "Sucesso",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+        response 
       );
       await refetch();
     } catch (error) {
-      console.error("Erro ao excluir máquina:", error);
+      console.error("Erro ao inativar máquina:", error);
 
       showError(
-        "Erro ao excluir",
-        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+        "Erro ao inativar",
+        error as Record<string, unknown> 
       );
     }
   };
@@ -256,8 +256,8 @@ const CadastroMaquinas = () => {
       <DeleteButton
         id={maquina.id}
         onDelete={handleDelete}
-        confirmText="Deseja realmente excluir esta máquina?"
-        confirmTitle="Exclusão de Máquina"
+        confirmText="Deseja realmente inativar esta máquina?"
+        confirmTitle="Inativação de Máquina"
         itemName={`${maquina.numero_serie} - ${
           maquina.descricao || "Sem descrição"
         }`}

@@ -188,15 +188,15 @@ const CadastroTiposPecas = () => {
       await refetch();
 
       showSuccess(
-        "Exclusão realizada!",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+        "Inativação realizada!",
+        response 
       );
     } catch (error) {
-      console.error("Erro ao excluir tipo de peça:", error);
+      console.error("Erro ao inativar tipo de peça:", error);
 
       showError(
-        "Erro ao excluir",
-        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+        "Erro ao inativar",
+        error as Record<string, unknown> 
       );
     }
   };
@@ -210,8 +210,8 @@ const CadastroTiposPecas = () => {
       <DeleteButton
         id={tipoPeca.id_tipo_peca}
         onDelete={handleDelete}
-        confirmText="Deseja realmente excluir este tipo de peça?"
-        confirmTitle="Exclusão de Tipo de Peça"
+        confirmText="Deseja realmente inativar este tipo de peça?"
+        confirmTitle="Inativação de Tipo de Peça"
         itemName={`${tipoPeca.descricao}`}
       />
     </div>

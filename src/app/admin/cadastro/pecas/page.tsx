@@ -187,9 +187,9 @@ const CadastroPecas = () => {
       showSuccess("Sucesso", response);
       await refetch();
     } catch (error) {
-      console.error("Erro ao excluir peça:", error);
+      console.error("Erro ao iantivar peça:", error);
 
-      showError("Erro ao excluir", error as Record<string, unknown>);
+      showError("Erro ao inativar", error as Record<string, unknown>);
     }
   };
 
@@ -199,8 +199,8 @@ const CadastroPecas = () => {
       <DeleteButton
         id={peca.id}
         onDelete={handleDelete}
-        confirmText="Deseja realmente excluir esta peça?"
-        confirmTitle="Exclusão de Peça"
+        confirmText="Deseja realmente inativar esta peça?"
+        confirmTitle="Inativação de Peça"
         itemName={`${peca.codigo_peca}`}
       />
     </div>

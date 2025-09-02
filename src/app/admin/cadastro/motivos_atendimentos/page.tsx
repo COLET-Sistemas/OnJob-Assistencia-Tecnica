@@ -95,12 +95,12 @@ const CadastroMotivosAtendimento = () => {
   const handleDelete = async (id: number) => {
     try {
       const response = await motivosAtendimentoAPI.delete(id);
-      setLocalShowFilters(false); // Garante que o menu esteja fechado após a exclusão
-      isReloadingRef.current = true; // Marca que vamos recarregar
+      setLocalShowFilters(false);
+      isReloadingRef.current = true;
       await refetch();
       showSuccess("Inativação realizada!", response);
     } catch (error) {
-      console.error("Erro ao excluir motivo de atendimento:", error);
+      console.error("Erro ao inativar motivo de atendimento:", error);
       showError("Erro ao inativar", error as Record<string, unknown>);
     } finally {
       setTimeout(() => {
@@ -148,8 +148,8 @@ const CadastroMotivosAtendimento = () => {
       <DeleteButton
         id={motivo.id}
         onDelete={handleDelete}
-        confirmText="Deseja realmente excluir este motivo de atendimento?"
-        confirmTitle="Exclusão de Motivo de Atendimento"
+        confirmText="Deseja realmente inativar este motivo de atendimento?"
+        confirmTitle="Inativação de Motivo de Atendimento"
         itemName={`${motivo.descricao}`}
       />
     </div>

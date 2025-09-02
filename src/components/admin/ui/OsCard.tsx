@@ -2,6 +2,17 @@
 
 import React from "react";
 import { formatarData } from "@/utils/formatters";
+import {
+  Clock,
+  CloudDrizzle,
+  Check,
+  X,
+  Eye,
+  MapPin,
+  Cpu,
+  User,
+  Calendar,
+} from "lucide-react";
 
 interface OrdemServico {
   id_os: number;
@@ -81,106 +92,25 @@ const OsCard: React.FC<OsCardProps> = ({ os }) => {
   const getSituacaoIcon = () => {
     switch (os.situacao_os.codigo) {
       case 1: // Pendente
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        );
+        return <Clock className="h-4 w-4" />;
       case 2: // Em Andamento
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-            />
-          </svg>
-        );
+        return <CloudDrizzle className="h-4 w-4" />;
       case 3: // Concluída
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        );
+        return <Check className="h-4 w-4" />;
       case 4: // Cancelada
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        );
+        return <X className="h-4 w-4" />;
       case 5: // Em Espera
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-            />
-          </svg>
-        );
+        return <Eye className="h-4 w-4" />;
       default:
         return null;
     }
   };
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 h-full flex flex-col">
+    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100 h-full flex flex-col">
       {/* Cabeçalho com informações principais */}
       <div
-        className="p-4 relative border-b"
+        className="p-3 relative border-b"
         style={{ borderColor: `${getStatusColor(os.situacao_os.codigo)}40` }}
       >
         <div className="flex justify-between items-center">
@@ -208,27 +138,8 @@ const OsCard: React.FC<OsCardProps> = ({ os }) => {
         </div>
 
         {/* Localização */}
-        <div className="flex items-center text-xs text-gray-500 mt-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-3.5 w-3.5 mr-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
+        <div className="flex items-center text-xs text-gray-500">
+          <MapPin className="h-3.5 w-3.5 mr-1" />
           <span>
             {os.cliente.cidade}/{os.cliente.uf}
           </span>
@@ -236,78 +147,41 @@ const OsCard: React.FC<OsCardProps> = ({ os }) => {
       </div>
 
       {/* Corpo do card com informações relevantes */}
-      <div className="p-4 flex-1 flex flex-col">
+      <div className="p-3 flex-1 flex flex-col">
         {/* Máquina */}
-        <div className="mb-3">
-          <div className="flex items-center text-xs text-gray-500 mb-1">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-3.5 w-3.5 mr-1.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
-              />
-            </svg>
-            <span>MÁQUINA</span>
+        <div className="mb-2">
+          <div className="flex items-center">
+            <Cpu className="h-3 w-3 mr-1.5 text-gray-500" />
+            <p className="text-xs font-medium text-gray-800">
+              {os.maquina.modelo || os.maquina.descricao}
+              {os.maquina.numero_serie && (
+                <span className="text-[10px] text-gray-500 ml-1">
+                  (S/N: {os.maquina.numero_serie})
+                </span>
+              )}
+            </p>
           </div>
-          <p className="text-sm font-medium text-gray-800">
-            {os.maquina.modelo || os.maquina.descricao}
-            {os.maquina.numero_serie && (
-              <span className="text-xs text-gray-500 ml-1">
-                (S/N: {os.maquina.numero_serie})
-              </span>
-            )}
-          </p>
         </div>
 
         {/* Técnico */}
-        <div className="mb-3">
-          <div className="flex items-center text-xs text-gray-500 mb-1">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-3.5 w-3.5 mr-1.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        <div className="mb-2">
+          <div className="flex items-center">
+            <User className="h-3 w-3 mr-1.5 text-gray-500" />
+            <p
+              className={`text-xs font-medium ${
+                os.tecnico?.nome ? "text-gray-800" : "text-red-500"
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-            <span>TÉCNICO</span>
+              {os.tecnico?.nome || "Indefinido"}
+            </p>
           </div>
-          <p className="text-sm font-medium text-gray-800">
-            {os.tecnico.nome || "Não atribuído"}
-          </p>
         </div>
 
         {/* Datas */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <div>
+        <div className="flex flex-wrap gap-3 mb-3">
+          <div className="flex-grow min-w-[45%]">
             <div className="flex items-center text-xs text-gray-500 mb-1">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-3.5 w-3.5 mr-1.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
+              <Calendar className="h-3 w-3 mr-1" />
               <span>ABERTURA</span>
             </div>
             <p className="text-xs font-medium text-gray-700">
@@ -316,53 +190,23 @@ const OsCard: React.FC<OsCardProps> = ({ os }) => {
                 : "-"}
             </p>
           </div>
-          <div>
-            <div className="flex items-center text-xs text-gray-500 mb-1">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-3.5 w-3.5 mr-1.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-              <span>AGENDADA</span>
+          {os.data_agendada && (
+            <div className="flex-grow min-w-[45%]">
+              <div className="flex items-center text-xs text-gray-500 mb-1">
+                <Calendar className="h-3 w-3 mr-1" />
+                <span>AGENDADA</span>
+              </div>
+              <p className="text-xs font-medium text-gray-700">
+                {formatarData(os.data_agendada)}
+              </p>
             </div>
-            <p className="text-xs font-medium text-gray-700">
-              {os.data_agendada
-                ? formatarData(os.data_agendada)
-                : "Não agendada"}
-            </p>
-          </div>
+          )}
         </div>
 
-        {/* Descrição do problema */}
+        {/* Descrição do problema - sem título e com fundo diferente */}
         <div className="mt-auto">
-          <div className="flex items-center text-xs text-gray-500 mb-1">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-3.5 w-3.5 mr-1.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>PROBLEMA</span>
-          </div>
           <p
-            className="text-sm line-clamp-2 text-gray-700"
+            className="text-xs line-clamp-2 text-gray-700 bg-gray-50 p-2 rounded-md border border-gray-100"
             title={os.descricao_problema}
           >
             {os.descricao_problema || "Sem descrição"}
@@ -370,20 +214,20 @@ const OsCard: React.FC<OsCardProps> = ({ os }) => {
         </div>
 
         {/* Tags importantes */}
-        <div className="flex flex-wrap gap-1.5 mt-3">
+        <div className="flex flex-wrap gap-1 mt-2">
           {os.em_garantia && (
-            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+            <span className="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
               Em Garantia
             </span>
           )}
           {!os.liberacao_financeira.liberada && (
-            <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded">
+            <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">
               Pendência Financeira
             </span>
           )}
           {os.situacao_os.motivo_pendencia && (
             <span
-              className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded truncate max-w-full"
+              className="text-[10px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded truncate max-w-full"
               title={os.situacao_os.motivo_pendencia}
             >
               {os.situacao_os.motivo_pendencia}

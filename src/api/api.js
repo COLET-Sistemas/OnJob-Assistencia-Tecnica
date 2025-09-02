@@ -221,7 +221,7 @@ export const regioesAPI = {
   getById: (id) => api.get("/regioes", { params: { id } }),
   create: (regiaoData) => api.post("/regioes", regiaoData),
   update: (id, regiaoData) => api.put(`/regioes?id=${id}`, regiaoData),
-  delete: (id) => api.delete(`/regioes/${id}`),
+  delete: (id) => api.delete(`/regioes?id=${id}`),
 };
 
 export const pecasAPI = {

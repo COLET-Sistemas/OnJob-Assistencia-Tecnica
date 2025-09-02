@@ -173,19 +173,13 @@ const CadastroRegioes = () => {
   const handleDelete = async (id: number) => {
     try {
       const response = await regioesAPI.delete(id);
-      setLocalShowFilters(false); // Garante que o menu esteja fechado após a exclusão
-      isReloadingRef.current = true; // Marca que vamos recarregar
+      setLocalShowFilters(false);
+      isReloadingRef.current = true;
       await refetch();
-      showSuccess(
-        "Exclusão realizada!",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
-      );
+      showSuccess("Inativação realizada!", response);
     } catch (error) {
-      console.error("Erro ao excluir região:", error);
-      showError(
-        "Erro ao excluir",
-        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
-      );
+      console.error("Erro ao inativar região:", error);
+      showError("Erro ao inativar", error as Record<string, unknown>);
     } finally {
       setTimeout(() => {
         isReloadingRef.current = false;
@@ -199,8 +193,8 @@ const CadastroRegioes = () => {
       <DeleteButton
         id={regiao.id}
         onDelete={handleDelete}
-        confirmText="Deseja realmente excluir esta região?"
-        confirmTitle="Exclusão de Região"
+        confirmText="Deseja realmente inativar esta região?"
+        confirmTitle="Inativação de Região"
         itemName={`${regiao.nome}`}
       />
     </div>

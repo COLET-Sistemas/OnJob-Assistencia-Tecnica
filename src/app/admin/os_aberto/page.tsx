@@ -489,8 +489,8 @@ const TelaOSAbertas: React.FC = () => {
                                 {os.tecnico.nome}
                               </span>
                             ) : (
-                              <span className="text-amber-600 font-medium my-auto">
-                                Sem técnico
+                              <span className="text-red-600 font-medium my-auto">
+                                Técnico indefinido
                               </span>
                             )}
                           </div>

@@ -84,8 +84,8 @@ const CadastroUsuariosRegioes = () => {
       await usuariosRegioesAPI.delete(id);
       await refetch();
     } catch (error) {
-      console.error("Erro ao excluir usuário região:", error);
-      alert("Erro ao excluir usuário região.");
+      console.error("Erro ao inativar usuário região:", error);
+      alert("Erro ao inativar usuário região.");
     }
   };
 
@@ -98,8 +98,8 @@ const CadastroUsuariosRegioes = () => {
       <DeleteButton
         id={usuario.id_usuario}
         onDelete={handleDelete}
-        confirmText="Deseja realmente excluir este usuário região?"
-        confirmTitle="Exclusão de Usuário Região"
+        confirmText="Deseja realmente inativar este usuário região?"
+        confirmTitle="Inativação de Usuário Região"
         itemName={`${usuario.nome_usuario}`}
       />
     </div>
