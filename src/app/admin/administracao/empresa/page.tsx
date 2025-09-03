@@ -1,6 +1,13 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Building2, Users, Package } from "lucide-react";
+import {
+  Building2,
+  Users,
+  Package,
+  MapPin,
+  Shield,
+  Calendar,
+} from "lucide-react";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { Loading } from "@/components/LoadingPersonalizado";
 import MapComponent from "@/components/admin/ui/MapComponent";
@@ -29,7 +36,7 @@ const ConsultaEmpresa: React.FC = () => {
 
   // Definir o título da página apenas uma vez
   useEffect(() => {
-    setTitle("Empresa / Licenças / Versões");
+    setTitle("Licença e Empresa");
   }, [setTitle]);
 
   useEffect(() => {
@@ -77,78 +84,36 @@ const ConsultaEmpresa: React.FC = () => {
     [empresaData]
   );
 
-  const EmpresaInfoCard = useCallback(
+  // Componente de skeleton para carregamento
+  const Skeleton = () => (
+    <div className="animate-pulse space-y-6">
+      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+      <div className="h-10 bg-gray-200 rounded"></div>
+      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+    </div>
+  );
+
+  const InfoCard = useCallback(
     ({
-      label,
+      title,
       value,
       icon,
     }: {
-      label: string;
-      value: string | null | undefined;
-      icon?: React.ReactNode;
+      title: string;
+      value: string | number | undefined;
+      icon: React.ReactNode;
     }) => (
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          {label}
-        </label>
-        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 transition-all duration-300 hover:border-gray-300 hover:shadow-sm">
-          <span className="text-black font-semibold flex items-center gap-2">
-            {icon}
+      <div className="flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-lg h-[100px]">
+        <div className="p-3 bg-gray-50 rounded-full">{icon}</div>
+        <div className="flex-1">
+          <p className="text-xs text-gray-500 font-medium">{title}</p>
+          <p className="text-[var(--neutral-graphite)] font-semibold">
             {value || "Não informado"}
-          </span>
+          </p>
         </div>
       </div>
     ),
     []
-  );
-
-  const LicencaCard = useCallback(
-    ({
-      label,
-      value,
-      bgColor,
-      textColor,
-    }: {
-      label: string;
-      value: number | undefined;
-      bgColor: string;
-      textColor: string;
-    }) => (
-      <div
-        className={`flex justify-between items-center p-4 ${bgColor} rounded-lg border transition-all duration-300 hover:shadow-md`}
-      >
-        <span className="font-medium text-gray-700">{label}</span>
-        <span className={`text-2xl font-bold ${textColor}`}>
-          {value !== undefined ? value : "-"}
-        </span>
-      </div>
-    ),
-    []
-  );
-
-  // Componente de skeleton para carregamento
-  const EmpresaInfoSkeleton = () => (
-    <div className="animate-pulse space-y-4">
-      <div className="h-5 w-32 bg-gray-200 rounded mb-2"></div>
-      <div className="h-12 bg-gray-200 rounded-lg"></div>
-      <div className="h-5 w-24 bg-gray-200 rounded mb-2"></div>
-      <div className="h-12 bg-gray-200 rounded-lg"></div>
-      <div className="h-5 w-40 bg-gray-200 rounded mb-2"></div>
-      <div className="h-12 bg-gray-200 rounded-lg"></div>
-    </div>
-  );
-
-  const LicencaSkeleton = () => (
-    <div className="animate-pulse space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="h-16 bg-gray-200 rounded-lg"></div>
-        <div className="h-16 bg-gray-200 rounded-lg"></div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="h-16 bg-gray-200 rounded-lg"></div>
-        <div className="h-16 bg-gray-200 rounded-lg"></div>
-      </div>
-    </div>
   );
 
   return (
@@ -158,153 +123,170 @@ const ConsultaEmpresa: React.FC = () => {
         config={{ type: "form", backLink: "admin/dashboard" }}
       />
 
-      <div className="max-w-8xl mx-auto space-y-8">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 transition-all duration-300 hover:shadow-md">
-          <div className="flex items-center gap-3 mb-6 pb-3 border-b border-slate-100">
-            <Building2 className="h-6 w-6 text-[var(--primary)]" />
-            <h3 className="text-lg font-semibold text-[var(--neutral-graphite)]">
-              Dados da Empresa
-            </h3>
-          </div>
+      <div className="max-w-8l mx-auto space-y-6">
+        {/* Seção de informações da empresa */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Dados principais */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[450px]">
+              <div className="p-6 h-full flex flex-col">
+                <h3 className="text-lg font-medium mb-6 text-[var(--neutral-graphite)] flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-[var(--primary)]" />
+                  Dados Corporativos
+                </h3>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              {loading ? (
-                <EmpresaInfoSkeleton />
-              ) : (
-                <>
-                  <EmpresaInfoCard
-                    label="Razão Social"
-                    value={empresaData?.razao_social}
-                  />
-
-                  <EmpresaInfoCard label="CNPJ" value={empresaData?.cnpj} />
-
-                  <EmpresaInfoCard
-                    label="Endereço Completo"
-                    value={enderecoCompleto}
-                  />
-
-                  {empresaData?.latitude && empresaData?.longitude && (
-                    <EmpresaInfoCard
-                      label="Coordenadas"
-                      value={`${empresaData.latitude.toFixed(
-                        6
-                      )}, ${empresaData.longitude.toFixed(6)}`}
+                {loading ? (
+                  <div className="flex-1 flex items-center">
+                    <Skeleton />
+                  </div>
+                ) : (
+                  <div className="space-y-4 flex-1 flex flex-col justify-center">
+                    <InfoCard
+                      title="Razão Social"
+                      value={empresaData?.razao_social}
+                      icon={
+                        <Building2 className="h-5 w-5 text-[var(--primary)]" />
+                      }
                     />
-                  )}
-                </>
-              )}
+
+                    <InfoCard
+                      title="CNPJ"
+                      value={empresaData?.cnpj}
+                      icon={
+                        <Shield className="h-5 w-5 text-[var(--primary)]" />
+                      }
+                    />
+
+                    <InfoCard
+                      title="Endereço"
+                      value={enderecoCompleto}
+                      icon={
+                        <MapPin className="h-5 w-5 text-[var(--primary)]" />
+                      }
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Localização no Mapa
-              </label>
+            {/* Versões */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[250px]">
+              <div className="p-6 h-full flex flex-col">
+                <h3 className="text-lg font-medium mb-6 text-[var(--neutral-graphite)] flex items-center gap-2">
+                  <Package className="h-5 w-5 text-[var(--primary)]" />
+                  Versões
+                </h3>
 
-              {loading ? (
-                <div className="h-[320px] w-full rounded-lg flex items-center justify-center bg-gray-50 border">
-                  <Loading
-                    size="medium"
-                    text="Carregando mapa..."
-                    preventScroll={false}
-                  />
-                </div>
-              ) : (
-                <div className="transition-all duration-300 rounded-lg overflow-hidden hover:shadow-lg">
-                  <MapComponent
-                    height="320px"
-                    zoom={17}
-                    showAddress={false}
-                    className="border border-gray-300 rounded-lg"
-                  />
-                </div>
-              )}
+                {loading ? (
+                  <div className="flex flex-col gap-4 flex-1 justify-center">
+                    <div className="h-[40px] bg-gray-100 rounded animate-pulse"></div>
+                    <div className="h-[40px] bg-gray-100 rounded animate-pulse"></div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4 flex-1">
+                    <div className="p-4 bg-white border border-gray-100 rounded-lg flex justify-between items-center">
+                      <p className="text-md text-gray-500 font-medium">
+                        Aplicação
+                      </p>
+                      <p className="text-lg font-bold text-[var(--primary)]">
+                        {packageInfo.version}
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-white border border-gray-100 rounded-lg flex justify-between items-center">
+                      <p className="text-md text-gray-500 font-medium">API</p>
+                      <p className="text-lg font-bold text-[var(--primary)]">
+                        {versaoInfo.versaoApi || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-10 gap-6">
-          <div className="md:col-span-6 bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 transition-all duration-300 hover:shadow-md">
-            <div className="flex items-center gap-3 mb-6 pb-3 border-b border-slate-100">
-              <Users className="h-6 w-6 text-[var(--primary)]" />
-              <h3 className="text-lg font-semibold text-[var(--neutral-graphite)]">
-                Licença
-              </h3>
+          {/* Mapa e licenças */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Mapa */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[450px]">
+              <div className="p-6 h-full flex flex-col">
+                <h3 className="text-lg font-medium mb-4 text-[var(--neutral-graphite)] flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-[var(--primary)]" />
+                  Localização
+                </h3>
+
+                {loading ? (
+                  <div className="flex-1 w-full rounded-lg flex items-center justify-center bg-gray-50 border">
+                    <Loading
+                      size="medium"
+                      text="Carregando mapa..."
+                      preventScroll={false}
+                    />
+                  </div>
+                ) : (
+                  <div className="transition-all duration-300 rounded-lg overflow-hidden flex-1">
+                    <MapComponent
+                      height="100%"
+                      zoom={17}
+                      showAddress={false}
+                      className="border border-gray-100 rounded-lg h-full"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
-            {loading ? (
-              <LicencaSkeleton />
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <LicencaCard
-                    label="Usuários Licenciados"
-                    value={empresaData?.usuarios_licenciados}
-                    bgColor="bg-green-50 border-green-200"
-                    textColor="text-green-600"
-                  />
+            {/* Licença */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[250px]">
+              <div className="p-6 h-full flex flex-col">
+                <h3 className="text-lg font-medium mb-4 text-[var(--neutral-graphite)] flex items-center gap-2">
+                  <Users className="h-5 w-5 text-[var(--primary)]" />
+                  Informações de Licença
+                </h3>
+                <div className="flex-1 flex flex-col gap-3">
+                  {/* Usuários */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="flex justify-between items-center p-4 rounded-lg border border-gray-100 bg-white">
+                      <span className="text-sm text-gray-500">
+                        Usuários Licenciados
+                      </span>
+                      <span className="text-xl font-bold text-[var(--primary)]">
+                        {empresaData?.usuarios_licenciados ?? "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-4 rounded-lg border border-gray-100 bg-white">
+                      <span className="text-sm text-gray-500">
+                        Usuários Ativos
+                      </span>
+                      <span className="text-xl font-bold text-green-600">
+                        {empresaData?.usuarios_ativos ?? "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-4 rounded-lg border border-gray-100 bg-white">
+                      <span className="text-sm text-gray-500">
+                        Usuários Cadastrados
+                      </span>
+                      <span className="text-xl font-bold text-blue-600">
+                        {empresaData?.usuarios_cadastrados ?? "-"}
+                      </span>
+                    </div>
+                  </div>
 
-                  <LicencaCard
-                    label="Usuários Ativos"
-                    value={empresaData?.usuarios_ativos}
-                    bgColor="bg-green-50 border-green-200"
-                    textColor="text-green-600"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <LicencaCard
-                    label="Usuários Cadastrados"
-                    value={empresaData?.usuarios_cadastrados}
-                    bgColor="bg-yellow-50 border-yellow-200"
-                    textColor="text-yellow-600"
-                  />
-
-                  <div className="flex justify-between items-center p-4 bg-yellow-50 rounded-lg border border-yellow-200 transition-all duration-300 hover:shadow-md">
-                    <span className="font-medium text-gray-700 flex items-center gap-2">
-                      Data de validade
-                    </span>
-                    <span className="text-lg font-bold text-yellow-700">
-                      {empresaData?.data_validade ?? "Data não informada"}
-                    </span>
+                  {/* Validade */}
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f5ff] border border-[#e9e1fa] rounded-lg">
+                    <Calendar className="h-5 w-5 text-[var(--primary)]" />
+                    <div className="flex flex-col justify-center">
+                      <p className="text-xs text-gray-500 font-medium">
+                        Validade da Licença
+                      </p>
+                      <p className="text-[var(--primary)] font-semibold">
+                        {empresaData?.data_validade ?? "Data não informada"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-
-          <div className="md:col-span-4 bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 transition-all duration-300 hover:shadow-md">
-            <div className="flex items-center gap-3 mb-6 pb-3 border-b border-slate-100">
-              <Package className="h-6 w-6 text-[var(--primary)]" />
-              <h3 className="text-lg font-semibold text-[var(--neutral-graphite)]">
-                Versões
-              </h3>
             </div>
-
-            {loading ? (
-              <LicencaSkeleton />
-            ) : (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-4 bg-purple-50 rounded-lg border border-purple-200 transition-all duration-300 hover:shadow-md">
-                  <span className="font-medium text-gray-700">
-                    Versão da Aplicação
-                  </span>
-                  <span className="text-lg font-bold text-purple-600">
-                    {packageInfo.version}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center p-4 bg-purple-50 rounded-lg border border-purple-200 transition-all duration-300 hover:shadow-md">
-                  <span className="font-medium text-gray-700">
-                    Versão da API
-                  </span>
-                  <span className="text-lg font-bold text-purple-600">
-                    {versaoInfo.versaoApi || "N/A"}
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

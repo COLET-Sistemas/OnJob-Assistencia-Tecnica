@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { MapPin, AlertCircle, ExternalLink, RefreshCw } from "lucide-react";
 
-// ✅ Importar do arquivo utilitário correto
 import {
   isValidCoordinate,
   generateGoogleMapsIframeUrl,
@@ -45,19 +44,14 @@ const MapComponent: React.FC<MapComponentProps> = ({
       const lat = Number(empresa.latitude);
       const lng = Number(empresa.longitude);
 
-      console.log("Coordenadas recuperadas:", { lat, lng });
-
       if (isValidCoordinate(lat, lng)) {
         const url = generateGoogleMapsIframeUrl(lat, lng, zoom);
         setMapUrl(url);
         setHasValidCoords(true);
-        console.log("URL do mapa gerada:", url);
       } else {
-        console.warn("Coordenadas inválidas:", { lat, lng });
         setHasValidCoords(false);
       }
     } else {
-      console.warn("Dados da empresa não encontrados");
       setHasValidCoords(false);
     }
 
@@ -81,7 +75,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
   };
 
   const handleMapError = () => {
-    console.error("Erro ao carregar o mapa");
     setMapError(true);
   };
 
@@ -142,7 +135,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
   return (
     <div className={`w-full space-y-4 ${className}`}>
-      {/* Mapa */}
       <div
         className="w-full rounded-lg overflow-hidden shadow-md border relative"
         style={{ height }}
@@ -170,15 +162,11 @@ const MapComponent: React.FC<MapComponentProps> = ({
             referrerPolicy="no-referrer-when-downgrade"
             title={`Localização da ${empresaData.razao_social}`}
             onError={handleMapError}
-            onLoad={() => {
-              console.log("Mapa carregado com sucesso");
-              setMapError(false);
-            }}
+            onLoad={() => setMapError(false)}
           />
         )}
       </div>
 
-      {/* Informações da empresa */}
       {showAddress && empresaData && (
         <div className="bg-white p-4 rounded-lg border shadow-sm">
           <div className="flex items-start space-x-3">
