@@ -20,6 +20,7 @@ import PageHeaderSimple from "@/components/admin/ui/PageHeaderSimple";
 import { ordensServicoService } from "@/api/services/ordensServicoService";
 import { useTitle } from "@/context/TitleContext";
 import { Loading } from "@/components/LoadingPersonalizado";
+import { formatarDataHora, isDataAgendadaPassada } from "@/utils/formatters";
 
 interface OrdemServico {
   id_os: number;
@@ -177,52 +178,7 @@ const TelaOSAbertas: React.FC = () => {
     return formas[forma] || forma;
   };
 
-  const formatarDataHora = (dataHora: string) => {
-    if (!dataHora) return undefined;
-
-    // Verifica se a data já está no formato dd/mm/yyyy
-    if (dataHora.includes("/")) {
-      const [data, hora] = dataHora.split(" ");
-      // Não precisamos separar dia/mes/ano, já está formatado
-      const [h, m] = hora ? hora.split(":") : ["", ""];
-      const dataFormatada = data;
-      const horaFormatada = h && m ? `${h}:${m}` : "";
-      return { data: dataFormatada, hora: horaFormatada };
-    } else {
-      // Formato ISO yyyy-mm-dd
-      const [data, hora] = dataHora.split(" ");
-      const [ano, mes, dia] = data.split("-");
-      const dataFormatada = `${dia}/${mes}/${ano}`;
-      const [h, m] = hora ? hora.split(":") : ["", ""];
-      const horaFormatada = h && m ? `${h}:${m}` : "";
-      return { data: dataFormatada, hora: horaFormatada };
-    }
-  };
-
-  const isDataAgendadaPassada = (dataAgendada: string) => {
-    if (!dataAgendada) return false;
-
-    let dataComparacao;
-    if (dataAgendada.includes("/")) {
-      // Formato dd/mm/yyyy
-      const [data] = dataAgendada.split(" ");
-      const [dia, mes, ano] = data.split("/");
-      dataComparacao = new Date(
-        parseInt(ano),
-        parseInt(mes) - 1,
-        parseInt(dia)
-      );
-    } else {
-      // Formato ISO yyyy-mm-dd
-      const [data] = dataAgendada.split(" ");
-      dataComparacao = new Date(data);
-    }
-
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-
-    return dataComparacao < hoje;
-  };
+  // Funções de formatação de data movidas para utils/formatters.ts
 
   const filteredOrdens = ordensServico.filter((os) => {
     const matchSearch =
@@ -247,7 +203,6 @@ const TelaOSAbertas: React.FC = () => {
 
   return (
     <>
-      {/* Cabeçalho usando o componente PageHeaderSimple */}
       <PageHeaderSimple
         title="Ordens de Serviço Abertas"
         config={{
@@ -410,9 +365,7 @@ const TelaOSAbertas: React.FC = () => {
       {/* OS Cards */}
       <div className="space-y-4">
         {filteredOrdens.map((os) => {
-          const dataHoraObj = formatarDataHora(os.abertura.data_abertura);
-          const dataAbertura = dataHoraObj?.data || "";
-          // Mesmo que não usemos horaAbertura diretamente, mantemos a variável para referência futura
+          // Verificamos apenas se o card está expandido
           const isExpanded = expandedCards.has(os.id_os);
 
           // Não precisamos mais da variável dataAgendadaObj
@@ -497,7 +450,11 @@ const TelaOSAbertas: React.FC = () => {
                           <div className="flex items-center gap-1.5 text-sm text-gray-600">
                             <Calendar className="w-3.5 h-3.5 flex-shrink-0 text-gray-500 my-auto" />
                             <span className="font-medium my-auto">
-                              Abertura: {dataAbertura}
+                              Abertura:{" "}
+                              {
+                                formatarDataHora(os.abertura.data_abertura)
+                                  ?.data
+                              }
                             </span>
                           </div>
 
@@ -591,7 +548,12 @@ const TelaOSAbertas: React.FC = () => {
                           <div className="border-t border-gray-100 p-3 bg-gray-50 flex justify-between items-center text-sm rounded-b-lg">
                             <div className="flex items-center gap-1.5">
                               <Calendar className="w-4 h-4 text-gray-500 my-auto" />
-                              <span className="my-auto">{dataAbertura}</span>
+                              <span className="my-auto">
+                                {
+                                  formatarDataHora(os.abertura.data_abertura)
+                                    ?.data
+                                }
+                              </span>
                             </div>
                             <div>
                               <span className="font-medium text-gray-700 my-auto">
@@ -689,12 +651,6 @@ const TelaOSAbertas: React.FC = () => {
                                       {formatarDataHora(os.data_agendada)?.data}
                                     </span>
                                   </div>
-                                  {formatarDataHora(os.data_agendada)?.hora && (
-                                    <div className="text-sm text-gray-700 mt-0.5">
-                                      Horário:{" "}
-                                      {formatarDataHora(os.data_agendada)?.hora}
-                                    </div>
-                                  )}
                                 </div>
                               )}
                             </div>

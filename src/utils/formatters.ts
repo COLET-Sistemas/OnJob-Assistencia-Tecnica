@@ -182,3 +182,97 @@ export function formatarData(dataISO: string): string {
     return "-";
   }
 }
+
+/**
+ * Formata uma data/hora para exibição, retornando um objeto com data formatada e hora
+ * @param dataHora String contendo a data/hora em formato ISO ou outro formato
+ * @returns Objeto com data formatada (dd/mm/yyyy hh:mm) e hora (hh:mm) ou undefined se inválido
+ */
+export function formatarDataHora(
+  dataHora: string
+): { data: string; hora: string } | undefined {
+  if (!dataHora) return undefined;
+
+  // Formato ISO com T (como 2025-07-28T19:07:16)
+  if (dataHora.includes("T")) {
+    try {
+      const data = new Date(dataHora);
+      if (isNaN(data.getTime())) return undefined;
+
+      const dia = data.getDate().toString().padStart(2, "0");
+      const mes = (data.getMonth() + 1).toString().padStart(2, "0");
+      const ano = data.getFullYear();
+      const hora = data.getHours().toString().padStart(2, "0");
+      const minuto = data.getMinutes().toString().padStart(2, "0");
+
+      const dataFormatada = `${dia}/${mes}/${ano}`;
+      const horaFormatada = `${hora}:${minuto}`;
+      return { data: `${dataFormatada} ${horaFormatada}`, hora: horaFormatada };
+    } catch {
+      return undefined;
+    }
+  }
+  // Verifica se a data já está no formato dd/mm/yyyy
+  else if (dataHora.includes("/")) {
+    const [data, hora] = dataHora.split(" ");
+    // Não precisamos separar dia/mes/ano, já está formatado
+    const [h, m] = hora ? hora.split(":") : ["", ""];
+    const dataFormatada = data;
+    const horaFormatada = h && m ? `${h}:${m}` : "";
+    return {
+      data: hora ? `${dataFormatada} ${horaFormatada}` : dataFormatada,
+      hora: horaFormatada,
+    };
+  }
+  // Formato ISO yyyy-mm-dd
+  else {
+    const [data, hora] = dataHora.split(" ");
+    const [ano, mes, dia] = data.split("-");
+    const dataFormatada = `${dia}/${mes}/${ano}`;
+    const [h, m] = hora ? hora.split(":") : ["", ""];
+    const horaFormatada = h && m ? `${h}:${m}` : "";
+    return {
+      data: hora ? `${dataFormatada} ${horaFormatada}` : dataFormatada,
+      hora: horaFormatada,
+    };
+  }
+}
+
+/**
+ * Verifica se uma data agendada já passou
+ * @param dataAgendada String contendo a data agendada
+ * @returns true se a data já passou, false caso contrário ou se a data for inválida
+ */
+export function isDataAgendadaPassada(dataAgendada: string): boolean {
+  if (!dataAgendada) return false;
+
+  try {
+    let dataComparacao;
+    if (dataAgendada.includes("/")) {
+      // Formato dd/mm/yyyy
+      const [data] = dataAgendada.split(" ");
+      const [dia, mes, ano] = data.split("/");
+      dataComparacao = new Date(
+        parseInt(ano),
+        parseInt(mes) - 1,
+        parseInt(dia)
+      );
+    } else if (dataAgendada.includes("T")) {
+      // Formato ISO com T (2025-07-28T19:07:16)
+      dataComparacao = new Date(dataAgendada);
+    } else {
+      // Formato ISO yyyy-mm-dd
+      const [data] = dataAgendada.split(" ");
+      dataComparacao = new Date(data);
+    }
+
+    if (isNaN(dataComparacao.getTime())) return false;
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    return dataComparacao < hoje;
+  } catch {
+    return false;
+  }
+}
