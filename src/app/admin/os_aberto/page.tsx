@@ -6,7 +6,6 @@ import {
   User,
   MapPin,
   AlertCircle,
-  Clock,
   Settings,
   Phone,
   Mail,
@@ -155,13 +154,12 @@ const TelaOSAbertas: React.FC = () => {
     };
 
     fetchData();
-  }, [situacoes, getSituacoesSelecionadas]); // Adiciona situacoes e função como dependências
+  }, [situacoes, getSituacoesSelecionadas]);
 
   const toggleCardExpansion = (osId: number) => {
-    const newExpanded = new Set(expandedCards);
-    if (newExpanded.has(osId)) {
-      newExpanded.delete(osId);
-    } else {
+    const newExpanded = new Set<number>();
+
+    if (!expandedCards.has(osId)) {
       newExpanded.add(osId);
     }
     setExpandedCards(newExpanded);
@@ -177,8 +175,6 @@ const TelaOSAbertas: React.FC = () => {
     };
     return formas[forma] || forma;
   };
-
-  // Funções de formatação de data movidas para utils/formatters.ts
 
   const filteredOrdens = ordensServico.filter((os) => {
     const matchSearch =
@@ -215,11 +211,9 @@ const TelaOSAbertas: React.FC = () => {
         }}
       />
 
-      {/* Filters Section - Sempre visível */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100  overflow-hidden">
         <div className="p-4">
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Search - 35% da largura */}
             <div className="lg:w-[35%] order-2 lg:order-1">
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Buscar Ordem de Serviço
@@ -236,7 +230,7 @@ const TelaOSAbertas: React.FC = () => {
               </div>
             </div>
 
-            {/* Status Filter Checkboxes - 65% da largura */}
+            {/* Status Filter Buttons - 65% da largura */}
             <div className="lg:w-[65%] order-1 lg:order-2">
               <div className="flex justify-between items-center mb-3">
                 <label className="block text-sm font-semibold text-gray-700">
@@ -265,93 +259,100 @@ const TelaOSAbertas: React.FC = () => {
                   </button>
                 )}
               </div>
-              <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-100">
-                <div className="flex flex-wrap gap-1">
-                  <label className="flex items-center space-x-2 cursor-pointer p-1.5 rounded hover:bg-gray-100 transition-colors">
-                    <input
-                      type="checkbox"
-                      className="form-checkbox h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                      checked={situacoes.pendente}
-                      onChange={() =>
-                        setSituacoes({
-                          ...situacoes,
-                          pendente: !situacoes.pendente,
-                        })
-                      }
-                    />
-                    <span className="text-gray-700 whitespace-nowrap">
-                      Pendente
-                    </span>
-                  </label>
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className={`px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-all ${
+                      situacoes.pendente
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm"
+                        : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                    }`}
+                    onClick={() =>
+                      setSituacoes({
+                        ...situacoes,
+                        pendente: !situacoes.pendente,
+                      })
+                    }
+                  >
+                    {situacoes.pendente && <Check className="w-4 h-4" />}
+                    <span className="whitespace-nowrap">Pendente</span>
+                  </button>
 
-                  <label className="flex items-center space-x-2 cursor-pointer p-1.5 rounded hover:bg-gray-100 transition-colors">
-                    <input
-                      type="checkbox"
-                      className="form-checkbox h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                      checked={situacoes.aAtender}
-                      onChange={() =>
-                        setSituacoes({
-                          ...situacoes,
-                          aAtender: !situacoes.aAtender,
-                        })
-                      }
-                    />
-                    <span className="text-gray-700 whitespace-nowrap">
-                      Por Atender
-                    </span>
-                  </label>
+                  <button
+                    type="button"
+                    className={`px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-all ${
+                      situacoes.aAtender
+                        ? "bg-purple-100 text-purple-800 border border-purple-200 shadow-sm"
+                        : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                    }`}
+                    onClick={() =>
+                      setSituacoes({
+                        ...situacoes,
+                        aAtender: !situacoes.aAtender,
+                      })
+                    }
+                  >
+                    {situacoes.aAtender && <Check className="w-4 h-4" />}
+                    <span className="whitespace-nowrap">Por Atender</span>
+                  </button>
 
-                  <label className="flex items-center space-x-2 cursor-pointer p-1.5 rounded hover:bg-gray-100 transition-colors">
-                    <input
-                      type="checkbox"
-                      className="form-checkbox h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                      checked={situacoes.emDeslocamento}
-                      onChange={() =>
-                        setSituacoes({
-                          ...situacoes,
-                          emDeslocamento: !situacoes.emDeslocamento,
-                        })
-                      }
-                    />
-                    <span className="text-gray-700 whitespace-nowrap">
-                      Em Deslocamento
-                    </span>
-                  </label>
+                  <button
+                    type="button"
+                    className={`px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-all ${
+                      situacoes.emDeslocamento
+                        ? "bg-amber-100 text-amber-800 border border-amber-200 shadow-sm"
+                        : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                    }`}
+                    onClick={() =>
+                      setSituacoes({
+                        ...situacoes,
+                        emDeslocamento: !situacoes.emDeslocamento,
+                      })
+                    }
+                  >
+                    {situacoes.emDeslocamento && <Check className="w-4 h-4" />}
+                    <span className="whitespace-nowrap">Em Deslocamento</span>
+                  </button>
 
-                  <label className="flex items-center space-x-2 cursor-pointer p-1.5 rounded hover:bg-gray-100 transition-colors">
-                    <input
-                      type="checkbox"
-                      className="form-checkbox h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                      checked={situacoes.emAtendimento}
-                      onChange={() =>
-                        setSituacoes({
-                          ...situacoes,
-                          emAtendimento: !situacoes.emAtendimento,
-                        })
-                      }
-                    />
-                    <span className="text-gray-700 whitespace-nowrap">
-                      Em Atendimento
-                    </span>
-                  </label>
+                  <button
+                    type="button"
+                    className={`px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-all ${
+                      situacoes.emAtendimento
+                        ? "bg-blue-100 text-blue-800 border border-blue-200 shadow-sm"
+                        : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                    }`}
+                    onClick={() =>
+                      setSituacoes({
+                        ...situacoes,
+                        emAtendimento: !situacoes.emAtendimento,
+                      })
+                    }
+                  >
+                    {situacoes.emAtendimento && <Check className="w-4 h-4" />}
+                    <span className="whitespace-nowrap">Em Atendimento</span>
+                  </button>
 
-                  <label className="flex items-center space-x-2 cursor-pointer p-1.5 rounded hover:bg-gray-100 transition-colors">
-                    <input
-                      type="checkbox"
-                      className="form-checkbox h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                      checked={situacoes.atendimentoInterrompido}
-                      onChange={() =>
-                        setSituacoes({
-                          ...situacoes,
-                          atendimentoInterrompido:
-                            !situacoes.atendimentoInterrompido,
-                        })
-                      }
-                    />
-                    <span className="text-gray-700 whitespace-nowrap">
-                      Atend. Interrompido
-                    </span>
-                  </label>
+                  <button
+                    type="button"
+                    className={`px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-all ${
+                      situacoes.atendimentoInterrompido
+                        ? "bg-red-100 text-red-800 border border-red-200 shadow-sm"
+                        : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                    }`}
+                    onClick={() =>
+                      setSituacoes({
+                        ...situacoes,
+                        atendimentoInterrompido:
+                          !situacoes.atendimentoInterrompido,
+                      })
+                    }
+                  >
+                    {situacoes.atendimentoInterrompido && (
+                      <Check className="w-4 h-4" />
+                    )}
+                    <span className="whitespace-nowrap">Interrompido</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -385,7 +386,15 @@ const TelaOSAbertas: React.FC = () => {
                     {/* Status indicator */}
                     <div
                       className={`w-2 h-16 rounded-sm hidden sm:block ${
-                        os.em_garantia ? "bg-emerald-500" : "bg-amber-500"
+                        os.situacao_os.codigo === 1
+                          ? "bg-emerald-500"
+                          : os.situacao_os.codigo === 2
+                          ? "bg-purple-500"
+                          : os.situacao_os.codigo === 3
+                          ? "bg-amber-500"
+                          : os.situacao_os.codigo === 4
+                          ? "bg-blue-500"
+                          : "bg-red-500"
                       }`}
                     ></div>
 
@@ -421,8 +430,30 @@ const TelaOSAbertas: React.FC = () => {
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                           Máquina / Série
                         </div>
-                        <div className="font-semibold text-gray-900 truncate text-base mt-1">
-                          {os.maquina.modelo || os.maquina.descricao}
+                        <div className="flex items-center gap-2">
+                          <div className="font-semibold text-gray-900 truncate text-base mt-1">
+                            {os.maquina.modelo || os.maquina.descricao}
+                          </div>
+                          <div
+                            className={`w-4 h-4 rounded-full flex items-center justify-center border ${
+                              os.em_garantia
+                                ? "bg-emerald-100 border-emerald-300"
+                                : "bg-amber-100 border-amber-300"
+                            }`}
+                          >
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                os.em_garantia
+                                  ? "bg-emerald-500"
+                                  : "bg-amber-500"
+                              }`}
+                              title={
+                                os.em_garantia
+                                  ? "Em garantia"
+                                  : "Fora da garantia"
+                              }
+                            ></div>
+                          </div>
                         </div>
                         <div className="text-sm text-gray-600 flex items-center gap-1.5 mt-0.5">
                           <Settings className="w-3.5 h-3.5 flex-shrink-0 my-auto" />
@@ -484,14 +515,14 @@ const TelaOSAbertas: React.FC = () => {
                       <span
                         className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${
                           os.situacao_os.codigo === 1
-                            ? "bg-blue-100 text-blue-800 border border-blue-200"
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                             : os.situacao_os.codigo === 2
-                            ? "bg-amber-100 text-amber-800 border border-amber-200"
-                            : os.situacao_os.codigo === 3
                             ? "bg-purple-100 text-purple-800 border border-purple-200"
+                            : os.situacao_os.codigo === 3
+                            ? "bg-amber-100 text-amber-800 border border-amber-200"
                             : os.situacao_os.codigo === 4
-                            ? "bg-red-100 text-red-800 border border-red-200"
-                            : "bg-gray-100 text-gray-800 border border-gray-200"
+                            ? "bg-blue-100 text-blue-800 border border-blue-200"
+                            : "bg-red-100 text-red-800 border border-red-200"
                         }`}
                       >
                         <span className="my-auto">
@@ -525,42 +556,36 @@ const TelaOSAbertas: React.FC = () => {
               {/* Expanded Details */}
               {isExpanded && (
                 <div className="border-t border-gray-100 bg-gray-50">
-                  <div className="p-6">
-                    {/* Main Info Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                      {/* Problem Description - Now emphasized as most important */}
-                      <div className="md:col-span-2">
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full">
-                          <div className="border-b border-gray-100 bg-gray-50 p-3 rounded-t-lg">
-                            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                              <AlertCircle className="w-4 h-4 text-indigo-600" />
-                              Descrição do Problema
-                            </h4>
-                          </div>
-                          <div className="p-4">
-                            <p className="text-gray-800 leading-relaxed">
-                              {os.descricao_problema ||
-                                "Sem descrição fornecida"}
-                            </p>
-                          </div>
+                  <div className="p-4">
+                    {/* Problema e informações adicionais - única seção */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Descrição do Problema e Abertura */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertCircle className="w-4 h-4 text-indigo-500" />
+                          <h4 className="font-medium text-gray-700">
+                            Descrição do Problema
+                          </h4>
+                        </div>
+                        <p className="text-gray-800 text-sm mb-3">
+                          {os.descricao_problema || "Sem descrição fornecida"}
+                        </p>
 
-                          {/* Abertura Information */}
-                          <div className="border-t border-gray-100 p-3 bg-gray-50 flex justify-between items-center text-sm rounded-b-lg">
+                        {/* Informações de Abertura */}
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <div className="flex justify-between text-xs text-gray-600">
                             <div className="flex items-center gap-1.5">
-                              <Calendar className="w-4 h-4 text-gray-500 my-auto" />
-                              <span className="my-auto">
-                                {
-                                  formatarDataHora(os.abertura.data_abertura)
-                                    ?.data
-                                }
+                              <User className="w-3 h-3 text-gray-500" />
+                              <span>
+                                Aberto por:{" "}
+                                <span className="font-medium">
+                                  {os.abertura.nome_usuario}
+                                </span>
                               </span>
                             </div>
-                            <div>
-                              <span className="font-medium text-gray-700 my-auto">
-                                {os.abertura.nome_usuario}
-                              </span>
-                              <span className="text-gray-500 mx-1.5">•</span>
-                              <span className="text-gray-600 my-auto">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-3 h-3 text-gray-500" />
+                              <span>
                                 Via{" "}
                                 {getFormaAberturaTexto(
                                   os.abertura.forma_abertura
@@ -569,280 +594,118 @@ const TelaOSAbertas: React.FC = () => {
                             </div>
                           </div>
                         </div>
+
+                        {/* Informação de Liberação Financeira */}
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <div className="flex items-center gap-1.5">
+                            {os.liberacao_financeira.liberada ? (
+                              <span className="text-emerald-600 text-xs flex items-center gap-1">
+                                <CheckCircle className="w-3 h-3" />
+                                Liberação financeira:{" "}
+                                <span className="font-medium">
+                                  {
+                                    os.liberacao_financeira
+                                      .nome_usuario_liberacao
+                                  }
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-amber-600 text-xs flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" />
+                                Aguardando liberação financeira
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Motivo Pendência quando existir */}
+                        {os.situacao_os.motivo_pendencia && (
+                          <div className="mt-3 pt-3 border-t border-gray-100">
+                            <div className="text-xs text-gray-700 mb-1 font-medium">
+                              Motivo da Pendência:
+                            </div>
+                            <div className="px-3 py-1.5 bg-orange-50 border border-orange-100 rounded text-orange-700 text-xs">
+                              {os.situacao_os.motivo_pendencia}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      {/* OS Status Column */}
-                      <div>
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full">
-                          <div className="border-b border-gray-100 bg-gray-50 p-3 rounded-t-lg">
-                            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-indigo-600" />
-                              Status do Atendimento
-                            </h4>
-                          </div>
-                          <div className="p-4">
-                            <div className="space-y-3">
-                              <div>
-                                <div className="text-sm text-gray-500 mb-1">
-                                  Situação
-                                </div>
-                                <div className="flex items-center">
-                                  <div
-                                    className={`w-2 h-10 rounded-sm ${
-                                      os.situacao_os.codigo === 1
-                                        ? "bg-blue-500"
-                                        : os.situacao_os.codigo === 2
-                                        ? "bg-amber-500"
-                                        : os.situacao_os.codigo === 3
-                                        ? "bg-purple-500"
-                                        : os.situacao_os.codigo === 4
-                                        ? "bg-red-500"
-                                        : "bg-gray-500"
-                                    } mr-3`}
-                                  ></div>
-                                  <span className="font-semibold text-gray-900">
-                                    {os.situacao_os.descricao}
-                                  </span>
-                                </div>
-                              </div>
+                      {/* Endereço e Contato - Informações Adicionais */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <MapPin className="w-4 h-4 text-indigo-500" />
+                          <h4 className="font-medium text-gray-700">
+                            Endereço Completo
+                          </h4>
+                        </div>
 
-                              {os.situacao_os.motivo_pendencia && (
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Motivo
-                                  </div>
-                                  <div className="bg-orange-50 border border-orange-100 p-2 rounded-md text-orange-700 text-sm">
-                                    {os.situacao_os.motivo_pendencia}
-                                  </div>
-                                </div>
+                        <div className="text-sm text-gray-600 mb-4">
+                          {os.cliente.endereco ? (
+                            <div className="space-y-1">
+                              <p>
+                                {os.cliente.endereco}, {os.cliente.numero}
+                              </p>
+                              {os.cliente.complemento && (
+                                <p>Complemento: {os.cliente.complemento}</p>
                               )}
+                              {os.cliente.bairro && (
+                                <p>Bairro: {os.cliente.bairro}</p>
+                              )}
+                              <p>
+                                {os.cliente.cidade}/{os.cliente.uf}
+                              </p>
+                              {os.cliente.cep && <p>CEP: {os.cliente.cep}</p>}
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 italic">
+                              Endereço não cadastrado
+                            </p>
+                          )}
+                        </div>
 
-                              <div>
-                                <div className="text-sm text-gray-500 mb-1">
-                                  Garantia
-                                </div>
-                                <div
-                                  className={`font-medium ${
-                                    os.em_garantia
-                                      ? "text-emerald-600"
-                                      : "text-amber-600"
-                                  }`}
-                                >
-                                  {os.em_garantia
-                                    ? "Em Garantia"
-                                    : "Fora da Garantia"}
-                                </div>
-                              </div>
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Phone className="w-4 h-4 text-indigo-500" />
+                            <h4 className="font-medium text-gray-700">
+                              Contato
+                            </h4>
+                          </div>
 
-                              {os.data_agendada && (
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Agendamento
-                                  </div>
-                                  <div
-                                    className={`font-semibold ${
-                                      isDataAgendadaPassada(os.data_agendada)
-                                        ? "text-red-600"
-                                        : "text-indigo-600"
-                                    } flex items-center gap-1.5`}
-                                  >
-                                    <Calendar className="w-4 h-4" />
-                                    <span>
-                                      {formatarDataHora(os.data_agendada)?.data}
-                                    </span>
-                                  </div>
-                                </div>
+                          <div className="text-sm space-y-1.5">
+                            <div className="flex items-center gap-1.5 text-gray-600">
+                              <Phone className="w-3 h-3 text-gray-600" />
+                              <span>{os.contato.telefone}</span>
+                              {os.contato.whatsapp && (
+                                <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-full text-[10px] font-medium border border-emerald-100">
+                                  WhatsApp
+                                </span>
                               )}
                             </div>
+
+                            {os.contato.email && (
+                              <div className="flex items-center gap-1.5 text-gray-600">
+                                <Mail className="w-3 h-3 text-gray-600" />
+                                <span>{os.contato.email}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Second Row Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Cliente e Contato Info */}
-                      <div>
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full">
-                          <div className="border-b border-gray-100 bg-gray-50 p-3 rounded-t-lg">
-                            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                              <User className="w-4 h-4 text-indigo-600" />
-                              Cliente e Contato
-                            </h4>
-                          </div>
-                          <div className="p-4">
-                            <div className="space-y-4">
-                              {/* Cliente */}
-                              <div>
-                                <div className="text-sm font-medium text-gray-500 mb-2">
-                                  Informações do Cliente
-                                </div>
-                                <div className="text-base font-semibold text-gray-900 mb-1">
-                                  {os.cliente.nome}
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600 mt-2">
-                                  <div className="flex items-start gap-2">
-                                    <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-gray-500" />
-                                    <div>
-                                      {os.cliente.endereco && (
-                                        <div>
-                                          {os.cliente.endereco},{" "}
-                                          {os.cliente.numero}
-                                        </div>
-                                      )}
-                                      {os.cliente.bairro && (
-                                        <div>{os.cliente.bairro}</div>
-                                      )}
-                                      <div className="font-medium">
-                                        {os.cliente.cidade}/{os.cliente.uf}
-                                      </div>
-                                      {os.cliente.cep && (
-                                        <div>CEP: {os.cliente.cep}</div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Contato */}
-                              <div className="pt-3 border-t border-gray-100">
-                                <div className="text-sm font-medium text-gray-500 mb-2">
-                                  Informações de Contato
-                                </div>
-                                <div className="text-base font-semibold text-gray-900 mb-1">
-                                  {os.contato.nome}
-                                </div>
-
-                                <div className="space-y-1.5 mt-2">
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <Phone className="w-4 h-4 text-gray-500 my-auto" />
-                                    <span className="my-auto">
-                                      {os.contato.telefone}
-                                    </span>
-                                    {os.contato.whatsapp && (
-                                      <span className="text-emerald-600 font-medium text-xs px-2 py-0.5 bg-emerald-50 rounded-full border border-emerald-100 my-auto">
-                                        WhatsApp
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  {os.contato.email && (
-                                    <div className="flex items-center gap-2 text-sm">
-                                      <Mail className="w-4 h-4 text-gray-500 my-auto" />
-                                      <span className="my-auto">
-                                        {os.contato.email}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
+                        {/* Observações do técnico quando existirem */}
+                        {os.tecnico.observacoes && (
+                          <div className="mt-4 pt-4 border-t border-gray-100">
+                            <div className="flex items-center gap-2 mb-2">
+                              <User className="w-4 h-4 text-indigo-500" />
+                              <h4 className="font-medium text-gray-700">
+                                Observações do Técnico
+                              </h4>
                             </div>
+                            <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
+                              {os.tecnico.observacoes}
+                            </p>
                           </div>
-                        </div>
-                      </div>
-
-                      {/* Equipment and Technician */}
-                      <div>
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full">
-                          <div className="border-b border-gray-100 bg-gray-50 p-3 rounded-t-lg">
-                            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                              <Settings className="w-4 h-4 text-indigo-600" />
-                              Máquina e Técnico
-                            </h4>
-                          </div>
-                          <div className="p-4">
-                            <div className="space-y-4">
-                              <div>
-                                <div className="text-sm font-medium text-gray-500 mb-2">
-                                  Detalhes do Equipamento
-                                </div>
-                                <div className="text-base font-semibold text-gray-900 mb-1">
-                                  {os.maquina.descricao}
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600 mt-2">
-                                  <div>
-                                    <span className="text-gray-500">
-                                      Modelo:
-                                    </span>{" "}
-                                    <span className="font-medium">
-                                      {os.maquina.modelo || "Não especificado"}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-gray-500">
-                                      Número de Série:
-                                    </span>{" "}
-                                    <span className="font-mono font-medium">
-                                      {os.maquina.numero_serie}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Técnico */}
-                              <div className="pt-3 border-t border-gray-100">
-                                <div className="text-sm font-medium text-gray-500 mb-2">
-                                  Técnico Responsável
-                                </div>
-
-                                {os.tecnico.nome ? (
-                                  <div>
-                                    <div className="text-base font-semibold text-indigo-600 mb-1">
-                                      {os.tecnico.nome}
-                                    </div>
-
-                                    {os.tecnico.observacoes && (
-                                      <div className="mt-2 bg-gray-50 border-l-4 border-indigo-300 p-3 rounded-r-md">
-                                        <div className="text-xs font-medium text-gray-500 mb-1">
-                                          Observações
-                                        </div>
-                                        <p className="text-sm text-gray-700">
-                                          {os.tecnico.observacoes}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2 text-amber-600">
-                                    <AlertTriangle className="w-4 h-4 my-auto" />
-                                    <span className="font-medium my-auto">
-                                      Técnico não designado
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Liberação Financeira */}
-                              <div className="pt-3 border-t border-gray-100">
-                                <div className="text-sm font-medium text-gray-500 mb-2">
-                                  Liberação Financeira
-                                </div>
-
-                                {os.liberacao_financeira.liberada ? (
-                                  <div className="flex items-center gap-2 text-emerald-600">
-                                    <CheckCircle className="w-4 h-4 my-auto" />
-                                    <span className="font-medium my-auto">
-                                      Liberado por{" "}
-                                      {
-                                        os.liberacao_financeira
-                                          .nome_usuario_liberacao
-                                      }
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2 text-amber-600">
-                                    <AlertTriangle className="w-4 h-4 my-auto" />
-                                    <span className="font-medium my-auto">
-                                      Aguardando liberação
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
