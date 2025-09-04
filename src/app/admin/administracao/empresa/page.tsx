@@ -279,9 +279,16 @@ const ConsultaEmpresa: React.FC = () => {
                       <p className="text-xs text-gray-500 font-medium">
                         Validade da Licença
                       </p>
-                      <p className="text-[var(--primary)] font-semibold">
-                        {empresaData?.data_validade ?? "Data não informada"}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[var(--primary)] font-semibold">
+                          {empresaData?.data_validade ?? "Data não informada"}
+                        </p>
+                        {empresaData?.licenca_demo && (
+                          <span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full font-medium">
+                            Provisória
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

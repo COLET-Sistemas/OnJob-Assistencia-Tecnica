@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import packageInfo from "../../package.json";
 
 // ✅ Import da função utilitária
@@ -278,40 +279,36 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-[55%] bg-gradient-to-br from-[#7C54BD] via-[#6B47A8] to-[#5A3B95] relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[55%] bg-[#F6C647] relative overflow-hidden">
         <div className="absolute inset-0 opacity-15">
           <div className="absolute top-20 left-10 w-32 h-32 rounded-full border-2 border-[#75FABD]"></div>
-          <div className="absolute top-40 right-20 w-24 h-24 rounded-full bg-[#F6C647] opacity-20"></div>
-          <div className="absolute bottom-32 left-1/4 w-16 h-16 rotate-45 border-2 border-[#75FABD]"></div>
+          <div className="absolute top-40 right-20 w-24 h-24 rounded-full bg-[#7C54BD] opacity-20"></div>
+          <div className="absolute bottom-32 left-1/4 w-16 h-16 rotate-45 border-2 border-[#7C54BD]"></div>
           <div className="absolute bottom-20 right-1/3 w-20 h-20 rounded-full border border-white"></div>
-          <div className="absolute top-1/2 left-1/2 w-12 h-12 rounded-full bg-[#F6C647] opacity-10"></div>
+          <div className="absolute top-1/2 left-1/2 w-12 h-12 rounded-full bg-[#75FABD] opacity-20"></div>
         </div>
 
         <div className="relative z-10 flex flex-col justify-center px-12 py-16 text-white">
           <div className="mb-12">
-            <div className="flex items-center mb-6">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mr-4 bg-white/10 backdrop-blur-sm border border-white/20">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#75FABD] to-[#F6C647] flex items-center justify-center">
-                  <span className="text-[#7C54BD] font-bold text-lg">O</span>
-                </div>
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight">OnJob</h1>
-                <p className="text-white/80 text-base font-medium">
-                  Sistema de Assistência Técnica
-                </p>
-              </div>
+            <div className="mb-6">
+              <Image
+                src="/images/logoEscrito.png"
+                alt="OnJob Sistema de Assistência Técnica"
+                width={320}
+                height={100}
+                className="h-36 object-contain"
+              />
             </div>
           </div>
 
           <div className="mb-8">
             <h2 className="text-5xl font-bold mb-6 leading-tight">
               Sistema de
-              <span className="block text-[#75FABD] bg-gradient-to-r from-[#75FABD] to-[#F6C647] bg-clip-text">
+              <span className="block text-[#7C54BD] bg-[#7C54BD] bg-clip-text text-transparent">
                 Assistencia Técnica
               </span>
             </h2>
-            <p className="text-white/90 text-xl leading-relaxed font-light">
+            <p className="text-gray-800 text-xl leading-relaxed font-light">
               Plataforma integrada para otimização de processos de trabalho, com
               módulos administrativos e operacionais modernos.
             </p>
@@ -319,14 +316,14 @@ export default function LoginPage() {
 
           <div className="space-y-8">
             <div className="flex items-center space-x-5">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#75FABD] to-[#F6C647] shadow-lg">
-                <Settings className="w-6 h-6 text-[#7C54BD]" />
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#7C54BD] shadow-lg">
+                <Settings className="w-6 h-6 text-[#75FABD]" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-white">
+                <h3 className="font-semibold text-lg text-gray-800">
                   Módulo Administrativo
                 </h3>
-                <p className="text-white/70 text-sm leading-relaxed">
+                <p className="text-gray-700 text-sm leading-relaxed">
                   Gestão completa de usuários, criação de ordens de serviço,
                   relatórios avançados e configurações
                 </p>
@@ -334,14 +331,14 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center space-x-5">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#F6C647] to-[#75FABD] shadow-lg">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#75FABD] shadow-lg">
                 <Shield className="w-6 h-6 text-[#7C54BD]" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-white">
+                <h3 className="font-semibold text-lg text-gray-800">
                   Módulo Técnico
                 </h3>
-                <p className="text-white/70 text-sm leading-relaxed">
+                <p className="text-gray-700 text-sm leading-relaxed">
                   Interface otimizada para técnicos com recursos mobile e
                   operações de campo
                 </p>
@@ -349,23 +346,23 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center space-x-5">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#7C54BD] to-[#75FABD] shadow-lg">
-                <Database className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#7C54BD] shadow-lg">
+                <Database className="w-6 h-6 text-[#75FABD]" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-white">
+                <h3 className="font-semibold text-lg text-gray-800">
                   Segurança Avançada
                 </h3>
-                <p className="text-white/70 text-sm leading-relaxed">
+                <p className="text-gray-700 text-sm leading-relaxed">
                   Criptografia de última geração e controle de acesso multinível
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="mt-16 pt-8 border-t border-white/20">
+          <div className="mt-16 pt-8 border-t border-gray-700/20">
             <div className="text-center">
-              <p className="text-white/60 text-sm">
+              <p className="text-gray-700 text-sm">
                 Tecnologia que transforma a forma como você trabalha
               </p>
             </div>
@@ -373,16 +370,17 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <div className="w-full lg:w-[45%] flex items-center justify-center p-8 bg-gradient-to-br from-gray-50 to-white">
+      <div className="w-full lg:w-[45%] flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md">
           <div className="lg:hidden text-center mb-8">
-            <div className="flex items-center justify-center mb-6">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mr-3 bg-gradient-to-br from-[#7C54BD] to-[#6B47A8] shadow-lg">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#75FABD] to-[#F6C647] flex items-center justify-center">
-                  <span className="text-[#7C54BD] font-bold">O</span>
-                </div>
-              </div>
-              <h1 className="text-2xl font-bold text-gray-800">OnJob</h1>
+            <div className="flex justify-center mb-6">
+              <Image
+                src="/images/logoEscrito.png"
+                alt="OnJob Sistema de Assistência Técnica"
+                width={200}
+                height={50}
+                className="h-12 object-contain"
+              />
             </div>
             <h2 className="text-xl font-semibold mb-2 text-gray-800">
               Sistema de Gestão Profissional
@@ -391,9 +389,15 @@ export default function LoginPage() {
           </div>
 
           <div className="hidden lg:block text-center mb-10">
-            <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 bg-gradient-to-br from-[#7C54BD] to-[#6B47A8] shadow-xl">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#75FABD] to-[#F6C647] flex items-center justify-center">
-                <span className="text-[#7C54BD] font-bold text-lg">O</span>
+            <div className="w-25 h-25 rounded-3xl flex items-center justify-center mx-auto mb-6 bg-[#7C54BD] shadow-xl">
+              <div className="w-18 h-18 rounded-2xl bg-[#F6C647] flex items-center justify-center">
+                <Image
+                  src="/images/logo.png"
+                  alt="OnJob Logo"
+                  width={25}
+                  height={25}
+                  className="h-14 w-14 object-contain"
+                />
               </div>
             </div>
             <h2 className="text-3xl font-bold mb-3 text-gray-800">
@@ -418,7 +422,7 @@ export default function LoginPage() {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
+                  <User className="h-5 w-5 text-[#7C54BD]" />
                 </div>
                 <input
                   ref={loginInputRef}
@@ -438,7 +442,7 @@ export default function LoginPage() {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-5 w-5 text-[#7C54BD]" />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}

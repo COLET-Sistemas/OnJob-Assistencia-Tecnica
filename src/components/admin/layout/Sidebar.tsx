@@ -53,13 +53,13 @@ const menuItems: MenuItem[] = [
     key: "revisao_os",
     label: "Revisão de OSs",
     icon: ClipboardEdit,
-    path: "/admin/revisao_os",
+    path: "/admin/os_revisao",
   },
   {
     key: "consultas",
     label: "Consultas",
     icon: Search,
-    path: "/admin/consultas",
+    path: "/admin/os_consulta",
   },
   {
     key: "relatorios",
