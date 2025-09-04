@@ -304,7 +304,7 @@ export default function LoginPage() {
           <div className="mb-8">
             <h2 className="text-5xl font-bold mb-6 leading-tight">
               Sistema de
-              <span className="block text-[#7C54BD] bg-[#7C54BD] bg-clip-text text-transparent">
+              <span className="block text-[#7C54BD]  bg-clip-text ">
                 Assistencia Técnica
               </span>
             </h2>

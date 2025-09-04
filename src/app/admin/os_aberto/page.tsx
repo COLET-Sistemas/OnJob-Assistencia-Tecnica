@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Search,
   Calendar,
@@ -11,6 +11,8 @@ import {
   Mail,
   ChevronDown,
   ChevronUp,
+  CircleCheck,
+  CircleX,
   AlertTriangle,
   CheckCircle,
   Check,
@@ -70,6 +72,7 @@ interface OrdemServico {
   tecnico: {
     id: number;
     nome: string;
+    tipo?: string; // Adicionando o campo tipo para o técnico
     observacoes: string;
   };
   liberacao_financeira: {
@@ -106,7 +109,6 @@ const TelaOSAbertas: React.FC = () => {
     setTitle("Ordens de Serviço Abertas");
   }, [setTitle]);
 
-  // Estados para os checkboxes de situação
   const [situacoes, setSituacoes] = useState({
     pendente: true,
     aAtender: true,
@@ -115,46 +117,51 @@ const TelaOSAbertas: React.FC = () => {
     atendimentoInterrompido: true,
   });
 
-  // Função para obter as situações selecionadas como uma string para a API
-  const getSituacoesSelecionadas = useCallback(() => {
-    const codigos = Object.entries(situacoes)
-      .filter(([, isSelected]) => isSelected)
-      .map(([key]) => situacoesMap[key as keyof typeof situacoesMap]);
+  const fetchData = async (situacoesParam = situacoes) => {
+    try {
+      setLoading(true);
+      const getSituacoesSelecionadas = () => {
+        const codigos = Object.entries(situacoesParam)
+          .filter(([, isSelected]) => isSelected)
+          .map(([key]) => situacoesMap[key as keyof typeof situacoesMap]);
 
-    return codigos.join(",");
-  }, [situacoes]);
+        return codigos.join(",");
+      };
+
+      const situacoesSelecionadas = getSituacoesSelecionadas();
+
+      const response = await ordensServicoService.getAll({
+        resumido: "S",
+        situacao: situacoesSelecionadas,
+      });
+
+      if (response && response.dados) {
+        setOrdensServico(response.dados as unknown as OrdemServico[]);
+      } else {
+        console.warn("Resposta inesperada da API:", response);
+        setOrdensServico([]);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar ordens de serviço:", error);
+      setOrdensServico([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const didFetch = useRef(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Obtém as situações selecionadas para o filtro
-        const situacoesSelecionadas = getSituacoesSelecionadas();
+    if (!didFetch.current) {
+      fetchData();
+      didFetch.current = true;
+    }
+  }, []);
 
-        // Faz a chamada à API com os parâmetros de situação
-        const response = await ordensServicoService.getAll({
-          resumido: "S",
-          situacao: situacoesSelecionadas,
-        });
-
-        if (response && response.dados) {
-          // Converter os dados da API para o formato OrdemServico
-          // Esta é uma adaptação temporária até que os tipos sejam alinhados
-          setOrdensServico(response.dados as unknown as OrdemServico[]);
-        } else {
-          console.warn("Resposta inesperada da API:", response);
-          setOrdensServico([]);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar ordens de serviço:", error);
-        setOrdensServico([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [situacoes, getSituacoesSelecionadas]);
+  const handleSituacoesChange = (newSituacoes: typeof situacoes) => {
+    setSituacoes(newSituacoes);
+    fetchData(newSituacoes);
+  };
 
   const toggleCardExpansion = (osId: number) => {
     const newExpanded = new Set<number>();
@@ -245,13 +252,14 @@ const TelaOSAbertas: React.FC = () => {
                     type="button"
                     className="px-2 py-1 text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-md font-medium transition-colors border border-indigo-200 flex items-center gap-1"
                     onClick={() => {
-                      setSituacoes({
+                      const newSituacoes = {
                         pendente: true,
                         aAtender: true,
                         emDeslocamento: true,
                         emAtendimento: true,
                         atendimentoInterrompido: true,
-                      });
+                      };
+                      handleSituacoesChange(newSituacoes);
                     }}
                   >
                     <Check className="w-3.5 h-3.5" />
@@ -269,7 +277,7 @@ const TelaOSAbertas: React.FC = () => {
                         : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
                     }`}
                     onClick={() =>
-                      setSituacoes({
+                      handleSituacoesChange({
                         ...situacoes,
                         pendente: !situacoes.pendente,
                       })
@@ -287,7 +295,7 @@ const TelaOSAbertas: React.FC = () => {
                         : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
                     }`}
                     onClick={() =>
-                      setSituacoes({
+                      handleSituacoesChange({
                         ...situacoes,
                         aAtender: !situacoes.aAtender,
                       })
@@ -305,7 +313,7 @@ const TelaOSAbertas: React.FC = () => {
                         : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
                     }`}
                     onClick={() =>
-                      setSituacoes({
+                      handleSituacoesChange({
                         ...situacoes,
                         emDeslocamento: !situacoes.emDeslocamento,
                       })
@@ -323,7 +331,7 @@ const TelaOSAbertas: React.FC = () => {
                         : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
                     }`}
                     onClick={() =>
-                      setSituacoes({
+                      handleSituacoesChange({
                         ...situacoes,
                         emAtendimento: !situacoes.emAtendimento,
                       })
@@ -341,7 +349,7 @@ const TelaOSAbertas: React.FC = () => {
                         : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
                     }`}
                     onClick={() =>
-                      setSituacoes({
+                      handleSituacoesChange({
                         ...situacoes,
                         atendimentoInterrompido:
                           !situacoes.atendimentoInterrompido,
@@ -435,24 +443,18 @@ const TelaOSAbertas: React.FC = () => {
                             {os.maquina.modelo || os.maquina.descricao}
                           </div>
                           <div
-                            className={`w-4 h-4 rounded-full flex items-center justify-center border ${
+                            className="w-4 h-4 flex items-center justify-center"
+                            title={
                               os.em_garantia
-                                ? "bg-emerald-100 border-emerald-300"
-                                : "bg-amber-100 border-amber-300"
-                            }`}
+                                ? "Em garantia"
+                                : "Fora da garantia"
+                            }
                           >
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                os.em_garantia
-                                  ? "bg-emerald-500"
-                                  : "bg-amber-500"
-                              }`}
-                              title={
-                                os.em_garantia
-                                  ? "Em garantia"
-                                  : "Fora da garantia"
-                              }
-                            ></div>
+                            {os.em_garantia ? (
+                              <CircleCheck className="w-4 h-4 text-emerald-500" />
+                            ) : (
+                              <CircleX className="w-4 h-4 text-amber-500" />
+                            )}
                           </div>
                         </div>
                         <div className="text-sm text-gray-600 flex items-center gap-1.5 mt-0.5">
@@ -469,15 +471,33 @@ const TelaOSAbertas: React.FC = () => {
                           <div className="flex items-center gap-1.5 text-sm text-gray-600">
                             <User className="w-3.5 h-3.5 flex-shrink-0 text-gray-500 my-auto" />
                             {os.tecnico.nome ? (
-                              <span className="font-medium truncate my-auto">
-                                {os.tecnico.nome}
-                              </span>
+                              <div className="flex items-center gap-1.5 truncate my-auto">
+                                <span className="font-bold text-md truncate">
+                                  {os.tecnico.nome}
+                                </span>
+                                {os.tecnico.tipo && (
+                                  <span
+                                    className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                                      os.tecnico.tipo === "interno"
+                                        ? "bg-blue-50 text-blue-600 border border-blue-100"
+                                        : os.tecnico.tipo === "terceiro"
+                                        ? "bg-amber-50 text-amber-600 border border-amber-100"
+                                        : ""
+                                    }`}
+                                  >
+                                    {os.tecnico.tipo === "interno"
+                                      ? "Interno"
+                                      : "Terceiro"}
+                                  </span>
+                                )}
+                              </div>
                             ) : (
                               <span className="text-red-600 font-medium my-auto">
                                 Técnico indefinido
                               </span>
                             )}
                           </div>
+
                           <div className="flex items-center gap-1.5 text-sm text-gray-600">
                             <Calendar className="w-3.5 h-3.5 flex-shrink-0 text-gray-500 my-auto" />
                             <span className="font-medium my-auto">
@@ -697,8 +717,23 @@ const TelaOSAbertas: React.FC = () => {
                           <div className="mt-4 pt-4 border-t border-gray-100">
                             <div className="flex items-center gap-2 mb-2">
                               <User className="w-4 h-4 text-indigo-500" />
-                              <h4 className="font-medium text-gray-700">
+                              <h4 className="font-medium text-gray-700 flex items-center gap-2">
                                 Observações do Técnico
+                                {os.tecnico.tipo && (
+                                  <span
+                                    className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                                      os.tecnico.tipo === "interno"
+                                        ? "bg-blue-50 text-blue-600 border border-blue-100"
+                                        : os.tecnico.tipo === "terceiro"
+                                        ? "bg-amber-50 text-amber-600 border border-amber-100"
+                                        : ""
+                                    }`}
+                                  >
+                                    {os.tecnico.tipo === "interno"
+                                      ? "Interno"
+                                      : "Terceiro"}
+                                  </span>
+                                )}
                               </h4>
                             </div>
                             <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
@@ -733,14 +768,14 @@ const TelaOSAbertas: React.FC = () => {
             <button
               type="button"
               onClick={() => {
-                setSituacoes({
+                const newSituacoes = {
                   pendente: true,
                   aAtender: true,
                   emDeslocamento: true,
                   emAtendimento: true,
                   atendimentoInterrompido: true,
-                });
-                setSearchTerm("");
+                };
+                handleSituacoesChange(newSituacoes);
               }}
               className="px-4 py-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg font-medium transition-colors flex items-center gap-2"
             >
