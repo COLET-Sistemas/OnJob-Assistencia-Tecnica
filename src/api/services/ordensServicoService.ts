@@ -1,6 +1,6 @@
 import api from "../httpClient";
 
-interface OSStatusCount {
+export interface OSStatusCount {
   em_execucao: number;
   finalizadas: number;
   abertas: number;
@@ -8,7 +8,7 @@ interface OSStatusCount {
   total: number;
 }
 
-interface OSItem {
+export interface OSItem {
   id: number;
   numero_os: string;
   data_abertura: string;
@@ -20,31 +20,14 @@ interface OSItem {
     id: number;
     numero_serie: string;
   };
-  status: string;
+  status: string | number;
   tecnico?: {
     id: number;
     nome: string;
   };
 }
 
-interface OSDetalhada extends OSItem {
-  motivo_atendimento: {
-    id: number;
-    descricao: string;
-  };
-  motivo_pendencia?: {
-    id: number;
-    descricao: string;
-  };
-  comentarios_pendencia?: string;
-  regiao: {
-    id: number;
-    nome: string;
-  };
-  historico: OSHistorico[];
-}
-
-interface OSHistorico {
+export interface OSHistorico {
   id: number;
   data_hora: string;
   usuario: {
@@ -54,6 +37,90 @@ interface OSHistorico {
   status_anterior: string;
   status_atual: string;
   comentario: string;
+}
+
+export interface OSFat {
+  id: number;
+  data_inicio: string;
+  data_fim: string;
+  tecnico: {
+    id: number;
+    nome: string;
+  };
+  observacoes: string;
+  pecas_utilizadas: OSPeca[];
+}
+
+export interface OSPeca {
+  id: number;
+  peca: {
+    id: number;
+    nome: string;
+  };
+  quantidade: number;
+  valor_unitario: number;
+}
+
+export interface OSRevisao {
+  id: number;
+  data_revisao: string;
+  usuario: {
+    id: number;
+    nome: string;
+  };
+  observacoes: string;
+}
+
+export interface OSDetalhada extends OSItem {
+  data_agendada?: string;
+  data_fechamento?: string;
+  data_revisao?: string;
+  status: number; // Changed to number to match the print page expectation
+  status_descricao: string;
+  cliente: {
+    id: number;
+    nome_fantasia: string;
+    endereco?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    cidade: string;
+    uf: string;
+    cep?: string;
+  };
+  contato?: {
+    nome: string;
+    telefone: string;
+    email?: string;
+  };
+  maquina: {
+    id: number;
+    numero_serie: string;
+    descricao?: string;
+    modelo?: string;
+  };
+  tecnico?: {
+    id: number;
+    nome: string;
+  };
+  motivo_atendimento: {
+    id: number;
+    descricao: string;
+  };
+  motivo_pendencia?: {
+    id: number;
+    descricao: string;
+  };
+  comentarios_pendencia?: string;
+  em_garantia?: boolean;
+  descricao_problema?: string;
+  regiao: {
+    id: number;
+    nome: string;
+  };
+  historico: OSHistorico[];
+  fats?: OSFat[];
+  revisao?: OSRevisao;
 }
 
 interface OSPaginada {

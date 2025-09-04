@@ -149,18 +149,17 @@ const NovaOrdemServico = () => {
 
         // Carregar técnicos
         setLoadingTecnicos(true);
-        const tecnicosData = await usuariosService.getAll({
+        const tecnicosResponse = await usuariosService.getAll({
           apenas_tecnicos: "s",
           situacao: "A",
         });
-        const tecnicosOpts = tecnicosData.map((tecnico: Usuario) => ({
+        const tecnicosOpts = tecnicosResponse.dados.map((tecnico: Usuario) => ({
           value: tecnico.id,
           label: tecnico.nome,
         }));
         setTecnicosOptions(tecnicosOpts);
         setLoadingTecnicos(false);
 
-        // Região removida conforme solicitação
       } catch (error) {
         console.error("Erro ao carregar dados iniciais:", error);
       } finally {
@@ -183,7 +182,6 @@ const NovaOrdemServico = () => {
 
   const searchClientes = async (term: string) => {
     try {
-      // Usando o parâmetro nome ao invés de busca
       const response = await clientesService.search(term);
 
       // Acessa os dados dos clientes no array 'dados'
@@ -213,9 +211,7 @@ const NovaOrdemServico = () => {
     try {
       const response = await maquinasService.searchByNumeroSerie(term);
 
-      // Mapear máquinas para opções
       const machineOptions = response.dados.map((maquina: Maquina) => {
-        // Verificar se está na garantia (data_final_garantia maior que hoje)
         const isInWarranty =
           maquina.data_final_garantia &&
           new Date(maquina.data_final_garantia) > new Date();

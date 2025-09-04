@@ -564,22 +564,23 @@ const ConsultaOSPage: React.FC = () => {
       header: "OS #",
       accessor: (os: OrdemServico) => os.id,
       render: (os: OrdemServico) => (
-        <span className="font-medium">{os.id}</span>
+        <span className="font-medium text-black">{os.id}</span>
       ),
     },
     {
       header: "Cliente",
       accessor: (os: OrdemServico) => os.cliente.nome_fantasia,
+      render: (os: OrdemServico) => (
+        <span className="text-black">{os.cliente.nome_fantasia}</span>
+      ),
     },
     {
       header: "Máquina",
       accessor: (os: OrdemServico) => os.maquina.numero_serie,
       render: (os: OrdemServico) => (
         <div className="flex flex-col">
-          <span>{os.maquina.descricao || "N/A"}</span>
-          <span className="text-xs text-gray-500">
-            {os.maquina.numero_serie}
-          </span>
+          <span className="text-black">{os.maquina.descricao || "N/A"}</span>
+          <span className="text-xs text-black">{os.maquina.numero_serie}</span>
         </div>
       ),
     },
@@ -587,14 +588,18 @@ const ConsultaOSPage: React.FC = () => {
       header: "Técnico",
       accessor: (os: OrdemServico) => os.tecnico?.nome || "Não atribuído",
       render: (os: OrdemServico) => (
-        <span>{os.tecnico?.nome || "Não atribuído"}</span>
+        <span className="text-black">
+          {os.tecnico?.nome || "Não atribuído"}
+        </span>
       ),
     },
     {
       header: "Abertura",
       accessor: (os: OrdemServico) => os.data_abertura,
       render: (os: OrdemServico) => (
-        <span>{formatarDataHora(os.data_abertura)?.data || "N/A"}</span>
+        <span className="text-black">
+          {formatarDataHora(os.data_abertura)?.data || "N/A"}
+        </span>
       ),
     },
     {

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Search,
   Calendar,
@@ -16,6 +16,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Check,
+  MessageCircle,
+  ExternalLink,
 } from "lucide-react";
 import PageHeaderSimple from "@/components/admin/ui/PageHeaderSimple";
 import { ordensServicoService } from "@/api/services/ordensServicoService";
@@ -102,6 +104,7 @@ const TelaOSAbertas: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  const [tecnicoTipo, setTecnicoTipo] = useState<string>("todos"); // Novo state para filtro de tipo de técnico
 
   const { setTitle } = useTitle();
 
@@ -117,37 +120,40 @@ const TelaOSAbertas: React.FC = () => {
     atendimentoInterrompido: true,
   });
 
-  const fetchData = async (situacoesParam = situacoes) => {
-    try {
-      setLoading(true);
-      const getSituacoesSelecionadas = () => {
-        const codigos = Object.entries(situacoesParam)
-          .filter(([, isSelected]) => isSelected)
-          .map(([key]) => situacoesMap[key as keyof typeof situacoesMap]);
+  const fetchData = useCallback(
+    async (situacoesParam = situacoes) => {
+      try {
+        setLoading(true);
+        const getSituacoesSelecionadas = () => {
+          const codigos = Object.entries(situacoesParam)
+            .filter(([, isSelected]) => isSelected)
+            .map(([key]) => situacoesMap[key as keyof typeof situacoesMap]);
 
-        return codigos.join(",");
-      };
+          return codigos.join(",");
+        };
 
-      const situacoesSelecionadas = getSituacoesSelecionadas();
+        const situacoesSelecionadas = getSituacoesSelecionadas();
 
-      const response = await ordensServicoService.getAll({
-        resumido: "S",
-        situacao: situacoesSelecionadas,
-      });
+        const response = await ordensServicoService.getAll({
+          resumido: "S",
+          situacao: situacoesSelecionadas,
+        });
 
-      if (response && response.dados) {
-        setOrdensServico(response.dados as unknown as OrdemServico[]);
-      } else {
-        console.warn("Resposta inesperada da API:", response);
+        if (response && response.dados) {
+          setOrdensServico(response.dados as unknown as OrdemServico[]);
+        } else {
+          console.warn("Resposta inesperada da API:", response);
+          setOrdensServico([]);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar ordens de serviço:", error);
         setOrdensServico([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Erro ao buscar ordens de serviço:", error);
-      setOrdensServico([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [situacoes]
+  );
 
   const didFetch = useRef(false);
 
@@ -156,7 +162,7 @@ const TelaOSAbertas: React.FC = () => {
       fetchData();
       didFetch.current = true;
     }
-  }, []);
+  }, [fetchData]);
 
   const handleSituacoesChange = (newSituacoes: typeof situacoes) => {
     setSituacoes(newSituacoes);
@@ -183,6 +189,33 @@ const TelaOSAbertas: React.FC = () => {
     return formas[forma] || forma;
   };
 
+  // Helper functions for contact actions
+  const formatWhatsAppUrl = (telefone: string) => {
+    const cleanPhone = telefone.replace(/\D/g, "");
+    return `https://wa.me/55${cleanPhone}`;
+  };
+
+  const formatEmailUrl = (email: string) => {
+    return `mailto:${email}`;
+  };
+
+  const formatGoogleMapsUrl = (cliente: OrdemServico["cliente"]) => {
+    const endereco = [
+      cliente.endereco,
+      cliente.numero,
+      cliente.bairro,
+      cliente.cidade,
+      cliente.uf,
+      cliente.cep,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      endereco
+    )}`;
+  };
+
   const filteredOrdens = ordensServico.filter((os) => {
     const matchSearch =
       searchTerm === "" ||
@@ -192,7 +225,14 @@ const TelaOSAbertas: React.FC = () => {
       os.maquina.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
       os.maquina.numero_serie.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return matchSearch;
+    // Filtro por tipo de técnico
+    const matchTecnicoTipo =
+      tecnicoTipo === "todos" ||
+      (tecnicoTipo === "indefinido" &&
+        (!os.tecnico.tipo || !os.tecnico.nome)) ||
+      os.tecnico.tipo === tecnicoTipo;
+
+    return matchSearch && matchTecnicoTipo;
   });
 
   if (loading) {
@@ -361,6 +401,83 @@ const TelaOSAbertas: React.FC = () => {
                     )}
                     <span className="whitespace-nowrap">Interrompido</span>
                   </button>
+                </div>
+              </div>
+
+              {/* Filtro de Tipo de Técnico */}
+              <div className="mt-4">
+                <div className="flex justify-between items-center mb-3">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Tipo de Técnico
+                  </label>
+                  {tecnicoTipo !== "todos" && (
+                    <button
+                      type="button"
+                      className="px-2 py-1 text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-md font-medium transition-colors border border-indigo-200 flex items-center gap-1"
+                      onClick={() => setTecnicoTipo("todos")}
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      Mostrar todos
+                    </button>
+                  )}
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className={`px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-all ${
+                        tecnicoTipo === "todos"
+                          ? "bg-indigo-100 text-indigo-800 border border-indigo-200 shadow-sm"
+                          : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                      }`}
+                      onClick={() => setTecnicoTipo("todos")}
+                    >
+                      {tecnicoTipo === "todos" && <Check className="w-4 h-4" />}
+                      <span className="whitespace-nowrap">Todos</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-all ${
+                        tecnicoTipo === "interno"
+                          ? "bg-blue-100 text-blue-800 border border-blue-200 shadow-sm"
+                          : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                      }`}
+                      onClick={() => setTecnicoTipo("interno")}
+                    >
+                      {tecnicoTipo === "interno" && (
+                        <Check className="w-4 h-4" />
+                      )}
+                      <span className="whitespace-nowrap">Internos</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-all ${
+                        tecnicoTipo === "terceiro"
+                          ? "bg-amber-100 text-amber-800 border border-amber-200 shadow-sm"
+                          : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                      }`}
+                      onClick={() => setTecnicoTipo("terceiro")}
+                    >
+                      {tecnicoTipo === "terceiro" && (
+                        <Check className="w-4 h-4" />
+                      )}
+                      <span className="whitespace-nowrap">Terceirizados</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-all ${
+                        tecnicoTipo === "indefinido"
+                          ? "bg-red-100 text-red-800 border border-red-200 shadow-sm"
+                          : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                      }`}
+                      onClick={() => setTecnicoTipo("indefinido")}
+                    >
+                      {tecnicoTipo === "indefinido" && (
+                        <Check className="w-4 h-4" />
+                      )}
+                      <span className="whitespace-nowrap">Indefinidos</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -649,69 +766,6 @@ const TelaOSAbertas: React.FC = () => {
                             </div>
                           </div>
                         )}
-                      </div>
-
-                      {/* Endereço e Contato - Informações Adicionais */}
-                      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <MapPin className="w-4 h-4 text-indigo-500" />
-                          <h4 className="font-medium text-gray-700">
-                            Endereço Completo
-                          </h4>
-                        </div>
-
-                        <div className="text-sm text-gray-600 mb-4">
-                          {os.cliente.endereco ? (
-                            <div className="space-y-1">
-                              <p>
-                                {os.cliente.endereco}, {os.cliente.numero}
-                              </p>
-                              {os.cliente.complemento && (
-                                <p>Complemento: {os.cliente.complemento}</p>
-                              )}
-                              {os.cliente.bairro && (
-                                <p>Bairro: {os.cliente.bairro}</p>
-                              )}
-                              <p>
-                                {os.cliente.cidade}/{os.cliente.uf}
-                              </p>
-                              {os.cliente.cep && <p>CEP: {os.cliente.cep}</p>}
-                            </div>
-                          ) : (
-                            <p className="text-gray-500 italic">
-                              Endereço não cadastrado
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="mt-4 pt-4 border-t border-gray-100">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Phone className="w-4 h-4 text-indigo-500" />
-                            <h4 className="font-medium text-gray-700">
-                              Contato
-                            </h4>
-                          </div>
-
-                          <div className="text-sm space-y-1.5">
-                            <div className="flex items-center gap-1.5 text-gray-600">
-                              <Phone className="w-3 h-3 text-gray-600" />
-                              <span>{os.contato.telefone}</span>
-                              {os.contato.whatsapp && (
-                                <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-full text-[10px] font-medium border border-emerald-100">
-                                  WhatsApp
-                                </span>
-                              )}
-                            </div>
-
-                            {os.contato.email && (
-                              <div className="flex items-center gap-1.5 text-gray-600">
-                                <Mail className="w-3 h-3 text-gray-600" />
-                                <span>{os.contato.email}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
                         {/* Observações do técnico quando existirem */}
                         {os.tecnico.observacoes && (
                           <div className="mt-4 pt-4 border-t border-gray-100">
@@ -741,6 +795,113 @@ const TelaOSAbertas: React.FC = () => {
                             </p>
                           </div>
                         )}
+                      </div>
+
+                      {/* Endereço e Contato - Informações Adicionais */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <MapPin className="w-4 h-4 text-indigo-500" />
+                          <h4 className="font-medium text-gray-700">
+                            Endereço Completo
+                          </h4>
+                        </div>
+
+                        <div className="text-sm text-gray-600 mb-4">
+                          {os.cliente.endereco ? (
+                            <div className="space-y-1">
+                              <div className="flex justify-between items-start">
+                                <div className="space-y-1 flex-1">
+                                  <p>
+                                    {os.cliente.endereco}, {os.cliente.numero} -{" "}
+                                    {os.cliente.bairro}, {os.cliente.cidade}/
+                                    {os.cliente.uf}
+                                  </p>
+                                  {os.cliente.complemento && (
+                                    <p>Complemento: {os.cliente.complemento}</p>
+                                  )}
+                                  {os.cliente.cep && (
+                                    <p>CEP: {os.cliente.cep}</p>
+                                  )}
+                                </div>
+
+                                {/* Google Maps Button */}
+                                <div className="ml-2 flex-shrink-0">
+                                  <a
+                                    href={formatGoogleMapsUrl(os.cliente)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-medium transition-colors border border-blue-200"
+                                  >
+                                    <MapPin className="w-3.5 h-3.5" />
+                                    Google Maps
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 italic">
+                              Endereço não cadastrado
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Phone className="w-4 h-4 text-indigo-500" />
+                            <h4 className="font-medium text-gray-700">
+                              Contato
+                            </h4>
+                          </div>
+
+                          <div className="text-sm space-y-2">
+                            <div className="flex items-center justify-between">
+                              {os.contato.telefone && (
+                                <div className="flex items-center gap-1.5 text-gray-600">
+                                  <Phone className="w-3 h-3 text-gray-600" />
+                                  <span>{os.contato.telefone}</span>
+                                  {os.contato.whatsapp && (
+                                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                                  )}
+                                </div>
+                              )}
+                              {/* WhatsApp Button */}
+                              {os.contato.whatsapp && (
+                                <a
+                                  href={formatWhatsAppUrl(os.contato.telefone)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-md text-xs font-medium transition-colors border border-emerald-200"
+                                >
+                                  <MessageCircle className="w-3 h-3" />
+                                  WhatsApp
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              )}
+                            </div>
+
+                            {os.contato.email && (
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5 text-gray-600">
+                                  <Mail className="w-3 h-3 text-gray-600" />
+                                  <span>{os.contato.email}</span>
+                                </div>
+
+                                {/* Email Button */}
+                                <a
+                                  href={formatEmailUrl(os.contato.email)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md text-xs font-medium transition-colors border border-blue-200"
+                                >
+                                  <Mail className="w-3 h-3" />
+                                  Enviar email
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -776,6 +937,7 @@ const TelaOSAbertas: React.FC = () => {
                   atendimentoInterrompido: true,
                 };
                 handleSituacoesChange(newSituacoes);
+                setTecnicoTipo("todos");
               }}
               className="px-4 py-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg font-medium transition-colors flex items-center gap-2"
             >
