@@ -1,12 +1,15 @@
 "use client";
 
-import { Plus, ArrowLeft } from "lucide-react";
+import { Plus, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
 interface ListConfig {
   type: "list";
   itemCount: number;
+  refreshButton?: {
+    onClick: () => void;
+  };
   newButton: {
     label: string;
     link?: string;
@@ -43,7 +46,19 @@ const PageHeaderSimple: React.FC<PageHeaderSimpleProps> = ({
               </span>
             </h2>
 
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
+              {config.refreshButton && (
+                <button
+                  onClick={config.refreshButton.onClick}
+                  className="cursor-pointer bg-white text-[var(--primary)] px-4 py-2 rounded-xl flex items-center gap-2 justify-center 
+             transition-all duration-300 shadow-sm hover:shadow-md border border-[var(--primary)]/30 
+             hover:bg-[var(--primary)]/10 active:scale-95"
+                  title="Atualizar lista"
+                >
+                  <RefreshCw size={18} className="cursor-pointer" />
+                  <span className="font-medium">Atualizar</span>
+                </button>
+              )}
               {config.newButton.onClick ? (
                 <button
                   onClick={config.newButton.onClick}

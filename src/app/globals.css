@@ -74,3 +74,102 @@ body {
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out forwards;
 }
+
+/* Animação de expansão vertical */
+@keyframes expandY {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 1000px;
+    opacity: 1;
+  }
+}
+
+.animate-expandY {
+  animation: expandY 0.4s ease-out forwards;
+  overflow: hidden;
+}
+
+/* Animação de slide de baixo para cima */
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+/* Atraso nas animações */
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+/* Estilo personalizado para a barra de rolagem */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--primary);
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #6241a4;
+}
+
+/* Estilo para Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) #f1f1f1;
+  scroll-behavior: smooth;
+}
+
+/* Efeito de scroll reveal para cartões */
+@keyframes cardReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-reveal {
+  animation: cardReveal 0.4s ease-out forwards;
+}
+
+/* Animação para hover em cards */
+@keyframes cardHover {
+  to {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+}
+
+.hover-animate {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-animate:hover {
+  animation: cardHover 0.2s ease forwards;
+}

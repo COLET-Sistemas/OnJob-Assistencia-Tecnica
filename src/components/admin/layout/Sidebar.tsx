@@ -43,6 +43,11 @@ const menuItems: MenuItem[] = [
     icon: Home,
     path: "/admin/dashboard",
   },
+  // {
+  //   key: "OS_section",
+  //   label: "Ordens de Serviço",
+  //   isSection: true,
+  // },
   {
     key: "os_aberto",
     label: "Ordens de Serviço",
@@ -57,7 +62,7 @@ const menuItems: MenuItem[] = [
   },
   {
     key: "consultas",
-    label: "Consultas",
+    label: "Consulta de OS",
     icon: Search,
     path: "/admin/os_consulta",
   },
