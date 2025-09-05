@@ -1,4 +1,3 @@
-import { useTitle } from "@/context/TitleContext";
 import Link from "next/link";
 import {
   Bell,
@@ -14,15 +13,25 @@ import {
   MonitorDot,
 } from "lucide-react";
 import { useEffect, useState, memo } from "react";
+import { useEmpresa } from "@/hooks";
+import { authService, empresaService } from "@/api/services";
 
-// Separate component for the title that will re-render independently
-const PageTitle = memo(function PageTitle({
-  fallbackTitle = "",
-}: {
-  fallbackTitle?: string;
-}) {
-  const titleContext = useTitle();
-  const displayTitle = titleContext.title || fallbackTitle || "";
+const CompanyName = memo(function CompanyName() {
+  const { nomeEmpresa, loading } = useEmpresa();
+
+  if (loading) {
+    return (
+      <div
+        className="animate-pulse bg-gray-200 rounded"
+        style={{
+          height: "22px",
+          width: "120px",
+          marginLeft: "8px",
+        }}
+      />
+    );
+  }
+
   return (
     <h4
       className="font-semibold flex items-center"
@@ -34,7 +43,7 @@ const PageTitle = memo(function PageTitle({
         letterSpacing: 0,
       }}
     >
-      {displayTitle}
+      {nomeEmpresa}
     </h4>
   );
 });
@@ -42,10 +51,9 @@ const PageTitle = memo(function PageTitle({
 interface NavbarProps {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
-  title?: string;
 }
 
-function NavbarComponent({ sidebarOpen, setSidebarOpen, title }: NavbarProps) {
+function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
   const [nomeUsuario, setNomeUsuario] = useState("Usuário");
 
   useEffect(() => {
@@ -114,16 +122,28 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen, title }: NavbarProps) {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("email");
-    localStorage.removeItem("id_usuario");
-    localStorage.removeItem("nome_usuario");
-    localStorage.removeItem("token");
-    localStorage.removeItem("perfil");
-    localStorage.removeItem("versao_api");
-    localStorage.removeItem("empresa");
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
 
-    window.location.href = "/";
+      // Limpa todos os dados do localStorage
+      localStorage.removeItem("email");
+      localStorage.removeItem("id_usuario");
+      localStorage.removeItem("nome_usuario");
+      localStorage.removeItem("token");
+      localStorage.removeItem("perfil");
+      localStorage.removeItem("versao_api");
+
+      // Limpa dados da empresa
+      empresaService.clearEmpresaData();
+
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Erro durante logout:", error);
+      // Em caso de erro, ainda assim limpa os dados locais e redireciona
+      localStorage.clear();
+      window.location.href = "/";
+    }
   };
 
   return (
@@ -154,7 +174,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen, title }: NavbarProps) {
               />
             )}
           </button>
-          <PageTitle fallbackTitle={title} />
+          <CompanyName />
         </div>
 
         <div className="flex items-center space-x-5">

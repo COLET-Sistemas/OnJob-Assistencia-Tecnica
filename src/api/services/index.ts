@@ -5,6 +5,7 @@ export * from "./baseService";
 export * from "./authService";
 export * from "./clientesService";
 export * from "./dashboardService";
+export * from "./empresaService";
 export * from "./maquinasService";
 export * from "./motivosAtendimentoService";
 export * from "./motivosPendenciaService";

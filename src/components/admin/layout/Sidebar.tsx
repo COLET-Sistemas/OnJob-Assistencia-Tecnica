@@ -485,7 +485,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                   <Cog size={18} className="text-[#F6C647]" />
                 </div>
                 <div className="flex flex-col">
-                  <p className="text-sm font-medium text-white/80">
+                  {/* <p className="text-sm font-medium text-white/80">
                     {typeof window !== "undefined"
                       ? (() => {
                           const empresaStr = localStorage.getItem("empresa");
@@ -504,7 +504,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                           return "Nome BD não definido";
                         })()
                       : "Nome BD não disponível"}
-                  </p>
+                  </p> */}
 
                   <p className="text-xs font-medium text-white">
                     Versão APP: {packageInfo.version}
