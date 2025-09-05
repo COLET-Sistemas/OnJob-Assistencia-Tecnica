@@ -89,7 +89,7 @@ const ConsultaOSPage: React.FC = () => {
       },
       {
         header: "Cliente",
-        accessor: (item: OSItem) => item.cli  "-",
+        accessor: (item: OSItem) => item.cliente?.nome_fantasia || "-",
       },
       {
         header: "Máquina",
