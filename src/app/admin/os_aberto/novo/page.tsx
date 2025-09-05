@@ -104,6 +104,18 @@ const NovaOrdemServico = () => {
     null
   );
   const [loadingTecnicos, setLoadingTecnicos] = useState(false);
+  const [showNameError, setShowNameError] = useState(false);
+
+  // Estado para controlar validação de campos
+  const [errors, setErrors] = useState<{
+    cliente?: boolean;
+    maquina?: boolean;
+    contato?: boolean;
+    motivoPendencia?: boolean;
+    descricaoProblema?: boolean;
+    formaAbertura?: boolean;
+    customContatoNome?: boolean;
+  }>({});
 
   // Refs para controlar chamadas à API
   const motivosPendenciaLoaded = useRef(false);
@@ -393,38 +405,76 @@ const NovaOrdemServico = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedCliente || !selectedMaquina || !descricaoProblema.trim()) {
-      alert(
-        "Por favor, preencha todos os campos obrigatórios: Cliente, Máquina e Descrição do Problema."
-      );
-      return;
+    // Objeto para armazenar os erros de validação
+    const validationErrors: {
+      cliente?: boolean;
+      maquina?: boolean;
+      contato?: boolean;
+      motivoPendencia?: boolean;
+      descricaoProblema?: boolean;
+      formaAbertura?: boolean;
+      customContatoNome?: boolean;
+    } = {};
+
+    // Validar cliente
+    if (!selectedCliente) {
+      validationErrors.cliente = true;
     }
 
+    // Validar máquina
+    if (!selectedMaquina) {
+      validationErrors.maquina = true;
+    }
+
+    // Validar descrição do problema
+    if (!descricaoProblema.trim()) {
+      validationErrors.descricaoProblema = true;
+    }
+
+    // Validar forma de abertura
     if (!formaAbertura || !formaAbertura.value) {
-      alert("Por favor, selecione uma forma de abertura válida.");
-      return;
+      validationErrors.formaAbertura = true;
     }
 
+    // Validar motivo de pendência
     if (!selectedMotivoPendencia) {
-      alert("Por favor, selecione um motivo de pendência.");
-      return;
+      validationErrors.motivoPendencia = true;
     }
 
-    // Validar se o contato foi selecionado
+    // Validar contato
     if (!selectedContato) {
-      alert("Por favor, selecione um contato.");
+      validationErrors.contato = true;
+    } else if (selectedContato.isCustom && !customContatoNome.trim()) {
+      // Validar nome do contato personalizado
+      validationErrors.customContatoNome = true;
+      setShowNameError(true);
+    }
+
+    // Se houver erros, atualizar o estado e abortar o envio
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+
+      // Rolar até o primeiro campo com erro
+      const firstErrorField = document.querySelector(".campo-erro");
+      if (firstErrorField) {
+        firstErrorField.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
       return;
     }
 
-    // Validar se, para contato personalizado, pelo menos o nome foi informado
-    if (selectedContato.isCustom && !customContatoNome.trim()) {
-      alert("Por favor, informe pelo menos o nome do contato.");
-      return;
-    }
+    // Limpar erros se tudo estiver válido
+    setErrors({});
 
     setIsSaving(true);
 
     try {
+      // Verificamos anteriormente que esses valores não são nulos, mas vamos garantir isso novamente
+      if (!selectedCliente || !selectedMaquina || !formaAbertura) {
+        console.error("Valores necessários não encontrados");
+        return;
+      }
+
       const osData: {
         id_cliente: number;
         id_maquina: number;
@@ -512,10 +562,13 @@ const NovaOrdemServico = () => {
         id_motivo_atendimento: number;
         comentarios: string;
       };
-      await ordensServicoService.create({
-        ...osData,
-      } as OSFormCustom);
-      router.push("/admin/os_aberto");
+      // Garantindo que selectedCliente e selectedMaquina não são nulos
+      if (selectedCliente && selectedMaquina) {
+        await ordensServicoService.create({
+          ...osData,
+        } as OSFormCustom);
+        router.push("/admin/os_aberto");
+      }
     } catch (error) {
       console.error("Erro ao criar ordem de serviço:", error);
       alert(
@@ -557,11 +610,15 @@ const NovaOrdemServico = () => {
               placeholder="Digite pelo menos 3 caracteres para buscar..."
               inputValue={clienteInput}
               onInputChange={handleClienteInputChange}
-              onChange={handleClienteSelectChange}
+              onChange={(option) => {
+                handleClienteSelectChange(option);
+                if (option) setErrors((prev) => ({ ...prev, cliente: false }));
+              }}
               options={clienteOptions}
               value={selectedCliente}
               isLoading={isSearchingClientes}
               minCharsToSearch={3}
+              error={errors.cliente ? "Cliente é obrigatório" : ""}
               noOptionsMessageFn={({ inputValue }) =>
                 inputValue.length < 3
                   ? "Digite pelo menos 3 caracteres para buscar..."
@@ -585,10 +642,14 @@ const NovaOrdemServico = () => {
               }
               options={contatoOptions}
               value={selectedContato}
-              onChange={handleContatoSelectChange}
+              onChange={(option) => {
+                handleContatoSelectChange(option);
+                if (option) setErrors((prev) => ({ ...prev, contato: false }));
+              }}
               inputValue=""
               onInputChange={() => {}}
               isLoading={loadingContatos}
+              error={errors.contato ? "Contato é obrigatório" : ""}
               noOptionsMessageFn={() =>
                 "Nenhum contato encontrado para este cliente"
               }
@@ -600,13 +661,17 @@ const NovaOrdemServico = () => {
         {useCustomContato && (
           <CustomContatoForm
             customContatoNome={customContatoNome}
-            setCustomContatoNome={setCustomContatoNome}
+            setCustomContatoNome={(value) => {
+              setCustomContatoNome(value);
+              if (value.trim()) setShowNameError(false);
+            }}
             customContatoEmail={customContatoEmail}
             setCustomContatoEmail={setCustomContatoEmail}
             customContatoTelefone={customContatoTelefone}
             setCustomContatoTelefone={setCustomContatoTelefone}
             customContatoWhatsapp={customContatoWhatsapp}
             setCustomContatoWhatsapp={setCustomContatoWhatsapp}
+            showNameError={showNameError}
           />
         )}
 
@@ -634,9 +699,13 @@ const NovaOrdemServico = () => {
               onInputChange={handleMaquinaInputChange}
               options={maquinaOptions}
               value={selectedMaquina}
-              onChange={handleMaquinaSelectChange}
+              onChange={(option) => {
+                handleMaquinaSelectChange(option);
+                if (option) setErrors((prev) => ({ ...prev, maquina: false }));
+              }}
               isLoading={loadingMaquinas || isSearchingMaquinas}
               minCharsToSearch={3}
+              error={errors.maquina ? "Máquina é obrigatória" : ""}
               noOptionsMessageFn={({ inputValue }) =>
                 inputValue.length < 3
                   ? "Digite pelo menos 3 caracteres para buscar uma máquina..."
@@ -679,10 +748,19 @@ const NovaOrdemServico = () => {
               placeholder="Selecione o motivo de pendência"
               options={motivosPendenciaOptions}
               value={selectedMotivoPendencia}
-              onChange={handleMotivoPendenciaSelectChange}
+              onChange={(option) => {
+                handleMotivoPendenciaSelectChange(option);
+                if (option)
+                  setErrors((prev) => ({ ...prev, motivoPendencia: false }));
+              }}
               inputValue=""
               onInputChange={() => {}}
               isLoading={false}
+              error={
+                errors.motivoPendencia
+                  ? "Motivo de pendência é obrigatório"
+                  : ""
+              }
               noOptionsMessageFn={() => "Nenhum motivo de pendência cadastrado"}
             />
           </motion.div>
@@ -714,6 +792,7 @@ const NovaOrdemServico = () => {
               onChange={(option) => {
                 if (option) {
                   setFormaAbertura(option as FormaAberturaOption);
+                  setErrors((prev) => ({ ...prev, formaAbertura: false }));
                 } else {
                   setFormaAbertura({ value: "telefone", label: "Telefone" });
                 }
@@ -734,6 +813,9 @@ const NovaOrdemServico = () => {
                 }
               }}
               isLoading={false}
+              error={
+                errors.formaAbertura ? "Forma de abertura é obrigatória" : ""
+              }
               noOptionsMessageFn={({ inputValue }) =>
                 inputValue
                   ? `Use "${inputValue}" como forma de abertura`
@@ -759,16 +841,30 @@ const NovaOrdemServico = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.15 }}
         >
-          <TextAreaField
-            id="descricao-problema"
-            label="Descrição do Problema"
-            value={descricaoProblema}
-            onChange={(e) => setDescricaoProblema(e.target.value)}
-            placeholder="Descreva detalhadamente o problema relatado pelo cliente"
-            required
-            rows={4}
-            className="transition-all duration-200"
-          />
+          <div className="relative">
+            <TextAreaField
+              id="descricao-problema"
+              label="Descrição do Problema"
+              value={descricaoProblema}
+              onChange={(e) => {
+                setDescricaoProblema(e.target.value);
+                if (e.target.value.trim()) {
+                  setErrors((prev) => ({ ...prev, descricaoProblema: false }));
+                }
+              }}
+              placeholder="Descreva detalhadamente o problema relatado pelo cliente"
+              required
+              rows={4}
+              className={`transition-all duration-200 ${
+                errors.descricaoProblema ? "!border-red-500 !ring-red-500" : ""
+              }`}
+            />
+            {errors.descricaoProblema && (
+              <div className="text-red-500 text-sm mt-1">
+                Descrição do problema é obrigatória
+              </div>
+            )}
+          </div>
         </motion.div>
 
         <FormActions isSaving={isSaving} />
