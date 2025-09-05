@@ -191,7 +191,7 @@ const OSCard: React.FC<OSCardProps> = ({
                       className={`flex items-center gap-1.5 text-sm ${
                         isDataAgendadaPassada(os.data_agendada)
                           ? "text-red-600"
-                          : "text-indigo-600"
+                          : "text-gray-600"
                       }`}
                     >
                       <Calendar className="w-3.5 h-3.5 flex-shrink-0 my-auto" />

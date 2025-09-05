@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import Select, { StylesConfig, Props as SelectProps } from "react-select";
 
 export interface OptionType {
@@ -38,7 +38,7 @@ export const getCustomSelectStyles = <
     }),
     singleValue: (provided: Record<string, unknown>) => ({
       ...provided,
-      color: "#0f172a", // text-slate-900
+      color: "#0f172a",
     }),
     option: (
       provided: Record<string, unknown>,
@@ -50,19 +50,19 @@ export const getCustomSelectStyles = <
         : state.isFocused
         ? "rgba(124, 84, 189, 0.1)"
         : "transparent",
-      color: state.isSelected ? "white" : "#0f172a", // text-slate-900
+      color: state.isSelected ? "white" : "#0f172a",
       cursor: "pointer",
     }),
     menu: (provided: Record<string, unknown>) => ({
       ...provided,
-      borderRadius: "0.5rem", // rounded-lg
+      borderRadius: "0.5rem",
       boxShadow:
         "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-      zIndex: 99999, // Increased to ensure it's on top of everything
+      zIndex: 99999,
     }),
     menuPortal: (provided: Record<string, unknown>) => ({
       ...provided,
-      zIndex: 99999, // Also ensuring the portal has high z-index
+      zIndex: 99999,
     }),
   };
 };
@@ -100,6 +100,12 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   noOptionsMessageFn,
   components,
 }) => {
+  // Using a properly typed ref for react-select that handles the methods we need
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const selectRef = useRef<any>(null);
+  // This is acceptable here as react-select's typing is complex,
+  // and we only use the focus() method from the ref.
+
   const defaultNoOptionsMessage = ({ inputValue }: { inputValue: string }) =>
     inputValue.length < minCharsToSearch
       ? `Digite pelo menos ${minCharsToSearch} caracteres para buscar...`
@@ -145,6 +151,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         }
         menuPosition="fixed"
         components={components}
+        ref={selectRef}
       />
       {error && <div className="text-red-500 text-sm mt-1">{error}</div>}
     </div>

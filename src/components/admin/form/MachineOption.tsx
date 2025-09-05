@@ -1,5 +1,6 @@
 import React from "react";
 import { components, OptionProps, GroupBase } from "react-select";
+import { CircleCheck, CircleX } from "lucide-react";
 import { OptionType } from "./CustomSelect";
 
 // Extend the Option type to include warranty info
@@ -8,7 +9,7 @@ export interface MachineOptionType extends OptionType {
   data_final_garantia?: string;
 }
 
-// Custom Option component that includes a warranty badge
+// Custom Option component that includes a warranty badge with Lucide icons
 export const MachineOption = (
   props: OptionProps<OptionType, boolean, GroupBase<OptionType>>
 ) => {
@@ -18,16 +19,27 @@ export const MachineOption = (
     <components.Option {...props}>
       <div className="flex items-center justify-between w-full">
         <div>{props.children}</div>
-        {option.isInWarranty !== undefined && (
-          <span
-            className={`text-xs font-medium px-2 py-1 rounded-full ${
-              option.isInWarranty
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
+        {option.isInWarranty !== undefined && option.value !== -1 && (
+          <div
+            className="flex items-center gap-1.5"
+            title={option.isInWarranty ? "Em garantia" : "Fora da garantia"}
           >
-            {option.isInWarranty ? "Em Garantia" : "Sem Garantia"}
-          </span>
+            {option.isInWarranty ? (
+              <>
+                <CircleCheck className="w-4 h-4 text-emerald-500" />
+                <span className="text-xs font-medium text-emerald-700">
+                  Em Garantia
+                </span>
+              </>
+            ) : (
+              <>
+                <CircleX className="w-4 h-4 text-amber-500" />
+                <span className="text-xs font-medium text-amber-700">
+                  Sem Garantia
+                </span>
+              </>
+            )}
+          </div>
         )}
       </div>
     </components.Option>

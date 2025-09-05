@@ -159,7 +159,7 @@ const FilterButton: React.FC<FilterButtonProps> = React.memo(
       <button
         type="button"
         className={`px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1 transition-all 
-                 transform hover:scale-105 active:scale-95 ${
+                 transform hover:scale-102 active:scale-95 cursor-pointer ${
                    active
                      ? `${colors[colorScheme]} shadow-sm`
                      : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"

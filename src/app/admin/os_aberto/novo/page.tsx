@@ -2,14 +2,14 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import CreatableSelect from "react-select/creatable";
+import { motion } from "framer-motion";
 import { LoadingSpinner as Loading } from "@/components/LoadingPersonalizado";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import {
   CustomSelect,
   TextAreaField,
-  DateTimeField,
   MachineOption,
+  DateTimeField,
   type MachineOptionType,
 } from "@/components/admin/form";
 import { clientesService } from "@/api/services/clientesService";
@@ -21,8 +21,12 @@ import { Cliente, ClienteContato } from "@/types/admin/cadastro/clientes";
 import { MotivoPendencia } from "@/types/admin/cadastro/motivos_pendencia";
 import { Maquina } from "@/types/admin/cadastro/maquinas";
 import { Usuario } from "@/types/admin/cadastro/usuarios";
-
 import { OptionType } from "@/components/admin/form/CustomSelect";
+
+// Componentes locais
+import CustomContatoForm from "./components/CustomContatoForm";
+import FormActions from "./components/FormActions";
+import FormContainer from "./components/FormContainer";
 
 interface ClienteOption extends OptionType {
   value: number;
@@ -76,6 +80,7 @@ const NovaOrdemServico = () => {
     value: "telefone",
     label: "Telefone",
   });
+  const [formaAberturaInput, setFormaAberturaInput] = useState("");
   const [dataAgendada, setDataAgendada] = useState("");
   const formaAberturaOptions: FormaAberturaOption[] = [
     { value: "email", label: "Email" },
@@ -103,6 +108,23 @@ const NovaOrdemServico = () => {
   // Refs para controlar chamadas à API
   const motivosPendenciaLoaded = useRef(false);
   const tecnicosLoaded = useRef(false);
+  // Refs para controlar timeouts de debounce
+  const clienteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const maquinaTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Efeito para focar no campo de cliente quando a página carregar
+  useEffect(() => {
+    // Pequeno delay para garantir que o componente foi renderizado completamente
+    const timer = setTimeout(() => {
+      // Buscar o elemento de input dentro do componente Select
+      const clienteInput = document.querySelector("#cliente input");
+      if (clienteInput) {
+        (clienteInput as HTMLInputElement).focus();
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Adaptadores de tipo para os handlers de mudança de select
   const handleClienteSelectChange = (option: OptionType | null) => {
@@ -159,15 +181,19 @@ const NovaOrdemServico = () => {
           tecnicosLoaded.current = true;
           setLoadingTecnicos(true);
           const tecnicosResponse = await usuariosService.getAll({
-            apenas_tecnicos: "s",
+            apenas_tecnicos: "S",
             situacao: "A",
           });
-          const tecnicosOpts = tecnicosResponse.dados.map(
-            (tecnico: Usuario) => ({
-              value: tecnico.id,
-              label: tecnico.nome,
-            })
-          );
+          // Handle both array response and {dados: [...]} structure
+          const tecnicos = Array.isArray(tecnicosResponse)
+            ? tecnicosResponse
+            : tecnicosResponse.dados || [];
+
+          const tecnicosOpts = tecnicos.map((tecnico: Usuario) => ({
+            value: tecnico.id,
+            label: tecnico.nome,
+          }));
+
           setTecnicosOptions(tecnicosOpts);
           setLoadingTecnicos(false);
         }
@@ -179,20 +205,20 @@ const NovaOrdemServico = () => {
     };
 
     fetchInitialData();
+
+    // Cleanup function para limpar os timeouts quando o componente é desmontado
+    return () => {
+      if (clienteTimeoutRef.current) clearTimeout(clienteTimeoutRef.current);
+      if (maquinaTimeoutRef.current) clearTimeout(maquinaTimeoutRef.current);
+    };
   }, []);
 
-  // Buscar clientes quando o input tiver pelo menos 3 caracteres
-  const handleClienteInputChange = (inputValue: string) => {
-    setClienteInput(inputValue);
-
-    if (inputValue.length >= 3 && !isSearchingClientes) {
-      setIsSearchingClientes(true);
-      searchClientes(inputValue);
-    }
-  };
-
+  // Função assíncrona para buscar clientes
   const searchClientes = async (term: string) => {
+    if (term.length < 3) return;
+
     try {
+      setIsSearchingClientes(true);
       const response = await clientesService.search(term);
 
       // Acessa os dados dos clientes no array 'dados'
@@ -208,17 +234,30 @@ const NovaOrdemServico = () => {
     }
   };
 
-  // Buscar máquinas pelo número de série
-  const handleMaquinaInputChange = (inputValue: string) => {
-    setMaquinaInput(inputValue);
+  // Handler para o input de cliente com debounce
+  const handleClienteInputChange = (inputValue: string) => {
+    setClienteInput(inputValue);
 
-    if (inputValue.length >= 3 && !isSearchingMaquinas) {
-      setIsSearchingMaquinas(true);
-      searchMaquinas(inputValue);
+    // Limpa o timeout anterior se estiver pendente
+    if (clienteTimeoutRef.current) {
+      clearTimeout(clienteTimeoutRef.current);
+      clienteTimeoutRef.current = null;
+    }
+
+    if (inputValue.length >= 3) {
+      setIsSearchingClientes(true);
+      clienteTimeoutRef.current = setTimeout(() => {
+        searchClientes(inputValue);
+      }, 700);
+    } else {
+      setClienteOptions([]);
+      setIsSearchingClientes(false);
     }
   };
 
   const searchMaquinas = async (term: string) => {
+    if (term.length < 3) return;
+
     try {
       const response = await maquinasService.searchByNumeroSerie(term);
 
@@ -243,7 +282,6 @@ const NovaOrdemServico = () => {
         data_final_garantia: "",
       } as MaquinaOption);
 
-      // Explicitly cast the array to MaquinaOption[]
       setMaquinaOptions(machineOptions as MaquinaOption[]);
     } catch (error) {
       console.error("Erro ao buscar máquinas:", error);
@@ -252,18 +290,36 @@ const NovaOrdemServico = () => {
     }
   };
 
-  // Carregar máquinas e contatos do cliente selecionado
+  // Handler para o input de máquina com debounce
+  const handleMaquinaInputChange = (inputValue: string) => {
+    setMaquinaInput(inputValue);
+
+    // Limpa o timeout anterior se estiver pendente
+    if (maquinaTimeoutRef.current) {
+      clearTimeout(maquinaTimeoutRef.current);
+      maquinaTimeoutRef.current = null;
+    }
+
+    if (inputValue.length >= 3) {
+      setIsSearchingMaquinas(true);
+
+      maquinaTimeoutRef.current = setTimeout(() => {
+        searchMaquinas(inputValue);
+      }, 700);
+    } else if (inputValue.length < 3) {
+      setIsSearchingMaquinas(false);
+    }
+  };
+
   const handleClienteChange = async (selectedOption: ClienteOption | null) => {
     setSelectedCliente(selectedOption);
-    setSelectedMaquina(null);
     setSelectedContato(null);
+    setSelectedMaquina(null);
     setMaquinaInput("");
 
     if (selectedOption) {
-      // Carregar máquinas do cliente
       setLoadingMaquinas(true);
       try {
-        // Buscar máquinas usando o id do cliente
         const maquinasResponse = await maquinasService.getByClienteId(
           selectedOption.value,
           15
@@ -271,7 +327,6 @@ const NovaOrdemServico = () => {
 
         const machineOptions = maquinasResponse.dados.map(
           (maquina: Maquina) => {
-            // Verificar se está na garantia (data_final_garantia maior que hoje)
             const isInWarranty =
               maquina.data_final_garantia &&
               new Date(maquina.data_final_garantia) > new Date();
@@ -285,7 +340,6 @@ const NovaOrdemServico = () => {
           }
         );
 
-        // Adiciona uma opção para buscar outras máquinas
         machineOptions.push({
           value: -1,
           label: "Buscar outra máquina...",
@@ -293,7 +347,6 @@ const NovaOrdemServico = () => {
           data_final_garantia: "",
         } as MaquinaOption);
 
-        // Explicitly cast the array to MaquinaOption[]
         setMaquinaOptions(machineOptions as MaquinaOption[]);
       } catch (error) {
         console.error("Erro ao carregar máquinas:", error);
@@ -372,7 +425,6 @@ const NovaOrdemServico = () => {
     setIsSaving(true);
 
     try {
-      // Define complete type with all possible fields
       const osData: {
         id_cliente: number;
         id_maquina: number;
@@ -478,10 +530,8 @@ const NovaOrdemServico = () => {
     return <Loading fullScreen />;
   }
 
-  // Removendo estilos customizados e formatter, já que estamos usando o componente CustomSelect
-
   return (
-    <div className="p-6">
+    <>
       <PageHeader
         title="Nova Ordem de Serviço"
         config={{
@@ -491,11 +541,15 @@ const NovaOrdemServico = () => {
         }}
       />
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Primeira linha: Cliente e Contato */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Cliente */}
+      <FormContainer onSubmit={handleSubmit}>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          {/* Cliente */}
+          <motion.div>
             <CustomSelect
               id="cliente"
               label="Cliente"
@@ -514,8 +568,10 @@ const NovaOrdemServico = () => {
                   : "Nenhum cliente encontrado"
               }
             />
+          </motion.div>
 
-            {/* Contato */}
+          {/* Contato */}
+          <motion.div>
             <CustomSelect
               id="contato"
               label="Contato"
@@ -536,83 +592,33 @@ const NovaOrdemServico = () => {
               noOptionsMessageFn={() =>
                 "Nenhum contato encontrado para este cliente"
               }
-              error={
-                selectedCliente && !selectedContato
-                  ? "Contato é obrigatório"
-                  : undefined
-              }
             />
-          </div>
+          </motion.div>
+        </motion.div>
 
-          {/* Campos para contato personalizado */}
-          {useCustomContato && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome do Contato <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={customContatoNome}
-                  onChange={(e) => setCustomContatoNome(e.target.value)}
-                  className={`w-full px-3 py-2 border text-gray-900 rounded-md shadow-sm 
-                    focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] 
-                    ${
-                      !customContatoNome.trim()
-                        ? "border-red-300"
-                        : "border-gray-300"
-                    }`}
-                  placeholder="Nome do contato"
-                  required
-                />
-                {!customContatoNome.trim() && (
-                  <p className="text-red-500 text-sm mt-1">
-                    Nome do contato é obrigatório
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={customContatoEmail}
-                  onChange={(e) => setCustomContatoEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-                  placeholder="Email do contato"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Telefone
-                </label>
-                <input
-                  type="text"
-                  value={customContatoTelefone}
-                  onChange={(e) => setCustomContatoTelefone(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-                  placeholder="Telefone do contato"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  WhatsApp
-                </label>
-                <input
-                  type="text"
-                  value={customContatoWhatsapp}
-                  onChange={(e) => setCustomContatoWhatsapp(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-                  placeholder="WhatsApp do contato (opcional)"
-                />
-              </div>
-            </div>
-          )}
+        {/* Campos para contato personalizado */}
+        {useCustomContato && (
+          <CustomContatoForm
+            customContatoNome={customContatoNome}
+            setCustomContatoNome={setCustomContatoNome}
+            customContatoEmail={customContatoEmail}
+            setCustomContatoEmail={setCustomContatoEmail}
+            customContatoTelefone={customContatoTelefone}
+            setCustomContatoTelefone={setCustomContatoTelefone}
+            customContatoWhatsapp={customContatoWhatsapp}
+            setCustomContatoWhatsapp={setCustomContatoWhatsapp}
+          />
+        )}
 
-          {/* Segunda linha: Máquina e Técnico */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Máquina */}
+        {/* Segunda linha: Máquina e Técnico */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          {/* Máquina */}
+          <motion.div>
             <CustomSelect
               id="maquina"
               label="Máquina"
@@ -638,8 +644,10 @@ const NovaOrdemServico = () => {
               }
               components={{ Option: MachineOption }}
             />
+          </motion.div>
 
-            {/* Técnico */}
+          {/* Técnico */}
+          <motion.div>
             <CustomSelect
               id="tecnico"
               label="Técnico"
@@ -652,11 +660,18 @@ const NovaOrdemServico = () => {
               isLoading={loadingTecnicos}
               noOptionsMessageFn={() => "Nenhum técnico encontrado"}
             />
-          </div>
+          </motion.div>
+        </motion.div>
 
-          {/* Terceira linha: Motivo de Pendência, Forma de Abertura e Data Agendada */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Motivo de Pendência */}
+        {/* Terceira linha: Motivo de Pendência, Forma de Abertura e Data Agendada */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          {/* Motivo de Pendência */}
+          <motion.div>
             <CustomSelect
               id="motivo-pendencia"
               label="Motivo de Pendência"
@@ -670,57 +685,80 @@ const NovaOrdemServico = () => {
               isLoading={false}
               noOptionsMessageFn={() => "Nenhum motivo de pendência cadastrado"}
             />
+          </motion.div>
 
-            {/* Forma de Abertura */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Forma de Abertura <span className="text-red-500">*</span>
-              </label>
-              <CreatableSelect
-                placeholder="Selecione ou digite uma forma de abertura"
-                options={formaAberturaOptions}
-                value={formaAbertura}
-                onChange={(newValue) => {
-                  if (newValue) {
-                    setFormaAbertura(newValue as FormaAberturaOption);
-                  } else {
-                    setFormaAbertura({ value: "telefone", label: "Telefone" });
-                  }
-                }}
-                styles={{
-                  // Using inline styles instead of getCustomSelectStyles() to match FormaAberturaOption type
-                  control: (provided, state) => ({
-                    ...provided,
-                    minHeight: "48px",
-                    height: "48px",
-                    borderColor: state.isFocused ? "var(--primary)" : "#e2e8f0",
-                    boxShadow: state.isFocused
-                      ? "0 0 0 1px var(--primary)"
-                      : "none",
-                    "&:hover": {
-                      borderColor: state.isFocused
-                        ? "var(--primary)"
-                        : "#cbd5e0",
-                    },
-                    borderRadius: "0.5rem",
-                  }),
-                }}
-                formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
-                className="react-select-container"
-                classNamePrefix="react-select"
-              />
-            </div>
+          {/* Forma de Abertura */}
+          <motion.div>
+            <CustomSelect
+              id="forma-abertura"
+              label="Forma de Abertura"
+              required
+              placeholder="Selecione ou digite a forma de abertura"
+              options={[
+                ...formaAberturaOptions,
+                // Adiciona a opção digitada pelo usuário se não estiver na lista
+                ...(formaAberturaInput &&
+                !formaAberturaOptions.some(
+                  (opt) =>
+                    opt.label.toLowerCase() === formaAberturaInput.toLowerCase()
+                )
+                  ? [
+                      {
+                        value: formaAberturaInput.toLowerCase(),
+                        label: formaAberturaInput,
+                      },
+                    ]
+                  : []),
+              ]}
+              value={formaAbertura}
+              onChange={(option) => {
+                if (option) {
+                  setFormaAbertura(option as FormaAberturaOption);
+                } else {
+                  setFormaAbertura({ value: "telefone", label: "Telefone" });
+                }
+              }}
+              inputValue={formaAberturaInput}
+              onInputChange={(value) => {
+                setFormaAberturaInput(value);
+                if (
+                  value &&
+                  !formaAberturaOptions.some(
+                    (opt) => opt.label.toLowerCase() === value.toLowerCase()
+                  )
+                ) {
+                  setFormaAbertura({
+                    value: value.toLowerCase().replace(/\s+/g, "_"),
+                    label: value,
+                  });
+                }
+              }}
+              isLoading={false}
+              noOptionsMessageFn={({ inputValue }) =>
+                inputValue
+                  ? `Use "${inputValue}" como forma de abertura`
+                  : "Nenhuma forma de abertura disponível"
+              }
+            />
+          </motion.div>
 
-            {/* Data Agendada */}
+          {/* Data Agendada */}
+          <motion.div>
             <DateTimeField
               id="data-agendada"
               label="Data Agendada"
               value={dataAgendada}
               onChange={(e) => setDataAgendada(e.target.value)}
             />
-          </div>
+          </motion.div>
+        </motion.div>
 
-          {/* Descrição do Problema */}
+        {/* Descrição do Problema */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.15 }}
+        >
           <TextAreaField
             id="descricao-problema"
             label="Descrição do Problema"
@@ -729,28 +767,13 @@ const NovaOrdemServico = () => {
             placeholder="Descreva detalhadamente o problema relatado pelo cliente"
             required
             rows={4}
+            className="transition-all duration-200"
           />
+        </motion.div>
 
-          {/* Botões */}
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={() => router.push("/admin/os_aberto")}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)]"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[var(--primary)] hover:bg-[var(--primary)]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] disabled:opacity-50"
-            >
-              {isSaving ? "Salvando..." : "Salvar"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <FormActions isSaving={isSaving} />
+      </FormContainer>
+    </>
   );
 };
 
