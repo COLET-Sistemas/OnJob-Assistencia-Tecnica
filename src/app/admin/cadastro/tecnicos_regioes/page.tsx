@@ -1,14 +1,13 @@
 "use client";
 import { Loading } from "@/components/LoadingPersonalizado";
 import { TableList } from "@/components/admin/common";
-import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
-import { useEffect, useCallback } from "react";
-import { DeleteButton } from "@/components/admin/ui/DeleteButton";
-import { EditButton } from "@/components/admin/ui/EditButton";
-import PageHeaderNoFilters from "@/components/admin/ui/PageHeaderNoFilters";
+import { useCallback } from "react";
 import { usuariosRegioesAPI } from "@/api/api";
 import { MapPin } from "lucide-react";
+import PageHeaderBasic from "@/components/admin/ui/PageHeaderBasic";
+import { VincularButton } from "@/components/admin/ui/VincularButton";
+import { useRouter } from "next/navigation";
 
 interface UsuarioComRegioes {
   id_usuario: number;
@@ -21,23 +20,15 @@ interface UsuarioComRegioes {
 }
 
 const CadastroUsuariosRegioes = () => {
-  const { setTitle } = useTitle();
-
-  useEffect(() => {
-    setTitle("Técnicos X Regiões");
-  }, [setTitle]);
-
+  const router = useRouter();
   const fetchUsuariosRegioes = useCallback(async () => {
     return await usuariosRegioesAPI.getAll();
   }, []);
 
-  const {
-    data: usuariosRegioes,
-    loading,
-    refetch,
-  } = useDataFetch<UsuarioComRegioes[]>(fetchUsuariosRegioes, [
+  const { data: usuariosRegioes, loading } = useDataFetch<UsuarioComRegioes[]>(
     fetchUsuariosRegioes,
-  ]);
+    [fetchUsuariosRegioes]
+  );
 
   if (loading) {
     return (
@@ -79,29 +70,14 @@ const CadastroUsuariosRegioes = () => {
     },
   ];
 
-  const handleDelete = async (id: number) => {
-    try {
-      await usuariosRegioesAPI.delete(id);
-      await refetch();
-    } catch (error) {
-      console.error("Erro ao inativar usuário região:", error);
-      alert("Erro ao inativar usuário região.");
-    }
+  const handleVincular = (idUsuario: number) => {
+    // Navegação para a página de vinculação usando o router do Next.js
+    router.push(`/admin/cadastro/tecnicos_regioes/vincular/${idUsuario}`);
   };
 
   const renderActions = (usuario: UsuarioComRegioes) => (
     <div className="flex gap-2">
-      <EditButton
-        id={usuario.id_usuario}
-        editRoute="/admin/cadastro/tecnicos_regioes/editar"
-      />
-      <DeleteButton
-        id={usuario.id_usuario}
-        onDelete={handleDelete}
-        confirmText="Deseja realmente inativar este usuário região?"
-        confirmTitle="Inativação de Usuário Região"
-        itemName={`${usuario.nome_usuario}`}
-      />
+      <VincularButton onClick={() => handleVincular(usuario.id_usuario)} />
     </div>
   );
 
@@ -118,15 +94,11 @@ const CadastroUsuariosRegioes = () => {
 
   return (
     <>
-      <PageHeaderNoFilters
+      <PageHeaderBasic
         title="Lista de Técnicos X Regiões"
         config={{
           type: "list",
           itemCount: itemCount,
-          newButton: {
-            label: "Novo Técnico x Região",
-            link: "/admin/cadastro/tecnicos_regioes/novo",
-          },
         }}
       />
       <TableList

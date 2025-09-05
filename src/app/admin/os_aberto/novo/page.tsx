@@ -828,7 +828,7 @@ const NovaOrdemServico = () => {
           <motion.div>
             <DateTimeField
               id="data-agendada"
-              label="Data Agendada"
+              label="Data Agendada (opcional)"
               value={dataAgendada}
               onChange={(e) => setDataAgendada(e.target.value)}
             />

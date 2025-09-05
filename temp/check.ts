@@ -1,1 +1,1 @@
-﻿import { SelectRef } from 'react-select';
+﻿import { SelectInstance } from "react-select";
