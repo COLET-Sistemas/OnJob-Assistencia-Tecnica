@@ -1,7 +1,6 @@
 "use client";
 import { Loading } from "@/components/LoadingPersonalizado";
 import { TableList, TableStatusColumn } from "@/components/admin/common";
-import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { MotivoPendencia } from "@/types/admin/cadastro/motivos_pendencia";
 import { useCallback, useEffect, useState, useRef } from "react";
@@ -13,14 +12,10 @@ import { motivosPendenciaAPI } from "@/api/api";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 
 const CadastroMotivosPendencia = () => {
-  const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
   const [localShowFilters, setLocalShowFilters] = useState(false);
   const isReloadingRef = useRef(false);
 
-  useEffect(() => {
-    setTitle("Motivos de Pendências");
-  }, [setTitle]);
 
   const {
     showFilters,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import CreatableSelect from "react-select/creatable";
 import { LoadingSpinner as Loading } from "@/components/LoadingPersonalizado";
@@ -76,7 +76,7 @@ const NovaOrdemServico = () => {
     value: "telefone",
     label: "Telefone",
   });
-  const [dataAgendada, setDataAgendada] = useState("2025-06-14T09:00:00");
+  const [dataAgendada, setDataAgendada] = useState("");
   const formaAberturaOptions: FormaAberturaOption[] = [
     { value: "email", label: "Email" },
     { value: "telefone", label: "Telefone" },
@@ -99,6 +99,10 @@ const NovaOrdemServico = () => {
     null
   );
   const [loadingTecnicos, setLoadingTecnicos] = useState(false);
+
+  // Refs para controlar chamadas à API
+  const motivosPendenciaLoaded = useRef(false);
+  const tecnicosLoaded = useRef(false);
 
   // Adaptadores de tipo para os handlers de mudança de select
   const handleClienteSelectChange = (option: OptionType | null) => {
@@ -135,31 +139,38 @@ const NovaOrdemServico = () => {
     const fetchInitialData = async () => {
       setIsLoading(true);
       try {
-        // Carregar motivos de pendência
-        const motivosPendenciaData = await motivosPendenciaService.getAll({
-          situacao: "A",
-        });
-        const motivosPendenciaOpts = motivosPendenciaData.map(
-          (motivo: MotivoPendencia) => ({
-            value: motivo.id,
-            label: motivo.descricao,
-          })
-        );
-        setMotivosPendenciaOptions(motivosPendenciaOpts);
+        // Carregar motivos de pendência apenas se ainda não foram carregados
+        if (!motivosPendenciaLoaded.current) {
+          motivosPendenciaLoaded.current = true;
+          const motivosPendenciaData = await motivosPendenciaService.getAll({
+            situacao: "A",
+          });
+          const motivosPendenciaOpts = motivosPendenciaData.map(
+            (motivo: MotivoPendencia) => ({
+              value: motivo.id,
+              label: motivo.descricao,
+            })
+          );
+          setMotivosPendenciaOptions(motivosPendenciaOpts);
+        }
 
-        // Carregar técnicos
-        setLoadingTecnicos(true);
-        const tecnicosResponse = await usuariosService.getAll({
-          apenas_tecnicos: "s",
-          situacao: "A",
-        });
-        const tecnicosOpts = tecnicosResponse.dados.map((tecnico: Usuario) => ({
-          value: tecnico.id,
-          label: tecnico.nome,
-        }));
-        setTecnicosOptions(tecnicosOpts);
-        setLoadingTecnicos(false);
-
+        // Carregar técnicos apenas se ainda não foram carregados
+        if (!tecnicosLoaded.current) {
+          tecnicosLoaded.current = true;
+          setLoadingTecnicos(true);
+          const tecnicosResponse = await usuariosService.getAll({
+            apenas_tecnicos: "s",
+            situacao: "A",
+          });
+          const tecnicosOpts = tecnicosResponse.dados.map(
+            (tecnico: Usuario) => ({
+              value: tecnico.id,
+              label: tecnico.nome,
+            })
+          );
+          setTecnicosOptions(tecnicosOpts);
+          setLoadingTecnicos(false);
+        }
       } catch (error) {
         console.error("Erro ao carregar dados iniciais:", error);
       } finally {
@@ -341,6 +352,11 @@ const NovaOrdemServico = () => {
       return;
     }
 
+    if (!selectedMotivoPendencia) {
+      alert("Por favor, selecione um motivo de pendência.");
+      return;
+    }
+
     // Validar se o contato foi selecionado
     if (!selectedContato) {
       alert("Por favor, selecione um contato.");
@@ -356,9 +372,6 @@ const NovaOrdemServico = () => {
     setIsSaving(true);
 
     try {
-      // Formatar data_agendada para o formato correto: YYYY-MM-DD HH:MM:SS
-      const formattedDate = dataAgendada.replace("T", " ");
-
       // Define complete type with all possible fields
       const osData: {
         id_cliente: number;
@@ -368,7 +381,7 @@ const NovaOrdemServico = () => {
         origem_abertura: string;
         forma_abertura: string;
         em_garantia: boolean;
-        data_agendada: string;
+        data_agendada?: string;
         id_tecnico?: number;
         id_usuario_tecnico?: number;
         id_contato?: number;
@@ -385,9 +398,13 @@ const NovaOrdemServico = () => {
         origem_abertura: "I",
         forma_abertura: formaAbertura.value,
         em_garantia: selectedMaquina.isInWarranty || false,
-        data_agendada: formattedDate,
         id_regiao: 1,
       };
+
+      // Adicione data_agendada apenas se não estiver vazia
+      if (dataAgendada && dataAgendada.trim() !== "") {
+        osData.data_agendada = dataAgendada.replace("T", " ");
+      }
 
       // Adicionar informações de contato com os novos campos
       if (selectedContato) {
@@ -643,6 +660,7 @@ const NovaOrdemServico = () => {
             <CustomSelect
               id="motivo-pendencia"
               label="Motivo de Pendência"
+              required
               placeholder="Selecione o motivo de pendência"
               options={motivosPendenciaOptions}
               value={selectedMotivoPendencia}
@@ -656,7 +674,7 @@ const NovaOrdemServico = () => {
             {/* Forma de Abertura */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Forma de Abertura
+                Forma de Abertura <span className="text-red-500">*</span>
               </label>
               <CreatableSelect
                 placeholder="Selecione ou digite uma forma de abertura"
@@ -699,7 +717,6 @@ const NovaOrdemServico = () => {
               label="Data Agendada"
               value={dataAgendada}
               onChange={(e) => setDataAgendada(e.target.value)}
-              required
             />
           </div>
 
