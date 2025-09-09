@@ -17,6 +17,7 @@ import {
   ExternalLink,
   CheckCircle,
   DollarSign,
+  Edit,
 } from "lucide-react";
 import { formatarDataHora, isDataAgendadaPassada } from "@/utils/formatters";
 
@@ -29,6 +30,11 @@ interface OSCardProps {
   formatEmailUrl: (email: string) => string;
   formatGoogleMapsUrl: (cliente: OrdemServico["cliente"]) => string;
   onLiberarFinanceiramente?: (osId: number) => void;
+  onAlterarPendencia?: (
+    osId: number,
+    currentMotivoId?: number,
+    currentMotivoText?: string
+  ) => void;
 }
 
 const OSCard: React.FC<OSCardProps> = ({
@@ -40,6 +46,7 @@ const OSCard: React.FC<OSCardProps> = ({
   formatEmailUrl,
   formatGoogleMapsUrl,
   onLiberarFinanceiramente,
+  onAlterarPendencia,
 }) => {
   // Função para determinar a cor baseada no código da situação
   const getSituacaoColor = (codigo: number) => {
@@ -316,8 +323,29 @@ const OSCard: React.FC<OSCardProps> = ({
                 {/* Motivo Pendência quando existir */}
                 {os.situacao_os.motivo_pendencia && (
                   <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="text-xs text-gray-700 mb-1 font-medium">
-                      Motivo da Pendência:
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="text-xs text-gray-700 font-medium">
+                        Motivo da Pendência:
+                      </div>
+                      {onAlterarPendencia && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAlterarPendencia(
+                              os.id_os,
+                              os.situacao_os.id_motivo_pendencia,
+                              os.situacao_os.motivo_pendencia
+                            );
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-600 
+                                  hover:bg-amber-100 rounded-md text-xs font-medium transition-colors 
+                                  border border-amber-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                          title="Alterar pendência"
+                        >
+                          <Edit className="w-3 h-3" />
+                          Alterar
+                        </button>
+                      )}
                     </div>
                     <div className="px-3 py-1.5 bg-orange-50 border border-orange-100 rounded text-orange-700 text-xs">
                       {os.situacao_os.motivo_pendencia}

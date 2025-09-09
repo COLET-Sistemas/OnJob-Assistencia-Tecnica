@@ -15,6 +15,7 @@ import EmptyState from "@/app/admin/os_aberto/components/EmptyState";
 import OSCard from "@/app/admin/os_aberto/components/OSCard";
 import SkeletonCard from "@/app/admin/os_aberto/components/SkeletonCard";
 import LiberacaoFinanceiraModal from "@/app/admin/os_aberto/components/LiberacaoFinanceiraModal";
+import AlterarPendenciaModal from "@/app/admin/os_aberto/components/AlterarPendenciaModal";
 import { OrdemServico } from "@/types/OrdemServico";
 
 // Usando a interface OrdemServico do arquivo de tipos
@@ -41,6 +42,13 @@ const TelaOSAbertas: React.FC = () => {
   const [modalLiberacao, setModalLiberacao] = useState({
     isOpen: false,
     osId: 0,
+  });
+
+  const [modalPendencia, setModalPendencia] = useState({
+    isOpen: false,
+    osId: 0,
+    currentMotivoId: 0,
+    currentMotivoText: "",
   });
 
   const { setTitle } = useTitle();
@@ -251,6 +259,53 @@ const TelaOSAbertas: React.FC = () => {
     [fetchData, handleCloseLiberacaoModal]
   );
 
+  // Funções para lidar com a alteração de pendência
+  const handleOpenPendenciaModal = useCallback(
+    (osId: number, currentMotivoId?: number, currentMotivoText?: string) => {
+      setModalPendencia({
+        isOpen: true,
+        osId,
+        currentMotivoId: currentMotivoId || 0,
+        currentMotivoText: currentMotivoText || "",
+      });
+    },
+    []
+  );
+
+  const handleClosePendenciaModal = useCallback(() => {
+    setModalPendencia({
+      isOpen: false,
+      osId: 0,
+      currentMotivoId: 0,
+      currentMotivoText: "",
+    });
+  }, []);
+
+  const handleConfirmAlterarPendencia = useCallback(
+    async (osId: number, motivoId: number | null) => {
+      try {
+        await ordensServicoService.alterarMotivoPendencia(osId, motivoId);
+
+        // Atualiza os dados após a alteração
+        await fetchData();
+
+        if (motivoId === null) {
+          feedback.toast("Pendência removida com sucesso", "success");
+        } else {
+          feedback.toast("Pendência alterada com sucesso", "success");
+        }
+
+        handleClosePendenciaModal();
+        return Promise.resolve();
+      } catch (error) {
+        console.error("Erro ao alterar pendência:", error);
+        feedback.toast("Erro ao alterar pendência", "error");
+        return Promise.reject(error);
+      }
+    },
+    [fetchData, handleClosePendenciaModal]
+  );
+
   // Memoização para melhorar performance e evitar re-renderizações desnecessárias
   const filteredOrdens = useMemo(() => {
     return ordensServico.filter((os) => {
@@ -380,6 +435,7 @@ const TelaOSAbertas: React.FC = () => {
                 formatEmailUrl={formatEmailUrl}
                 formatGoogleMapsUrl={formatGoogleMapsUrl}
                 onLiberarFinanceiramente={handleOpenLiberacaoModal}
+                onAlterarPendencia={handleOpenPendenciaModal}
               />
             ))}
           </div>
@@ -397,6 +453,16 @@ const TelaOSAbertas: React.FC = () => {
         osId={modalLiberacao.osId}
         onClose={handleCloseLiberacaoModal}
         onConfirm={handleConfirmLiberacaoFinanceira}
+      />
+
+      {/* Modal de Alteração de Pendência */}
+      <AlterarPendenciaModal
+        isOpen={modalPendencia.isOpen}
+        osId={modalPendencia.osId}
+        currentMotivoId={modalPendencia.currentMotivoId}
+        currentMotivoText={modalPendencia.currentMotivoText}
+        onClose={handleClosePendenciaModal}
+        onConfirm={handleConfirmAlterarPendencia}
       />
     </div>
   );

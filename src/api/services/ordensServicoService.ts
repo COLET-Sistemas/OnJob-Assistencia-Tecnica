@@ -241,6 +241,15 @@ class OrdensServicoService {
       liberada_financeira: true,
     });
   }
+
+  async alterarMotivoPendencia(
+    id: number,
+    idMotivo: number | null
+  ): Promise<OSDetalhada> {
+    return api.patch<OSDetalhada>(`${this.baseUrl}/liberacao?id=${id}`, {
+      id_motivo_pendencia: idMotivo,
+    });
+  }
 }
 
 export const ordensServicoService = new OrdensServicoService();
