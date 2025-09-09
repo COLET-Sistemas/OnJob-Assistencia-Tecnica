@@ -14,6 +14,7 @@ import FilterPanel from "@/app/admin/os_aberto/components/FilterPanel";
 import EmptyState from "@/app/admin/os_aberto/components/EmptyState";
 import OSCard from "@/app/admin/os_aberto/components/OSCard";
 import SkeletonCard from "@/app/admin/os_aberto/components/SkeletonCard";
+import LiberacaoFinanceiraModal from "@/app/admin/os_aberto/components/LiberacaoFinanceiraModal";
 import { OrdemServico } from "@/types/OrdemServico";
 
 // Usando a interface OrdemServico do arquivo de tipos
@@ -36,6 +37,10 @@ const TelaOSAbertas: React.FC = () => {
     interno: true,
     terceiro: true,
     indefinido: true,
+  });
+  const [modalLiberacao, setModalLiberacao] = useState({
+    isOpen: false,
+    osId: 0,
   });
 
   const { setTitle } = useTitle();
@@ -212,6 +217,40 @@ const TelaOSAbertas: React.FC = () => {
     setSearchTerm("");
   }, []);
 
+  // Funções para lidar com a liberação financeira
+  const handleOpenLiberacaoModal = useCallback((osId: number) => {
+    setModalLiberacao({
+      isOpen: true,
+      osId,
+    });
+  }, []);
+
+  const handleCloseLiberacaoModal = useCallback(() => {
+    setModalLiberacao({
+      isOpen: false,
+      osId: 0,
+    });
+  }, []);
+
+  const handleConfirmLiberacaoFinanceira = useCallback(
+    async (osId: number) => {
+      try {
+        await ordensServicoService.liberarFinanceiramente(osId);
+
+        // Atualiza os dados após a liberação
+        await fetchData();
+        feedback.toast("OS liberada com sucesso", "success");
+        handleCloseLiberacaoModal();
+        return Promise.resolve();
+      } catch (error) {
+        console.error("Erro ao liberar OS:", error);
+        feedback.toast("Erro ao liberar OS", "error");
+        return Promise.reject(error);
+      }
+    },
+    [fetchData, handleCloseLiberacaoModal]
+  );
+
   // Memoização para melhorar performance e evitar re-renderizações desnecessárias
   const filteredOrdens = useMemo(() => {
     return ordensServico.filter((os) => {
@@ -340,6 +379,7 @@ const TelaOSAbertas: React.FC = () => {
                 formatWhatsAppUrl={formatWhatsAppUrl}
                 formatEmailUrl={formatEmailUrl}
                 formatGoogleMapsUrl={formatGoogleMapsUrl}
+                onLiberarFinanceiramente={handleOpenLiberacaoModal}
               />
             ))}
           </div>
@@ -350,6 +390,14 @@ const TelaOSAbertas: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Modal de Liberação Financeira */}
+      <LiberacaoFinanceiraModal
+        isOpen={modalLiberacao.isOpen}
+        osId={modalLiberacao.osId}
+        onClose={handleCloseLiberacaoModal}
+        onConfirm={handleConfirmLiberacaoFinanceira}
+      />
     </div>
   );
 };

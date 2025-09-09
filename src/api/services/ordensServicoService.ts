@@ -1,4 +1,4 @@
-import api from '../api';
+import api from "../api";
 
 export interface OSStatusCount {
   em_execucao: number;
@@ -234,6 +234,12 @@ class OrdensServicoService {
 
   async cancel(id: number): Promise<void> {
     await api.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  async liberarFinanceiramente(id: number): Promise<OSDetalhada> {
+    return api.patch<OSDetalhada>(`${this.baseUrl}/liberacao?id=${id}`, {
+      liberada_financeira: true,
+    });
   }
 }
 

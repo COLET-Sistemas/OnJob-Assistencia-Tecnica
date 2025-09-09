@@ -10,10 +10,6 @@ import PageHeaderBasic from "@/components/admin/ui/PageHeaderBasic";
 import { useRouter, useParams } from "next/navigation";
 import { LoadingButton } from "@/components/admin/form";
 
-// We'll use the imported types from the shared types definition
-// This ensures consistency across the application
-
-// Next.js page component using useParams hook
 const VincularTecnicoRegioes = () => {
   const router = useRouter();
   const params = useParams();

@@ -16,6 +16,7 @@ import {
   MessageCircle,
   ExternalLink,
   CheckCircle,
+  DollarSign,
 } from "lucide-react";
 import { formatarDataHora, isDataAgendadaPassada } from "@/utils/formatters";
 
@@ -27,6 +28,7 @@ interface OSCardProps {
   formatWhatsAppUrl: (telefone: string) => string;
   formatEmailUrl: (email: string) => string;
   formatGoogleMapsUrl: (cliente: OrdemServico["cliente"]) => string;
+  onLiberarFinanceiramente?: (osId: number) => void;
 }
 
 const OSCard: React.FC<OSCardProps> = ({
@@ -37,6 +39,7 @@ const OSCard: React.FC<OSCardProps> = ({
   formatWhatsAppUrl,
   formatEmailUrl,
   formatGoogleMapsUrl,
+  onLiberarFinanceiramente,
 }) => {
   // Função para determinar a cor baseada no código da situação
   const getSituacaoColor = (codigo: number) => {
@@ -272,21 +275,41 @@ const OSCard: React.FC<OSCardProps> = ({
 
                 {/* Informação de Liberação Financeira */}
                 <div className="mt-3 pt-3 border-t border-gray-100">
-                  <div className="flex items-center gap-1.5">
-                    {os.liberacao_financeira.liberada ? (
-                      <span className="text-emerald-600 text-xs flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" />
-                        Liberação financeira:{" "}
-                        <span className="font-medium">
-                          {os.liberacao_financeira.nome_usuario_liberacao}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      {os.liberacao_financeira.liberada ? (
+                        <span className="text-emerald-600 text-xs flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          Liberação financeira:{" "}
+                          <span className="font-medium">
+                            {os.liberacao_financeira.nome_usuario_liberacao}
+                          </span>
                         </span>
-                      </span>
-                    ) : (
-                      <span className="text-amber-600 text-xs flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        Aguardando liberação financeira
-                      </span>
-                    )}
+                      ) : (
+                        <span className="text-amber-600 text-xs flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          Aguardando liberação financeira
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Botão Liberar quando estiver aguardando liberação financeira */}
+                    {!os.liberacao_financeira.liberada &&
+                      onLiberarFinanceiramente && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onLiberarFinanceiramente(os.id_os);
+                          }}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 text-green-600 
+                                  hover:bg-green-100 rounded-md text-xs font-medium transition-colors 
+                                  border border-green-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                          title="Liberar financeiramente"
+                        >
+                          <DollarSign className="w-3.5 h-3.5" />
+                          Liberar
+                        </button>
+                      )}
                   </div>
                 </div>
 
