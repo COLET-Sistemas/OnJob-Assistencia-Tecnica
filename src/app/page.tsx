@@ -307,7 +307,8 @@ export default function LoginPage() {
                 alt="OnJob Sistema de Assistência Técnica"
                 width={320}
                 height={100}
-                className="h-36 object-contain"
+                priority
+                className="h-36 w-auto object-contain"
               />
             </div>
           </div>
@@ -390,7 +391,8 @@ export default function LoginPage() {
                 alt="OnJob Sistema de Assistência Técnica"
                 width={200}
                 height={50}
-                className="h-12 object-contain"
+                priority
+                className="h-12 w-auto object-contain"
               />
             </div>
             <h2 className="text-xl font-semibold mb-2 text-gray-800">

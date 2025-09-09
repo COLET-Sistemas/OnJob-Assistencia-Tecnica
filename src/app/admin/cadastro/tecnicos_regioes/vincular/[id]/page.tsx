@@ -1,252 +1,305 @@
 "use client";
 
-import { Loading } from "@/components/LoadingPersonalizado";
-import { useDataFetch } from "@/hooks";
-import { useCallback, useState, useEffect } from "react";
-import { usuariosRegioesService } from "@/api/services/usuariosService";
+import api from "@/api/api";
 import { regioesService } from "@/api/services/regioesService";
-import { UsuarioComRegioes, Regiao } from "@/types/admin/cadastro/usuarios";
-import PageHeaderBasic from "@/components/admin/ui/PageHeaderBasic";
-import { useRouter, useParams } from "next/navigation";
+import { usuariosRegioesService } from "@/api/services/usuariosService";
 import { LoadingButton } from "@/components/admin/form";
+import { useToast } from "@/components/admin/ui/ToastContainer";
+import PageHeader from "@/components/admin/ui/PageHeader";
+import { Loading } from "@/components/LoadingPersonalizado";
+import { useTitle } from "@/context/TitleContext";
+import { Regiao } from "@/types/admin/cadastro/regioes";
+import { UsuarioComRegioes } from "@/types/admin/cadastro/usuarios";
+import { Save } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const VincularTecnicoRegioes = () => {
-  const router = useRouter();
-  const params = useParams();
-  const idUsuario = parseInt(params.id as string, 10);
-  const [selectedRegioes, setSelectedRegioes] = useState<number[]>([]);
-  const [allRegioes, setAllRegioes] = useState<Regiao[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// Cache global de regiões compartilhado entre componentes
+let regioesGlobais: Regiao[] = [];
+let regioesCarregadas = false;
 
-  // Fetch user data
-  const fetchUsuarioRegioes = useCallback(async () => {
-    try {
-      // The API now returns data directly in the UsuarioComRegioes format
-      const result = await usuariosRegioesService.getById(idUsuario);
+// Custom hook para gerenciar o cache de regiões
+const useRegioesCache = () => {
+  const [regioes, setRegioes] = useState<Regiao[]>(regioesGlobais);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-      // The response is already in the correct format, no transformation needed
-      return result;
-    } catch (err) {
-      console.error("Error fetching usuario regioes:", err);
-      setError(
-        `Erro ao carregar dados do usuário: ${
-          err instanceof Error ? err.message : "Erro desconhecido"
-        }`
-      );
-      throw err;
-    }
-  }, [idUsuario]);
-
-  const {
-    data: usuario,
-    loading: loadingUsuario,
-    error: usuarioError,
-  } = useDataFetch<UsuarioComRegioes>(fetchUsuarioRegioes, [
-    fetchUsuarioRegioes,
-  ]);
-
-  // Fetch all regions
+  // Função para carregar regiões (será chamada apenas uma vez)
   const fetchRegioes = useCallback(async () => {
+    // Se já carregamos anteriormente, apenas retorna o cache
+    if (regioesCarregadas) {
+      return regioesGlobais;
+    }
+
+    // Evita chamadas múltiplas
+    regioesCarregadas = true;
+
+    setIsLoading(true);
     try {
       const result = await regioesService.getAll();
-
-      // Transform the API response to match our expected type
-      const transformedResult: Regiao[] = result.map((regiao) => ({
-        id_regiao: regiao.id_regiao || regiao.id, // Use id_regiao if available, otherwise use id
-        nome_regiao: regiao.nome_regiao || regiao.nome, // Use nome_regiao if available, otherwise use nome
-      }));
-
-      return transformedResult;
+      // Atualiza tanto o estado local quanto o cache global
+      regioesGlobais = result;
+      setRegioes(result);
+      return result;
     } catch (err) {
-      console.error("Error fetching regioes:", err);
-      setError(
-        `Erro ao carregar regiões: ${
-          err instanceof Error ? err.message : "Erro desconhecido"
-        }`
-      );
+      setError(err as Error);
+      regioesCarregadas = false; // Reseta para permitir nova tentativa
       throw err;
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, []); // Sem dependências para evitar loops
 
-  const {
-    data: regioes,
-    loading: loadingRegioes,
-    error: regioesError,
-  } = useDataFetch<Regiao[]>(fetchRegioes, [fetchRegioes]);
-
-  // Set initial selected regions
-  useEffect(() => {
-    if (usuario && usuario.regioes) {
-      setSelectedRegioes(
-        usuario.regioes.map((regiao: Regiao) => regiao.id_regiao)
-      );
-    }
-  }, [usuario]);
-
-  useEffect(() => {
-    if (regioes) {
-      setAllRegioes(regioes);
-    }
+  // Memoize das regiões para evitar re-renderizações desnecessárias
+  const regioesOrdenadas = useMemo(() => {
+    return [...regioes].sort((a, b) => {
+      const nomeA = a.nome || (a.nome_regiao as string);
+      const nomeB = b.nome || (b.nome_regiao as string);
+      return nomeA.localeCompare(nomeB, "pt-BR", { sensitivity: "base" });
+    });
   }, [regioes]);
 
-  const handleToggleRegiao = (idRegiao: number) => {
-    setSelectedRegioes((current) =>
-      current.includes(idRegiao)
-        ? current.filter((id) => id !== idRegiao)
-        : [...current, idRegiao]
-    );
+  return {
+    regioes: regioesOrdenadas,
+    isLoading,
+    error,
+    fetchRegioes,
+  };
+};
+
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
+
+const VincularTecnicoRegioes = ({ params }: PageProps) => {
+  const idUsuario = parseInt(params.id);
+  const router = useRouter();
+  const { setTitle } = useTitle();
+  const { showSuccess, showError } = useToast();
+  const regioesCache = useRegioesCache();
+
+  // Estados
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tecnico, setTecnico] = useState<UsuarioComRegioes | null>(null);
+  const [regioesVinculadas, setRegioesVinculadas] = useState<number[]>([]);
+
+  // Referência para controlar se já carregamos os dados
+  const didLoadRef = useRef(false);
+
+  // Carregar dados iniciais
+  useEffect(() => {
+    // Evita chamadas duplicadas causadas por re-renders
+    if (didLoadRef.current) return;
+    didLoadRef.current = true;
+
+    setTitle("Vincular Técnico a Regiões");
+    setIsLoading(true);
+
+    // Função assíncrona para carregar dados uma única vez
+    const loadData = async () => {
+      try {
+        // Inicia a busca das regiões
+        const regioesPromise = regioesCache.fetchRegioes();
+
+        // Busca os dados do técnico
+        const tecnicoResponse = await usuariosRegioesService.getById(idUsuario);
+
+        // Atualiza o estado com as informações do técnico
+        setTecnico(tecnicoResponse);
+
+        // Extrai IDs das regiões já vinculadas
+        setRegioesVinculadas(
+          tecnicoResponse.regioes.map((regiao) => regiao.id_regiao)
+        );
+
+        // Aguarda as regiões serem carregadas (sem usar o resultado)
+        await regioesPromise;
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        showError("Erro", "Não foi possível carregar os dados necessários");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idUsuario]); // Remova dependências problemáticas e use eslint-disable
+
+  // Alternar seleção de região
+  const toggleRegiao = (idRegiao: number) => {
+    setRegioesVinculadas((prevRegioes) => {
+      if (prevRegioes.includes(idRegiao)) {
+        return prevRegioes.filter((id) => id !== idRegiao);
+      } else {
+        return [...prevRegioes, idRegiao];
+      }
+    });
   };
 
-  const handleSubmit = async () => {
+  // Salvar vinculações
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
-    try {
-      // Create the payload according to what the API expects
-      const payload: { id_usuario: number; id_regiao: number[] } = {
-        id_usuario: idUsuario,
-        id_regiao: selectedRegioes,
-      };
 
-      await usuariosRegioesService.update(idUsuario, payload);
-      router.push("/admin/cadastro/tecnicos_regioes");
-    } catch (err) {
-      console.error("Erro ao vincular regiões:", err);
-      setError(
-        `Erro ao salvar vinculações: ${
-          err instanceof Error ? err.message : "Erro desconhecido"
-        }`
+    try {
+      // Usando POST com o formato de payload solicitado
+      await api.post("/usuarios_regioes", {
+        id_usuario: idUsuario,
+        id_regiao: regioesVinculadas,
+      });
+
+      showSuccess(
+        "Sucesso",
+        "Vínculos do técnico com as regiões foram atualizados com sucesso!"
       );
+
+      router.push("/admin/cadastro/tecnicos_regioes");
+    } catch (error) {
+      console.error("Erro ao salvar vínculos:", error);
+      showError(
+        "Erro ao salvar",
+        "Não foi possível atualizar os vínculos do técnico com as regiões"
+      );
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCancel = () => {
-    router.push("/admin/cadastro/tecnicos_regioes");
-  };
-
-  // Display error messages if any
-  if (error || usuarioError || regioesError) {
-    const errorMessage =
-      error ||
-      (usuarioError instanceof Error
-        ? usuarioError.message
-        : "Erro ao carregar dados do usuário") ||
-      (regioesError instanceof Error
-        ? regioesError.message
-        : "Erro ao carregar regiões");
-
-    return (
-      <div className="bg-red-50 border-l-4 border-red-500 p-4 m-4 rounded shadow">
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <svg
-              className="h-5 w-5 text-red-500"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-800">
-              Erro ao carregar dados
-            </h3>
-            <div className="mt-2 text-sm text-red-700">
-              <p>{errorMessage}</p>
-              <button
-                onClick={() => router.back()}
-                className="mt-3 text-sm text-red-800 font-medium hover:underline"
-              >
-                Voltar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (loadingUsuario || loadingRegioes) {
+  if (isLoading) {
     return (
       <Loading
         fullScreen={true}
         preventScroll={false}
-        text="Carregando dados..."
+        text="Carregando informações..."
         size="large"
       />
     );
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeaderBasic
-        title={`Vincular Regiões ao Técnico: ${
-          usuario?.nome_usuario || "Carregando..."
-        }`}
+    <>
+      <PageHeader
+        title="Vincular Técnico a Regiões"
         config={{
           type: "form",
-          backButton: {
-            label: "Voltar",
-            href: "/admin/cadastro/tecnicos_regioes",
-          },
+          backLink: "/admin/cadastro/tecnicos_regioes",
+          backLabel: "Voltar para lista de técnicos",
         }}
       />
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-medium mb-4">
-          Selecione as regiões para este técnico
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {allRegioes.map((regiao) => (
-            <div
-              key={regiao.id_regiao}
-              className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                selectedRegioes.includes(regiao.id_regiao)
-                  ? "bg-yellow-100 border-yellow-300 shadow"
-                  : "bg-white border-gray-200 hover:bg-gray-50"
-              }`}
-              onClick={() => handleToggleRegiao(regiao.id_regiao)}
-            >
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={selectedRegioes.includes(regiao.id_regiao)}
-                  onChange={() => {}} // Controlled by parent div click
-                  className="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
-                />
-                <label className="ml-2 block text-sm font-medium text-gray-900">
-                  {regiao.nome_regiao}
-                </label>
+      <main>
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+          noValidate
+        >
+          <div className="p-8">
+            {/* Informações do técnico */}
+            <section className="mb-6">
+              <h2 className="text-xl font-medium text-gray-800 mb-4">
+                Informações do Técnico
+              </h2>
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center">
+                  <p className="font-semibold text-lg text-gray-900">
+                    {tecnico?.nome_usuario}
+                  </p>
+                  <span
+                    className={`ml-3 text-xs px-2 py-1 rounded-full ${
+                      tecnico?.tipo === "interno"
+                        ? "bg-blue-50 text-blue-600"
+                        : "bg-amber-50 text-amber-600"
+                    }`}
+                  >
+                    {tecnico?.tipo === "interno" ? "Interno" : "Terceirizado"}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            </section>
 
-        <div className="flex justify-end space-x-3 pt-4 border-t">
-          <button
-            className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
-            onClick={handleCancel}
-            disabled={isSubmitting}
-          >
-            Cancelar
-          </button>
-          <LoadingButton
-            className="px-4 py-2 text-sm font-medium rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition-colors"
-            onClick={handleSubmit}
-            isLoading={isSubmitting}
-            disabled={isSubmitting}
-          >
-            Salvar Vinculações
-          </LoadingButton>
-        </div>
-      </div>
-    </div>
+            {/* Seleção de regiões */}
+            <section>
+              <h2 className="text-xl font-medium text-gray-800 mb-4">
+                Selecione as Regiões
+              </h2>
+              <p className="text-gray-500 mb-4">
+                Clique nas regiões para vincular ou desvincular do técnico.
+              </p>
+
+              <div className="flex flex-wrap gap-3 mt-6">
+                {regioesCache.regioes.map((regiao: Regiao) => {
+                  // Normaliza os IDs e nomes das regiões para lidar com ambas as estruturas de dados
+                  const regionId = regiao.id || (regiao.id_regiao as number);
+                  const regionName =
+                    regiao.nome || (regiao.nome_regiao as string);
+                  const isSelected = regioesVinculadas.includes(regionId);
+
+                  return (
+                    <button
+                      key={regionId}
+                      type="button"
+                      onClick={() => toggleRegiao(regionId)}
+                      className={`
+                        px-4 py-2 rounded-md font-medium transition-all
+                        ${
+                          isSelected
+                            ? "bg-violet-600 text-white shadow-md hover:bg-violet-700"
+                            : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                        }
+                        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500
+                      `}
+                    >
+                      {regionName}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {regioesCache.regioes.length === 0 && (
+                <div className="text-center p-6 bg-gray-50 rounded-md">
+                  <p className="text-gray-500">Nenhuma região encontrada</p>
+                </div>
+              )}
+
+              {/* Resumo das regiões selecionadas */}
+              <div className="mt-8">
+                <h3 className="text-lg font-medium text-gray-700 mb-3">
+                  Regiões vinculadas: {regioesVinculadas.length}
+                </h3>
+              </div>
+            </section>
+          </div>
+
+          {/* Footer com botões */}
+          <footer className="bg-slate-50 px-8 py-6 border-t border-slate-200">
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+              <Link
+                href="/admin/cadastro/tecnicos_regioes"
+                className="px-6 py-3 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-colors text-center font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+              >
+                Cancelar
+              </Link>
+
+              <LoadingButton
+                type="submit"
+                isLoading={isSubmitting}
+                className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <Save className="h-4 w-4" />
+                  <span>Salvar</span>
+                </span>
+              </LoadingButton>
+            </div>
+          </footer>
+        </form>
+      </main>
+    </>
   );
 };
 
