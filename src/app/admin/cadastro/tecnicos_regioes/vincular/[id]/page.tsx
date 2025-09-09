@@ -5,72 +5,32 @@ import { useDataFetch } from "@/hooks";
 import { useCallback, useState, useEffect } from "react";
 import { usuariosRegioesService } from "@/api/services/usuariosService";
 import { regioesService } from "@/api/services/regioesService";
+import { UsuarioComRegioes, Regiao } from "@/types/admin/cadastro/usuarios";
 import PageHeaderBasic from "@/components/admin/ui/PageHeaderBasic";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { LoadingButton } from "@/components/admin/form";
 
-// Define the correct params type for Next.js App Router
-interface PageParams {
-  id: string;
-}
+// We'll use the imported types from the shared types definition
+// This ensures consistency across the application
 
-// Properly typed props for the page component
-interface PageProps {
-  params: PageParams;
-}
-
-// Use the Regiao type from our local context, which may differ from the imported type
-interface RegiaoLocal {
-  id_regiao: number;
-  nome_regiao: string;
-}
-
-// Define the structure based on what we expect from the API response
-interface UsuarioRegioes {
-  id_usuario: number;
-  nome_usuario: string;
-  tipo?: string;
-  regioes: RegiaoLocal[];
-}
-
-const VincularTecnicoRegioes = ({ params }: PageProps) => {
+// Next.js page component using useParams hook
+const VincularTecnicoRegioes = () => {
   const router = useRouter();
-  const idUsuario = parseInt(params.id, 10);
+  const params = useParams();
+  const idUsuario = parseInt(params.id as string, 10);
   const [selectedRegioes, setSelectedRegioes] = useState<number[]>([]);
-  const [allRegioes, setAllRegioes] = useState<RegiaoLocal[]>([]);
+  const [allRegioes, setAllRegioes] = useState<Regiao[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch user data
   const fetchUsuarioRegioes = useCallback(async () => {
     try {
+      // The API now returns data directly in the UsuarioComRegioes format
       const result = await usuariosRegioesService.getById(idUsuario);
 
-      // Transform the API response to match our expected type
-      // The structure of the API response might need adjustment based on the actual data
-      const transformedResult: UsuarioRegioes = {
-        id_usuario: result.id_usuario,
-        nome_usuario: result.nome_usuario || "",
-        tipo: (result as { tipo?: string }).tipo, // Use type assertion
-        regioes: Array.isArray(result.id_regiao)
-          ? result.id_regiao.map((id: number, index: number) => ({
-              id_regiao: id,
-              nome_regiao:
-                result.nome_regiao && Array.isArray(result.nome_regiao)
-                  ? result.nome_regiao[index]
-                  : `Região ${id}`,
-            }))
-          : typeof result.id_regiao === "number" && result.nome_regiao
-          ? [
-              {
-                id_regiao: result.id_regiao as number,
-                nome_regiao: result.nome_regiao as string,
-              },
-            ]
-          : [],
-      };
-
-      return transformedResult;
+      // The response is already in the correct format, no transformation needed
+      return result;
     } catch (err) {
       console.error("Error fetching usuario regioes:", err);
       setError(
@@ -86,7 +46,9 @@ const VincularTecnicoRegioes = ({ params }: PageProps) => {
     data: usuario,
     loading: loadingUsuario,
     error: usuarioError,
-  } = useDataFetch<UsuarioRegioes>(fetchUsuarioRegioes, [fetchUsuarioRegioes]);
+  } = useDataFetch<UsuarioComRegioes>(fetchUsuarioRegioes, [
+    fetchUsuarioRegioes,
+  ]);
 
   // Fetch all regions
   const fetchRegioes = useCallback(async () => {
@@ -94,7 +56,7 @@ const VincularTecnicoRegioes = ({ params }: PageProps) => {
       const result = await regioesService.getAll();
 
       // Transform the API response to match our expected type
-      const transformedResult: RegiaoLocal[] = result.map((regiao) => ({
+      const transformedResult: Regiao[] = result.map((regiao) => ({
         id_regiao: regiao.id_regiao || regiao.id, // Use id_regiao if available, otherwise use id
         nome_regiao: regiao.nome_regiao || regiao.nome, // Use nome_regiao if available, otherwise use nome
       }));
@@ -115,12 +77,14 @@ const VincularTecnicoRegioes = ({ params }: PageProps) => {
     data: regioes,
     loading: loadingRegioes,
     error: regioesError,
-  } = useDataFetch<RegiaoLocal[]>(fetchRegioes, [fetchRegioes]);
+  } = useDataFetch<Regiao[]>(fetchRegioes, [fetchRegioes]);
 
   // Set initial selected regions
   useEffect(() => {
     if (usuario && usuario.regioes) {
-      setSelectedRegioes(usuario.regioes.map((regiao) => regiao.id_regiao));
+      setSelectedRegioes(
+        usuario.regioes.map((regiao: Regiao) => regiao.id_regiao)
+      );
     }
   }, [usuario]);
 

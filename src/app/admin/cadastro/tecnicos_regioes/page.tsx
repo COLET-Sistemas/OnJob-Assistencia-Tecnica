@@ -4,83 +4,28 @@ import { TableList } from "@/components/admin/common";
 import { useDataFetch } from "@/hooks";
 import { useCallback } from "react";
 import { usuariosRegioesService } from "@/api/services/usuariosService";
+import {
+  UsuarioComRegioes,
+  UsuariosRegioesResponse,
+} from "@/types/admin/cadastro/usuarios";
 import { MapPin } from "lucide-react";
 import PageHeaderBasic from "@/components/admin/ui/PageHeaderBasic";
 import { VincularButton } from "@/components/admin/ui/VincularButton";
 import { useRouter } from "next/navigation";
 
-interface UsuarioComRegioes {
-  id_usuario: number;
-  nome_usuario: string;
-  tipo: string;
-  regioes: {
-    id_regiao: number;
-    nome_regiao: string;
-  }[];
-}
-
 const CadastroUsuariosRegioes = () => {
   const router = useRouter();
 
-  // Local type for the API row which may contain legacy fields plus optional 'tipo'
-  type UsuarioRegiaoRow = {
-    id_usuario: number;
-    nome_usuario?: string;
-    id_regiao: number | number[];
-    nome_regiao?: string | string[];
-    data_cadastro?: string;
-    tipo?: string;
-  };
-
   const fetchUsuariosRegioes = useCallback(async () => {
-    // The API returns a flattened list of user-region rows (UsuarioRegiao[]).
-    // We need to group by user and produce UsuarioComRegioes[] for the table.
-    const rows = await usuariosRegioesService.getAll();
+    // The API now returns a paginated structure with the data in a 'dados' array
+    // Each user already includes their associated regions in the expected format
+    const response = await usuariosRegioesService.getAll();
 
-    const map = new Map<number, UsuarioComRegioes>();
+    // Cast the response to our interface using as unknown first to avoid type errors
+    const typedResponse = response as unknown as UsuariosRegioesResponse;
 
-    (rows as UsuarioRegiaoRow[]).forEach((row) => {
-      const id = row.id_usuario;
-      const nome = row.nome_usuario || "";
-      // 'tipo' might not be present in the legacy typed interface; read from the row type
-      const tipo = row.tipo ?? "";
-
-      if (!map.has(id)) {
-        map.set(id, {
-          id_usuario: id,
-          nome_usuario: nome,
-          tipo: tipo,
-          regioes: [],
-        });
-      }
-
-      const entry = map.get(id)!;
-
-      // id_regiao can be number or number[] according to legacy typing
-      if (Array.isArray(row.id_regiao)) {
-        // If names also come as array, try to align them by index
-        const nomes = Array.isArray(row.nome_regiao)
-          ? (row.nome_regiao as string[])
-          : [];
-        (row.id_regiao as number[]).forEach((rid, idx) => {
-          entry.regioes.push({
-            id_regiao: rid,
-            nome_regiao: nomes[idx] ?? `Região ${rid}`,
-          });
-        });
-      } else if (typeof row.id_regiao === "number") {
-        const nomeCampo = Array.isArray(row.nome_regiao)
-          ? (row.nome_regiao as string[])[0]
-          : (row.nome_regiao as string | undefined);
-
-        entry.regioes.push({
-          id_regiao: row.id_regiao as number,
-          nome_regiao: nomeCampo ?? `Região ${row.id_regiao}`,
-        });
-      }
-    });
-
-    return Array.from(map.values());
+    // Return the formatted data directly since the API now provides the correct structure
+    return typedResponse.dados || [];
   }, []);
 
   const { data: usuariosRegioes, loading } = useDataFetch<UsuarioComRegioes[]>(

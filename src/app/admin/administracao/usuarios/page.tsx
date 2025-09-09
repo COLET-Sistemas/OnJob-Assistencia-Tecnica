@@ -9,7 +9,7 @@ import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useFilters } from "@/hooks/useFilters";
-import { usuariosAPI } from "@/api/api";
+import { usuariosService as usuariosAPI } from "@/api/services/usuariosService";
 import { Mail, ShieldCheck } from "lucide-react";
 
 // Interface dos filtros específicos para usuários
@@ -54,7 +54,8 @@ const CadastroUsuario = () => {
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
 
-    return await usuariosAPI.getAll(params);
+    const response = await usuariosAPI.getAll(params);
+    return response.dados; // Acessa a propriedade 'dados' da resposta da API
   }, [filtrosAplicados]);
 
   const {

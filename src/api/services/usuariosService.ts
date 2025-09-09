@@ -1,4 +1,9 @@
-import { Usuario, UsuarioRegiao } from "../../types/admin/cadastro/usuarios";
+import {
+  Usuario,
+  UsuarioRegiao,
+  UsuarioComRegioes,
+  UsuariosRegioesResponse,
+} from "../../types/admin/cadastro/usuarios";
 import api from "../api";
 
 // Interface para padronizar resposta da API
@@ -51,12 +56,26 @@ class UsuariosRegioesService {
 
   async getAll(
     params?: Record<string, string | number | boolean>
-  ): Promise<UsuarioRegiao[]> {
-    return await api.get<UsuarioRegiao[]>(this.baseUrl, { params });
+  ): Promise<UsuariosRegioesResponse> {
+    return await api.get<UsuariosRegioesResponse>(this.baseUrl, { params });
   }
 
-  async getById(id: number | string): Promise<UsuarioRegiao> {
-    return await api.get<UsuarioRegiao>(`${this.baseUrl}/${id}`);
+  async getById(id: number | string): Promise<UsuarioComRegioes> {
+    // Add query parameter to ensure we get the specific user with their regions
+    const response = await api.get<{ dados: UsuarioComRegioes[] }>(
+      `${this.baseUrl}`,
+      {
+        params: { id_usuario: id },
+      }
+    );
+
+    // Extract the user from the dados array (should be only one)
+    const users = response.dados || [];
+    if (users.length === 0) {
+      throw new Error(`Usuário com ID ${id} não encontrado`);
+    }
+
+    return users[0];
   }
 
   async create(
@@ -67,9 +86,12 @@ class UsuariosRegioesService {
 
   async update(
     id: number | string,
-    data: Partial<UsuarioRegiao>
-  ): Promise<UsuarioRegiao> {
-    return await api.put<UsuarioRegiao>(`${this.baseUrl}/${id}`, data);
+    data: { id_usuario: number; id_regiao: number[] }
+  ): Promise<{ message: string; success: boolean }> {
+    return await api.put<{ message: string; success: boolean }>(
+      `${this.baseUrl}/${id}`,
+      data
+    );
   }
 
   async delete(id: number | string): Promise<void> {

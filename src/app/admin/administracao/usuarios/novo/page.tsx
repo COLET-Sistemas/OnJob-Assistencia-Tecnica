@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { usuariosAPI } from "@/api/api";
+import { usuariosService as usuariosAPI } from "@/api/services/usuariosService";
 import { useTitle } from "@/context/TitleContext";
 import Link from "next/link";
 import { Save } from "lucide-react";
@@ -24,6 +24,7 @@ export default function NovoUsuario() {
     email: string;
     senha_hash: string;
     id_empresa: string;
+    situacao: string;
     perfil_interno: boolean;
     perfil_gestor_assistencia: boolean;
     perfil_tecnico_proprio: boolean;
@@ -42,6 +43,7 @@ export default function NovoUsuario() {
     perfil_tecnico_proprio: false,
     perfil_tecnico_terceirizado: false,
     administrador: false,
+    situacao: "A", // Adiciona situação como 'Ativo' por padrão
   });
   const [savingData, setSavingData] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});

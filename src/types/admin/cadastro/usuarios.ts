@@ -22,6 +22,28 @@ export interface UsuarioLegacy {
   data_cadastro: string;
 }
 
+// Structure for a single region associated with a user
+export interface Regiao {
+  id_regiao: number;
+  nome_regiao: string;
+}
+
+// Structure for a user with their associated regions
+export interface UsuarioComRegioes {
+  id_usuario: number;
+  nome_usuario: string;
+  tipo: string;
+  regioes: Regiao[];
+}
+
+// The paginated response format for the API
+export interface UsuariosRegioesResponse {
+  total_registros: number;
+  total_paginas: number;
+  dados: UsuarioComRegioes[];
+}
+
+// Keeping the old interface for backwards compatibility
 export interface UsuarioRegiao {
   id_usuario: number;
   nome_usuario?: string;
