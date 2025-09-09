@@ -88,37 +88,12 @@ const apiRequest = async <T>(
     },
   };
 
-  // Add extra logging for /regioes endpoint
-  if (endpoint.startsWith("/regioes")) {
-    console.log(`Request to ${endpoint}:`, {
-      url,
-      method: options.method || "GET",
-      headers: {
-        ...config.headers,
-        // Mask the token for security
-        "X-Token":
-          config.headers && "X-Token" in config.headers
-            ? (config.headers["X-Token"] as string).substring(0, 10) + "..."
-            : "not set",
-      },
-    });
-  }
-
   try {
     const response = await fetch(url, config);
 
     if (!response.ok) {
       const errorText = await response.text();
       const status = response.status;
-
-      // Add extra logging for /regioes endpoint errors
-      if (endpoint.startsWith("/regioes")) {
-        console.error(`Error in ${endpoint} API call:`, {
-          status,
-          statusText: response.statusText,
-          errorText,
-        });
-      }
 
       try {
         const errorData = JSON.parse(errorText);
@@ -153,7 +128,7 @@ const apiRequest = async <T>(
           : apiMessage || "Erro desconhecido na API";
 
         throw new Error(fullErrorMessage);
-      } catch (parseError) {
+      } catch {
         // Se não for um JSON válido, mas ainda for 401, verificar o texto
         if (
           response.status === 401 &&

@@ -14,6 +14,7 @@ import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { use } from "react";
 
 // Cache global de regiões compartilhado entre componentes
 let regioesGlobais: Regiao[] = [];
@@ -69,13 +70,15 @@ const useRegioesCache = () => {
 };
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 const VincularTecnicoRegioes = ({ params }: PageProps) => {
-  const idUsuario = parseInt(params.id);
+  // Unwrap the params promise using React.use()
+  const unwrappedParams = use(params);
+  const idUsuario = parseInt(unwrappedParams.id);
   const router = useRouter();
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
