@@ -3,7 +3,7 @@ import {
   ClienteContato,
   FormData as ClienteFormData,
 } from "../../types/admin/cadastro/clientes";
-import api from "../httpClient";
+import api from "../api";
 
 class ClientesService {
   private baseUrl = "/clientes";

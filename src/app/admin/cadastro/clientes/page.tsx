@@ -16,10 +16,12 @@ import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
-import { clientesAPI } from "@/api/api";
+import { services } from "@/api";
 import { MapPin } from "lucide-react";
 import LocationButton from "@/components/admin/ui/LocationButton"; // Importa o componente
 import api from "@/api/api";
+
+const { clientesService } = services;
 
 // Interface dos filtros específicos para clientes
 interface ClientesFilters {
@@ -124,7 +126,7 @@ const CadastroClientes = () => {
       params.incluir_inativos = "S";
 
     try {
-      const response: ClientesResponse = await clientesAPI.getAll(params);
+      const response: ClientesResponse = await clientesService.getAll(params);
 
       setPaginacao((prev) => ({
         ...prev,
@@ -190,7 +192,7 @@ const CadastroClientes = () => {
       try {
         const clientId = getClienteId(selectedCliente);
 
-        const response = await api.patch(`/clientes/geo?id=${clientId}`, {
+        await api.patch(`/clientes/geo?id=${clientId}`, {
           latitude: Number(latitude),
           longitude: Number(longitude),
         });
@@ -199,7 +201,7 @@ const CadastroClientes = () => {
         await refetch(); // Recarrega os dados
         showSuccess(
           "Sucesso",
-          response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+          "Localização atualizada com sucesso" // Mensagem explícita em vez da resposta
         );
       } catch (error) {
         console.error("Error updating location:", error);
@@ -357,21 +359,15 @@ const CadastroClientes = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await clientesAPI.delete(id);
-      setLocalShowFilters(false); 
-      isReloadingRef.current = true; 
-      showSuccess(
-        "Sucesso",
-        response 
-      );
+      await clientesService.delete(id);
+      setLocalShowFilters(false);
+      isReloadingRef.current = true;
+      showSuccess("Sucesso", "Cliente inativado com sucesso");
       await refetch();
     } catch (error) {
       console.error("Erro ao inativar cliente:", error);
 
-      showError(
-        "Erro ao inativar",
-        error as Record<string, unknown> 
-      );
+      showError("Erro ao inativar", error as Record<string, unknown>);
     } finally {
       setTimeout(() => {
         isReloadingRef.current = false;

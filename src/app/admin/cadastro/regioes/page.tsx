@@ -9,7 +9,7 @@ import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useRegioesFilters } from "@/hooks/useSpecificFilters";
-import { regioesAPI } from "@/api/api";
+import { regioesService } from "@/api/services/regioesService";
 import { MapPin } from "lucide-react";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 
@@ -51,7 +51,7 @@ const CadastroRegioes = () => {
       params.incluir_inativos = "S";
 
     try {
-      return await regioesAPI.getAll(params);
+      return await regioesService.getAll(params);
     } finally {
       // Depois de recarregar, permitir mudanças no estado do menu
       setTimeout(() => {
@@ -172,11 +172,11 @@ const CadastroRegioes = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await regioesAPI.delete(id);
+      await regioesService.delete(id);
       setLocalShowFilters(false);
       isReloadingRef.current = true;
       await refetch();
-      showSuccess("Inativação realizada!", response);
+      showSuccess("Inativação realizada!", "Região inativada com sucesso");
     } catch (error) {
       console.error("Erro ao inativar região:", error);
       showError("Erro ao inativar", error as Record<string, unknown>);

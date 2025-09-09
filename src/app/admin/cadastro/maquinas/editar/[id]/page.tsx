@@ -8,7 +8,8 @@ interface ClienteAPIResult {
   codigo_erp?: string;
 }
 
-import { maquinasAPI, clientesAPI } from "@/api/api";
+import { maquinasService } from "@/api/services/maquinasService";
+import { clientesService } from "@/api/services/clientesService";
 import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { Save } from "lucide-react";
@@ -24,7 +25,7 @@ interface FormData {
   numero_serie: string;
   descricao: string;
   modelo: string;
-  id_cliente_atual: number | null;
+  id_cliente: number | null; // Changed from id_cliente_atual to match API expectations
   data_1a_venda: string;
   nota_fiscal_venda: string;
   data_final_garantia: string;
@@ -39,7 +40,7 @@ interface ClienteOption extends Omit<OptionType, "value"> {
 const EditarMaquina = () => {
   const router = useRouter();
   const { id } = useParams();
-  const maquinaId = Array.isArray(id) ? id[0] : id;
+  const maquinaId = Array.isArray(id) ? id[0] : (id as string); // Force as string since it's from the URL param
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
   const [savingData, setSavingData] = useState(false);
@@ -50,7 +51,7 @@ const EditarMaquina = () => {
     numero_serie: "",
     descricao: "",
     modelo: "",
-    id_cliente_atual: null,
+    id_cliente: null,
     data_1a_venda: "",
     nota_fiscal_venda: "",
     data_final_garantia: "",
@@ -73,7 +74,7 @@ const EditarMaquina = () => {
   const fetchMaquina = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await maquinasAPI.getById(maquinaId);
+      const response = await maquinasService.getById(maquinaId);
 
       // Verifica se a resposta está no formato paginado ou direto
       let maquinaData;
@@ -104,7 +105,7 @@ const EditarMaquina = () => {
         numero_serie: maquinaData.numero_serie || "",
         descricao: maquinaData.descricao || "",
         modelo: maquinaData.modelo || "",
-        id_cliente_atual:
+        id_cliente:
           maquinaData.id_cliente_atual ||
           maquinaData.cliente_atual?.id_cliente ||
           null,
@@ -144,14 +145,14 @@ const EditarMaquina = () => {
         // Garantir que o ID do cliente esteja no formData
         setFormData((prev) => ({
           ...prev,
-          id_cliente_atual: clienteId,
+          id_cliente: clienteId,
         }));
       } else if (maquinaData.id_cliente_atual) {
         console.log("Buscando cliente pelo ID:", maquinaData.id_cliente_atual);
         // Se tiver apenas o ID do cliente, mas não o objeto cliente_atual,
         // buscar os dados do cliente pela API
         try {
-          const clienteData = await clientesAPI.getAll({
+          const clienteData = await clientesService.getAll({
             id: maquinaData.id_cliente_atual,
           });
 
@@ -166,9 +167,9 @@ const EditarMaquina = () => {
 
             setClienteInput(clienteNome);
 
-            // Criar o objeto do cliente
-            const clienteOption = {
-              value: cliente.id_cliente,
+            // Criar o objeto do cliente, garantindo que o id_cliente nunca seja undefined
+            const clienteOption: ClienteOption = {
+              value: cliente.id_cliente ?? 0, // Fallback para 0 caso seja undefined
               label: clienteNome,
               razao_social: cliente.razao_social || "",
             };
@@ -181,7 +182,7 @@ const EditarMaquina = () => {
             // Garantir que o ID do cliente esteja no formData
             setFormData((prev) => ({
               ...prev,
-              id_cliente_atual: cliente.id_cliente,
+              id_cliente: cliente.id_cliente ?? null,
             }));
           } else {
             console.log("Cliente não encontrado pela API");
@@ -209,8 +210,8 @@ const EditarMaquina = () => {
   useEffect(() => {
     console.log("Estado atual do cliente selecionado:", selectedCliente);
     console.log("clienteInput:", clienteInput);
-    console.log("formData.id_cliente_atual:", formData.id_cliente_atual);
-  }, [selectedCliente, clienteInput, formData.id_cliente_atual]);
+    console.log("formData.id_cliente:", formData.id_cliente);
+  }, [selectedCliente, clienteInput, formData.id_cliente]);
 
   // Manipular mudanças nos campos do formulário
   const handleInputChange = (
@@ -244,8 +245,8 @@ const EditarMaquina = () => {
 
   const searchClientes = async (term: string) => {
     try {
-      // Utiliza clientesAPI.getAll para buscar clientes por nome com parâmetro resumido=S
-      const data = await clientesAPI.getAll({
+      // Utiliza clientesService.getAll para buscar clientes por nome com parâmetro resumido=S
+      const data = await clientesService.getAll({
         nome: term,
         resumido: "S",
         qtde_registros: 15,
@@ -283,7 +284,7 @@ const EditarMaquina = () => {
     if (clienteOption) {
       setFormData((prev) => ({
         ...prev,
-        id_cliente_atual: clienteOption.value,
+        id_cliente: clienteOption.value,
       }));
 
       // Limpar erro se existir
@@ -291,7 +292,7 @@ const EditarMaquina = () => {
         setFormErrors((prev) => ({ ...prev, id_cliente_atual: "" }));
       }
     } else {
-      setFormData((prev) => ({ ...prev, id_cliente_atual: null }));
+      setFormData((prev) => ({ ...prev, id_cliente: null }));
     }
   };
 
@@ -301,8 +302,7 @@ const EditarMaquina = () => {
     if (!formData.numero_serie) errors.numero_serie = "Campo obrigatório";
     if (!formData.descricao) errors.descricao = "Campo obrigatório";
     if (!formData.modelo) errors.modelo = "Campo obrigatório";
-    if (!formData.id_cliente_atual)
-      errors.id_cliente_atual = "Selecione um cliente";
+    if (!formData.id_cliente) errors.id_cliente_atual = "Selecione um cliente";
     if (!formData.data_1a_venda) errors.data_1a_venda = "Campo obrigatório";
     if (!formData.nota_fiscal_venda)
       errors.nota_fiscal_venda = "Campo obrigatório";
@@ -324,18 +324,18 @@ const EditarMaquina = () => {
     setSavingData(true);
 
     try {
-      const response = await maquinasAPI.update(maquinaId, {
+      await maquinasService.update(maquinaId, {
         numero_serie: formData.numero_serie,
         descricao: formData.descricao,
         modelo: formData.modelo,
-        id_cliente_atual: formData.id_cliente_atual,
+        id_cliente: formData.id_cliente ?? undefined, // Convert null to undefined if needed
         data_1a_venda: formData.data_1a_venda,
         nota_fiscal_venda: formData.nota_fiscal_venda,
         data_final_garantia: formData.data_final_garantia,
       });
       showSuccess(
         "Sucesso",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+        "Máquina atualizada com sucesso" // Mensagem fixa em vez da resposta
       );
       router.push("/admin/cadastro/maquinas");
     } catch (error) {
@@ -418,9 +418,7 @@ const EditarMaquina = () => {
                           ? `${selectedCliente.label} (${selectedCliente.value})`
                           : "nenhum"}
                       </div>
-                      <div>
-                        ID do cliente no form: {formData.id_cliente_atual}
-                      </div>
+                      <div>ID do cliente no form: {formData.id_cliente}</div>
                     </div>
                   )}
 

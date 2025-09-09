@@ -1,7 +1,6 @@
 "use client";
 
-import { pecasAPI } from "@/api/api";
-import { tiposPecasService } from "@/api/services";
+import { pecasService, tiposPecasService } from "@/api/services";
 import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { Save } from "lucide-react";
@@ -174,16 +173,19 @@ const CadastrarPeca = () => {
     setSavingData(true);
 
     try {
-      // Adiciona o campo situacao como 'A' antes de enviar para a API
       const pecaData = {
-        ...formData,
+        codigo_peca: formData.codigo_peca,
+        descricao: formData.descricao,
+        unidade_medida: formData.unidade_medida,
+        id_tipo_peca: formData.id_tipo_peca!,
         situacao: "A",
+        tipo_peca: selectedTipoPeca?.label || "",
       };
 
-      const response = await pecasAPI.create(pecaData);
+      const response = await pecasService.create(pecaData);
       showSuccess(
         "Sucesso",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+        response as unknown as Record<string, unknown> // Type assertion to match expected type
       );
       router.push("/admin/cadastro/pecas");
     } catch (error) {

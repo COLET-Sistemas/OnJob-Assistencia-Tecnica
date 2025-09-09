@@ -1,6 +1,6 @@
 "use client";
 
-import api from "@/api/api";
+import { services } from "@/api";
 import { useTitle } from "@/context/TitleContext";
 import { Save } from "lucide-react";
 import Link from "next/link";
@@ -48,9 +48,11 @@ const EditarMotivoAtendimento = (props: PageProps) => {
     const carregarDados = async () => {
       setLoading(true);
       try {
-        const response = await api.get(`/motivos_atendimento?id=${id}`);
+        const response = await services.motivosAtendimentoService.getAll({
+          id: id.toString(),
+        });
 
-        if (response && response.length > 0) {
+        if (response && Array.isArray(response) && response.length > 0) {
           const motivo = response[0];
           setFormData({
             descricao: motivo.descricao,
@@ -113,7 +115,7 @@ const EditarMotivoAtendimento = (props: PageProps) => {
     setSavingData(true);
 
     try {
-      const response = await api.put(`/motivos_atendimento?id=${id}`, {
+      await services.motivosAtendimentoService.update(id, {
         descricao: formData.descricao,
         situacao: formData.situacao,
       });
@@ -122,15 +124,12 @@ const EditarMotivoAtendimento = (props: PageProps) => {
 
       showSuccess(
         "Atualização realizada!",
-        response
+        "Motivo de atendimento atualizado com sucesso!"
       );
     } catch (error) {
       console.error("Erro ao atualizar motivo de atendimento:", error);
 
-      showError(
-        "Erro ao atualizar",
-        error as Record<string, unknown> 
-      );
+      showError("Erro ao atualizar", error as Record<string, unknown>);
     } finally {
       setSavingData(false);
     }

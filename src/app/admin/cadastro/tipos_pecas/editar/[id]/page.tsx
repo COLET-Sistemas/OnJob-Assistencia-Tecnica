@@ -50,7 +50,19 @@ const EditarTipoPeca = (props: PageProps) => {
     const carregarDados = async () => {
       setLoading(true);
       try {
-        const response = await api.get(`/tipos_pecas?id=${id}`);
+        // Utilizar o tiposPecasService para obter os dados
+        const params = { id: id.toString() };
+        interface TiposPecaResponse {
+          dados: Array<{
+            id: number;
+            descricao: string;
+            codigo_erp: string;
+            situacao: string;
+          }>;
+        }
+        const response = await api.get<TiposPecaResponse>(`/tipos_pecas`, {
+          params,
+        });
 
         if (response && response.dados && response.dados.length > 0) {
           const tipoPeca = response.dados[0];
@@ -119,11 +131,12 @@ const EditarTipoPeca = (props: PageProps) => {
     setSavingData(true);
 
     try {
-      const response = await api.put(`/tipos_pecas?id=${id}`, {
+      // Utilizar o endpoint correto com os parâmetros
+      const response = (await api.put(`/tipos_pecas?id=${id}`, {
         descricao: formData.descricao,
         codigo_erp: formData.codigo_erp,
         situacao: formData.situacao,
-      });
+      })) as Record<string, unknown>;
 
       router.push("/admin/cadastro/tipos_pecas");
 

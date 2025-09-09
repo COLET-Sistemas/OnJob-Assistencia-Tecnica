@@ -69,12 +69,23 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [redirectReason, setRedirectReason] = useState<string | null>(null);
 
   const loginInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   useEffect(() => {
     setIsMounted(true);
+
+    // Verificar se há mensagem de redirecionamento armazenada
+    if (typeof window !== "undefined") {
+      const reason = sessionStorage.getItem("loginRedirectReason");
+      if (reason) {
+        setRedirectReason(reason);
+        setError(reason);
+        sessionStorage.removeItem("loginRedirectReason");
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -409,9 +420,25 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start space-x-3 animate-shake shadow-sm">
-              <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-              <p className="text-red-700 text-sm">{error}</p>
+            <div
+              className={`mb-6 p-4 ${
+                redirectReason
+                  ? "bg-amber-50 border-amber-200"
+                  : "bg-red-50 border-red-200"
+              } border rounded-2xl flex items-start space-x-3 animate-shake shadow-sm`}
+            >
+              <AlertTriangle
+                className={`w-5 h-5 ${
+                  redirectReason ? "text-amber-500" : "text-red-500"
+                } mt-0.5 flex-shrink-0`}
+              />
+              <p
+                className={`${
+                  redirectReason ? "text-amber-700" : "text-red-700"
+                } text-sm`}
+              >
+                {error}
+              </p>
             </div>
           )}
 

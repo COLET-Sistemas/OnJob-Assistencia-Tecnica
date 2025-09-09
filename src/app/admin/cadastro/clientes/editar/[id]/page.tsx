@@ -1,6 +1,6 @@
 "use client";
 
-import { clientesAPI, regioesAPI } from "@/api/api";
+import { clientesService, regioesService } from "@/api/services";
 import { Loading } from "@/components/LoadingPersonalizado";
 import LocationPicker from "@/components/admin/common/LocationPicker";
 import StaticMap from "@/components/admin/common/StaticMap";
@@ -135,22 +135,23 @@ const EditarCliente: React.FC = () => {
     const carregarCliente = async () => {
       try {
         // Fazer a requisição para a API com o ID do cliente
-        const response = await clientesAPI.getById(Number(clienteId));
+        const cliente = await clientesService.getById(Number(clienteId));
 
-        if (response && response.dados && response.dados.length > 0) {
-          const cliente = response.dados[0];
-
+        if (cliente) {
           // Mapeamento de regiao.id_regiao para regiao.id para compatibilidade com o componente
           const regiaoFormatada = cliente.regiao
             ? {
-                id: cliente.regiao.id_regiao,
-                nome: cliente.regiao.nome_regiao,
-                atendida_empresa: cliente.regiao.atendida_empresa,
-                situacao: "A",
-                descricao: "",
-                uf: "",
-                data_cadastro: "",
-                id_usuario_cadastro: 0,
+                id: cliente.regiao.id_regiao || cliente.regiao.id,
+                nome: cliente.regiao.nome_regiao || cliente.regiao.nome,
+                atendida_empresa:
+                  cliente.regiao.atendida_empresa ||
+                  cliente.regiao.atendida_pela_empresa ||
+                  false,
+                situacao: cliente.regiao.situacao || "A",
+                descricao: cliente.regiao.descricao || "",
+                uf: cliente.regiao.uf || "",
+                data_cadastro: cliente.regiao.data_cadastro || "",
+                id_usuario_cadastro: cliente.regiao.id_usuario_cadastro || 0,
               }
             : undefined;
 
@@ -220,7 +221,7 @@ const EditarCliente: React.FC = () => {
     carregouRegioes.current = true;
     const carregarRegioes = async () => {
       try {
-        const response = await regioesAPI.getAll();
+        const response = await regioesService.getAll();
         const regioesAtivas = (response || []).filter(
           (regiao: Regiao) => regiao.situacao === "A"
         );
@@ -490,38 +491,35 @@ const EditarCliente: React.FC = () => {
       try {
         // Formatar dados para envio conforme esperado pela API
         const clienteData = {
-          codigo_erp: formData.codigo_erp || null,
+          codigo_erp: formData.codigo_erp || undefined,
           nome_fantasia: formData.nome_fantasia,
           razao_social: formData.razao_social,
           cnpj: formData.cnpj,
           endereco: formData.endereco,
           numero: formData.numero,
-          complemento: formData.complemento || null,
+          complemento: formData.complemento || undefined,
           bairro: formData.bairro,
           cep: formData.cep,
           cidade: formData.cidade,
           uf: formData.uf,
-          id_regiao: formData.regiao?.id ?? null,
+          id_regiao: formData.regiao?.id,
           latitude:
             typeof formData.latitude === "string"
               ? parseFloat(formData.latitude)
-              : formData.latitude ?? null,
+              : formData.latitude,
           longitude:
             typeof formData.longitude === "string"
               ? parseFloat(formData.longitude)
-              : formData.longitude ?? null,
+              : formData.longitude,
           situacao: formData.situacao,
         };
 
         // Enviar para a API - Update
-        const response = await clientesAPI.update(
-          Number(clienteId),
-          clienteData
-        );
+        await clientesService.update(Number(clienteId), clienteData);
 
         router.push("/admin/cadastro/clientes");
 
-        showSuccess(MESSAGES.success, response);
+        showSuccess(MESSAGES.success, "Cliente atualizado com sucesso!");
       } catch (error) {
         console.error("Erro ao atualizar cliente:", error);
 

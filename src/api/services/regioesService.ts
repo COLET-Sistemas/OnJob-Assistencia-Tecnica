@@ -1,5 +1,5 @@
 import { Regiao } from '../../types/admin/cadastro/regioes';
-import api from '../httpClient';
+import api from '../api';
 import { BaseService } from './baseService';
 
 class RegioesService implements BaseService<Regiao> {

@@ -78,19 +78,19 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                 active={situacoes.aAtender}
                 onClick={() => toggleSituacao("aAtender")}
                 colorScheme="purple"
-                label="Por Atender"
+                label="A atender"
               />
               <FilterButton
                 active={situacoes.emDeslocamento}
                 onClick={() => toggleSituacao("emDeslocamento")}
                 colorScheme="amber"
-                label="Em Deslocamento"
+                label="Em deslocamento"
               />
               <FilterButton
                 active={situacoes.emAtendimento}
                 onClick={() => toggleSituacao("emAtendimento")}
                 colorScheme="blue"
-                label="Em Atendimento"
+                label="Em atendimento"
               />
               <FilterButton
                 active={situacoes.atendimentoInterrompido}

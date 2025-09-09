@@ -1,6 +1,6 @@
 "use client";
 
-import { motivosAtendimentoAPI } from "@/api/api";
+import { services } from "@/api";
 import { useTitle } from "@/context/TitleContext";
 import { Save, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -144,13 +144,17 @@ const CadastrarMotivoAtendimento: React.FC = () => {
       setIsSubmitting(true);
 
       try {
-        const response = await motivosAtendimentoAPI.create({
+        await services.motivosAtendimentoService.create({
           descricao: formData.descricao.trim(),
+          situacao: "A", // Default to "Ativo"
         });
 
         router.push("/admin/cadastro/motivos_atendimentos");
 
-        showSuccess("Cadastro realizado!", response);
+        showSuccess(
+          "Cadastro realizado!",
+          "Motivo de atendimento cadastrado com sucesso!"
+        );
       } catch (error) {
         console.error("Erro ao cadastrar motivo de atendimento:", error);
 

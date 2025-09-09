@@ -8,14 +8,13 @@ import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useMotivosPendenciaFilters } from "@/hooks/useSpecificFilters";
-import { motivosPendenciaAPI } from "@/api/api";
+import { services } from "@/api";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 
 const CadastroMotivosPendencia = () => {
   const { showSuccess, showError } = useToast();
   const [localShowFilters, setLocalShowFilters] = useState(false);
   const isReloadingRef = useRef(false);
-
 
   const {
     showFilters,
@@ -42,7 +41,7 @@ const CadastroMotivosPendencia = () => {
       params.descricao = filtrosAplicados.descricao;
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
-    return await motivosPendenciaAPI.getAll(params);
+    return await services.motivosPendenciaService.getAll(params);
   }, [filtrosAplicados]);
 
   const {
@@ -90,20 +89,17 @@ const CadastroMotivosPendencia = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await motivosPendenciaAPI.delete(id);
+      await services.motivosPendenciaService.delete(id);
       await refetch();
 
       showSuccess(
         "Inativação realizada!",
-        response 
+        "Motivo de pendência inativado com sucesso."
       );
     } catch (error) {
       console.error("Erro ao inativar motivo de pendência:", error);
 
-      showError(
-        "Erro ao inativar",
-        error as Record<string, unknown>
-      );
+      showError("Erro ao inativar", error as Record<string, unknown>);
     }
   };
 

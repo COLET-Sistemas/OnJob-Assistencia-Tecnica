@@ -1,6 +1,6 @@
 "use client";
 
-import { clientesAPI, regioesAPI } from "@/api/api";
+import { clientesService, regioesService } from "@/api/services";
 import { Loading } from "@/components/LoadingPersonalizado";
 import LocationPicker from "@/components/admin/common/LocationPicker";
 import StaticMap from "@/components/admin/common/StaticMap";
@@ -12,7 +12,7 @@ import {
   SelectField,
   LoadingButton,
 } from "@/components/admin/form";
-import { FormData } from "@/types/admin/cadastro/clientes";
+import { FormData as ClienteFormData } from "@/types/admin/cadastro/clientes";
 import { formatDocumento, validarDocumento } from "@/utils/formatters";
 import { buscarCEP, formatarCEP } from "@/utils/cepAPI";
 import { ESTADOS } from "@/utils/constants";
@@ -54,32 +54,36 @@ const MESSAGES = {
 
 // Hook customizado para validação
 const useFormValidation = () => {
-  const validateForm = useCallback((formData: FormData): FormValidation => {
-    const errors: FormErrors = {};
+  const validateForm = useCallback(
+    (formData: ClienteFormData): FormValidation => {
+      const errors: FormErrors = {};
 
-    if (!formData.nome_fantasia.trim())
-      errors.nome_fantasia = MESSAGES.required;
-    if (!formData.razao_social.trim()) errors.razao_social = MESSAGES.required;
-    if (!formData.cnpj || !validarDocumento(formData.cnpj))
-      errors.cnpj = MESSAGES.invalidCNPJ;
-    if (!formData.endereco.trim()) errors.endereco = MESSAGES.required;
-    if (!formData.numero.trim()) errors.numero = MESSAGES.required;
-    if (!formData.bairro.trim()) errors.bairro = MESSAGES.required;
-    if (!formData.cep || formData.cep.length < 9)
-      errors.cep = MESSAGES.required;
-    if (!formData.cidade.trim()) errors.cidade = MESSAGES.required;
-    if (!formData.uf) errors.uf = MESSAGES.required;
+      if (!formData.nome_fantasia.trim())
+        errors.nome_fantasia = MESSAGES.required;
+      if (!formData.razao_social.trim())
+        errors.razao_social = MESSAGES.required;
+      if (!formData.cnpj || !validarDocumento(formData.cnpj))
+        errors.cnpj = MESSAGES.invalidCNPJ;
+      if (!formData.endereco.trim()) errors.endereco = MESSAGES.required;
+      if (!formData.numero.trim()) errors.numero = MESSAGES.required;
+      if (!formData.bairro.trim()) errors.bairro = MESSAGES.required;
+      if (!formData.cep || formData.cep.length < 9)
+        errors.cep = MESSAGES.required;
+      if (!formData.cidade.trim()) errors.cidade = MESSAGES.required;
+      if (!formData.uf) errors.uf = MESSAGES.required;
 
-    // Validação para região
-    if (!formData.regiao || !formData.regiao.id) {
-      errors.id_regiao = MESSAGES.invalidRegion;
-    }
+      // Validação para região
+      if (!formData.regiao || !formData.regiao.id) {
+        errors.id_regiao = MESSAGES.invalidRegion;
+      }
 
-    return {
-      isValid: Object.keys(errors).length === 0,
-      errors,
-    };
-  }, []);
+      return {
+        isValid: Object.keys(errors).length === 0,
+        errors,
+      };
+    },
+    []
+  );
 
   return { validateForm };
 };
@@ -107,7 +111,7 @@ const CadastrarCliente: React.FC = () => {
     nomeFantasiaRef.current?.focus();
   }, [setTitle]);
 
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<ClienteFormData>({
     codigo_erp: "",
     nome_fantasia: "",
     razao_social: "",
@@ -133,7 +137,7 @@ const CadastrarCliente: React.FC = () => {
     const carregarRegioes = async () => {
       setLoading(true);
       try {
-        const response = await regioesAPI.getAll();
+        const response = await regioesService.getAll();
         const regioesAtivas = (response || []).filter(
           (regiao: Regiao) => regiao.situacao === "A"
         );
@@ -369,36 +373,39 @@ const CadastrarCliente: React.FC = () => {
 
       try {
         // Formatar dados para envio conforme esperado pela API
-        const clienteData = {
-          codigo_erp: formData.codigo_erp || null,
+        const clienteData: ClienteFormData = {
+          codigo_erp: formData.codigo_erp || undefined,
           nome_fantasia: formData.nome_fantasia,
           razao_social: formData.razao_social,
           cnpj: formData.cnpj,
           endereco: formData.endereco,
           numero: formData.numero,
-          complemento: formData.complemento || null,
+          complemento: formData.complemento || undefined,
           bairro: formData.bairro,
           cep: formData.cep,
           cidade: formData.cidade,
           uf: formData.uf,
-          id_regiao: formData.regiao?.id ?? null,
+          regiao: formData.regiao,
           latitude:
             typeof formData.latitude === "string"
               ? parseFloat(formData.latitude)
-              : formData.latitude ?? null,
+              : formData.latitude,
           longitude:
             typeof formData.longitude === "string"
               ? parseFloat(formData.longitude)
-              : formData.longitude ?? null,
+              : formData.longitude,
           situacao: formData.situacao,
         };
 
         // Enviar para a API
-        const response = await clientesAPI.create(clienteData);
+        const response = await clientesService.create(clienteData);
 
         router.push("/admin/cadastro/clientes");
 
-        showSuccess(MESSAGES.success, response);
+        showSuccess(
+          MESSAGES.success,
+          response as unknown as Record<string, unknown>
+        );
       } catch (error) {
         console.error("Erro ao cadastrar cliente:", error);
 

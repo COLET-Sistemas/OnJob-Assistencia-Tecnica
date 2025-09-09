@@ -1,6 +1,6 @@
 "use client";
 
-import { motivosPendenciaAPI } from "@/api/api";
+import { services } from "@/api";
 import { useTitle } from "@/context/TitleContext";
 import { Save, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -144,15 +144,16 @@ const CadastrarMotivoPendencia: React.FC = () => {
       setIsSubmitting(true);
 
       try {
-        const response = await motivosPendenciaAPI.create({
+        await services.motivosPendenciaService.create({
           descricao: formData.descricao.trim(),
+          situacao: "A", // Definindo status como ativo por padrão
         });
 
         router.push("/admin/cadastro/motivos_pendencias");
 
         showSuccess(
           "Cadastro realizado!",
-          response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+          "Motivo de pendência cadastrado com sucesso."
         );
       } catch (error) {
         console.error("Erro ao cadastrar motivo de pendência:", error);

@@ -16,7 +16,7 @@ import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
-import { tiposPecasAPI } from "@/api/api";
+import api from "@/api/api";
 
 // Interface dos filtros específicos para tipos de peças
 interface TiposPecasFilters {
@@ -99,7 +99,9 @@ const CadastroTiposPecas = () => {
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
 
-    const response: TiposPecasResponse = await tiposPecasAPI.getAll(params);
+    const response: TiposPecasResponse = await api.get("/tipos_pecas", {
+      params,
+    });
 
     setPaginacao((prev) => ({
       ...prev,
@@ -184,20 +186,14 @@ const CadastroTiposPecas = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await tiposPecasAPI.delete(id);
+      const response = await api.delete(`/tipos_pecas?id=${id}`);
       await refetch();
 
-      showSuccess(
-        "Inativação realizada!",
-        response 
-      );
+      showSuccess("Inativação realizada!", response as Record<string, unknown>);
     } catch (error) {
       console.error("Erro ao inativar tipo de peça:", error);
 
-      showError(
-        "Erro ao inativar",
-        error as Record<string, unknown> 
-      );
+      showError("Erro ao inativar", error as Record<string, unknown>);
     }
   };
 

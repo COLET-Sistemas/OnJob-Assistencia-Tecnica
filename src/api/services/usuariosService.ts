@@ -1,5 +1,5 @@
 import { Usuario, UsuarioRegiao } from "../../types/admin/cadastro/usuarios";
-import api from "../httpClient";
+import api from "../api";
 
 // Interface para padronizar resposta da API
 interface ApiResponse<T> {

@@ -8,7 +8,7 @@ import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useMotivosAtendimentoFilters } from "@/hooks/useSpecificFilters";
-import { motivosAtendimentoAPI } from "@/api/api";
+import { services } from "@/api";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 
 const CadastroMotivosAtendimento = () => {
@@ -36,11 +36,11 @@ const CadastroMotivosAtendimento = () => {
     isReloadingRef.current = true;
 
     try {
-      return await motivosAtendimentoAPI.getAll(params);
+      return await services.motivosAtendimentoService.getAll(params);
     } finally {
       setTimeout(() => {
         isReloadingRef.current = false;
-      }, 500); 
+      }, 500);
     }
   }, [filtrosAplicados]);
 
@@ -58,30 +58,33 @@ const CadastroMotivosAtendimento = () => {
 
   const handleApplyFilters = () => {
     setLocalShowFilters(false);
-    isReloadingRef.current = true; 
-    aplicarFiltros(); 
+    isReloadingRef.current = true;
+    aplicarFiltros();
   };
 
   const handleClearFilters = () => {
-    setLocalShowFilters(false); 
-    isReloadingRef.current = true; 
-    limparFiltros(); 
+    setLocalShowFilters(false);
+    isReloadingRef.current = true;
+    limparFiltros();
   };
 
   const handleToggleFilters = () => {
     if (!isReloadingRef.current) {
-      setLocalShowFilters(!localShowFilters); 
+      setLocalShowFilters(!localShowFilters);
     }
-    toggleFilters(); 
+    toggleFilters();
   };
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await motivosAtendimentoAPI.delete(id);
+      await services.motivosAtendimentoService.delete(id);
       setLocalShowFilters(false);
       isReloadingRef.current = true;
       await refetch();
-      showSuccess("Inativação realizada!", response);
+      showSuccess(
+        "Inativação realizada!",
+        "Motivo de atendimento inativado com sucesso"
+      );
     } catch (error) {
       console.error("Erro ao inativar motivo de atendimento:", error);
       showError("Erro ao inativar", error as Record<string, unknown>);
@@ -153,7 +156,9 @@ const CadastroMotivosAtendimento = () => {
     },
   ];
 
-  const itemCount = motivosAtendimento ? motivosAtendimento.length : 0;
+  const itemCount = Array.isArray(motivosAtendimento)
+    ? motivosAtendimento.length
+    : 0;
 
   return (
     <>
@@ -163,7 +168,7 @@ const CadastroMotivosAtendimento = () => {
           type: "list",
           itemCount: itemCount,
           onFilterToggle: handleToggleFilters,
-          showFilters: localShowFilters, 
+          showFilters: localShowFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
             label: "Novo Motivo",
@@ -183,7 +188,7 @@ const CadastroMotivosAtendimento = () => {
         onFilterChange={handleFiltroChange}
         onClearFilters={handleClearFilters}
         onApplyFilters={handleApplyFilters}
-        onFilterToggle={handleToggleFilters} 
+        onFilterToggle={handleToggleFilters}
       />
     </>
   );

@@ -11,7 +11,7 @@ import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
-import { maquinasAPI } from "@/api/api";
+import { maquinasService } from "@/api/services/maquinasService";
 
 interface MaquinasFilters {
   numero_serie: string;
@@ -33,14 +33,6 @@ interface PaginacaoInfo {
   totalPaginas: number;
   totalRegistros: number;
   registrosPorPagina: number;
-}
-
-interface MaquinasResponse {
-  dados: Maquina[];
-  total_paginas: number;
-  total_registros: number;
-  pagina_atual: number;
-  registros_por_pagina: number;
 }
 
 const formatDate = (dateString: string): string => {
@@ -79,59 +71,65 @@ const CadastroMaquinas = () => {
   });
 
   const fetchMaquinas = useCallback(async (): Promise<Maquina[]> => {
-    const params: Record<string, string | number> = {
-      nro_pagina: paginacao.paginaAtual,
-      qtde_registros: paginacao.registrosPorPagina,
-    };
+    try {
+      // Verificar se há filtros ativos que precisamos tratar separadamente
+      // Como a API do serviço não aceita todos os filtros diretamente,
+      // precisamos implementar uma solução alternativa
 
-    // Adiciona os filtros
-    if (
-      filtrosAplicados.numero_serie &&
-      filtrosAplicados.numero_serie.trim() !== ""
-    ) {
-      params.numero_serie = filtrosAplicados.numero_serie.trim();
-    }
-    if (filtrosAplicados.modelo && filtrosAplicados.modelo.trim() !== "") {
-      params.modelo = filtrosAplicados.modelo.trim();
-    }
-    if (
-      filtrosAplicados.descricao &&
-      filtrosAplicados.descricao.trim() !== ""
-    ) {
-      params.descricao = filtrosAplicados.descricao.trim();
-    }
-    if (filtrosAplicados.incluir_inativos === "true") {
-      params.incluir_inativos = "S";
-    }
+      const incluirInativos = filtrosAplicados.incluir_inativos === "true";
 
-    let response: MaquinasResponse | Maquina[];
+      // Obter os resultados da API
+      const response = await maquinasService.getAll(
+        paginacao.paginaAtual,
+        paginacao.registrosPorPagina,
+        incluirInativos
+      );
 
-    if (filtrosAplicados.incluir_inativos === "true") {
-      response = await maquinasAPI.getAllWithInactive(params);
-    } else {
-      response = await maquinasAPI.getAll(params);
-    }
-
-    if (response && typeof response === "object" && "dados" in response) {
-      const paginatedResponse = response as MaquinasResponse;
-
+      // Atualizar a paginação com os dados da resposta
       setPaginacao((prev) => ({
         ...prev,
-        totalPaginas: paginatedResponse.total_paginas || 1,
-        totalRegistros: paginatedResponse.total_registros || 0,
+        totalPaginas: response.total_paginas || 1,
+        totalRegistros: response.total_registros || 0,
       }));
 
-      return paginatedResponse.dados || [];
-    } else {
-      // Fallback para o formato antigo
-      const maquinasArray = response as Maquina[];
+      // Aplicar os filtros adicionais no cliente se necessário
+      let dadosFiltrados = response.dados || [];
 
-      setPaginacao((prev) => ({
-        ...prev,
-        totalRegistros: maquinasArray?.length || 0,
-      }));
+      // Filtragem adicional no cliente para os campos que a API não filtra
+      if (
+        filtrosAplicados.numero_serie &&
+        filtrosAplicados.numero_serie.trim() !== ""
+      ) {
+        dadosFiltrados = dadosFiltrados.filter((m) =>
+          m.numero_serie
+            .toLowerCase()
+            .includes(filtrosAplicados.numero_serie.trim().toLowerCase())
+        );
+      }
 
-      return maquinasArray || [];
+      if (filtrosAplicados.modelo && filtrosAplicados.modelo.trim() !== "") {
+        dadosFiltrados = dadosFiltrados.filter((m) =>
+          m.modelo
+            .toLowerCase()
+            .includes(filtrosAplicados.modelo.trim().toLowerCase())
+        );
+      }
+
+      if (
+        filtrosAplicados.descricao &&
+        filtrosAplicados.descricao.trim() !== ""
+      ) {
+        dadosFiltrados = dadosFiltrados.filter((m) =>
+          m.descricao
+            .toLowerCase()
+            .includes(filtrosAplicados.descricao.trim().toLowerCase())
+        );
+      }
+
+      return dadosFiltrados;
+    } catch (error) {
+      console.error("Erro ao buscar máquinas:", error);
+      return [];
     }
   }, [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]);
 
@@ -234,19 +232,13 @@ const CadastroMaquinas = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await maquinasAPI.delete(id);
-      showSuccess(
-        "Sucesso",
-        response 
-      );
+      await maquinasService.delete(id);
+      showSuccess("Sucesso", "Máquina inativada com sucesso!");
       await refetch();
     } catch (error) {
       console.error("Erro ao inativar máquina:", error);
 
-      showError(
-        "Erro ao inativar",
-        error as Record<string, unknown> 
-      );
+      showError("Erro ao inativar", error as Record<string, unknown>);
     }
   };
 

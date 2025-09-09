@@ -1,5 +1,5 @@
 import { MotivoAtendimento } from '../../types/admin/cadastro/motivos_atendimento';
-import api from '../httpClient';
+import api from '../api';
 import { BaseService } from './baseService';
 
 class MotivosAtendimentoService implements BaseService<MotivoAtendimento> {

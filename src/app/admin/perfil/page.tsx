@@ -11,23 +11,18 @@ import {
   Edit,
   Building,
 } from "lucide-react";
-import { usuariosAPI } from "@/api/api";
+import { services } from "@/api";
+const { usuariosService } = services;
 import { useTitle } from "@/context/TitleContext";
+import { Usuario } from "@/types/admin/cadastro/usuarios";
 
 type Empresa = {
   razao_social: string;
 };
 
-type UserData = {
-  nome: string;
-  email: string;
-  login: string;
+// Estendendo o tipo Usuario para incluir campos adicionais e tornar campos opcionais
+type UserData = Partial<Usuario> & {
   empresa?: Empresa;
-  perfil_interno?: boolean;
-  perfil_gestor_assistencia?: boolean;
-  perfil_tecnico_proprio?: boolean;
-  perfil_tecnico_terceirizado?: boolean;
-  administrador?: boolean;
   [key: string]: unknown;
 };
 
@@ -61,10 +56,13 @@ const UserProfile = () => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        const response = await usuariosAPI.getAll({ id: 1 });
+        const response = await usuariosService.getAll({ id: 1 });
 
-        const user = Array.isArray(response) ? response[0] : response;
-        setUserData(user);
+        const user = Array.isArray(response.dados)
+          ? response.dados[0]
+          : response.dados;
+        // Type casting to handle the index signature requirement
+        setUserData(user as unknown as UserData);
         setError(null);
       } catch (err) {
         console.error("Erro ao buscar dados do usuário:", err);

@@ -3,7 +3,7 @@ import {
   FormData as MaquinaFormData,
   MaquinaResponse,
 } from "../../types/admin/cadastro/maquinas";
-import api from "../httpClient";
+import api from "../api";
 
 class MaquinasService {
   private baseUrl = "/maquinas";

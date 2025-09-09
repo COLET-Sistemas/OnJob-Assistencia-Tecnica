@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ordensServicoAPI } from "@/api/api";
+import { services } from "@/api";
+const { ordensServicoService } = services;
 import OsCard from "@/components/admin/ui/OsCard";
 import { Loading as LoadingSpinner } from "@/components/LoadingPersonalizado";
 import { Expand, RefreshCw } from "lucide-react";
@@ -68,7 +69,7 @@ export default function DashboardPainel() {
   const fetchOrdens = async () => {
     try {
       setIsLoading(true);
-      const response = await ordensServicoAPI.getDashboard();
+      const response = await ordensServicoService.getDashboard();
       // Converte os dados para o tipo OrdemServico
       const ordensData = response.dados as unknown as OrdemServico[];
       setOrdens(ordensData);

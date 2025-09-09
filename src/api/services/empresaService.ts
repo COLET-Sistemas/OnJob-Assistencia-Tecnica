@@ -1,4 +1,4 @@
-import api from "../httpClient";
+import api from "../api";
 
 interface EmpresaInfo {
   id: number;

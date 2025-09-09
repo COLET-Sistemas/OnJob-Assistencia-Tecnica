@@ -1,7 +1,6 @@
 "use client";
 
-import api from "@/api/api";
-import { tiposPecasService } from "@/api/services";
+import { tiposPecasService, pecasService } from "@/api/services";
 import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { Save } from "lucide-react";
@@ -120,31 +119,23 @@ const EditarPeca = () => {
     const carregarDados = async () => {
       setLoading(true);
       try {
-        // Busca por ID, espera objeto com array 'dados'
-        const response = await api.get(`/pecas`, { params: { id } });
-        if (
-          response &&
-          Array.isArray(response.dados) &&
-          response.dados.length > 0
-        ) {
-          const peca = response.dados[0];
-          setFormData({
-            codigo_peca: peca.codigo_peca,
-            descricao: peca.descricao,
-            situacao: peca.situacao,
-            unidade_medida: peca.unidade_medida,
-            id_tipo_peca: peca.id_tipo_peca,
-          });
+        // Garantimos que id é uma string ou número
+        const pecaId = typeof id === "string" ? id : String(id);
+        const peca = await pecasService.getById(pecaId);
+        setFormData({
+          codigo_peca: peca.codigo_peca,
+          descricao: peca.descricao,
+          situacao: peca.situacao,
+          unidade_medida: peca.unidade_medida,
+          id_tipo_peca: peca.id_tipo_peca,
+        });
 
-          // Se tiver tipo_peca, configura o select
-          if (peca.id_tipo_peca && peca.tipo_peca) {
-            setSelectedTipoPeca({
-              value: Number(peca.id_tipo_peca), // Ensure id is a number
-              label: peca.tipo_peca,
-            });
-          }
-        } else {
-          throw new Error("Peça não encontrada");
+        // Se tiver tipo_peca, configura o select
+        if (peca.id_tipo_peca && peca.tipo_peca) {
+          setSelectedTipoPeca({
+            value: Number(peca.id_tipo_peca), // Ensure id is a number
+            label: peca.tipo_peca,
+          });
         }
       } catch (error) {
         console.error("Erro ao carregar peça:", error);
@@ -197,17 +188,16 @@ const EditarPeca = () => {
     }
     setSavingData(true);
     try {
-      const response = await api.put(`/pecas?id=${id}`, {
+      // Garantimos que id é uma string ou número
+      const pecaId = typeof id === "string" ? id : String(id);
+      await pecasService.update(pecaId, {
         codigo_peca: formData.codigo_peca,
         descricao: formData.descricao,
         situacao: formData.situacao,
         unidade_medida: formData.unidade_medida,
         id_tipo_peca: formData.id_tipo_peca,
       });
-      showSuccess(
-        "Sucesso",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
-      );
+      showSuccess("Sucesso", "Peça atualizada com sucesso");
       router.push("/admin/cadastro/pecas");
     } catch (error) {
       console.error("Erro ao atualizar peça:", error);

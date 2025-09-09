@@ -1,6 +1,6 @@
 "use client";
 
-import { regioesAPI } from "@/api/api";
+import { regioesService } from "@/api/services/regioesService";
 import { useTitle } from "@/context/TitleContext";
 import { FormData } from "@/types/admin/cadastro/regioes";
 import { Save } from "lucide-react";
@@ -96,7 +96,7 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
       setLoading(true);
       try {
         const id = parseInt(resolvedParams.id);
-        const regiao = await regioesAPI.getById(id);
+        const regiao = await regioesService.getById(id);
         const dadosRegiao = Array.isArray(regiao) ? regiao[0] : regiao;
         if (!dadosRegiao) throw new Error("Região não encontrada");
         setFormData({
@@ -178,14 +178,11 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
 
     try {
       const id = parseInt(resolvedParams.id);
-      const response = await regioesAPI.update(id, formData);
+      await regioesService.update(id, formData);
 
       router.push("/admin/cadastro/regioes");
 
-      showSuccess(
-        "Atualização realizada!",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
-      );
+      showSuccess("Atualização realizada!", "Região atualizada com sucesso");
     } catch (error) {
       console.error("Erro ao atualizar região:", error);
 

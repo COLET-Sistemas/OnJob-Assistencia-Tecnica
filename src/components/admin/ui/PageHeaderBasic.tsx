@@ -7,9 +7,17 @@ interface CustomListConfig {
   itemCount: number;
 }
 
+interface CustomFormConfig {
+  type: "form";
+  backButton?: {
+    label: string;
+    href: string;
+  };
+}
+
 interface PageHeaderBasicProps {
   title: string;
-  config: CustomListConfig;
+  config: CustomListConfig | CustomFormConfig;
 }
 
 const PageHeaderBasic: React.FC<PageHeaderBasicProps> = ({ title, config }) => {
@@ -20,10 +28,20 @@ const PageHeaderBasic: React.FC<PageHeaderBasicProps> = ({ title, config }) => {
           <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center">
             <span className="bg-[var(--primary)] h-6 w-1 rounded-full mr-3"></span>
             {title}
-            <span className="ml-2 bg-[var(--primary)]/10 text-[var(--primary)] text-sm px-3 py-0.5 rounded-full font-medium">
-              {config.itemCount}
-            </span>
+            {config.type === "list" && (
+              <span className="ml-2 bg-[var(--primary)]/10 text-[var(--primary)] text-sm px-3 py-0.5 rounded-full font-medium">
+                {config.itemCount}
+              </span>
+            )}
           </h2>
+          {config.type === "form" && config.backButton && (
+            <a
+              href={config.backButton.href}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+            >
+              {config.backButton.label}
+            </a>
+          )}
         </div>
       </div>
     </header>

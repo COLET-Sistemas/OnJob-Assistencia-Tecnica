@@ -1,6 +1,6 @@
 "use client";
 
-import { tiposPecasAPI } from "@/api/api";
+import api from "@/api/api";
 import { useTitle } from "@/context/TitleContext";
 import { Save } from "lucide-react";
 import Link from "next/link";
@@ -117,10 +117,10 @@ const CadastrarTipoPeca: React.FC = () => {
       setIsSubmitting(true);
 
       try {
-        const response = await tiposPecasAPI.create({
+        const response = (await api.post("/tipos_pecas", {
           descricao: formData.descricao.trim(),
           codigo_erp: formData.codigo_erp.trim(),
-        });
+        })) as Record<string, unknown>;
 
         router.push("/admin/cadastro/tipos_pecas");
 

@@ -1,4 +1,4 @@
-import api from "../httpClient";
+import api from "../api";
 import { empresaService } from "./empresaService";
 
 interface LoginCredentials {

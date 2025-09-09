@@ -1,6 +1,6 @@
 "use client";
 
-import { regioesAPI } from "@/api/api";
+import { regioesService } from "@/api/services";
 import { useTitle } from "@/context/TitleContext";
 import { FormData } from "@/types/admin/cadastro/regioes";
 import { Save } from "lucide-react";
@@ -119,13 +119,22 @@ const CadastrarRegiao = () => {
     setSavingData(true);
 
     try {
-      const response = await regioesAPI.create(formData);
+      // Create an object that matches what the API expects
+      const regiaoData = {
+        nome: formData.nome,
+        descricao: formData.descricao,
+        uf: formData.uf,
+        atendida_empresa: formData.atendida_empresa,
+        situacao: formData.situacao,
+      };
+
+      const response = await regioesService.create(regiaoData);
 
       router.push("/admin/cadastro/regioes");
 
       showSuccess(
         "Cadastro realizado!",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+        response as unknown as Record<string, unknown> 
       );
     } catch (error) {
       console.error("Erro ao cadastrar região:", error);

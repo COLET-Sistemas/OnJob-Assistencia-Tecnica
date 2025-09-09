@@ -7,7 +7,7 @@ interface ClienteAPIResult {
   codigo_erp?: string;
 }
 
-import { maquinasAPI, clientesAPI } from "@/api/api";
+import { maquinasService, clientesService } from "@/api/services";
 import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { Save } from "lucide-react";
@@ -18,7 +18,7 @@ import PageHeader from "@/components/admin/ui/PageHeader";
 import { InputField, LoadingButton } from "@/components/admin/form";
 import CustomSelect, { OptionType } from "@/components/admin/form/CustomSelect";
 
-// Define interface for the form data
+// Define interface for the local form data
 interface FormData {
   numero_serie: string;
   descricao: string;
@@ -98,7 +98,7 @@ const CadastrarMaquina = () => {
   const searchClientes = async (term: string) => {
     try {
       // Utiliza clientesAPI.getAll para buscar clientes por nome com parâmetro resumido=S
-      const data = await clientesAPI.getAll({
+      const data = await clientesService.getAll({
         nome: term,
         resumido: "S",
         qtde_registros: 15,
@@ -177,18 +177,22 @@ const CadastrarMaquina = () => {
     setSavingData(true);
 
     try {
-      const response = await maquinasAPI.create({
+      // Convert form data to match expected API format
+      const maquinaData = {
         numero_serie: formData.numero_serie,
         descricao: formData.descricao,
         modelo: formData.modelo,
-        id_cliente_atual: formData.id_cliente_atual,
+        id_cliente: formData.id_cliente_atual!, // Use non-null assertion since validation ensures it's not null
         data_1a_venda: formData.data_1a_venda,
         nota_fiscal_venda: formData.nota_fiscal_venda,
         data_final_garantia: formData.data_final_garantia,
-      });
+        situacao: "A", // Active by default
+      };
+
+      const response = await maquinasService.create(maquinaData);
       showSuccess(
         "Sucesso",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+        response as unknown as Record<string, unknown> // Type assertion to match expected type
       );
       router.push("/admin/cadastro/maquinas");
     } catch (error) {

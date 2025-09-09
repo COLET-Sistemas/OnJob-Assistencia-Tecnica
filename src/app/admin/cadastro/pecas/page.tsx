@@ -10,7 +10,7 @@ import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
-import { pecasAPI } from "@/api/api";
+import { pecasService, PecaResponse } from "@/api/services/pecasService";
 import { Package } from "lucide-react";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 
@@ -35,11 +35,7 @@ interface PaginacaoInfo {
   registrosPorPagina: number;
 }
 
-interface PecasResponse {
-  dados: Peca[];
-  total_paginas: number;
-  total_registros: number;
-}
+//Using the imported PecaResponse interface
 
 const CadastroPecas = () => {
   const { setTitle } = useTitle();
@@ -78,7 +74,7 @@ const CadastroPecas = () => {
 
   const fetchPecas = useCallback(async (): Promise<Peca[]> => {
     isReloadingRef.current = true;
-    const params: Record<string, string | number> = {
+    const params: Record<string, string | number | boolean> = {
       nro_pagina: paginacao.paginaAtual,
       qtde_registros: paginacao.registrosPorPagina,
     };
@@ -89,7 +85,7 @@ const CadastroPecas = () => {
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
 
-    const response: PecasResponse = await pecasAPI.getAll(params);
+    const response: PecaResponse = await pecasService.getAll(params);
 
     setPaginacao((prev) => ({
       ...prev,
@@ -183,11 +179,11 @@ const CadastroPecas = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await pecasAPI.delete(id);
-      showSuccess("Sucesso", response);
+      await pecasService.delete(id);
+      showSuccess("Sucesso", "Peça inativada com sucesso");
       await refetch();
     } catch (error) {
-      console.error("Erro ao iantivar peça:", error);
+      console.error("Erro ao inativar peça:", error);
 
       showError("Erro ao inativar", error as Record<string, unknown>);
     }

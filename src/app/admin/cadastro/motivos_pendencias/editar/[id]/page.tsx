@@ -1,6 +1,6 @@
 "use client";
 
-import api from "@/api/api";
+import { services } from "@/api";
 import { useTitle } from "@/context/TitleContext";
 import { Save } from "lucide-react";
 import Link from "next/link";
@@ -48,7 +48,9 @@ const EditarMotivoPendencia = (props: PageProps) => {
     const carregarDados = async () => {
       setLoading(true);
       try {
-        const response = await api.get(`/motivos_pendencia_os?id=${id}`);
+        const response = await services.motivosPendenciaService.getAll({
+          id: id.toString(),
+        });
 
         if (response && response.length > 0) {
           const motivo = response[0];
@@ -113,7 +115,7 @@ const EditarMotivoPendencia = (props: PageProps) => {
     setSavingData(true);
 
     try {
-      const response = await api.put(`/motivos_pendencia_os?id=${id}`, {
+      await services.motivosPendenciaService.update(id, {
         descricao: formData.descricao,
         situacao: formData.situacao,
       });
@@ -122,7 +124,7 @@ const EditarMotivoPendencia = (props: PageProps) => {
 
       showSuccess(
         "Atualização realizada!",
-        response // Passa a resposta diretamente, o ToastContainer extrai a mensagem
+        "Motivo de pendência atualizado com sucesso."
       );
     } catch (error) {
       console.error("Erro ao atualizar motivo de pendência:", error);
