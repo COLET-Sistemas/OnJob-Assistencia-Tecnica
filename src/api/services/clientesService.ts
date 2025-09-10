@@ -39,7 +39,7 @@ class ClientesService {
   }
 
   async getById(id: number | string): Promise<Cliente> {
-    return await api.get<Cliente>(`${this.baseUrl}/${id}`);
+    return await api.get<Cliente>(this.baseUrl, { params: { id } });
   }
 
   async create(data: ClienteFormData): Promise<Cliente> {

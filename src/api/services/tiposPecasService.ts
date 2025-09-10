@@ -1,4 +1,4 @@
-import api from '../api';
+import api from "../api";
 
 export interface TipoPeca {
   id: number;
@@ -40,7 +40,7 @@ class TiposPecasService {
   }
 
   async getById(id: number | string): Promise<TipoPeca> {
-    return await api.get<TipoPeca>(`${this.baseUrl}/${id}`);
+    return await api.get<TipoPeca>(this.baseUrl, { params: { id } });
   }
 }
 

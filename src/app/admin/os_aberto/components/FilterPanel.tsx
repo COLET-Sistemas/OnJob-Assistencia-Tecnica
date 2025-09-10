@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Check } from "lucide-react";
+import { Search, Clock, Bell, Car, Wrench, PauseCircle } from "lucide-react";
 
 interface SituacoesState {
   pendente: boolean;
@@ -71,32 +71,37 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
               <FilterButton
                 active={situacoes.pendente}
                 onClick={() => toggleSituacao("pendente")}
-                colorScheme="emerald"
+                colorScheme="gray"
                 label="Pendente"
+                icon={<Clock className="w-3 h-3 text-gray-500" />}
               />
               <FilterButton
                 active={situacoes.aAtender}
                 onClick={() => toggleSituacao("aAtender")}
-                colorScheme="purple"
+                colorScheme="blue"
                 label="A atender"
+                icon={<Bell className="w-3 h-3 text-blue-600" />}
               />
               <FilterButton
                 active={situacoes.emDeslocamento}
                 onClick={() => toggleSituacao("emDeslocamento")}
-                colorScheme="amber"
+                colorScheme="purple"
                 label="Em deslocamento"
+                icon={<Car className="w-3 h-3 text-purple-600" />}
               />
               <FilterButton
                 active={situacoes.emAtendimento}
                 onClick={() => toggleSituacao("emAtendimento")}
-                colorScheme="blue"
+                colorScheme="orange"
                 label="Em atendimento"
+                icon={<Wrench className="w-3 h-3 text-orange-600" />}
               />
               <FilterButton
                 active={situacoes.atendimentoInterrompido}
                 onClick={() => toggleSituacao("atendimentoInterrompido")}
-                colorScheme="red"
+                colorScheme="amber"
                 label="Interrompido"
+                icon={<PauseCircle className="w-3 h-3 text-amber-600" />}
               />
             </div>
           </div>
@@ -141,20 +146,29 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 interface FilterButtonProps {
   active: boolean;
   onClick: () => void;
-  colorScheme: "emerald" | "purple" | "amber" | "blue" | "red";
+  colorScheme:
+    | "emerald"
+    | "purple"
+    | "amber"
+    | "blue"
+    | "red"
+    | "gray"
+    | "orange";
   label: string;
+  icon?: React.ReactNode;
 }
 
 const FilterButton: React.FC<FilterButtonProps> = React.memo(
-  ({ active, onClick, colorScheme, label }) => {
+  ({ active, onClick, colorScheme, label, icon }) => {
     const colors = {
       emerald: "bg-emerald-100 text-emerald-800 border-emerald-200",
       purple: "bg-purple-100 text-purple-800 border-purple-200",
       amber: "bg-amber-100 text-amber-800 border-amber-200",
       blue: "bg-blue-100 text-blue-800 border-blue-200",
       red: "bg-red-100 text-red-800 border-red-200",
+      gray: "bg-gray-100 text-gray-800 border-gray-200",
+      orange: "bg-orange-100 text-orange-800 border-orange-200",
     };
-
     return (
       <button
         type="button"
@@ -167,13 +181,11 @@ const FilterButton: React.FC<FilterButtonProps> = React.memo(
         onClick={onClick}
         aria-pressed={active}
       >
-        <span
-          className={`transition-opacity duration-200 ${
-            active ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          {active && <Check className="w-3 h-3" />}
-        </span>
+        {icon && (
+          <span className="w-4 h-4 flex items-center justify-center">
+            {icon}
+          </span>
+        )}
         <span>{label}</span>
       </button>
     );

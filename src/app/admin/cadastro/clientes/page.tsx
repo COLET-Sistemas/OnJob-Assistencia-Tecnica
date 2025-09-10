@@ -18,7 +18,7 @@ import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
 import { services } from "@/api";
 import { MapPin } from "lucide-react";
-import LocationButton from "@/components/admin/ui/LocationButton"; // Importa o componente
+import LocationButton from "@/components/admin/ui/LocationButton"; 
 import api from "@/api/api";
 
 const { clientesService } = services;

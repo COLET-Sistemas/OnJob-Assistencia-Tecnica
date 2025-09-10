@@ -2,8 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
-import DataTable from "@/components/admin/common/DataTable";
-import { StatusBadge } from "@/components/admin/common";
+import { EnhancedDataTable, StatusBadge } from "@/components/admin/common";
 import {
   ordensServicoService,
   OSItem,
@@ -11,7 +10,25 @@ import {
 import { usuariosService } from "@/api/services/usuariosService";
 import { formatarData } from "@/utils/formatters";
 import { LoadingSpinner } from "@/components/LoadingPersonalizado";
-import { Search, ChevronDown, X, Eye, Info, ClipboardList } from "lucide-react";
+import {
+  Search,
+  ChevronDown,
+  X,
+  Eye,
+  Info,
+  ClipboardList,
+  Clock,
+  Bell,
+  Car,
+  Wrench,
+  PauseCircle,
+  FileSearch,
+  CheckCircle,
+  XCircle,
+  UserX,
+  User,
+  Laptop,
+} from "lucide-react";
 
 // Interface estendida para suportar os campos adicionais do exemplo da API
 interface OSItemExtended extends OSItem {
@@ -67,6 +84,7 @@ interface OSItemExtended extends OSItem {
   liberacao_financeira?: {
     liberada: boolean;
     nome_usuario_liberacao?: string;
+    data_liberacao?: string;
   };
 }
 
@@ -123,48 +141,95 @@ const ConsultaOSPage: React.FC = () => {
   }, []);
 
   // Definir status mapping para as ordens de serviço
-  const statusMapping: Record<string, { label: string; className: string }> =
-    useMemo(
-      () => ({
-        "1": {
-          label: "Aberta",
-          className: "bg-blue-50 text-blue-700 border border-blue-100",
-        },
-        "2": {
-          label: "Agendada",
-          className: "bg-indigo-50 text-indigo-700 border border-indigo-100",
-        },
-        "3": {
-          label: "Em Execução",
-          className: "bg-amber-50 text-amber-700 border border-amber-100",
-        },
-        "4": {
-          label: "Pendente",
-          className: "bg-orange-50 text-orange-700 border border-orange-100",
-        },
-        "5": {
-          label: "Finalizada",
-          className: "bg-green-50 text-green-700 border border-green-100",
-        },
-        "6": {
-          label: "Em Revisão",
-          className: "bg-purple-50 text-purple-700 border border-purple-100",
-        },
-        "7": {
-          label: "Aprovada",
-          className: "bg-emerald-50 text-emerald-700 border border-emerald-100",
-        },
-        "8": {
-          label: "Cancelada",
-          className: "bg-red-50 text-red-700 border border-red-100",
-        },
-        "9": {
-          label: "Rejeitada",
-          className: "bg-rose-50 text-rose-700 border border-rose-100",
-        },
-      }),
-      []
-    );
+  const statusMapping: Record<
+    string,
+    { label: string; className: string; icon: React.ReactNode }
+  > = useMemo(
+    () => ({
+      "1": {
+        label: "Pendente",
+        className: "bg-gray-100 text-gray-700 border border-gray-200",
+        icon: (
+          <span title="Pendente">
+            <Clock className="w-3.5 h-3.5 text-gray-500" />
+          </span>
+        ),
+      },
+      "2": {
+        label: "A atender",
+        className: "bg-blue-100 text-blue-700 border border-blue-200",
+        icon: (
+          <span title="A atender">
+            <Bell className="w-3.5 h-3.5 text-blue-600" />
+          </span>
+        ),
+      },
+      "3": {
+        label: "Em deslocamento",
+        className: "bg-purple-100 text-purple-700 border border-purple-200",
+        icon: (
+          <span title="Em deslocamento">
+            <Car className="w-3.5 h-3.5 text-purple-600" />
+          </span>
+        ),
+      },
+      "4": {
+        label: "Em atendimento",
+        className: "bg-orange-100 text-orange-700 border border-orange-200",
+        icon: (
+          <span title="Em atendimento">
+            <Wrench className="w-3.5 h-3.5 text-orange-600" />
+          </span>
+        ),
+      },
+      "5": {
+        label: "Atendimento interrompido",
+        className: "bg-amber-100 text-amber-700 border border-amber-200",
+        icon: (
+          <span title="Atendimento interrompido">
+            <PauseCircle className="w-3.5 h-3.5 text-amber-600" />
+          </span>
+        ),
+      },
+      "6": {
+        label: "Em Revisão",
+        className: "bg-indigo-100 text-indigo-700 border border-indigo-200",
+        icon: (
+          <span title="Em Revisão">
+            <FileSearch className="w-3.5 h-3.5 text-indigo-600" />
+          </span>
+        ),
+      },
+      "7": {
+        label: "Concluída",
+        className: "bg-green-100 text-green-700 border border-green-200",
+        icon: (
+          <span title="Concluída">
+            <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+          </span>
+        ),
+      },
+      "8": {
+        label: "Cancelada",
+        className: "bg-red-100 text-red-700 border border-red-200",
+        icon: (
+          <span title="Cancelada">
+            <XCircle className="w-3.5 h-3.5 text-red-600" />
+          </span>
+        ),
+      },
+      "9": {
+        label: "Cancelada pelo Cliente",
+        className: "bg-rose-100 text-rose-700 border border-rose-200",
+        icon: (
+          <span title="Cancelada pelo Cliente">
+            <UserX className="w-3.5 h-3.5 text-rose-600" />
+          </span>
+        ),
+      },
+    }),
+    []
+  );
 
   // Manipulação dos filtros
   const handleFilterChange = useCallback((key: string, value: string) => {
@@ -237,6 +302,12 @@ const ConsultaOSPage: React.FC = () => {
     setExpandedRowId(expandedRowId === Number(id) ? null : Number(id));
   };
 
+  // Função para navegar para a página de detalhes da OS
+  const handleRowNavigate = (item: OSItemExtended) => {
+    const osId = item.id_os || item.id;
+    window.location.href = `/admin/os_detalhes/${osId}`;
+  };
+
   // Definição das colunas da tabela
   const columns = useMemo(
     () => [
@@ -244,17 +315,46 @@ const ConsultaOSPage: React.FC = () => {
         header: "OS",
         accessor: (item: OSItemExtended) => item.id_os || "-",
         className: "font-medium text-gray-900",
+        render: (item: OSItemExtended) => (
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-gray-900">
+              {item.id_os || "-"}
+            </span>
+          </div>
+        ),
       },
       {
         header: "Cliente",
         accessor: (item: OSItemExtended) =>
           item.cliente?.nome || item.cliente?.nome_fantasia || "-",
-        className: "max-w-[180px] truncate",
+        className: "max-w-[180px]",
+        render: (item: OSItemExtended) => (
+          <div className="flex flex-col">
+            <span className="font-medium text-gray-800 truncate">
+              {item.cliente?.nome || item.cliente?.nome_fantasia || "-"}
+            </span>
+            <span className="text-xs text-gray-500">
+              {item.cliente?.cidade
+                ? `${item.cliente.cidade}/${item.cliente.uf || ""}`
+                : "-"}
+            </span>
+          </div>
+        ),
       },
       {
         header: "Máquina",
-        accessor: (item: OSItem) => item.maquina?.numero_serie || "-",
+        accessor: (item: OSItemExtended) => item.maquina?.numero_serie || "-",
         className: "hidden md:table-cell",
+        render: (item: OSItemExtended) => (
+          <div className="flex flex-col">
+            <span className="font-medium text-gray-800">
+              {item.maquina?.numero_serie || "-"}
+            </span>
+            <span className="text-xs text-gray-500 truncate max-w-[180px]">
+              {item.maquina?.modelo || "-"}
+            </span>
+          </div>
+        ),
       },
       {
         header: "Data Abertura",
@@ -266,7 +366,39 @@ const ConsultaOSPage: React.FC = () => {
       {
         header: "Técnico",
         accessor: (item: OSItemExtended) => item.tecnico?.nome || "-",
-        className: "hidden lg:table-cell max-w-[150px] truncate",
+        className: "hidden lg:table-cell",
+        render: (item: OSItemExtended) => (
+          <div className="flex flex-col">
+            <span className="font-medium text-gray-800 truncate max-w-[150px]">
+              {item.tecnico?.nome || "-"}
+            </span>
+            {item.tecnico?.tipo && (
+              <span
+                className="text-xs px-1.5 py-0.5 rounded-full inline-flex items-center w-fit mt-1"
+                style={{
+                  backgroundColor:
+                    item.tecnico.tipo === "interno"
+                      ? "rgba(var(--color-primary-rgb), 0.1)"
+                      : item.tecnico.tipo === "terceiro"
+                      ? "rgba(var(--color-warning-rgb), 0.1)"
+                      : "rgba(var(--color-gray-rgb), 0.1)",
+                  color:
+                    item.tecnico.tipo === "interno"
+                      ? "var(--primary)"
+                      : item.tecnico.tipo === "terceiro"
+                      ? "var(--color-warning)"
+                      : "var(--color-gray)",
+                }}
+              >
+                {item.tecnico.tipo === "interno"
+                  ? "Interno"
+                  : item.tecnico.tipo === "terceiro"
+                  ? "Terceirizado"
+                  : "Indefinido"}
+              </span>
+            )}
+          </div>
+        ),
       },
       {
         header: "Status",
@@ -583,25 +715,104 @@ const ConsultaOSPage: React.FC = () => {
               </span>
             </h2>
           </div>
-          <DataTable
+          <EnhancedDataTable
             columns={columns}
             data={data.dados || []}
             keyField="id"
             expandedRowId={expandedRowId}
             onRowExpand={handleRowClick}
+            onRowClick={handleRowNavigate}
             renderExpandedRow={(item: OSItemExtended) => (
               <div className="p-5 bg-gradient-to-r from-gray-50 to-white border-t border-b border-gray-100">
-                <h3 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
-                  <span className="text-[var(--primary)]">
-                    <Info className="h-5 w-5" />
-                  </span>
-                  Detalhes da OS #{item.numero_os}
-                </h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                    <span className="text-[var(--primary)]">
+                      <Info className="h-5 w-5" />
+                    </span>
+                    Detalhes da OS #{item.id_os || item.numero_os}
+                  </h3>
+
+                  <div className="flex items-center gap-2">
+                    <StatusBadge
+                      status={String(item.situacao_os?.codigo || item.status)}
+                      mapping={statusMapping}
+                    />
+                  </div>
+                </div>
+
+                {/* Summary Card */}
+                <div className="bg-[var(--primary)]/5 p-4 rounded-lg mb-5 border border-[var(--primary)]/20">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <span className="text-xs text-gray-500 block">
+                        Cliente
+                      </span>
+                      <span className="font-medium">
+                        {item.cliente?.nome ||
+                          item.cliente?.nome_fantasia ||
+                          "-"}
+                      </span>
+                      <span className="text-xs text-gray-500 block mt-1">
+                        {item.cliente?.cidade
+                          ? `${item.cliente.cidade}/${item.cliente.uf || ""}`
+                          : "-"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-gray-500 block">
+                        Máquina
+                      </span>
+                      <span className="font-medium">
+                        {item.maquina?.numero_serie || "-"}
+                      </span>
+                      <span className="text-xs text-gray-500 block mt-1">
+                        {item.maquina?.modelo || "-"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-gray-500 block">
+                        Técnico
+                      </span>
+                      <span className="font-medium">
+                        {item.tecnico?.nome || "Não atribuído"}
+                      </span>
+                      {item.tecnico?.tipo && (
+                        <span
+                          className="text-xs px-1.5 py-0.5 rounded-full inline-block mt-1"
+                          style={{
+                            backgroundColor:
+                              item.tecnico.tipo === "interno"
+                                ? "rgba(var(--color-primary-rgb), 0.1)"
+                                : item.tecnico.tipo === "terceiro"
+                                ? "rgba(var(--color-warning-rgb), 0.1)"
+                                : "rgba(var(--color-gray-rgb), 0.1)",
+                            color:
+                              item.tecnico.tipo === "interno"
+                                ? "var(--primary)"
+                                : item.tecnico.tipo === "terceiro"
+                                ? "var(--color-warning)"
+                                : "var(--color-gray)",
+                          }}
+                        >
+                          {item.tecnico.tipo === "interno"
+                            ? "Interno"
+                            : item.tecnico.tipo === "terceiro"
+                            ? "Terceirizado"
+                            : "Indefinido"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-5 rounded-lg border border-gray-100 shadow-sm">
                   {/* Coluna da esquerda */}
                   <div>
                     <div className="mb-5">
-                      <h4 className="text-sm font-semibold text-gray-700 border-b pb-1 mb-3 border-gray-200">
+                      <h4 className="text-sm font-semibold text-gray-700 border-b pb-1 mb-3 border-gray-200 flex items-center gap-2">
+                        <span className="text-[var(--primary)] bg-[var(--primary)]/10 p-1 rounded">
+                          <User className="h-3.5 w-3.5" />
+                        </span>
                         Informações do Cliente
                       </h4>
                       <div className="grid grid-cols-1 gap-2">
@@ -610,7 +821,24 @@ const ConsultaOSPage: React.FC = () => {
                             Nome:
                           </span>{" "}
                           <span className="text-gray-800">
-                            {item.cliente?.nome_fantasia}
+                            {item.cliente?.nome ||
+                              item.cliente?.nome_fantasia ||
+                              "-"}
+                          </span>
+                        </p>
+                        <p className="text-sm flex flex-wrap items-baseline gap-2">
+                          <span className="font-medium text-gray-700 min-w-[120px]">
+                            Endereço:
+                          </span>{" "}
+                          <span className="text-gray-800">
+                            {[
+                              item.cliente?.endereco,
+                              item.cliente?.numero &&
+                                `Nº ${item.cliente.numero}`,
+                              item.cliente?.complemento,
+                            ]
+                              .filter(Boolean)
+                              .join(", ") || "-"}
                           </span>
                         </p>
                         <p className="text-sm flex flex-wrap items-baseline gap-2">
@@ -618,8 +846,10 @@ const ConsultaOSPage: React.FC = () => {
                             Cidade/UF:
                           </span>{" "}
                           <span className="text-gray-800">
-                            {item.cliente?.cidade || "-"}/
-                            {item.cliente?.uf || "-"}
+                            {[item.cliente?.cidade, item.cliente?.uf]
+                              .filter(Boolean)
+                              .join("/") || "-"}
+                            {item.cliente?.cep && ` - CEP: ${item.cliente.cep}`}
                           </span>
                         </p>
                         <p className="text-sm flex flex-wrap items-baseline gap-2">
@@ -636,13 +866,31 @@ const ConsultaOSPage: React.FC = () => {
                           </span>{" "}
                           <span className="text-gray-800">
                             {item.contato?.telefone || "-"}
+                            {item.contato?.whatsapp && (
+                              <span className="ml-1 text-xs px-1.5 py-0.5 rounded-full bg-green-100 text-green-800">
+                                WhatsApp
+                              </span>
+                            )}
                           </span>
                         </p>
+                        {item.contato?.email && (
+                          <p className="text-sm flex flex-wrap items-baseline gap-2">
+                            <span className="font-medium text-gray-700 min-w-[120px]">
+                              Email:
+                            </span>{" "}
+                            <span className="text-gray-800">
+                              {item.contato.email}
+                            </span>
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     <div>
-                      <h4 className="text-sm font-semibold text-gray-700 border-b pb-1 mb-3 border-gray-200">
+                      <h4 className="text-sm font-semibold text-gray-700 border-b pb-1 mb-3 border-gray-200 flex items-center gap-2">
+                        <span className="text-[var(--primary)] bg-[var(--primary)]/10 p-1 rounded">
+                          <Laptop className="h-3.5 w-3.5" />
+                        </span>
                         Máquina
                       </h4>
                       <div className="grid grid-cols-1 gap-2">
@@ -676,11 +924,13 @@ const ConsultaOSPage: React.FC = () => {
                           </span>{" "}
                           <span className="text-gray-800">
                             {item.em_garantia ? (
-                              <span className="text-green-600 font-medium">
-                                Sim
+                              <span className="text-green-600 font-medium flex items-center gap-1">
+                                <CheckCircle className="h-3.5 w-3.5" /> Sim
                               </span>
                             ) : (
-                              <span className="text-gray-500">Não</span>
+                              <span className="text-gray-500 flex items-center gap-1">
+                                <XCircle className="h-3.5 w-3.5" /> Não
+                              </span>
                             )}
                           </span>
                         </p>
@@ -691,7 +941,10 @@ const ConsultaOSPage: React.FC = () => {
                   {/* Coluna da direita */}
                   <div>
                     <div className="mb-5">
-                      <h4 className="text-sm font-semibold text-gray-700 border-b pb-1 mb-3 border-gray-200">
+                      <h4 className="text-sm font-semibold text-gray-700 border-b pb-1 mb-3 border-gray-200 flex items-center gap-2">
+                        <span className="text-[var(--primary)] bg-[var(--primary)]/10 p-1 rounded">
+                          <ClipboardList className="h-3.5 w-3.5" />
+                        </span>
                         Detalhes do Atendimento
                       </h4>
                       <div className="grid grid-cols-1 gap-2">
@@ -700,7 +953,33 @@ const ConsultaOSPage: React.FC = () => {
                             Data Abertura:
                           </span>{" "}
                           <span className="text-gray-800">
-                            {formatarData(item.data_abertura)}
+                            {formatarData(
+                              item.abertura?.data_abertura || item.data_abertura
+                            ) || "-"}
+                          </span>
+                        </p>
+                        <p className="text-sm flex flex-wrap items-baseline gap-2">
+                          <span className="font-medium text-gray-700 min-w-[120px]">
+                            Usuário Abertura:
+                          </span>{" "}
+                          <span className="text-gray-800">
+                            {item.abertura?.nome_usuario || "-"}
+                          </span>
+                        </p>
+                        <p className="text-sm flex flex-wrap items-baseline gap-2">
+                          <span className="font-medium text-gray-700 min-w-[120px]">
+                            Data Agendada:
+                          </span>{" "}
+                          <span className="text-gray-800">
+                            {item.data_agendada || "-"}
+                          </span>
+                        </p>
+                        <p className="text-sm flex flex-wrap items-baseline gap-2">
+                          <span className="font-medium text-gray-700 min-w-[120px]">
+                            Data Fechamento:
+                          </span>{" "}
+                          <span className="text-gray-800">
+                            {item.data_fechamento || "-"}
                           </span>
                         </p>
                         <p className="text-sm flex flex-wrap items-baseline gap-2">
@@ -722,19 +1001,14 @@ const ConsultaOSPage: React.FC = () => {
                             {item.situacao_os?.motivo_pendencia || "-"}
                           </span>
                         </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Data Agendada:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {item.data_agendada || "-"}
-                          </span>
-                        </p>
                       </div>
                     </div>
 
                     <div>
-                      <h4 className="text-sm font-semibold text-gray-700 border-b pb-1 mb-3 border-gray-200">
+                      <h4 className="text-sm font-semibold text-gray-700 border-b pb-1 mb-3 border-gray-200 flex items-center gap-2">
+                        <span className="text-[var(--primary)] bg-[var(--primary)]/10 p-1 rounded">
+                          <Wrench className="h-3.5 w-3.5" />
+                        </span>
                         Técnico e Problema
                       </h4>
                       <div className="grid grid-cols-1 gap-2">
@@ -743,13 +1017,31 @@ const ConsultaOSPage: React.FC = () => {
                             <span className="font-medium text-gray-700 min-w-[120px]">
                               Técnico:
                             </span>{" "}
-                            <span className="text-gray-800">
+                            <span className="text-gray-800 flex items-center gap-1 flex-wrap">
                               {item.tecnico.nome}
                               {item.tecnico?.tipo && (
-                                <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                <span
+                                  className="ml-2 text-xs px-2 py-0.5 rounded-full"
+                                  style={{
+                                    backgroundColor:
+                                      item.tecnico.tipo === "interno"
+                                        ? "rgba(var(--color-primary-rgb), 0.1)"
+                                        : item.tecnico.tipo === "terceiro"
+                                        ? "rgba(var(--color-warning-rgb), 0.1)"
+                                        : "rgba(var(--color-gray-rgb), 0.1)",
+                                    color:
+                                      item.tecnico.tipo === "interno"
+                                        ? "var(--primary)"
+                                        : item.tecnico.tipo === "terceiro"
+                                        ? "var(--color-warning)"
+                                        : "var(--color-gray)",
+                                  }}
+                                >
                                   {item.tecnico.tipo === "interno"
                                     ? "Interno"
-                                    : "Terceirizado"}
+                                    : item.tecnico.tipo === "terceiro"
+                                    ? "Terceirizado"
+                                    : "Indefinido"}
                                 </span>
                               )}
                             </span>
@@ -767,23 +1059,45 @@ const ConsultaOSPage: React.FC = () => {
                           <span className="font-medium text-gray-700 min-w-[120px]">
                             Liberada Financ.:
                           </span>{" "}
-                          <span className="text-gray-800">
+                          <span className="text-gray-800 flex items-center gap-1">
                             {item.liberacao_financeira?.liberada ? (
-                              <span className="text-green-600 font-medium">
-                                Sim
+                              <span className="text-green-600 font-medium flex items-center gap-1">
+                                <CheckCircle className="h-3.5 w-3.5" /> Sim
+                                {item.liberacao_financeira
+                                  ?.nome_usuario_liberacao && (
+                                  <span className="text-xs text-gray-600 ml-2">
+                                    por{" "}
+                                    {
+                                      item.liberacao_financeira
+                                        .nome_usuario_liberacao
+                                    }
+                                  </span>
+                                )}
                               </span>
                             ) : (
-                              <span className="text-gray-500">Não</span>
+                              <span className="text-gray-500 flex items-center gap-1">
+                                <XCircle className="h-3.5 w-3.5" /> Não
+                              </span>
                             )}
                           </span>
                         </p>
+                        {item.liberacao_financeira?.data_liberacao && (
+                          <p className="text-sm flex flex-wrap items-baseline gap-2">
+                            <span className="font-medium text-gray-700 min-w-[120px]">
+                              Data Liberação:
+                            </span>{" "}
+                            <span className="text-gray-800">
+                              {item.liberacao_financeira.data_liberacao}
+                            </span>
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
                 <div className="mt-5 flex justify-end gap-3">
                   <a
-                    href={`/admin/os_aberto/${item.id}`}
+                    href={`/admin/os_aberto/${item.id_os || item.id}`}
                     className="px-4 py-2.5 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-dark)] transition-colors shadow hover:shadow-md flex items-center gap-2"
                   >
                     <Eye className="h-4 w-4" />

@@ -18,6 +18,11 @@ import {
   CheckCircle,
   DollarSign,
   Edit,
+  Clock,
+  Bell,
+  Car,
+  Wrench,
+  PauseCircle,
 } from "lucide-react";
 import { formatarDataHora, isDataAgendadaPassada } from "@/utils/formatters";
 
@@ -52,15 +57,15 @@ const OSCard: React.FC<OSCardProps> = ({
   const getSituacaoColor = (codigo: number) => {
     switch (codigo) {
       case 1:
-        return "bg-emerald-500";
+        return "bg-gray-500";
       case 2:
-        return "bg-purple-500";
-      case 3:
-        return "bg-amber-500";
-      case 4:
         return "bg-blue-500";
+      case 3:
+        return "bg-purple-500";
+      case 4:
+        return "bg-orange-500";
       default:
-        return "bg-red-500";
+        return "bg-amber-500";
     }
   };
 
@@ -68,15 +73,69 @@ const OSCard: React.FC<OSCardProps> = ({
   const getSituacaoBadgeColor = (codigo: number) => {
     switch (codigo) {
       case 1:
-        return "bg-emerald-100 text-emerald-800 border border-emerald-200";
+        return "bg-gray-100 text-gray-800 border border-gray-200";
       case 2:
-        return "bg-purple-100 text-purple-800 border border-purple-200";
-      case 3:
-        return "bg-amber-100 text-amber-800 border border-amber-200";
-      case 4:
         return "bg-blue-100 text-blue-800 border border-blue-200";
+      case 3:
+        return "bg-purple-100 text-purple-800 border border-purple-200";
+      case 4:
+        return "bg-orange-100 text-orange-800 border border-orange-200";
       default:
-        return "bg-red-100 text-red-800 border border-red-200";
+        return "bg-amber-100 text-amber-800 border border-amber-200";
+    }
+  };
+
+  // Função para obter o ícone baseado no código da situação
+  const getSituacaoIcon = (codigo: number, size: "sm" | "md" = "sm") => {
+    const iconSize = size === "sm" ? "w-3 h-3" : "w-4 h-4";
+    const getSituacaoDescricao = (codigo: number) => {
+      switch (codigo) {
+        case 1:
+          return "Pendente";
+        case 2:
+          return "A atender";
+        case 3:
+          return "Em deslocamento";
+        case 4:
+          return "Em atendimento";
+        default:
+          return "Atendimento interrompido";
+      }
+    };
+
+    const title = getSituacaoDescricao(codigo);
+
+    switch (codigo) {
+      case 1:
+        return (
+          <span title={title}>
+            <Clock className={`${iconSize} text-gray-500`} />
+          </span>
+        );
+      case 2:
+        return (
+          <span title={title}>
+            <Bell className={`${iconSize} text-blue-600`} />
+          </span>
+        );
+      case 3:
+        return (
+          <span title={title}>
+            <Car className={`${iconSize} text-purple-600`} />
+          </span>
+        );
+      case 4:
+        return (
+          <span title={title}>
+            <Wrench className={`${iconSize} text-orange-600`} />
+          </span>
+        );
+      default:
+        return (
+          <span title={title}>
+            <PauseCircle className={`${iconSize} text-amber-600`} />
+          </span>
+        );
     }
   };
 
@@ -94,13 +153,20 @@ const OSCard: React.FC<OSCardProps> = ({
         <div className="flex items-center justify-between">
           {/* Left side - Main info */}
           <div className="flex items-center space-x-4 lg:space-x-6 flex-1">
-            {/* Status indicator */}
-            <div
-              className={`w-2 h-16 rounded-sm hidden sm:block ${getSituacaoColor(
-                os.situacao_os.codigo
-              )}`}
-              aria-hidden="true"
-            ></div>
+            {/* Status indicator and icon */}
+            <div className="flex items-center">
+              <div
+                className={`w-2 h-16 rounded-sm hidden sm:block ${getSituacaoColor(
+                  os.situacao_os.codigo
+                )}`}
+                aria-hidden="true"
+              ></div>
+              <div className="hidden sm:flex items-center justify-center ml-2">
+                <span className="w-6 h-6 flex items-center justify-center">
+                  {getSituacaoIcon(os.situacao_os.codigo, "md")}
+                </span>
+              </div>
+            </div>
 
             {/* Primary Info Container */}
             <div className="flex-grow grid grid-cols-1 md:grid-cols-12 gap-4 min-w-0">
@@ -223,6 +289,9 @@ const OSCard: React.FC<OSCardProps> = ({
                   os.situacao_os.codigo
                 )}`}
               >
+                <span className="mr-1.5 flex items-center justify-center">
+                  {getSituacaoIcon(os.situacao_os.codigo, "sm")}
+                </span>
                 <span className="my-auto">{os.situacao_os.descricao}</span>
               </span>
             </div>

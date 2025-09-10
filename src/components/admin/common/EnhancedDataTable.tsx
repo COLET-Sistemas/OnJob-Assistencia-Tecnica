@@ -7,9 +7,10 @@ interface Column<T> {
   header: string;
   accessor: keyof T | ((item: T) => React.ReactNode);
   render?: (item: T) => React.ReactNode;
+  className?: string;
 }
 
-interface DataTableProps<T> {
+interface EnhancedDataTableProps<T> {
   columns: Column<T>[];
   data: T[];
   keyField: keyof T;
@@ -19,10 +20,11 @@ interface DataTableProps<T> {
   };
   expandedRowId?: number | string | null;
   onRowExpand?: (id: number | string) => void;
+  onRowClick?: (item: T) => void;
   renderExpandedRow?: (item: T) => React.ReactNode;
 }
 
-function DataTable<T extends object>({
+function EnhancedDataTable<T extends object>({
   columns,
   data,
   keyField,
@@ -31,23 +33,21 @@ function DataTable<T extends object>({
     description: "Tente ajustar seus filtros ou cadastre um novo item.",
   },
   expandedRowId,
-  // onRowExpand is received but no longer used directly by the DataTable component.
-  // It's still needed as an interface since component users call it directly.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onRowExpand,
+  onRowClick,
   renderExpandedRow,
-}: DataTableProps<T>): React.ReactElement {
-  // Row expansion is now handled only by specific controls (like the contacts button)
-  // and not by clicking anywhere in the row
+}: EnhancedDataTableProps<T>): React.ReactElement {
   return (
     <div className="overflow-x-auto overflow-y-auto max-h-[70vh] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
       <table className="w-full table-auto border-separate border-spacing-0">
-        <thead className="bg-[var(--neutral-light-gray)] border-b border-gray-100 sticky top-0 z-10">
+        <thead className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 sticky top-0 z-10">
           <tr>
             {columns.map((column, index) => (
               <th
                 key={index}
-                className="px-6 py-4 text-left text-xs font-semibold text-[var(--dark-navy)] uppercase tracking-wider"
+                className={`px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider ${
+                  column.className || ""
+                }`}
               >
                 {column.header}
               </th>
@@ -56,12 +56,8 @@ function DataTable<T extends object>({
         </thead>
         <tbody className="bg-white divide-y divide-gray-100">
           {data.length > 0 ? (
-            data.map((item, index) => {
-              // Use index as a fallback when keyField is undefined
-              const id =
-                item[keyField] !== undefined
-                  ? String(item[keyField])
-                  : `row-${index}`;
+            data.map((item) => {
+              const id = String(item[keyField]);
               const isExpanded =
                 expandedRowId !== undefined &&
                 expandedRowId !== null &&
@@ -69,11 +65,22 @@ function DataTable<T extends object>({
 
               return (
                 <React.Fragment key={id}>
-                  <tr className="hover:bg-[var(--primary)]/5 transition-colors duration-150">
+                  <tr
+                    className="hover:bg-[var(--primary)]/5 transition-all duration-200 hover:shadow-sm cursor-pointer"
+                    onClick={() => {
+                      if (onRowClick) {
+                        onRowClick(item);
+                      } else if (onRowExpand) {
+                        onRowExpand(id as string | number);
+                      }
+                    }}
+                  >
                     {columns.map((column, colIndex) => (
                       <td
                         key={colIndex}
-                        className="px-6 py-4 whitespace-nowrap text-black"
+                        className={`px-6 py-4 text-sm text-gray-800 ${
+                          column.className || ""
+                        }`}
                       >
                         {column.render
                           ? column.render(item)
@@ -85,10 +92,7 @@ function DataTable<T extends object>({
                   </tr>
                   {isExpanded && renderExpandedRow && (
                     <tr>
-                      <td
-                        colSpan={columns.length}
-                        className="px-6 pb-5 pt-2 bg-[var(--primary)]/5"
-                      >
+                      <td colSpan={columns.length} className="p-0">
                         {renderExpandedRow(item)}
                       </td>
                     </tr>
@@ -97,8 +101,8 @@ function DataTable<T extends object>({
               );
             })
           ) : (
-            <tr key="empty-state">
-              <td colSpan={columns.length} className="px-0 py-0">
+            <tr>
+              <td colSpan={columns.length} className="px-6 py-4">
                 <EmptyState
                   title={emptyStateProps.title}
                   description={emptyStateProps.description}
@@ -112,4 +116,4 @@ function DataTable<T extends object>({
   );
 }
 
-export default DataTable;
+export default EnhancedDataTable;

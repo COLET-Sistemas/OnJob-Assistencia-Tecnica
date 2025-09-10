@@ -18,7 +18,7 @@ class MotivosPendenciaService implements BaseService<MotivoPendencia> {
   }
 
   async getById(id: number | string): Promise<MotivoPendencia> {
-    return await api.get<MotivoPendencia>(`${this.baseUrl}/${id}`);
+    return await api.get<MotivoPendencia>(this.baseUrl, { params: { id } });
   }
 
   async create(data: Omit<MotivoPendencia, "id">): Promise<MotivoPendencia> {

@@ -39,7 +39,7 @@ class RegioesService implements BaseService<Regiao> {
   }
 
   async getById(id: number | string): Promise<Regiao> {
-    return await api.get<Regiao>(`${this.baseUrl}/${id}`);
+    return await api.get<Regiao>(this.baseUrl, { params: { id } });
   }
 
   async create(

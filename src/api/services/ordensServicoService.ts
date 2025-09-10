@@ -206,7 +206,7 @@ class OrdensServicoService {
   }
 
   async getById(id: number): Promise<OSDetalhada> {
-    return api.get<OSDetalhada>(`${this.baseUrl}/${id}`);
+    return api.get<OSDetalhada>(`${this.baseUrl}`, { params: { id } });
   }
 
   async create(data: OSForm): Promise<OSDetalhada> {
