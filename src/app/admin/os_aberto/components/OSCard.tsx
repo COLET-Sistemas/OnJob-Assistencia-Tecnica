@@ -290,6 +290,8 @@ const OSCard: React.FC<OSCardProps> = ({
                           Liberação financeira:{" "}
                           <span className="font-medium">
                             {os.liberacao_financeira.nome_usuario_liberacao}
+                            {" em "}
+                            {os.liberacao_financeira.data_liberacao}
                           </span>
                         </span>
                       ) : (

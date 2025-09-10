@@ -55,6 +55,7 @@ export interface OrdemServico {
     liberada: boolean;
     id_usuario_liberacao: number;
     nome_usuario_liberacao: string;
+    data_liberacao?: string;
   };
   revisao_os: {
     id_usuario: number;
