@@ -2,7 +2,6 @@
 
 import api from "@/api/api";
 import { useTitle } from "@/context/TitleContext";
-import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -201,10 +200,8 @@ const CadastrarTipoPeca: React.FC = () => {
                 isLoading={isSubmitting}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-                <span className="flex items-center justify-center gap-2">
-                  <Save className="h-4 w-4" />
                   <span>Salvar</span>
-                </span>
+          
               </LoadingButton>
             </div>
           </footer>

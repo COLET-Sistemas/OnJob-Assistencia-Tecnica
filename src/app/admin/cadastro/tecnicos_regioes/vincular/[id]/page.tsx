@@ -10,7 +10,6 @@ import { Loading } from "@/components/LoadingPersonalizado";
 import { useTitle } from "@/context/TitleContext";
 import { Regiao } from "@/types/admin/cadastro/regioes";
 import { UsuarioComRegioes } from "@/types/admin/cadastro/usuarios";
-import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -293,10 +292,8 @@ const VincularTecnicoRegioes = ({ params }: PageProps) => {
                 isLoading={isSubmitting}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-                <span className="flex items-center justify-center gap-2">
-                  <Save className="h-4 w-4" />
                   <span>Salvar</span>
-                </span>
+
               </LoadingButton>
             </div>
           </footer>

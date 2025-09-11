@@ -18,7 +18,7 @@ import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
 import { services } from "@/api";
 import { MapPin } from "lucide-react";
-import LocationButton from "@/components/admin/ui/LocationButton"; 
+import LocationButton from "@/components/admin/ui/LocationButton";
 import api from "@/api/api";
 
 const { clientesService } = services;
@@ -66,9 +66,9 @@ const CadastroClientes = () => {
   const isReloadingRef = useRef(false);
 
   // Helper function to safely get client ID
-  const getClienteId = (cliente: Cliente): number => {
-    return cliente.id_cliente ?? cliente.id ?? 0;
-  };
+  const getClienteId = useCallback((cliente: Cliente): number => {
+    return Number(cliente.id_cliente ?? cliente.id ?? 0);
+  }, []);
 
   useEffect(() => {
     setTitle("Clientes");
@@ -173,11 +173,47 @@ const CadastroClientes = () => {
   }, [clientes]);
 
   const toggleExpand = useCallback((id: number | string) => {
+    console.log("Toggling expansion for client ID:", id);
     setExpandedClienteId((prevId) => {
-      const result = prevId === id ? null : Number(id);
+      const result = prevId === Number(id) ? null : Number(id);
+      console.log("Previous expanded ID:", prevId, "New expanded ID:", result);
       return result;
     });
   }, []);
+
+  // Efeito para carregar os contatos quando um cliente é expandido
+  useEffect(() => {
+    const fetchContacts = async (clientId: number) => {
+      if (!clientId || !clientes) {
+        return;
+      }
+
+      // Verifica se o cliente já tem contatos carregados
+      const clienteAtual = clientes.find((c) => getClienteId(c) === clientId);
+      if (clienteAtual?.contatos?.length) {
+        return; // Contatos já estão carregados
+      }
+
+      try {
+        const response = await clientesService.getContacts(clientId);
+
+        if (response && response.contatos) {
+          // Força uma atualização dos dados para recarregar com os contatos
+          await refetch();
+        }
+      } catch (error) {
+        console.error("Erro ao carregar contatos:", error);
+        showError(
+          "Erro ao carregar contatos",
+          "Não foi possível carregar os contatos deste cliente."
+        );
+      }
+    };
+
+    if (expandedClienteId) {
+      fetchContacts(expandedClienteId);
+    }
+  }, [expandedClienteId, clientes, refetch, showError, getClienteId]);
 
   // Handlers para o LocationButton
   const openLocationModal = useCallback((cliente: Cliente) => {
@@ -211,7 +247,7 @@ const CadastroClientes = () => {
         );
       }
     },
-    [selectedCliente, refetch, showSuccess, showError]
+    [selectedCliente, refetch, showSuccess, showError, getClienteId]
   );
 
   // Recupera o endereço da empresa do localStorage
@@ -316,39 +352,59 @@ const CadastroClientes = () => {
           cliente.qtd_contatos ?? cliente.contatos?.length ?? 0;
         const hasContatos = contatosCount > 0;
         const clientId = getClienteId(cliente);
+        const isExpanded = expandedClienteId === clientId;
 
         return (
           <button
-            className={`px-2 py-1.5 border border-gray-100 rounded-lg text-xs font-medium flex items-center gap-2 transition-colors ${
+            className={`px-2.5 py-1.5 border rounded-lg text-xs font-medium flex items-center gap-2 transition-all ${
               hasContatos
-                ? "bg-[var(--neutral-light-gray)] text-[var(--neutral-graphite)] hover:bg-[var(--neutral-light-gray)]/80 cursor-pointer"
-                : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                ? isExpanded
+                  ? "bg-[var(--primary)]/10 border-[var(--primary)] text-[var(--primary)] shadow-sm"
+                  : "bg-[var(--neutral-light-gray)] text-[var(--neutral-graphite)] border-gray-200 hover:bg-[var(--primary)]/5 hover:border-[var(--primary)]/30 cursor-pointer"
+                : "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed"
             }`}
             onClick={(e) => {
               e.stopPropagation();
+              e.preventDefault();
               if (hasContatos) {
+                console.log("Contact button clicked for client ID:", clientId);
                 toggleExpand(clientId);
               }
             }}
             type="button"
             disabled={!hasContatos}
+            aria-expanded={isExpanded}
+            aria-controls={`contatos-cliente-${clientId}`}
+            title={hasContatos ? "Clique para ver os contatos" : "Sem contatos"}
           >
             <User
               size={16}
               className={
-                hasContatos ? "text-[var(--neutral-graphite)]" : "text-gray-400"
+                hasContatos
+                  ? isExpanded
+                    ? "text-[var(--primary)]"
+                    : "text-[var(--neutral-graphite)]"
+                  : "text-gray-400"
               }
             />
             <span
               className={
-                hasContatos ? "text-[var(--primary)]" : "text-gray-400"
+                hasContatos
+                  ? isExpanded
+                    ? "text-[var(--primary)] font-semibold"
+                    : "text-[var(--neutral-graphite)]"
+                  : "text-gray-400"
               }
             >
               ({contatosCount})
             </span>
             {hasContatos && (
-              <span className="text-[var(--primary)]">
-                {expandedClienteId === clientId ? "▲" : "▼"}
+              <span
+                className={
+                  isExpanded ? "text-[var(--primary)]" : "text-gray-500"
+                }
+              >
+                {isExpanded ? "▲" : "▼"}
               </span>
             )}
           </button>
@@ -479,7 +535,7 @@ const CadastroClientes = () => {
       <TableList
         title="Lista de Clientes"
         items={clientes || []}
-        keyField="id"
+        keyField="id_cliente"
         columns={columns}
         renderActions={renderActions}
         showFilter={localShowFilters}
@@ -491,8 +547,192 @@ const CadastroClientes = () => {
         onFilterToggle={handleToggleFilters}
         emptyStateProps={{
           title: "Nenhum cliente encontrado",
-          description: "Comece cadastrando um novo cliente.",
+          description: "Tente ajustar os filtros ou cadastre um novo cliente.",
         }}
+        expandedRowId={expandedClienteId}
+        onRowExpand={toggleExpand}
+        renderExpandedRow={(cliente) => (
+          <div
+            id={`contatos-cliente-${getClienteId(cliente)}`}
+            className="p-4 bg-gray-50 rounded-lg shadow-inner"
+          >
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm font-bold text-gray-700">
+                Contatos do Cliente
+              </h3>
+              <span className="text-xs text-gray-500">
+                {cliente.contatos?.length || cliente.qtd_contatos || 0}{" "}
+                contato(s)
+              </span>
+            </div>
+            {!cliente.contatos || cliente.contatos.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                {cliente.qtd_contatos && cliente.qtd_contatos > 0 ? (
+                  <div className="flex flex-col items-center">
+                    <svg
+                      className="animate-spin h-6 w-6 text-[var(--primary)] mb-2"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    <p>Carregando contatos...</p>
+                  </div>
+                ) : (
+                  <p>Este cliente não possui contatos registrados.</p>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {cliente.contatos.map((contato) => (
+                  <div
+                    key={contato.id}
+                    className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between">
+                      <div className="font-medium text-[var(--primary)] text-lg">
+                        {contato.nome || contato.nome_completo}
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 h-fit rounded-full text-xs ${
+                          contato.situacao === "A"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {contato.situacao === "A" ? "Ativo" : "Inativo"}
+                      </span>
+                    </div>
+
+                    {contato.nome_completo &&
+                      contato.nome_completo !== contato.nome && (
+                        <div className="text-xs text-gray-500">
+                          {contato.nome_completo}
+                        </div>
+                      )}
+
+                    {contato.cargo && (
+                      <div className="text-sm font-medium text-gray-700 mt-2">
+                        {contato.cargo}
+                      </div>
+                    )}
+
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="grid gap-2">
+                        {contato.telefone && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="bg-gray-100 p-1.5 rounded-md">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                fill="currentColor"
+                                className="text-gray-500"
+                                viewBox="0 0 16 16"
+                              >
+                                <path d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.568 17.568 0 0 0 4.168 6.608 17.569 17.569 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 0 0-.063-1.015l-2.307-1.794a.678.678 0 0 0-.58-.122l-2.19.547a1.745 1.745 0 0 1-1.657-.459L5.482 8.062a1.745 1.745 0 0 1-.46-1.657l.548-2.19a.678.678 0 0 0-.122-.58L3.654 1.328zM1.884.511a1.745 1.745 0 0 1 2.612.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.678.678 0 0 0 .178.643l2.457 2.457a.678.678 0 0 0 .644.178l2.189-.547a1.745 1.745 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.634 18.634 0 0 1-7.01-4.42 18.634 18.634 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877L1.885.511z" />
+                              </svg>
+                            </div>
+                            <a
+                              href={`tel:${contato.telefone.replace(
+                                /\D/g,
+                                ""
+                              )}`}
+                              className="text-gray-700 hover:text-[var(--primary)]"
+                            >
+                              {contato.telefone}
+                            </a>
+                          </div>
+                        )}
+
+                        {contato.whatsapp && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="bg-green-50 p-1.5 rounded-md">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                fill="currentColor"
+                                className="text-green-600"
+                                viewBox="0 0 16 16"
+                              >
+                                <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z" />
+                              </svg>
+                            </div>
+                            <a
+                              href={`https://wa.me/${contato.whatsapp.replace(
+                                /\D/g,
+                                ""
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-gray-700 hover:text-green-600"
+                            >
+                              {contato.whatsapp}
+                            </a>
+                          </div>
+                        )}
+
+                        {contato.email && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="bg-blue-50 p-1.5 rounded-md">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                fill="currentColor"
+                                className="text-blue-600"
+                                viewBox="0 0 16 16"
+                              >
+                                <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z" />
+                              </svg>
+                            </div>
+                            <a
+                              href={`mailto:${contato.email}`}
+                              className="text-gray-700 hover:text-blue-600"
+                            >
+                              {contato.email}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+
+                      {contato.recebe_aviso_os && (
+                        <div className="mt-3 flex items-center">
+                          <span className="bg-blue-100 text-blue-700 px-2 py-1 text-xs rounded-full flex items-center gap-1">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="12"
+                              height="12"
+                              fill="currentColor"
+                              viewBox="0 0 16 16"
+                            >
+                              <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zm.995-14.901a1 1 0 1 0-1.99 0A5.002 5.002 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901z" />
+                            </svg>
+                            Recebe avisos de OS
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       />
       <Pagination
         currentPage={paginacao.paginaAtual}

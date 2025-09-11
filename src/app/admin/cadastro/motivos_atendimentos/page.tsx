@@ -189,6 +189,10 @@ const CadastroMotivosAtendimento = () => {
         onClearFilters={handleClearFilters}
         onApplyFilters={handleApplyFilters}
         onFilterToggle={handleToggleFilters}
+        emptyStateProps={{
+          title: "Nenhum motivo atendimento encontrada",
+          description: "Tente ajustar os filtros ou cadastre um novo motivo atendimento.",
+        }}
       />
     </>
   );

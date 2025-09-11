@@ -10,15 +10,12 @@ import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useRegioesFilters } from "@/hooks/useSpecificFilters";
 import { regioesService } from "@/api/services/regioesService";
-import { MapPin } from "lucide-react";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 
 const CadastroRegioes = () => {
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
-  // Adicionar um estado local para controlar a visibilidade do filtro
   const [localShowFilters, setLocalShowFilters] = useState(false);
-  // Ref para evitar que o menu reabra durante o recarregamento
   const isReloadingRef = useRef(false);
 
   useEffect(() => {
@@ -36,7 +33,6 @@ const CadastroRegioes = () => {
   } = useRegioesFilters();
 
   const fetchRegioes = useCallback(async () => {
-    // Marcar que estamos recarregando
     isReloadingRef.current = true;
 
     const params: Record<string, string> = {};
@@ -53,10 +49,9 @@ const CadastroRegioes = () => {
     try {
       return await regioesService.getAll(params);
     } finally {
-      // Depois de recarregar, permitir mudanças no estado do menu
       setTimeout(() => {
         isReloadingRef.current = false;
-      }, 500); // pequeno delay para garantir que a renderização aconteça primeiro
+      }, 500); 
     }
   }, [filtrosAplicados]);
 
@@ -66,7 +61,6 @@ const CadastroRegioes = () => {
     refetch,
   } = useDataFetch<Regiao[]>(fetchRegioes, [fetchRegioes]);
 
-  // Effect para garantir que o menu permaneça fechado durante o recarregamento
   useEffect(() => {
     if (isReloadingRef.current) {
       setLocalShowFilters(false);
@@ -83,17 +77,6 @@ const CadastroRegioes = () => {
       />
     );
   }
-
-  // Estado vazio customizado para regiões
-  const emptyStateProps = {
-    title: "Nenhuma região cadastrada",
-    description: "Você ainda não possui regiões cadastradas no sistema.",
-    icon: (
-      <div className="bg-[var(--primary)]/5 p-5 rounded-full inline-flex mb-5 shadow-inner">
-        <MapPin size={36} className="text-[var(--primary)]" />
-      </div>
-    ),
-  };
 
   const columns = [
     {
@@ -152,22 +135,22 @@ const CadastroRegioes = () => {
 
   // Funções de filtro modificadas para usar estado local
   const handleApplyFilters = () => {
-    setLocalShowFilters(false); // Fecha o menu localmente
-    isReloadingRef.current = true; // Marca que vamos recarregar
-    aplicarFiltros(); // Aplica os filtros através do hook
+    setLocalShowFilters(false); 
+    isReloadingRef.current = true; 
+    aplicarFiltros(); 
   };
 
   const handleClearFilters = () => {
-    setLocalShowFilters(false); // Fecha o menu localmente
-    isReloadingRef.current = true; // Marca que vamos recarregar
-    limparFiltros(); // Limpa os filtros através do hook
+    setLocalShowFilters(false);
+    isReloadingRef.current = true; 
+    limparFiltros(); 
   };
 
   const handleToggleFilters = () => {
     if (!isReloadingRef.current) {
-      setLocalShowFilters(!localShowFilters); // Toggle local apenas se não estiver recarregando
+      setLocalShowFilters(!localShowFilters); 
     }
-    toggleFilters(); // Toggle através do hook
+    toggleFilters();
   };
 
   const handleDelete = async (id: number) => {
@@ -286,7 +269,6 @@ const CadastroRegioes = () => {
         keyField="id"
         columns={columns}
         renderActions={renderActions}
-        emptyStateProps={emptyStateProps}
         showFilter={localShowFilters}
         filterOptions={filterOptions}
         filterValues={filtrosPainel}
@@ -294,6 +276,10 @@ const CadastroRegioes = () => {
         onClearFilters={handleClearFilters}
         onApplyFilters={handleApplyFilters}
         onFilterToggle={handleToggleFilters}
+        emptyStateProps={{
+          title: "Nenhuma região encontrada",
+          description: "Tente ajustar os filtros ou cadastre uma nova região.",
+        }}
       />
     </>
   );

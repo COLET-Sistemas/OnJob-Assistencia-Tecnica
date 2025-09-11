@@ -3,7 +3,6 @@
 import { tiposPecasService, pecasService } from "@/api/services";
 import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
-import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -339,10 +338,9 @@ const EditarPeca = () => {
                 isLoading={savingData}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-                <span className="flex items-center justify-center gap-2">
-                  <Save className="h-4 w-4" />
-                  <span>Atualizar</span>
-                </span>
+   
+                  <span>Salvar</span>
+  
               </LoadingButton>
             </div>
           </footer>

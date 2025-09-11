@@ -324,7 +324,7 @@ const CadastroMaquinas = () => {
         onFilterToggle={toggleFilters}
         emptyStateProps={{
           title: "Nenhuma máquina encontrada",
-          description: "Comece cadastrando uma nova máquina.",
+          description: "Tente ajustar os filtros ou cadastre uma nova máquina.",
         }}
       />
 

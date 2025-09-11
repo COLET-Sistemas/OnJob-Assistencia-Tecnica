@@ -16,7 +16,7 @@ import { FormData as ClienteFormData } from "@/types/admin/cadastro/clientes";
 import { formatDocumento, validarDocumento } from "@/utils/formatters";
 import { buscarCEP, formatarCEP } from "@/utils/cepAPI";
 import { ESTADOS } from "@/utils/constants";
-import { Save, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useRef } from "react";
@@ -499,7 +499,7 @@ const CadastrarCliente: React.FC = () => {
                 />
 
                 <InputField
-                  label="Código ERP"
+                  label="Código no ERP"
                   name="codigo_erp"
                   value={formData.codigo_erp || ""}
                   placeholder="Código interno do sistema ERP"
@@ -692,10 +692,7 @@ const CadastrarCliente: React.FC = () => {
                 isLoading={isSubmitting}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-                <span className="flex items-center justify-center gap-2">
-                  <Save className="h-4 w-4" />
                   <span>Salvar Cliente</span>
-                </span>
               </LoadingButton>
             </div>
           </footer>

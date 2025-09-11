@@ -3,7 +3,6 @@
 import { regioesService } from "@/api/services/regioesService";
 import { useTitle } from "@/context/TitleContext";
 import { FormData } from "@/types/admin/cadastro/regioes";
-import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -186,10 +185,7 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
     } catch (error) {
       console.error("Erro ao atualizar região:", error);
 
-      showError(
-        "Erro ao atualizar",
-        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
-      );
+      showError("Erro ao atualizar", error as Record<string, unknown>);
     } finally {
       setSavingData(false);
     }
@@ -201,8 +197,7 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
         text="Carregando dados da região..."
         size="medium"
         color="primary"
-        fullScreen={false}
-        className="min-h-[200px]"
+        fullScreen={true}
       />
     );
   }
@@ -343,10 +338,7 @@ const EditarRegiao = ({ params }: EditarRegiaoProps) => {
                 isLoading={savingData}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-                <span className="flex items-center justify-center gap-2">
-                  <Save className="h-4 w-4" />
-                  <span>Atualizar</span>
-                </span>
+                <span>Salvar</span>
               </LoadingButton>
             </div>
           </footer>

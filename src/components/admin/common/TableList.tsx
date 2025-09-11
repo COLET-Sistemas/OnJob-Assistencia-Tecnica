@@ -36,6 +36,9 @@ interface TableListProps<T> {
     description: string;
   };
   customHeader?: ReactNode;
+  expandedRowId?: number | string | null;
+  onRowExpand?: (id: number | string) => void;
+  renderExpandedRow?: (item: T) => ReactNode;
 }
 
 function TableList<T extends object>({
@@ -53,6 +56,9 @@ function TableList<T extends object>({
   renderActions,
   emptyStateProps,
   customHeader,
+  expandedRowId,
+  onRowExpand,
+  renderExpandedRow,
 }: TableListProps<T>): React.ReactElement {
   // Add renderActions to columns if provided
   const finalColumns = renderActions
@@ -95,6 +101,9 @@ function TableList<T extends object>({
             description: "Tente ajustar seus filtros ou cadastre um novo item.",
           }
         }
+        expandedRowId={expandedRowId}
+        onRowExpand={onRowExpand}
+        renderExpandedRow={renderExpandedRow}
       />
     </ListContainer>
   );

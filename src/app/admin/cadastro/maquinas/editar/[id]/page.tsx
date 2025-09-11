@@ -1,6 +1,7 @@
 "use client";
 
-// Interface para cliente retornado pela API
+import { Loading } from "@/components/LoadingPersonalizado";
+
 interface ClienteAPIResult {
   id_cliente: number;
   nome_fantasia: string;
@@ -12,7 +13,6 @@ import { maquinasService } from "@/api/services/maquinasService";
 import { clientesService } from "@/api/services/clientesService";
 import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
-import { Save } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -20,18 +20,16 @@ import PageHeader from "@/components/admin/ui/PageHeader";
 import { InputField, LoadingButton } from "@/components/admin/form";
 import CustomSelect, { OptionType } from "@/components/admin/form/CustomSelect";
 
-// Define interface for the form data
 interface FormData {
   numero_serie: string;
   descricao: string;
   modelo: string;
-  id_cliente: number | null; // Changed from id_cliente_atual to match API expectations
+  id_cliente: number | null;
   data_1a_venda: string;
   nota_fiscal_venda: string;
   data_final_garantia: string;
 }
 
-// Define ClienteOption to ensure type compatibility with CustomSelect's OptionType
 interface ClienteOption extends Omit<OptionType, "value"> {
   value: number;
   razao_social?: string;
@@ -40,7 +38,7 @@ interface ClienteOption extends Omit<OptionType, "value"> {
 const EditarMaquina = () => {
   const router = useRouter();
   const { id } = useParams();
-  const maquinaId = Array.isArray(id) ? id[0] : (id as string); // Force as string since it's from the URL param
+  const maquinaId = Array.isArray(id) ? id[0] : (id as string);
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
   const [savingData, setSavingData] = useState(false);
@@ -76,7 +74,6 @@ const EditarMaquina = () => {
     try {
       const response = await maquinasService.getById(maquinaId);
 
-      // Verifica se a resposta está no formato paginado ou direto
       let maquinaData;
       if (
         response &&
@@ -84,11 +81,9 @@ const EditarMaquina = () => {
         Array.isArray(response.dados) &&
         response.dados.length > 0
       ) {
-        // Formato paginado: { dados: [...] }
         maquinaData = response.dados[0];
         console.log("Dados da máquina (formato paginado):", maquinaData);
       } else {
-        // Formato direto: o próprio objeto da máquina
         maquinaData = response;
         console.log("Dados da máquina (formato direto):", maquinaData);
       }
@@ -96,10 +91,6 @@ const EditarMaquina = () => {
       if (!maquinaData) {
         throw new Error("Máquina não encontrada");
       }
-
-      // Debug info
-      console.log("Cliente atual:", maquinaData.cliente_atual);
-      console.log("ID do cliente:", maquinaData.id_cliente_atual);
 
       setFormData({
         numero_serie: maquinaData.numero_serie || "",
@@ -206,13 +197,6 @@ const EditarMaquina = () => {
     }
   }, [maquinaId, fetchMaquina]);
 
-  // Debug do estado do cliente selecionado
-  useEffect(() => {
-    console.log("Estado atual do cliente selecionado:", selectedCliente);
-    console.log("clienteInput:", clienteInput);
-    console.log("formData.id_cliente:", formData.id_cliente);
-  }, [selectedCliente, clienteInput, formData.id_cliente]);
-
   // Manipular mudanças nos campos do formulário
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -233,42 +217,66 @@ const EditarMaquina = () => {
     }
   };
 
-  // Função para buscar clientes quando o input tiver pelo menos 3 caracteres
-  const handleClienteInputChange = (inputValue: string) => {
-    setClienteInput(inputValue);
+  // Função para buscar clientes
+  const searchClientes = useCallback(
+    async (term: string) => {
+      if (!term || term.length < 3) return;
 
-    if (inputValue.length >= 3 && !isSearchingCliente) {
-      setIsSearchingCliente(true);
-      searchClientes(inputValue);
-    }
-  };
+      try {
+        setIsSearchingCliente(true);
+        // Utiliza clientesService.getAll para buscar clientes por nome com parâmetro resumido=S
+        const data = await clientesService.getAll({
+          nome: term,
+          resumido: "S",
+          qtde_registros: 15,
+          nro_pagina: 1,
+        });
 
-  const searchClientes = async (term: string) => {
-    try {
-      // Utiliza clientesService.getAll para buscar clientes por nome com parâmetro resumido=S
-      const data = await clientesService.getAll({
-        nome: term,
-        resumido: "S",
-        qtde_registros: 15,
-        nro_pagina: 1,
-      });
+        const options = Array.isArray(data?.dados)
+          ? (data.dados as ClienteAPIResult[]).map((c) => ({
+              value: c.id_cliente,
+              label: c.nome_fantasia,
+              razao_social: c.razao_social,
+            }))
+          : [];
 
-      const options = Array.isArray(data?.dados)
-        ? (data.dados as ClienteAPIResult[]).map((c) => ({
-            value: c.id_cliente,
-            label: c.nome_fantasia,
-            razao_social: c.razao_social,
-          }))
-        : [];
+        setClienteOptions(options);
+      } catch (error) {
+        console.error("Erro ao buscar clientes:", error);
+        setClienteOptions([]);
+        showError("Erro ao buscar clientes", "Tente novamente mais tarde.");
+      } finally {
+        setIsSearchingCliente(false);
+      }
+    },
+    [showError]
+  );
 
-      setClienteOptions(options);
-    } catch (error) {
-      console.error("Erro ao buscar clientes:", error);
-      setClienteOptions([]);
-    } finally {
-      setIsSearchingCliente(false);
-    }
-  };
+  // Função debounced para buscar clientes quando o input tiver pelo menos 3 caracteres
+  const debouncedSearchClientes = useCallback(
+    (term: string) => {
+      // Implementação inline do debounce para evitar problemas com o ESLint
+      if (term.length >= 3 && !isSearchingCliente) {
+        // Usar um timeout para debounce
+        const timeoutId = setTimeout(() => {
+          searchClientes(term);
+        }, 300);
+
+        // Retornar uma função que limpa o timeout se chamada antes da execução
+        return () => clearTimeout(timeoutId);
+      }
+    },
+    [searchClientes, isSearchingCliente]
+  );
+
+  // Função para lidar com a mudança no input do cliente
+  const handleClienteInputChange = useCallback(
+    (inputValue: string) => {
+      setClienteInput(inputValue);
+      debouncedSearchClientes(inputValue);
+    },
+    [debouncedSearchClientes]
+  );
 
   const handleClienteChange = (selectedOption: OptionType | null) => {
     // Convert OptionType to ClienteOption if not null
@@ -303,11 +311,6 @@ const EditarMaquina = () => {
     if (!formData.descricao) errors.descricao = "Campo obrigatório";
     if (!formData.modelo) errors.modelo = "Campo obrigatório";
     if (!formData.id_cliente) errors.id_cliente_atual = "Selecione um cliente";
-    if (!formData.data_1a_venda) errors.data_1a_venda = "Campo obrigatório";
-    if (!formData.nota_fiscal_venda)
-      errors.nota_fiscal_venda = "Campo obrigatório";
-    if (!formData.data_final_garantia)
-      errors.data_final_garantia = "Campo obrigatório";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -328,39 +331,45 @@ const EditarMaquina = () => {
         numero_serie: formData.numero_serie,
         descricao: formData.descricao,
         modelo: formData.modelo,
-        id_cliente: formData.id_cliente ?? undefined, // Convert null to undefined if needed
+        id_cliente: formData.id_cliente ?? undefined,
         data_1a_venda: formData.data_1a_venda,
         nota_fiscal_venda: formData.nota_fiscal_venda,
         data_final_garantia: formData.data_final_garantia,
       });
-      showSuccess(
-        "Sucesso",
-        "Máquina atualizada com sucesso" // Mensagem fixa em vez da resposta
-      );
+      showSuccess("Sucesso", "Máquina atualizada com sucesso");
       router.push("/admin/cadastro/maquinas");
     } catch (error) {
       console.error("Erro ao atualizar máquina:", error);
 
       showError(
         "Erro ao atualizar",
-        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
+        error as Record<string, unknown>
       );
     } finally {
       setSavingData(false);
     }
   };
 
-  // Mostrar carregando enquanto busca dados
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin h-8 w-8 border-4 border-violet-700 border-t-transparent rounded-full"></div>
-      </div>
+      <Loading
+        fullScreen={true}
+        text="Carregando dados da máquina..."
+        size="medium"
+        className="min-h-[400px]"
+      />
     );
   }
 
   return (
     <>
+      {savingData && (
+        <Loading
+          fullScreen={true}
+          text="Salvando alterações..."
+          size="medium"
+        />
+      )}
       <PageHeader
         title="Edição de Máquina"
         config={{
@@ -409,19 +418,6 @@ const EditarMaquina = () => {
 
                 {/* Cliente Atual */}
                 <div>
-                  {/* Debug information */}
-                  {process.env.NODE_ENV === "development" && (
-                    <div className="mb-2 text-xs text-gray-500">
-                      <div>
-                        Cliente selecionado:{" "}
-                        {selectedCliente
-                          ? `${selectedCliente.label} (${selectedCliente.value})`
-                          : "nenhum"}
-                      </div>
-                      <div>ID do cliente no form: {formData.id_cliente}</div>
-                    </div>
-                  )}
-
                   <CustomSelect
                     id="cliente_atual"
                     label="Cliente Atual"
@@ -463,7 +459,6 @@ const EditarMaquina = () => {
                   />
                 </div>
 
-                {/* Linha com 3 campos: Data 1ª Venda, Nota Fiscal Venda, Data Final Garantia */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Data 1ª Venda */}
                   <div>
@@ -472,8 +467,6 @@ const EditarMaquina = () => {
                       label="Data 1ª Venda"
                       name="data_1a_venda"
                       value={formData.data_1a_venda}
-                      error={formErrors.data_1a_venda}
-                      required
                       onChange={handleInputChange}
                     />
                   </div>
@@ -484,9 +477,7 @@ const EditarMaquina = () => {
                       label="Nota Fiscal Venda"
                       name="nota_fiscal_venda"
                       value={formData.nota_fiscal_venda}
-                      error={formErrors.nota_fiscal_venda}
                       placeholder="Número da nota fiscal"
-                      required
                       onChange={handleInputChange}
                     />
                   </div>
@@ -498,8 +489,6 @@ const EditarMaquina = () => {
                       label="Data Final Garantia"
                       name="data_final_garantia"
                       value={formData.data_final_garantia}
-                      error={formErrors.data_final_garantia}
-                      required
                       onChange={handleInputChange}
                     />
                   </div>
@@ -523,10 +512,9 @@ const EditarMaquina = () => {
                 isLoading={savingData}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-                <span className="flex items-center justify-center gap-2">
-                  <Save className="h-4 w-4" />
+
                   <span>Salvar</span>
-                </span>
+          
               </LoadingButton>
             </div>
           </footer>

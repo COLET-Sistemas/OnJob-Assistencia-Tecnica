@@ -40,8 +40,8 @@ function DataTable<T extends object>({
   // Row expansion is now handled only by specific controls (like the contacts button)
   // and not by clicking anywhere in the row
   return (
-    <div className="overflow-x-auto overflow-y-auto max-h-[70vh] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-      <table className="w-full table-auto border-separate border-spacing-0">
+    <div className="overflow-x-auto overflow-y-auto max-h-[70vh] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 min-h-[400px] flex flex-col">
+      <table className="w-full table-auto border-separate border-spacing-0 flex-1">
         <thead className="bg-[var(--neutral-light-gray)] border-b border-gray-100 sticky top-0 z-10">
           <tr>
             {columns.map((column, index) => (
@@ -54,7 +54,11 @@ function DataTable<T extends object>({
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-100">
+        <tbody
+          className={`bg-white divide-y divide-gray-100 ${
+            data.length === 0 ? "h-full" : ""
+          }`}
+        >
           {data.length > 0 ? (
             data.map((item, index) => {
               // Use index as a fallback when keyField is undefined
@@ -97,8 +101,8 @@ function DataTable<T extends object>({
               );
             })
           ) : (
-            <tr key="empty-state">
-              <td colSpan={columns.length} className="px-0 py-0">
+            <tr key="empty-state" className="h-full">
+              <td colSpan={columns.length} className="p-0 h-[300px]">
                 <EmptyState
                   title={emptyStateProps.title}
                   description={emptyStateProps.description}

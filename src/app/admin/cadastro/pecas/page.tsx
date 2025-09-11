@@ -283,7 +283,7 @@ const CadastroPecas = () => {
         onFilterToggle={handleLocalToggleFilters}
         emptyStateProps={{
           title: "Nenhuma peça encontrada",
-          description: "Comece cadastrando uma nova peça.",
+          description: "Tente ajustar os filtros ou cadastre uma nova peça.",
         }}
       />
       <Pagination

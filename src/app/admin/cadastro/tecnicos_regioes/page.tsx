@@ -17,14 +17,8 @@ const CadastroUsuariosRegioes = () => {
   const router = useRouter();
 
   const fetchUsuariosRegioes = useCallback(async () => {
-    // The API now returns a paginated structure with the data in a 'dados' array
-    // Each user already includes their associated regions in the expected format
     const response = await usuariosRegioesService.getAll();
-
-    // Cast the response to our interface using as unknown first to avoid type errors
     const typedResponse = response as unknown as UsuariosRegioesResponse;
-
-    // Return the formatted data directly since the API now provides the correct structure
     return typedResponse.dados || [];
   }, []);
 

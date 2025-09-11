@@ -18,7 +18,6 @@ import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
 import api from "@/api/api";
 
-// Interface dos filtros específicos para tipos de peças
 interface TiposPecasFilters {
   codigo_erp: string;
   descricao: string;
@@ -71,7 +70,6 @@ const CadastroTiposPecas = () => {
     toggleFilters,
   } = useFilters(INITIAL_TIPOS_PECAS_FILTERS);
 
-  // Sincronizar estado local com o estado do hook quando não estiver recarregando
   useEffect(() => {
     if (!isReloadingRef.current) {
       setLocalShowFilters(showFilters);
@@ -109,7 +107,6 @@ const CadastroTiposPecas = () => {
       totalRegistros: response.total_registros,
     }));
 
-    // Mapear os dados para o formato esperado pela tabela
     return response.dados.map((item) => ({
       id_tipo_peca: item.id,
       codigo_erp: item.codigo_erp,
@@ -124,7 +121,6 @@ const CadastroTiposPecas = () => {
     refetch,
   } = useDataFetch<TipoPecaExtended[]>(fetchTiposPecas, [fetchTiposPecas]);
 
-  // Resetar o flag de recarregamento quando os dados são carregados
   useEffect(() => {
     if (!loading && isReloadingRef.current) {
       isReloadingRef.current = false;
@@ -214,12 +210,10 @@ const CadastroTiposPecas = () => {
   );
 
   const handleFiltroChangeCustom = (campo: string, valor: string) => {
-    // Converter código ERP para maiúsculo
     if (campo === "codigo_erp" && typeof valor === "string") {
       valor = valor.toUpperCase();
     }
 
-    // Converter checkbox para string
     if (campo === "incluir_inativos") {
       valor = valor === "true" ? "true" : "";
     }
@@ -294,7 +288,8 @@ const CadastroTiposPecas = () => {
         onFilterToggle={handleLocalToggleFilters}
         emptyStateProps={{
           title: "Nenhum tipo de peça encontrado",
-          description: "Comece cadastrando um novo tipo de peça.",
+          description:
+            "Tente ajustar os filtros ou cadastre um novo tipo de peça.",
         }}
       />
       <Pagination

@@ -180,6 +180,11 @@ const CadastroMotivosPendencia = () => {
         onClearFilters={handleLocalClearFilters}
         onApplyFilters={handleLocalApplyFilters}
         onFilterToggle={handleLocalToggleFilters}
+        emptyStateProps={{
+          title: "Nenhum motivo pendência encontrada",
+          description:
+            "Tente ajustar os filtros ou cadastre um novo motivo pendência.",
+        }}
       />
     </>
   );

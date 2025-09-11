@@ -1,4 +1,6 @@
 "use client";
+import { Loading } from "@/components/LoadingPersonalizado";
+
 // Interface para cliente retornado pela API
 interface ClienteAPIResult {
   id_cliente: number;
@@ -10,15 +12,13 @@ interface ClienteAPIResult {
 import { maquinasService, clientesService } from "@/api/services";
 import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
-import { Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { InputField, LoadingButton } from "@/components/admin/form";
 import CustomSelect, { OptionType } from "@/components/admin/form/CustomSelect";
 
-// Define interface for the local form data
 interface FormData {
   numero_serie: string;
   descricao: string;
@@ -85,42 +85,66 @@ const CadastrarMaquina = () => {
     }
   };
 
-  // Função para buscar clientes quando o input tiver pelo menos 3 caracteres
-  const handleClienteInputChange = (inputValue: string) => {
-    setClienteInput(inputValue);
+  // Função para buscar clientes
+  const searchClientes = useCallback(
+    async (term: string) => {
+      if (!term || term.length < 3) return;
 
-    if (inputValue.length >= 3 && !isSearchingCliente) {
-      setIsSearchingCliente(true);
-      searchClientes(inputValue);
-    }
-  };
+      try {
+        setIsSearchingCliente(true);
+        // Utiliza clientesAPI.getAll para buscar clientes por nome com parâmetro resumido=S
+        const data = await clientesService.getAll({
+          nome: term,
+          resumido: "S",
+          qtde_registros: 15,
+          nro_pagina: 1,
+        });
 
-  const searchClientes = async (term: string) => {
-    try {
-      // Utiliza clientesAPI.getAll para buscar clientes por nome com parâmetro resumido=S
-      const data = await clientesService.getAll({
-        nome: term,
-        resumido: "S",
-        qtde_registros: 15,
-        nro_pagina: 1,
-      });
+        const options = Array.isArray(data?.dados)
+          ? (data.dados as ClienteAPIResult[]).map((c) => ({
+              value: c.id_cliente,
+              label: c.nome_fantasia,
+              razao_social: c.razao_social,
+            }))
+          : [];
 
-      const options = Array.isArray(data?.dados)
-        ? (data.dados as ClienteAPIResult[]).map((c) => ({
-            value: c.id_cliente,
-            label: c.nome_fantasia,
-            razao_social: c.razao_social,
-          }))
-        : [];
+        setClienteOptions(options);
+      } catch (error) {
+        console.error("Erro ao buscar clientes:", error);
+        setClienteOptions([]);
+        showError("Erro ao buscar clientes", "Tente novamente mais tarde.");
+      } finally {
+        setIsSearchingCliente(false);
+      }
+    },
+    [showError]
+  );
 
-      setClienteOptions(options);
-    } catch (error) {
-      console.error("Erro ao buscar clientes:", error);
-      setClienteOptions([]);
-    } finally {
-      setIsSearchingCliente(false);
-    }
-  };
+  // Função debounced para buscar clientes quando o input tiver pelo menos 3 caracteres
+  const debouncedSearchClientes = useCallback(
+    (term: string) => {
+      // Implementação inline do debounce para evitar problemas com o ESLint
+      if (term.length >= 3 && !isSearchingCliente) {
+        // Usar um timeout para debounce
+        const timeoutId = setTimeout(() => {
+          searchClientes(term);
+        }, 300);
+
+        // Retornar uma função que limpa o timeout se chamada antes da execução
+        return () => clearTimeout(timeoutId);
+      }
+    },
+    [searchClientes, isSearchingCliente]
+  );
+
+  // Função para lidar com a mudança no input do cliente
+  const handleClienteInputChange = useCallback(
+    (inputValue: string) => {
+      setClienteInput(inputValue);
+      debouncedSearchClientes(inputValue);
+    },
+    [debouncedSearchClientes]
+  );
 
   const handleClienteChange = (selectedOption: OptionType | null) => {
     // Convert OptionType to ClienteOption if not null
@@ -156,11 +180,6 @@ const CadastrarMaquina = () => {
     if (!formData.modelo) errors.modelo = "Campo obrigatório";
     if (!formData.id_cliente_atual)
       errors.id_cliente_atual = "Selecione um cliente";
-    if (!formData.data_1a_venda) errors.data_1a_venda = "Campo obrigatório";
-    if (!formData.nota_fiscal_venda)
-      errors.nota_fiscal_venda = "Campo obrigatório";
-    if (!formData.data_final_garantia)
-      errors.data_final_garantia = "Campo obrigatório";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -182,26 +201,20 @@ const CadastrarMaquina = () => {
         numero_serie: formData.numero_serie,
         descricao: formData.descricao,
         modelo: formData.modelo,
-        id_cliente: formData.id_cliente_atual!, // Use non-null assertion since validation ensures it's not null
+        id_cliente: formData.id_cliente_atual!,
         data_1a_venda: formData.data_1a_venda,
         nota_fiscal_venda: formData.nota_fiscal_venda,
         data_final_garantia: formData.data_final_garantia,
-        situacao: "A", // Active by default
+        situacao: "A",
       };
 
       const response = await maquinasService.create(maquinaData);
-      showSuccess(
-        "Sucesso",
-        response as unknown as Record<string, unknown> // Type assertion to match expected type
-      );
+      showSuccess("Sucesso", response as unknown as Record<string, unknown>);
       router.push("/admin/cadastro/maquinas");
     } catch (error) {
       console.error("Erro ao cadastrar máquina:", error);
 
-      showError(
-        "Erro ao cadastrar",
-        error as Record<string, unknown> // Passa o erro diretamente, o ToastContainer extrai a mensagem
-      );
+      showError("Erro ao cadastrar", error as Record<string, unknown>);
     } finally {
       setSavingData(false);
     }
@@ -209,6 +222,9 @@ const CadastrarMaquina = () => {
 
   return (
     <>
+      {savingData && (
+        <Loading fullScreen={true} text="Salvando dados..." size="medium" />
+      )}
       <PageHeader
         title="Cadastro de Máquina"
         config={{
@@ -291,17 +307,13 @@ const CadastrarMaquina = () => {
                   />
                 </div>
 
-                {/* Linha com 3 campos: Data 1ª Venda, Nota Fiscal Venda, Data Final Garantia */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Data 1ª Venda */}
                   <div>
                     <InputField
                       type="date"
                       label="Data 1ª Venda"
                       name="data_1a_venda"
                       value={formData.data_1a_venda}
-                      error={formErrors.data_1a_venda}
-                      required
                       onChange={handleInputChange}
                     />
                   </div>
@@ -312,9 +324,7 @@ const CadastrarMaquina = () => {
                       label="Nota Fiscal Venda"
                       name="nota_fiscal_venda"
                       value={formData.nota_fiscal_venda}
-                      error={formErrors.nota_fiscal_venda}
                       placeholder="Número da nota fiscal"
-                      required
                       onChange={handleInputChange}
                     />
                   </div>
@@ -326,8 +336,6 @@ const CadastrarMaquina = () => {
                       label="Data Final Garantia"
                       name="data_final_garantia"
                       value={formData.data_final_garantia}
-                      error={formErrors.data_final_garantia}
-                      required
                       onChange={handleInputChange}
                     />
                   </div>
@@ -351,10 +359,9 @@ const CadastrarMaquina = () => {
                 isLoading={savingData}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-                <span className="flex items-center justify-center gap-2">
-                  <Save className="h-4 w-4" />
+   
                   <span>Salvar</span>
-                </span>
+             
               </LoadingButton>
             </div>
           </footer>
