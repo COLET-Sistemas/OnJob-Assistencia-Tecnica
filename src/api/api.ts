@@ -73,6 +73,34 @@ const handleSessionExpiredError = () => {
   }
 };
 
+// Variável para controlar o tempo entre exibições de mensagens de erro 403
+let lastForbiddenErrorTime = 0;
+const ERROR_COOLDOWN_MS = 3000; // 3 segundos de intervalo entre mensagens
+
+// Função para lidar com erros de acesso negado (403)
+const handleForbiddenError = (message: string) => {
+  // Verifica se o módulo de toast está disponível no lado do cliente
+  if (typeof window !== "undefined") {
+    // Prevenir múltiplas mensagens de erro em sequência rápida
+    const now = Date.now();
+    if (now - lastForbiddenErrorTime < ERROR_COOLDOWN_MS) {
+      return; // Ignorar esse erro, pois já mostramos um recentemente
+    }
+
+    // Atualiza o timestamp da última mensagem
+    lastForbiddenErrorTime = now;
+
+    // Usamos um evento customizado para garantir que qualquer componente possa escutar
+    window.dispatchEvent(
+      new CustomEvent("api:forbidden", {
+        detail: {
+          message: message || "Acesso negado para este recurso",
+        },
+      })
+    );
+  }
+};
+
 // Função genérica para fazer requisições
 const apiRequest = async <T>(
   endpoint: string,
@@ -122,6 +150,14 @@ const apiRequest = async <T>(
           );
         }
 
+        // Tratar erros de status 403 (Forbidden)
+        if (response.status === 403) {
+          handleForbiddenError(apiMessage || "Acesso negado");
+          const forbiddenError = new Error(apiMessage || "Acesso negado");
+          forbiddenError.name = "ForbiddenError";
+          throw forbiddenError;
+        }
+
         // Include error detail if available
         const fullErrorMessage = errorDetail
           ? `${apiMessage || "Erro na API"}: ${errorDetail}`
@@ -141,6 +177,15 @@ const apiRequest = async <T>(
             "Sessão encerrada devido a um novo login. Por favor, faça login novamente."
           );
         }
+
+        // Se for um erro 403, mas não for JSON válido
+        if (response.status === 403) {
+          handleForbiddenError(errorText || "Acesso negado");
+          const forbiddenError = new Error(errorText || "Acesso negado");
+          forbiddenError.name = "ForbiddenError";
+          throw forbiddenError;
+        }
+
         throw new Error(errorText || "Erro inesperado na requisição");
       }
     }

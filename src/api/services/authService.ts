@@ -6,6 +6,12 @@ interface LoginCredentials {
   senha: string;
 }
 
+interface ChangePasswordRequest {
+  id_usuario: number;
+  senha_atual: string;
+  nova_senha: string;
+}
+
 interface AuthResponse {
   token: string;
   user: {
@@ -24,6 +30,10 @@ interface AuthResponse {
 class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     return api.post<AuthResponse>("/auth/login", credentials);
+  }
+
+  async alterarSenha(data: ChangePasswordRequest): Promise<void> {
+    return api.patch<void>("/usuarios", data);
   }
 
   async logout(): Promise<void> {

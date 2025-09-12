@@ -47,6 +47,19 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
 
   const showToast = useCallback(
     (toast: Omit<ToastProps, "id" | "onClose">) => {
+      // Check if we already have a toast with the same type and message
+      const isDuplicate = toasts.some(
+        (existingToast) =>
+          existingToast.type === toast.type &&
+          existingToast.title === toast.title &&
+          existingToast.message === toast.message
+      );
+
+      // If it's a duplicate, don't add another toast
+      if (isDuplicate) {
+        return;
+      }
+
       const id = `${idPrefix}-${Date.now()}`;
       const newToast: ToastProps = {
         ...toast,
@@ -56,7 +69,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
 
       setToasts((prev) => [...prev, newToast]);
     },
-    [removeToast, idPrefix]
+    [removeToast, idPrefix, toasts]
   );
 
   const showSuccess = useCallback(

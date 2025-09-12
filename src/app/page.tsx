@@ -53,6 +53,7 @@ interface LoginResponse {
   };
   empresa?: Empresa;
   versao_api?: string | number;
+  senha_provisoria?: boolean;
 }
 
 interface LoginRequest {
@@ -197,7 +198,13 @@ export default function LoginPage() {
           };
           localStorage.setItem("empresa", JSON.stringify(empresaObj));
         }
-        router.push("/admin/dashboard");
+
+        // Verificar se a senha é provisória
+        if (authData.senha_provisoria) {
+          router.push("/alterar-senha");
+        } else {
+          router.push("/admin/dashboard");
+        }
       } else {
         setError(
           "Usuário não tem permissão para acessar o Módulo Administrativo."
@@ -260,7 +267,13 @@ export default function LoginPage() {
           };
           localStorage.setItem("empresa", JSON.stringify(empresaObj));
         }
-        router.push("/tecnico/dashboard");
+
+        // Verificar se a senha é provisória
+        if (authData.senha_provisoria) {
+          router.push("/alterar-senha");
+        } else {
+          router.push("/tecnico/dashboard");
+        }
       } else {
         setError("Usuário não tem permissão para acessar o Módulo Técnico.");
       }
