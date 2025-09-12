@@ -1,16 +1,23 @@
+export interface Empresa {
+  id_empresa: number;
+  razao_social: string;
+}
+
 export interface Usuario {
   id: number;
   login: string;
   nome: string;
   email: string;
+  senha_provisoria?: boolean;
   perfil_interno: boolean;
   perfil_gestor_assistencia: boolean;
   perfil_tecnico_proprio: boolean;
   perfil_tecnico_terceirizado: boolean;
   administrador: boolean;
-  id_empresa: number;
   situacao: string;
   data_situacao: string;
+  empresa?: Empresa; // Objeto empresa como no exemplo da API
+  id_empresa?: number; // Mantido para compatibilidade com código existente
 }
 
 // Mantendo a interface original para compatibilidade com código existente

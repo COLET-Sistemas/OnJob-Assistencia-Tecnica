@@ -13,6 +13,12 @@ interface ApiResponse<T> {
   sucesso: boolean;
 }
 
+interface CreateUserResponse {
+  mensagem: string;
+  senha_provisoria: string;
+  sucesso: boolean;
+}
+
 class UsuariosService {
   private baseUrl = "/usuarios";
 
@@ -38,8 +44,10 @@ class UsuariosService {
     return await api.get<Usuario>(`${this.baseUrl}/${id}`);
   }
 
-  async create(data: Omit<Usuario, "id" | "data_situacao">): Promise<Usuario> {
-    return await api.post<Usuario>(this.baseUrl, data);
+  async create(
+    data: Omit<Usuario, "id" | "data_situacao">
+  ): Promise<CreateUserResponse> {
+    return await api.post<CreateUserResponse>(this.baseUrl, data);
   }
 
   async update(id: number | string, data: Partial<Usuario>): Promise<Usuario> {
@@ -47,7 +55,7 @@ class UsuariosService {
   }
 
   async delete(id: number | string): Promise<void> {
-    await api.delete<void>(`${this.baseUrl}/${id}`);
+    await api.delete<void>(`${this.baseUrl}?id=${id}`);
   }
 }
 

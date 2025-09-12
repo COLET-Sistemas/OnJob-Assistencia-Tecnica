@@ -10,6 +10,7 @@ interface InputFieldProps {
   required?: boolean;
   readOnly?: boolean;
   disabled?: boolean;
+  autoFocus?: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   inputRef?: React.RefObject<HTMLInputElement>;
   type?: string;
@@ -25,6 +26,7 @@ const InputField: React.FC<InputFieldProps> = ({
   required = false,
   readOnly = false,
   disabled = false,
+  autoFocus = false,
   onChange,
   inputRef,
   type = "text",
@@ -57,6 +59,7 @@ const InputField: React.FC<InputFieldProps> = ({
           placeholder={placeholder}
           readOnly={readOnly}
           disabled={disabled}
+          autoFocus={autoFocus}
           className={`
             w-full px-4 py-3 rounded-lg border transition-all duration-200
             focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500

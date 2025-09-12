@@ -1,10 +1,10 @@
 "use client";
 import { Loading } from "@/components/LoadingPersonalizado";
 import { TableList, TableStatusColumn } from "@/components/admin/common";
-import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import { Usuario } from "@/types/admin/cadastro/usuarios";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
@@ -19,6 +19,7 @@ interface UsuariosFilters {
   login: string;
   email: string;
   incluir_inativos: string;
+  apenas_tecnicos: string;
 }
 
 const INITIAL_USUARIOS_FILTERS: UsuariosFilters = {
@@ -26,14 +27,11 @@ const INITIAL_USUARIOS_FILTERS: UsuariosFilters = {
   login: "",
   email: "",
   incluir_inativos: "",
+  apenas_tecnicos: "",
 };
 
 const CadastroUsuario = () => {
-  const { setTitle } = useTitle();
-
-  useEffect(() => {
-    setTitle("Usuários");
-  }, [setTitle]);
+  const { showSuccess, showError } = useToast();
 
   const {
     showFilters,
@@ -53,9 +51,28 @@ const CadastroUsuario = () => {
     if (filtrosAplicados.email) params.email = filtrosAplicados.email;
     if (filtrosAplicados.incluir_inativos === "true")
       params.incluir_inativos = "S";
+    if (filtrosAplicados.apenas_tecnicos === "true")
+      params.apenas_tecnicos = "S";
 
-    const response = await usuariosAPI.getAll(params);
-    return response.dados; // Acessa a propriedade 'dados' da resposta da API
+    try {
+      const response = await usuariosAPI.getAll(params);
+
+      // Se response é o próprio array (como no exemplo do usuário)
+      if (Array.isArray(response)) {
+        return response;
+      }
+
+      // Se response tem o formato { dados: Usuario[] } (como definido no service)
+      if (response && response.dados) {
+        return response.dados;
+      }
+
+      // Fallback para array vazio se a resposta não estiver no formato esperado
+      return [];
+    } catch (error) {
+      console.error("Erro ao buscar usuários:", error);
+      return [];
+    }
   }, [filtrosAplicados]);
 
   const {
@@ -137,6 +154,23 @@ const CadastroUsuario = () => {
       ),
     },
     {
+      header: "Senha",
+      accessor: "senha_provisoria" as keyof Usuario,
+      render: (usuario: Usuario) => (
+        <>
+          {usuario.senha_provisoria ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-yellow-100 text-yellow-800">
+              Provisória
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-green-100 text-green-800">
+              Definitiva
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
       header: "Status",
       accessor: "situacao" as keyof Usuario,
       render: (usuario: Usuario) => (
@@ -149,19 +183,29 @@ const CadastroUsuario = () => {
     try {
       await usuariosAPI.delete(id);
       await refetch();
-    } catch {
-      alert("Erro ao excluir usuário.");
+
+      showSuccess(
+        "Inativação realizada!",
+        "Motivo de pendência inativado com sucesso."
+      );
+    } catch (error) {
+      console.error("Erro ao inativar motivo de pendência:", error);
+
+      showError("Erro ao inativar", error as Record<string, unknown>);
     }
   };
 
   const renderActions = (usuario: Usuario) => (
     <div className="flex gap-2">
-      <EditButton id={usuario.id} editRoute="/admin/cadastro/usuarios/editar" />
+      <EditButton
+        id={usuario.id}
+        editRoute="/admin/administracao/usuarios/editar"
+      />
       <DeleteButton
         id={usuario.id}
         onDelete={handleDelete}
-        confirmText="Deseja realmente excluir este usuário?"
-        confirmTitle="Exclusão de Usuário"
+        confirmText="Deseja realmente inativar este usuário?"
+        confirmTitle="Inativação de Usuário"
         itemName={`${usuario.nome} (${usuario.login})`}
       />
     </div>
@@ -192,6 +236,12 @@ const CadastroUsuario = () => {
       type: "checkbox" as const,
       placeholder: "Incluir usuários inativos",
     },
+    {
+      id: "apenas_tecnicos",
+      label: "Apenas Técnicos",
+      type: "checkbox" as const,
+      placeholder: "Mostrar apenas usuários técnicos",
+    },
   ];
 
   const itemCount = usuarios ? usuarios.length : 0;
@@ -208,7 +258,7 @@ const CadastroUsuario = () => {
           activeFiltersCount: activeFiltersCount,
           newButton: {
             label: "Novo Usuário",
-            link: "/admin/cadastro/usuarios/novo",
+            link: "/admin/administracao/usuarios/novo",
           },
         }}
       />
