@@ -67,7 +67,7 @@ const CadastroPecas = () => {
   const fetchPecas = useCallback(async (): Promise<Peca[]> => {
     // Marcar que estamos recarregando
     isReloadingRef.current = true;
-    
+
     try {
       const params: Record<string, string | number | boolean> = {
         nro_pagina: paginacao.paginaAtual,
@@ -121,7 +121,7 @@ const CadastroPecas = () => {
   useEffect(() => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [filtrosAplicados]);
-  
+
   // Effect para garantir que o menu permaneça fechado durante o recarregamento
   useEffect(() => {
     if (isReloadingRef.current) {

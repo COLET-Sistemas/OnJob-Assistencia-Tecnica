@@ -79,30 +79,30 @@ const CadastroTiposPecas = () => {
   const fetchTiposPecas = useCallback(async (): Promise<TipoPecaExtended[]> => {
     // Marcar que estamos recarregando
     isReloadingRef.current = true;
-    
+
     try {
       const params: Record<string, string | number> = {
         nro_pagina: paginacao.paginaAtual,
         qtde_registros: paginacao.registrosPorPagina,
       };
-  
+
       if (filtrosAplicados.codigo_erp)
         params.codigo_erp = filtrosAplicados.codigo_erp;
       if (filtrosAplicados.descricao)
         params.descricao = filtrosAplicados.descricao;
       if (filtrosAplicados.incluir_inativos === "true")
         params.incluir_inativos = "S";
-  
+
       const response: TiposPecasResponse = await api.get("/tipos_pecas", {
         params,
       });
-  
+
       setPaginacao((prev) => ({
         ...prev,
         totalPaginas: response.total_paginas,
         totalRegistros: response.total_registros,
       }));
-  
+
       return response.dados.map((item) => ({
         id_tipo_peca: item.id,
         codigo_erp: item.codigo_erp,
@@ -141,7 +141,7 @@ const CadastroTiposPecas = () => {
   useEffect(() => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [filtrosAplicados]);
-  
+
   // Effect para garantir que o menu permaneça fechado durante o recarregamento
   useEffect(() => {
     if (isReloadingRef.current) {
