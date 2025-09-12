@@ -3,7 +3,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ["maps.googleapis.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "maps.googleapis.com",
+        port: "",
+        pathname: "/**",
+      },
+    ],
   },
 
   allowedDevOrigins: [
@@ -12,7 +19,7 @@ const nextConfig: NextConfig = {
     "10.0.0.154",
     "10.0.1.10",
     "10.0.1.6",
-    "192.168.137.1"
+    "192.168.137.1",
   ],
   async headers() {
     return [

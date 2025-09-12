@@ -72,17 +72,14 @@ const CadastroMaquinas = () => {
 
   const fetchMaquinas = useCallback(async (): Promise<Maquina[]> => {
     try {
-      // Verificar se há filtros ativos que precisamos tratar separadamente
-      // Como a API do serviço não aceita todos os filtros diretamente,
-      // precisamos implementar uma solução alternativa
-
-      const incluirInativos = filtrosAplicados.incluir_inativos === "true";
-
-      // Obter os resultados da API
+      // Obter os resultados da API com os filtros aplicados diretamente
       const response = await maquinasService.getAll(
         paginacao.paginaAtual,
         paginacao.registrosPorPagina,
-        incluirInativos
+        filtrosAplicados.incluir_inativos === "true",
+        filtrosAplicados.numero_serie?.trim() || undefined,
+        filtrosAplicados.modelo?.trim() || undefined,
+        filtrosAplicados.descricao?.trim() || undefined
       );
 
       // Atualizar a paginação com os dados da resposta
@@ -92,41 +89,7 @@ const CadastroMaquinas = () => {
         totalRegistros: response.total_registros || 0,
       }));
 
-      // Aplicar os filtros adicionais no cliente se necessário
-      let dadosFiltrados = response.dados || [];
-
-      // Filtragem adicional no cliente para os campos que a API não filtra
-      if (
-        filtrosAplicados.numero_serie &&
-        filtrosAplicados.numero_serie.trim() !== ""
-      ) {
-        dadosFiltrados = dadosFiltrados.filter((m) =>
-          m.numero_serie
-            .toLowerCase()
-            .includes(filtrosAplicados.numero_serie.trim().toLowerCase())
-        );
-      }
-
-      if (filtrosAplicados.modelo && filtrosAplicados.modelo.trim() !== "") {
-        dadosFiltrados = dadosFiltrados.filter((m) =>
-          m.modelo
-            .toLowerCase()
-            .includes(filtrosAplicados.modelo.trim().toLowerCase())
-        );
-      }
-
-      if (
-        filtrosAplicados.descricao &&
-        filtrosAplicados.descricao.trim() !== ""
-      ) {
-        dadosFiltrados = dadosFiltrados.filter((m) =>
-          m.descricao
-            .toLowerCase()
-            .includes(filtrosAplicados.descricao.trim().toLowerCase())
-        );
-      }
-
-      return dadosFiltrados;
+      return response.dados || [];
     } catch (error) {
       console.error("Erro ao buscar máquinas:", error);
       return [];
@@ -324,7 +287,10 @@ const CadastroMaquinas = () => {
         onFilterToggle={toggleFilters}
         emptyStateProps={{
           title: "Nenhuma máquina encontrada",
-          description: "Tente ajustar os filtros ou cadastre uma nova máquina.",
+          description:
+            activeFiltersCount > 0
+              ? "Não encontramos máquinas com os filtros aplicados. Tente ajustar os critérios de busca."
+              : "Não há máquinas cadastradas. Clique em 'Nova Máquina' para cadastrar.",
         }}
       />
 

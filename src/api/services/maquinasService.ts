@@ -11,13 +11,33 @@ class MaquinasService {
   async getAll(
     page = 1,
     limit = 20,
-    incluirInativos = false
+    incluirInativos = false,
+    numeroSerie?: string,
+    modelo?: string,
+    descricao?: string
   ): Promise<MaquinaResponse> {
-    const params = {
+    const params: Record<string, string | number | boolean> = {
       nro_pagina: page,
       qtde_registros: limit,
-      incluir_inativos: incluirInativos ? "S" : "N",
     };
+
+    // Apenas adiciona o parâmetro incluir_inativos se for true
+    if (incluirInativos) {
+      params.incluir_inativos = "S";
+    }
+
+    // Adiciona os parâmetros de filtro apenas se estiverem presentes
+    if (numeroSerie) {
+      params.numero_serie = numeroSerie;
+    }
+
+    if (modelo) {
+      params.modelo = modelo;
+    }
+
+    if (descricao) {
+      params.descricao = descricao;
+    }
 
     return await api.get<MaquinaResponse>(this.baseUrl, { params });
   }

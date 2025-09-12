@@ -139,7 +139,7 @@ const CadastroClientes = () => {
       // Depois de recarregar, permitir mudanças no estado do menu
       setTimeout(() => {
         isReloadingRef.current = false;
-      }, 500); // pequeno delay para garantir que a renderização aconteça primeiro
+      }, 500);
     }
   }, [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]);
 
@@ -191,7 +191,7 @@ const CadastroClientes = () => {
       // Verifica se o cliente já tem contatos carregados
       const clienteAtual = clientes.find((c) => getClienteId(c) === clientId);
       if (clienteAtual?.contatos?.length) {
-        return; // Contatos já estão carregados
+        return; 
       }
 
       try {
@@ -215,7 +215,6 @@ const CadastroClientes = () => {
     }
   }, [expandedClienteId, clientes, refetch, showError, getClienteId]);
 
-  // Handlers para o LocationButton
   const openLocationModal = useCallback((cliente: Cliente) => {
     setSelectedCliente(cliente);
     setShowLocationModal(true);
@@ -234,10 +233,10 @@ const CadastroClientes = () => {
         });
 
         setShowLocationModal(false);
-        await refetch(); // Recarrega os dados
+        await refetch(); 
         showSuccess(
           "Sucesso",
-          "Localização atualizada com sucesso" // Mensagem explícita em vez da resposta
+          "Localização atualizada com sucesso" 
         );
       } catch (error) {
         console.error("Error updating location:", error);
@@ -436,7 +435,6 @@ const CadastroClientes = () => {
 
     return (
       <div className="flex gap-2">
-        {/* Usando o componente LocationButton */}
         <LocationButton
           cliente={cliente}
           onDefineLocation={openLocationModal}
@@ -456,7 +454,6 @@ const CadastroClientes = () => {
   };
 
   const handleFiltroChangeCustom = (campo: string, valor: string) => {
-    // Converter checkbox para string
     if (campo === "incluir_inativos") {
       valor = valor === "true" ? "true" : "";
     }
