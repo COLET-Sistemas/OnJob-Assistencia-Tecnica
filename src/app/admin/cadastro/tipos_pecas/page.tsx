@@ -60,7 +60,6 @@ const CadastroTiposPecas = () => {
   }, [setTitle]);
 
   const {
-    showFilters,
     filtrosPainel,
     filtrosAplicados,
     activeFiltersCount,
@@ -70,12 +69,6 @@ const CadastroTiposPecas = () => {
     toggleFilters,
   } = useFilters(INITIAL_TIPOS_PECAS_FILTERS);
 
-  useEffect(() => {
-    if (!isReloadingRef.current) {
-      setLocalShowFilters(showFilters);
-    }
-  }, [showFilters]);
-
   const [paginacao, setPaginacao] = useState<PaginacaoInfo>({
     paginaAtual: 1,
     totalPaginas: 1,
@@ -84,35 +77,47 @@ const CadastroTiposPecas = () => {
   });
 
   const fetchTiposPecas = useCallback(async (): Promise<TipoPecaExtended[]> => {
+    // Marcar que estamos recarregando
     isReloadingRef.current = true;
-    const params: Record<string, string | number> = {
-      nro_pagina: paginacao.paginaAtual,
-      qtde_registros: paginacao.registrosPorPagina,
-    };
-
-    if (filtrosAplicados.codigo_erp)
-      params.codigo_erp = filtrosAplicados.codigo_erp;
-    if (filtrosAplicados.descricao)
-      params.descricao = filtrosAplicados.descricao;
-    if (filtrosAplicados.incluir_inativos === "true")
-      params.incluir_inativos = "S";
-
-    const response: TiposPecasResponse = await api.get("/tipos_pecas", {
-      params,
-    });
-
-    setPaginacao((prev) => ({
-      ...prev,
-      totalPaginas: response.total_paginas,
-      totalRegistros: response.total_registros,
-    }));
-
-    return response.dados.map((item) => ({
-      id_tipo_peca: item.id,
-      codigo_erp: item.codigo_erp,
-      descricao: item.descricao,
-      situacao: item.situacao as "A" | "I",
-    }));
+    
+    try {
+      const params: Record<string, string | number> = {
+        nro_pagina: paginacao.paginaAtual,
+        qtde_registros: paginacao.registrosPorPagina,
+      };
+  
+      if (filtrosAplicados.codigo_erp)
+        params.codigo_erp = filtrosAplicados.codigo_erp;
+      if (filtrosAplicados.descricao)
+        params.descricao = filtrosAplicados.descricao;
+      if (filtrosAplicados.incluir_inativos === "true")
+        params.incluir_inativos = "S";
+  
+      const response: TiposPecasResponse = await api.get("/tipos_pecas", {
+        params,
+      });
+  
+      setPaginacao((prev) => ({
+        ...prev,
+        totalPaginas: response.total_paginas,
+        totalRegistros: response.total_registros,
+      }));
+  
+      return response.dados.map((item) => ({
+        id_tipo_peca: item.id,
+        codigo_erp: item.codigo_erp,
+        descricao: item.descricao,
+        situacao: item.situacao as "A" | "I",
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar tipos de peças:", error);
+      return [];
+    } finally {
+      // Depois de recarregar, permitir mudanças no estado do menu
+      setTimeout(() => {
+        isReloadingRef.current = false;
+      }, 500);
+    }
   }, [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]);
 
   const {
@@ -120,12 +125,6 @@ const CadastroTiposPecas = () => {
     loading,
     refetch,
   } = useDataFetch<TipoPecaExtended[]>(fetchTiposPecas, [fetchTiposPecas]);
-
-  useEffect(() => {
-    if (!loading && isReloadingRef.current) {
-      isReloadingRef.current = false;
-    }
-  }, [loading]);
 
   const handlePageChange = useCallback((novaPagina: number) => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: novaPagina }));
@@ -142,6 +141,13 @@ const CadastroTiposPecas = () => {
   useEffect(() => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [filtrosAplicados]);
+  
+  // Effect para garantir que o menu permaneça fechado durante o recarregamento
+  useEffect(() => {
+    if (isReloadingRef.current) {
+      setLocalShowFilters(false);
+    }
+  }, [tiposPecas]);
 
   if (loading) {
     return (
@@ -183,6 +189,8 @@ const CadastroTiposPecas = () => {
   const handleDelete = async (id: number) => {
     try {
       const response = await api.delete(`/tipos_pecas?id=${id}`);
+      setLocalShowFilters(false);
+      isReloadingRef.current = true;
       await refetch();
 
       showSuccess("Inativação realizada!", response as Record<string, unknown>);
@@ -190,6 +198,10 @@ const CadastroTiposPecas = () => {
       console.error("Erro ao inativar tipo de peça:", error);
 
       showError("Erro ao inativar", error as Record<string, unknown>);
+    } finally {
+      setTimeout(() => {
+        isReloadingRef.current = false;
+      }, 500);
     }
   };
 
@@ -221,19 +233,23 @@ const CadastroTiposPecas = () => {
     handleFiltroChange(campo, valor);
   };
 
-  const handleLocalToggleFilters = () => {
-    setLocalShowFilters((prev) => !prev);
-    toggleFilters();
+  const handleToggleFilters = () => {
+    if (!isReloadingRef.current) {
+      setLocalShowFilters(!localShowFilters); // Toggle local apenas se não estiver recarregando
+    }
+    toggleFilters(); // Toggle através do hook
   };
 
-  const handleLocalApplyFilters = () => {
-    setLocalShowFilters(false);
-    aplicarFiltros();
+  const handleApplyFilters = () => {
+    setLocalShowFilters(false); // Fecha o menu localmente
+    isReloadingRef.current = true; // Marca que vamos recarregar
+    aplicarFiltros(); // Aplica os filtros através do hook
   };
 
-  const handleLocalClearFilters = () => {
-    setLocalShowFilters(false);
-    limparFiltros();
+  const handleClearFilters = () => {
+    setLocalShowFilters(false); // Fecha o menu localmente
+    isReloadingRef.current = true; // Marca que vamos recarregar
+    limparFiltros(); // Limpa os filtros através do hook
   };
 
   const filterOptions = [
@@ -264,7 +280,7 @@ const CadastroTiposPecas = () => {
         config={{
           type: "list",
           itemCount: paginacao.totalRegistros,
-          onFilterToggle: handleLocalToggleFilters,
+          onFilterToggle: handleToggleFilters,
           showFilters: localShowFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
@@ -283,13 +299,15 @@ const CadastroTiposPecas = () => {
         filterOptions={filterOptions}
         filterValues={filtrosPainel}
         onFilterChange={handleFiltroChangeCustom}
-        onClearFilters={handleLocalClearFilters}
-        onApplyFilters={handleLocalApplyFilters}
-        onFilterToggle={handleLocalToggleFilters}
+        onClearFilters={handleClearFilters}
+        onApplyFilters={handleApplyFilters}
+        onFilterToggle={handleToggleFilters}
         emptyStateProps={{
           title: "Nenhum tipo de peça encontrado",
           description:
-            "Tente ajustar os filtros ou cadastre um novo tipo de peça.",
+            activeFiltersCount > 0
+              ? "Não encontramos tipos de peças com os filtros aplicados. Tente ajustar os critérios de busca."
+              : "Não há tipos de peças cadastrados. Clique em 'Novo Tipo de Peça' para cadastrar.",
         }}
       />
       <Pagination

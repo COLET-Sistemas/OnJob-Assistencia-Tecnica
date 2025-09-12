@@ -48,7 +48,6 @@ const CadastroPecas = () => {
   }, [setTitle]);
 
   const {
-    showFilters,
     filtrosPainel,
     filtrosAplicados,
     activeFiltersCount,
@@ -58,13 +57,6 @@ const CadastroPecas = () => {
     toggleFilters,
   } = useFilters(INITIAL_PECAS_FILTERS);
 
-  // Sincronizar estado local com o estado do hook quando não estiver recarregando
-  useEffect(() => {
-    if (!isReloadingRef.current) {
-      setLocalShowFilters(showFilters);
-    }
-  }, [showFilters]);
-
   const [paginacao, setPaginacao] = useState<PaginacaoInfo>({
     paginaAtual: 1,
     totalPaginas: 1,
@@ -73,27 +65,39 @@ const CadastroPecas = () => {
   });
 
   const fetchPecas = useCallback(async (): Promise<Peca[]> => {
+    // Marcar que estamos recarregando
     isReloadingRef.current = true;
-    const params: Record<string, string | number | boolean> = {
-      nro_pagina: paginacao.paginaAtual,
-      qtde_registros: paginacao.registrosPorPagina,
-    };
+    
+    try {
+      const params: Record<string, string | number | boolean> = {
+        nro_pagina: paginacao.paginaAtual,
+        qtde_registros: paginacao.registrosPorPagina,
+      };
 
-    if (filtrosAplicados.codigo) params.codigo = filtrosAplicados.codigo;
-    if (filtrosAplicados.descricao)
-      params.descricao = filtrosAplicados.descricao;
-    if (filtrosAplicados.incluir_inativos === "true")
-      params.incluir_inativos = "S";
+      if (filtrosAplicados.codigo) params.codigo = filtrosAplicados.codigo;
+      if (filtrosAplicados.descricao)
+        params.descricao = filtrosAplicados.descricao;
+      if (filtrosAplicados.incluir_inativos === "true")
+        params.incluir_inativos = "S";
 
-    const response: PecaResponse = await pecasService.getAll(params);
+      const response: PecaResponse = await pecasService.getAll(params);
 
-    setPaginacao((prev) => ({
-      ...prev,
-      totalPaginas: response.total_paginas,
-      totalRegistros: response.total_registros,
-    }));
+      setPaginacao((prev) => ({
+        ...prev,
+        totalPaginas: response.total_paginas,
+        totalRegistros: response.total_registros,
+      }));
 
-    return response.dados;
+      return response.dados;
+    } catch (error) {
+      console.error("Erro ao buscar peças:", error);
+      return [];
+    } finally {
+      // Depois de recarregar, permitir mudanças no estado do menu
+      setTimeout(() => {
+        isReloadingRef.current = false;
+      }, 500);
+    }
   }, [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]);
 
   const {
@@ -101,13 +105,6 @@ const CadastroPecas = () => {
     loading,
     refetch,
   } = useDataFetch<Peca[]>(fetchPecas, [fetchPecas]);
-
-  // Resetar o flag de recarregamento quando os dados são carregados
-  useEffect(() => {
-    if (!loading && isReloadingRef.current) {
-      isReloadingRef.current = false;
-    }
-  }, [loading]);
 
   const handlePageChange = useCallback((novaPagina: number) => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: novaPagina }));
@@ -124,6 +121,13 @@ const CadastroPecas = () => {
   useEffect(() => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [filtrosAplicados]);
+  
+  // Effect para garantir que o menu permaneça fechado durante o recarregamento
+  useEffect(() => {
+    if (isReloadingRef.current) {
+      setLocalShowFilters(false);
+    }
+  }, [pecas]);
 
   if (loading) {
     return (
@@ -180,12 +184,18 @@ const CadastroPecas = () => {
   const handleDelete = async (id: number) => {
     try {
       await pecasService.delete(id);
+      setLocalShowFilters(false);
+      isReloadingRef.current = true;
       showSuccess("Sucesso", "Peça inativada com sucesso");
       await refetch();
     } catch (error) {
       console.error("Erro ao inativar peça:", error);
 
       showError("Erro ao inativar", error as Record<string, unknown>);
+    } finally {
+      setTimeout(() => {
+        isReloadingRef.current = false;
+      }, 500);
     }
   };
 
@@ -216,19 +226,23 @@ const CadastroPecas = () => {
     handleFiltroChange(campo, valor);
   };
 
-  const handleLocalToggleFilters = () => {
-    setLocalShowFilters((prev) => !prev);
-    toggleFilters();
+  const handleToggleFilters = () => {
+    if (!isReloadingRef.current) {
+      setLocalShowFilters(!localShowFilters); // Toggle local apenas se não estiver recarregando
+    }
+    toggleFilters(); // Toggle através do hook
   };
 
-  const handleLocalApplyFilters = () => {
-    setLocalShowFilters(false);
-    aplicarFiltros();
+  const handleApplyFilters = () => {
+    setLocalShowFilters(false); // Fecha o menu localmente
+    isReloadingRef.current = true; // Marca que vamos recarregar
+    aplicarFiltros(); // Aplica os filtros através do hook
   };
 
-  const handleLocalClearFilters = () => {
-    setLocalShowFilters(false);
-    limparFiltros();
+  const handleClearFilters = () => {
+    setLocalShowFilters(false); // Fecha o menu localmente
+    isReloadingRef.current = true; // Marca que vamos recarregar
+    limparFiltros(); // Limpa os filtros através do hook
   };
 
   const filterOptions = [
@@ -259,7 +273,7 @@ const CadastroPecas = () => {
         config={{
           type: "list",
           itemCount: paginacao.totalRegistros,
-          onFilterToggle: handleLocalToggleFilters,
+          onFilterToggle: handleToggleFilters,
           showFilters: localShowFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
@@ -278,12 +292,15 @@ const CadastroPecas = () => {
         filterOptions={filterOptions}
         filterValues={filtrosPainel}
         onFilterChange={handleFiltroChangeCustom}
-        onClearFilters={handleLocalClearFilters}
-        onApplyFilters={handleLocalApplyFilters}
-        onFilterToggle={handleLocalToggleFilters}
+        onClearFilters={handleClearFilters}
+        onApplyFilters={handleApplyFilters}
+        onFilterToggle={handleToggleFilters}
         emptyStateProps={{
           title: "Nenhuma peça encontrada",
-          description: "Tente ajustar os filtros ou cadastre uma nova peça.",
+          description:
+            activeFiltersCount > 0
+              ? "Não encontramos peças com os filtros aplicados. Tente ajustar os critérios de busca."
+              : "Não há peças cadastradas. Clique em 'Nova Peça' para cadastrar.",
         }}
       />
       <Pagination

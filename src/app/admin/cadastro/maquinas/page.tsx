@@ -5,7 +5,7 @@ import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { useDataFetch } from "@/hooks";
 import type { Maquina } from "@/types/admin/cadastro/maquinas";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
@@ -47,13 +47,14 @@ const formatDate = (dateString: string): string => {
 const CadastroMaquinas = () => {
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
+  const [localShowFilters, setLocalShowFilters] = useState(false);
+  const isReloadingRef = useRef(false);
 
   useEffect(() => {
     setTitle("Máquinas");
   }, [setTitle]);
 
   const {
-    showFilters,
     filtrosPainel,
     filtrosAplicados,
     activeFiltersCount,
@@ -70,9 +71,30 @@ const CadastroMaquinas = () => {
     registrosPorPagina: 25,
   });
 
+  
+  const handleApplyFilters = () => {
+    setLocalShowFilters(false);
+    isReloadingRef.current = true; 
+    aplicarFiltros();
+  };
+
+  const handleClearFilters = () => {
+    setLocalShowFilters(false); 
+    isReloadingRef.current = true; 
+    limparFiltros(); 
+  };
+
+  const handleToggleFilters = () => {
+    if (!isReloadingRef.current) {
+      setLocalShowFilters(!localShowFilters);
+    }
+    toggleFilters(); 
+  };
+
   const fetchMaquinas = useCallback(async (): Promise<Maquina[]> => {
+    isReloadingRef.current = true;
+
     try {
-      // Obter os resultados da API com os filtros aplicados diretamente
       const response = await maquinasService.getAll(
         paginacao.paginaAtual,
         paginacao.registrosPorPagina,
@@ -93,6 +115,10 @@ const CadastroMaquinas = () => {
     } catch (error) {
       console.error("Erro ao buscar máquinas:", error);
       return [];
+    } finally {
+      setTimeout(() => {
+        isReloadingRef.current = false;
+      }, 500);
     }
   }, [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]);
 
@@ -117,6 +143,13 @@ const CadastroMaquinas = () => {
   useEffect(() => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [filtrosAplicados]);
+
+  // Effect para garantir que o menu permaneça fechado durante o recarregamento
+  useEffect(() => {
+    if (isReloadingRef.current) {
+      setLocalShowFilters(false);
+    }
+  }, [maquinas]);
 
   if (loading) {
     return (
@@ -196,12 +229,18 @@ const CadastroMaquinas = () => {
   const handleDelete = async (id: number) => {
     try {
       await maquinasService.delete(id);
+      setLocalShowFilters(false);
+      isReloadingRef.current = true;
       showSuccess("Sucesso", "Máquina inativada com sucesso!");
       await refetch();
     } catch (error) {
       console.error("Erro ao inativar máquina:", error);
 
       showError("Erro ao inativar", error as Record<string, unknown>);
+    } finally {
+      setTimeout(() => {
+        isReloadingRef.current = false;
+      }, 500);
     }
   };
 
@@ -262,8 +301,8 @@ const CadastroMaquinas = () => {
         config={{
           type: "list",
           itemCount: paginacao.totalRegistros,
-          onFilterToggle: toggleFilters,
-          showFilters: showFilters,
+          onFilterToggle: handleToggleFilters,
+          showFilters: localShowFilters,
           activeFiltersCount: activeFiltersCount,
           newButton: {
             label: "Nova Máquina",
@@ -278,13 +317,13 @@ const CadastroMaquinas = () => {
         keyField="id"
         columns={columns}
         renderActions={renderActions}
-        showFilter={showFilters}
+        showFilter={localShowFilters}
         filterOptions={filterOptions}
         filterValues={filtrosPainel}
         onFilterChange={handleFiltroChangeCustom}
-        onClearFilters={limparFiltros}
-        onApplyFilters={aplicarFiltros}
-        onFilterToggle={toggleFilters}
+        onClearFilters={handleClearFilters}
+        onApplyFilters={handleApplyFilters}
+        onFilterToggle={handleToggleFilters}
         emptyStateProps={{
           title: "Nenhuma máquina encontrada",
           description:
