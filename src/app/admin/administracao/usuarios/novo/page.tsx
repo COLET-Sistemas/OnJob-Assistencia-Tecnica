@@ -7,6 +7,7 @@ import Link from "next/link";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { InputField } from "@/components/admin/form";
 import SuccessModal from "@/components/admin/ui/SuccessModal";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 const perfis = [
   { key: "perfil_interno", label: "Interno" },
@@ -51,6 +52,7 @@ export default function NovoUsuario() {
     message: "",
     additionalInfo: {} as Record<string, string>,
   });
+  const { showError } = useToast();
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -142,16 +144,33 @@ export default function NovoUsuario() {
         additionalInfo: senha_provisoria ? { senha_provisoria } : {},
       });
       setSavingData(false);
-    } catch {
+    } catch (error) {
+      let errorMessage = "Verifique os dados e tente novamente";
+
+      if (error instanceof Error) {
+        try {
+          const errorString = error.message;
+          const match = errorString.match(/"erro"\s*:\s*"([^"]+)"/);
+          if (match && match[1]) {
+          
+            errorMessage = match[1];
+          } else {
+          
+          }
+        } catch {
+        
+          errorMessage = error.message;
+        }
+      }
+      showError("Erro ao cadastrar usuário", errorMessage);
       setFormErrors({
-        submit:
-          "Erro ao cadastrar usuário. Verifique os dados e tente novamente.",
+        submit: errorMessage,
       });
+
       setSavingData(false);
     }
   };
 
-  // Função para fechar o modal e redirecionar para a lista
   const handleCloseSuccessModal = () => {
     setSuccessModal((prev) => ({ ...prev, isOpen: false }));
     router.push("/admin/administracao/usuarios");
@@ -185,6 +204,27 @@ export default function NovoUsuario() {
           <div className="p-8">
             <section>
               <div className="space-y-6">
+                {/* Erro do formulário */}
+                {formErrors.submit && (
+                  <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md flex items-start gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mt-0.5 flex-shrink-0"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <div>
+                      <p className="font-medium">{formErrors.submit}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Nome, Login, Email */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <InputField

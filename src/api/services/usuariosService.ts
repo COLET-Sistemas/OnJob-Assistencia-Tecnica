@@ -51,11 +51,30 @@ class UsuariosService {
   }
 
   async update(id: number | string, data: Partial<Usuario>): Promise<Usuario> {
-    return await api.put<Usuario>(`${this.baseUrl}/${id}`, data);
+    return await api.put<Usuario>(`${this.baseUrl}?id=${id}`, data);
   }
 
   async delete(id: number | string): Promise<void> {
     await api.delete<void>(`${this.baseUrl}?id=${id}`);
+  }
+
+  async resetPassword(
+    id: number | string,
+    passwordData: { senha_atual: string; nova_senha: string }
+  ): Promise<{
+    mensagem: string;
+    sucesso: boolean;
+    senha_provisoria?: string;
+  }> {
+    return await api.patch<{
+      mensagem: string;
+      sucesso: boolean;
+      senha_provisoria?: string;
+    }>(this.baseUrl, {
+      id_usuario: id,
+      senha_atual: passwordData.senha_atual,
+      nova_senha: passwordData.nova_senha,
+    });
   }
 }
 

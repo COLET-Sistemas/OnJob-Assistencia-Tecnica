@@ -12,7 +12,8 @@ import {
   Building,
 } from "lucide-react";
 import { services } from "@/api";
-const { usuariosService } = services;
+import api from "@/api/api";
+const { usuariosService, authService } = services;
 import { useTitle } from "@/context/TitleContext";
 import { Usuario } from "@/types/admin/cadastro/usuarios";
 import { LoadingSpinner } from "@/components/LoadingPersonalizado";
@@ -56,12 +57,31 @@ const UserProfile = () => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        const response = await usuariosService.getAll({ id: 1 });
 
-        const user = Array.isArray(response.dados)
-          ? response.dados[0]
-          : response.dados;
-        setUserData(user as unknown as UserData);
+        // Get current user ID from auth service
+        const currentUser = authService.getUser();
+        
+        let userData: UserData;
+        
+        if (currentUser?.id) {
+          // If we have a user ID, use getById to fetch specific user
+          userData = await usuariosService.getById(currentUser.id) as unknown as UserData;
+        } else {
+          // For development/testing - fall back to the first user
+          // In production, you might want to redirect to login instead
+          console.warn("ID do usuário não encontrado, buscando primeiro usuário disponível");
+          const response = await usuariosService.getAll();
+          if (!response.dados || (Array.isArray(response.dados) && response.dados.length === 0)) {
+            throw new Error("Nenhum usuário encontrado");
+          }
+          
+          // Get the first user from the response
+          userData = Array.isArray(response.dados) 
+            ? response.dados[0] as unknown as UserData
+            : response.dados as unknown as UserData;
+        }
+
+        setUserData(userData);
         setError(null);
       } catch (err) {
         console.error("Erro ao buscar dados do usuário:", err);
@@ -92,7 +112,7 @@ const UserProfile = () => {
     }));
   };
 
-  const handlePasswordSubmit = () => {
+  const handlePasswordSubmit = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert("As senhas não coincidem!");
       return;
@@ -101,15 +121,47 @@ const UserProfile = () => {
       alert("Por favor, preencha todos os campos!");
       return;
     }
-    // Aqui você implementaria a lógica de alteração de senha
-    console.log("Alterando senha...");
-    alert("Senha alterada com sucesso!");
-    setIsEditingPassword(false);
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
+
+    try {
+      // Get ID from either authenticated user or current userData
+      const currentUser = authService.getUser();
+      const userId = currentUser?.id || userData?.id;
+
+      if (!userId) {
+        alert("Não foi possível identificar o usuário para alterar a senha");
+        return;
+      }
+
+      // Make API call to update the password
+      await api.put(`/usuarios/alterar_senha?id=${userId}`, {
+        senha_atual: passwordData.currentPassword,
+        nova_senha: passwordData.newPassword,
+      });
+
+      alert("Senha alterada com sucesso!");
+      setIsEditingPassword(false);
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error: unknown) {
+      const errorMessage =
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response &&
+        error.response.data &&
+        typeof error.response.data === "object" &&
+        "mensagem" in error.response.data
+          ? error.response.data.mensagem
+          : "Erro ao alterar senha. Verifique se a senha atual está correta.";
+
+      alert(errorMessage);
+      console.error("Erro ao alterar senha:", error);
+    }
   };
 
   const getActiveProfiles = () => {

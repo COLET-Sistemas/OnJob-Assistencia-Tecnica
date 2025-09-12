@@ -7,6 +7,7 @@ import { useCallback } from "react";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
+import { ResetPasswordButton } from "@/components/admin/ui/ResetPasswordButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useFilters } from "@/hooks/useFilters";
 import { usuariosService as usuariosAPI } from "@/api/services/usuariosService";
@@ -79,6 +80,7 @@ const CadastroUsuario = () => {
     data: usuarios,
     loading,
     refetch,
+    updateData,
   } = useDataFetch<Usuario[]>(fetchUsuarios, [fetchUsuarios]);
 
   if (loading) {
@@ -184,15 +186,28 @@ const CadastroUsuario = () => {
       await usuariosAPI.delete(id);
       await refetch();
 
-      showSuccess(
-        "Inativação realizada!",
-        "Motivo de pendência inativado com sucesso."
-      );
+      showSuccess("Inativação realizada!", "Usuário inativado com sucesso.");
     } catch (error) {
-      console.error("Erro ao inativar motivo de pendência:", error);
+      console.error("Erro ao inativar usuário:", error);
 
       showError("Erro ao inativar", error as Record<string, unknown>);
     }
+  };
+
+  // Função para atualizar um usuário específico na lista
+  const updateUserInList = (userId: number, updates: Partial<Usuario>) => {
+    if (!usuarios) return;
+
+    const updatedUsuarios = usuarios.map((user) => {
+      if (user.id === userId) {
+        return { ...user, ...updates };
+      }
+      return user;
+    });
+
+    // Força uma atualização da interface sem realizar uma nova chamada à API
+    // Isso substitui os dados no hook useDataFetch sem fazer um novo GET
+    updateData(updatedUsuarios);
   };
 
   const renderActions = (usuario: Usuario) => (
@@ -208,28 +223,16 @@ const CadastroUsuario = () => {
         confirmTitle="Inativação de Usuário"
         itemName={`${usuario.nome} (${usuario.login})`}
       />
+      <ResetPasswordButton
+        id={usuario.id}
+        userName={usuario.nome}
+        userLogin={usuario.login}
+        onUpdateUser={(updates) => updateUserInList(usuario.id, updates)}
+      />
     </div>
   );
 
   const filterOptions = [
-    {
-      id: "nome",
-      label: "Nome",
-      type: "text" as const,
-      placeholder: "Buscar por nome...",
-    },
-    {
-      id: "login",
-      label: "Login",
-      type: "text" as const,
-      placeholder: "Buscar por login...",
-    },
-    {
-      id: "email",
-      label: "Email",
-      type: "text" as const,
-      placeholder: "Buscar por email...",
-    },
     {
       id: "incluir_inativos",
       label: "Incluir Inativos",

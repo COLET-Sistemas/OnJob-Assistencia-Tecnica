@@ -231,11 +231,9 @@ const EditarUsuario = (props: PageProps) => {
       userCache.delete(id);
 
       router.push("/admin/administracao/usuarios");
-
       showSuccess("Atualização realizada!", "Usuário atualizado com sucesso.");
     } catch (error) {
       console.error("Erro ao atualizar usuário:", error);
-
       showError("Erro ao atualizar", error as Record<string, unknown>);
     } finally {
       setSavingData(false);
