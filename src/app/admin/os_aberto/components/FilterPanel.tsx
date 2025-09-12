@@ -54,7 +54,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             />
             <input
               type="text"
-              placeholder="Digite o número, cliente ou máquina..."
+              placeholder="Digite o número (#), cliente ou máquina..."
               className="w-full sm:w-[400px] pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 
                         placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 
                         transition-all shadow-sm text-sm"
@@ -166,7 +166,7 @@ const FilterButton: React.FC<FilterButtonProps> = React.memo(
       amber: "bg-amber-100 text-amber-800 border-amber-200",
       blue: "bg-blue-100 text-blue-800 border-blue-200",
       red: "bg-red-100 text-red-800 border-red-200",
-      gray: "bg-gray-100 text-gray-800 border-gray-200",
+      gray: "bg-gray-200 text-gray-800 border-gray-300",
       orange: "bg-orange-100 text-orange-800 border-orange-200",
     };
     return (

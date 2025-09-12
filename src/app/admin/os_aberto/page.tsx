@@ -8,7 +8,6 @@ import React, {
 } from "react";
 import PageHeaderSimple from "@/components/admin/ui/PageHeaderSimple";
 import { ordensServicoService } from "@/api/services/ordensServicoService";
-import { useTitle } from "@/context/TitleContext";
 import { feedback } from "@/utils/feedback";
 import FilterPanel from "@/app/admin/os_aberto/components/FilterPanel";
 import EmptyState from "@/app/admin/os_aberto/components/EmptyState";
@@ -17,8 +16,6 @@ import SkeletonCard from "@/app/admin/os_aberto/components/SkeletonCard";
 import LiberacaoFinanceiraModal from "@/app/admin/os_aberto/components/LiberacaoFinanceiraModal";
 import AlterarPendenciaModal from "@/app/admin/os_aberto/components/AlterarPendenciaModal";
 import { OrdemServico } from "@/types/OrdemServico";
-
-// Usando a interface OrdemServico do arquivo de tipos
 
 const CODIGO_SITUACAO = {
   PENDENTE: 1,
@@ -51,13 +48,6 @@ const TelaOSAbertas: React.FC = () => {
     currentMotivoText: "",
   });
 
-  const { setTitle } = useTitle();
-
-  // Define o título da página
-  useEffect(() => {
-    setTitle("Ordens de Serviço Abertas");
-  }, [setTitle]);
-
   const [situacoes, setSituacoes] = useState({
     pendente: true,
     aAtender: true,
@@ -66,7 +56,6 @@ const TelaOSAbertas: React.FC = () => {
     atendimentoInterrompido: true,
   });
 
-  // Função para buscar os dados da API
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -81,7 +70,6 @@ const TelaOSAbertas: React.FC = () => {
         const ordens = response.dados as unknown as OrdemServico[];
         setAllOrdensServico(ordens);
 
-        // Filtramos as ordens com base nas situações selecionadas
         const filteredOrdens = ordens.filter((os) => {
           const situacaoCodigo = os.situacao_os.codigo;
           return (
@@ -125,7 +113,6 @@ const TelaOSAbertas: React.FC = () => {
 
   const didFetch = useRef(false);
 
-  // Carrega os dados na primeira renderização
   useEffect(() => {
     if (!didFetch.current) {
       fetchData();
@@ -133,7 +120,6 @@ const TelaOSAbertas: React.FC = () => {
     }
   }, [fetchData]);
 
-  // Quando as situações mudarem, filtramos as ordens novamente sem chamar a API
   useEffect(() => {
     if (didFetch.current && allOrdensServico.length > 0) {
       const filteredOrdens = allOrdensServico.filter((os) => {
@@ -155,7 +141,7 @@ const TelaOSAbertas: React.FC = () => {
     }
   }, [situacoes, allOrdensServico]);
 
-  // Função para alternar a expansão dos cards
+
   const toggleCardExpansion = useCallback((osId: number) => {
     setExpandedCards((prev) => {
       const newExpanded = new Set<number>();
@@ -166,7 +152,6 @@ const TelaOSAbertas: React.FC = () => {
     });
   }, []);
 
-  // Função para formatar o texto de forma de abertura
   const getFormaAberturaTexto = useCallback((forma: string) => {
     const formas: Record<string, string> = {
       email: "E-mail",
@@ -178,7 +163,6 @@ const TelaOSAbertas: React.FC = () => {
     return formas[forma] || forma;
   }, []);
 
-  // Helper functions para ações de contato
   const formatWhatsAppUrl = useCallback((telefone: string) => {
     const cleanPhone = telefone.replace(/\D/g, "");
     return `https://wa.me/55${cleanPhone}`;
@@ -306,9 +290,14 @@ const TelaOSAbertas: React.FC = () => {
     [fetchData, handleClosePendenciaModal]
   );
 
-  // Memoização para melhorar performance e evitar re-renderizações desnecessárias
   const filteredOrdens = useMemo(() => {
     return ordensServico.filter((os) => {
+      // Verifica se a busca é específica por ID (quando começa com #)
+      if (searchTerm.startsWith("#")) {
+        const idSearch = searchTerm.substring(1);
+        return os.id_os.toString() === idSearch;
+      }
+
       const matchSearch =
         searchTerm === "" ||
         `OS-${os.id_os}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -440,7 +429,6 @@ const TelaOSAbertas: React.FC = () => {
             ))}
           </div>
 
-          {/* Empty State - Componente separado */}
           {filteredOrdens.length === 0 && (
             <EmptyState resetFilters={resetFilters} />
           )}

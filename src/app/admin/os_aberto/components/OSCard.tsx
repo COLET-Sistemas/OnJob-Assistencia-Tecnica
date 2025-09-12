@@ -69,22 +69,6 @@ const OSCard: React.FC<OSCardProps> = ({
     }
   };
 
-  // Função para determinar a cor da badge de situação
-  const getSituacaoBadgeColor = (codigo: number) => {
-    switch (codigo) {
-      case 1:
-        return "bg-gray-100 text-gray-800 border border-gray-200";
-      case 2:
-        return "bg-blue-100 text-blue-800 border border-blue-200";
-      case 3:
-        return "bg-purple-100 text-purple-800 border border-purple-200";
-      case 4:
-        return "bg-orange-100 text-orange-800 border border-orange-200";
-      default:
-        return "bg-amber-100 text-amber-800 border border-amber-200";
-    }
-  };
-
   // Função para obter o ícone baseado no código da situação
   const getSituacaoIcon = (codigo: number, size: "sm" | "md" = "sm") => {
     const iconSize = size === "sm" ? "w-3 h-3" : "w-4 h-4";
@@ -147,6 +131,8 @@ const OSCard: React.FC<OSCardProps> = ({
                     ? "border-indigo-200 translate-y-[-2px]"
                     : "border-gray-100 hover:translate-y-[-2px]"
                 }`}
+      onClick={() => toggleCardExpansion(os.id_os)}
+      style={{ cursor: "pointer" }}
     >
       {/* Compact Header - Always Visible */}
       <div className="p-5">
@@ -281,36 +267,13 @@ const OSCard: React.FC<OSCardProps> = ({
             </div>
           </div>
 
-          {/* Right side - Status and Actions */}
-          <div className="flex flex-col items-end gap-2 ml-3">
-            <div className="flex flex-wrap gap-2 justify-end">
-              <span
-                className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${getSituacaoBadgeColor(
-                  os.situacao_os.codigo
-                )}`}
-              >
-                <span className="mr-1.5 flex items-center justify-center">
-                  {getSituacaoIcon(os.situacao_os.codigo, "sm")}
-                </span>
-                <span className="my-auto">{os.situacao_os.descricao}</span>
-              </span>
-            </div>
-
-            <button
-              onClick={() => toggleCardExpansion(os.id_os)}
-              className={`cursor-pointer p-2 rounded-lg transition-all duration-200 flex items-center justify-center ${
-                isExpanded
-                  ? "text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200"
-                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100 border border-transparent"
-              }`}
-              aria-label={isExpanded ? "Esconder detalhes" : "Mostrar detalhes"}
-            >
-              {isExpanded ? (
-                <ChevronUp className="w-5 h-5 my-auto cursor-pointer" />
-              ) : (
-                <ChevronDown className="w-5 h-5 my-auto cursor-pointer" />
-              )}
-            </button>
+          {/* Right side - Status indicator (just an expand indicator) */}
+          <div className="flex items-center justify-center ml-3">
+            {isExpanded ? (
+              <ChevronUp className="w-5 h-5 text-indigo-600" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+            )}
           </div>
         </div>
       </div>
@@ -486,6 +449,7 @@ const OSCard: React.FC<OSCardProps> = ({
                             href={formatGoogleMapsUrl(os.cliente)}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 
                                       rounded-lg text-xs font-medium transition-colors border border-blue-200
                                       transform hover:scale-105 active:scale-95"
@@ -527,6 +491,7 @@ const OSCard: React.FC<OSCardProps> = ({
                           href={formatWhatsAppUrl(os.contato.telefone)}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-600 
                                     hover:bg-emerald-100 rounded-md text-xs font-medium transition-colors 
                                     border border-emerald-200 transform hover:scale-105 active:scale-95"
@@ -550,6 +515,7 @@ const OSCard: React.FC<OSCardProps> = ({
                           href={formatEmailUrl(os.contato.email)}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 
                                     hover:bg-blue-100 rounded-md text-xs font-medium transition-colors 
                                     border border-blue-200 transform hover:scale-105 active:scale-95"
