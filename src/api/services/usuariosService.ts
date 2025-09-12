@@ -3,6 +3,7 @@ import {
   UsuarioRegiao,
   UsuarioComRegioes,
   UsuariosRegioesResponse,
+  UsuarioAPIResponse,
 } from "../../types/admin/cadastro/usuarios";
 import api from "../api";
 
@@ -41,7 +42,39 @@ class UsuariosService {
   }
 
   async getById(id: number | string): Promise<Usuario> {
-    return await api.get<Usuario>(`${this.baseUrl}/${id}`);
+    const response = await api.get<UsuarioAPIResponse[]>(`${this.baseUrl}`, {
+      params: { id },
+    });
+
+    // Verificar se a resposta é um array e pegar o primeiro item
+    if (!Array.isArray(response) || response.length === 0) {
+      throw new Error(`Usuário com ID ${id} não encontrado`);
+    }
+
+    // Obter o usuário do array (primeiro item)
+    const usuarioAPI = response[0];
+
+    // Mapeamento para o formato esperado pela aplicação
+    const usuarioFormatado: Usuario = {
+      id: usuarioAPI.id,
+      nome: usuarioAPI.nome,
+      login: usuarioAPI.login,
+      email: usuarioAPI.email,
+      telefone: usuarioAPI.telefone,
+      // Convertendo situacao de "A"/"I" para boolean
+      situacao: usuarioAPI.situacao === "A",
+      data_situacao: usuarioAPI.data_situacao,
+      perfil_interno: usuarioAPI.perfil_interno || false,
+      perfil_gestor_assistencia: usuarioAPI.perfil_gestor_assistencia || false,
+      perfil_tecnico_proprio: usuarioAPI.perfil_tecnico_proprio || false,
+      perfil_tecnico_terceirizado:
+        usuarioAPI.perfil_tecnico_terceirizado || false,
+      administrador: usuarioAPI.administrador || false,
+      senha_provisoria: usuarioAPI.senha_provisoria || false,
+      empresa: usuarioAPI.empresa,
+    };
+
+    return usuarioFormatado;
   }
 
   async create(

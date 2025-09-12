@@ -16,7 +16,7 @@ import { FormData } from "@/types/admin/cadastro/clientes";
 import { formatDocumento, validarDocumento } from "@/utils/formatters";
 import { buscarCEP, formatarCEP } from "@/utils/cepAPI";
 import { ESTADOS } from "@/utils/constants";
-import {  MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useCallback, useEffect, useState, useRef } from "react";
@@ -130,14 +130,16 @@ const EditarCliente: React.FC = () => {
   });
 
   // Carregar dados do cliente
+  const carregouCliente = useRef(false);
   useEffect(() => {
+    if (carregouCliente.current) return;
+    carregouCliente.current = true;
+
     const carregarCliente = async () => {
       try {
-        // Fazer a requisição para a API com o ID do cliente
         const cliente = await clientesService.getById(Number(clienteId));
 
         if (cliente) {
-          // Mapeamento de regiao.id_regiao para regiao.id para compatibilidade com o componente
           const regiaoFormatada = cliente.regiao
             ? {
                 id: cliente.regiao.id_regiao || cliente.regiao.id,
@@ -816,9 +818,7 @@ const EditarCliente: React.FC = () => {
                 isLoading={isSubmitting}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-        
-                  <span>Salvar Alterações</span>
-             
+                <span>Salvar Alterações</span>
               </LoadingButton>
             </div>
           </footer>

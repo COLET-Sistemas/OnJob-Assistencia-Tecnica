@@ -3,18 +3,39 @@ export interface Empresa {
   razao_social: string;
 }
 
+// Interface para API response format
+export interface UsuarioAPIResponse {
+  id: number;
+  login: string;
+  nome: string;
+  email: string;
+  telefone?: string;
+  senha_provisoria?: boolean;
+  perfil_interno?: boolean;
+  perfil_gestor_assistencia?: boolean;
+  perfil_tecnico_proprio?: boolean;
+  perfil_tecnico_terceirizado?: boolean;
+  administrador?: boolean;
+  situacao: "A" | "I";
+  data_situacao: string;
+  empresa?: Empresa;
+  id_empresa?: number;
+}
+
+// Interface para uso na aplicação
 export interface Usuario {
   id: number;
   login: string;
   nome: string;
   email: string;
+  telefone?: string;
   senha_provisoria?: boolean;
   perfil_interno: boolean;
   perfil_gestor_assistencia: boolean;
   perfil_tecnico_proprio: boolean;
   perfil_tecnico_terceirizado: boolean;
   administrador: boolean;
-  situacao: string;
+  situacao: boolean; // Convertido para boolean para uso na aplicação
   data_situacao: string;
   empresa?: Empresa; // Objeto empresa como no exemplo da API
   id_empresa?: number; // Mantido para compatibilidade com código existente
