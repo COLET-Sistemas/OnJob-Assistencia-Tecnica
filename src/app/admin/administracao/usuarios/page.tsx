@@ -176,7 +176,7 @@ const CadastroUsuario = () => {
       header: "Status",
       accessor: "situacao" as keyof Usuario,
       render: (usuario: Usuario) => (
-        <TableStatusColumn status={usuario.situacao} />
+        <TableStatusColumn status={usuario.situacao ? "true" : "false"} />
       ),
     },
   ];

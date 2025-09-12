@@ -220,7 +220,7 @@ const EditarUsuario = (props: PageProps) => {
       await services.usuariosService.update(id, {
         nome: formData.nome,
         email: formData.email,
-        situacao: formData.situacao,
+        //situacao: formData.situacao,
         perfil_interno: formData.perfil_interno,
         perfil_gestor_assistencia: formData.perfil_gestor_assistencia,
         perfil_tecnico_proprio: formData.perfil_tecnico_proprio,

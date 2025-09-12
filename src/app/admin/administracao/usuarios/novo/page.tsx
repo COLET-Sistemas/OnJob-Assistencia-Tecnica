@@ -122,7 +122,7 @@ export default function NovoUsuario() {
         nome: form.nome,
         email: form.email,
         id_empresa: Number(form.id_empresa),
-        situacao: form.situacao,
+        situacao: form.situacao === "A",
         perfil_interno: form.perfil_interno,
         perfil_gestor_assistencia: form.perfil_gestor_assistencia,
         perfil_tecnico_proprio: form.perfil_tecnico_proprio,
@@ -152,13 +152,10 @@ export default function NovoUsuario() {
           const errorString = error.message;
           const match = errorString.match(/"erro"\s*:\s*"([^"]+)"/);
           if (match && match[1]) {
-          
             errorMessage = match[1];
           } else {
-          
           }
         } catch {
-        
           errorMessage = error.message;
         }
       }
