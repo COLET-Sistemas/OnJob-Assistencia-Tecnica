@@ -244,6 +244,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
                   className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7C54BD] transition-all duration-150 cursor-pointer group"
                   onClick={() => {
                     setDropdownOpen(false);
+                    window.location.href = "/admin/perfil";
                   }}
                 >
                   <UserCircle

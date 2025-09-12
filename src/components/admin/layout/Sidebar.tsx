@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { LucideIcon } from "lucide-react";
 import packageInfo from "../../../../package.json";
 
@@ -137,6 +137,18 @@ const menuItems: MenuItem[] = [
 
 export default function Sidebar({ isOpen }: SidebarProps) {
   const pathname = usePathname();
+  const [apiVersion, setApiVersion] = useState<string>("não definido");
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Check if component is mounted (client-side)
+  useEffect(() => {
+    setIsMounted(true);
+    // Only access localStorage after component mounts
+    if (typeof window !== "undefined") {
+      const version = localStorage.getItem("versao_api") || "não definido";
+      setApiVersion(version);
+    }
+  }, []);
 
   const findActiveMenuKey = React.useCallback(
     (path: string, items: MenuItem[]): string | null => {
@@ -490,35 +502,11 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                   <Cog size={18} className="text-[#F6C647]" />
                 </div>
                 <div className="flex flex-col">
-                  {/* <p className="text-sm font-medium text-white/80">
-                    {typeof window !== "undefined"
-                      ? (() => {
-                          const empresaStr = localStorage.getItem("empresa");
-                          if (empresaStr) {
-                            try {
-                              const empresaObj = JSON.parse(empresaStr);
-                              const nomeBd =
-                                empresaObj.nome_bd || "Nome BD não definido";
-                              return nomeBd.includes(":")
-                                ? nomeBd.split(":").pop()
-                                : nomeBd;
-                            } catch {
-                              return "Nome BD inválido";
-                            }
-                          }
-                          return "Nome BD não definido";
-                        })()
-                      : "Nome BD não disponível"}
-                  </p> */}
-
                   <p className="text-xs font-medium text-white">
                     Versão APP: {packageInfo.version}
                   </p>
                   <p className="text-xs font-medium text-white">
-                    Versão API:{" "}
-                    {typeof window !== "undefined"
-                      ? localStorage.getItem("versao_api") || "não definido"
-                      : "não disponível"}
+                    Versão API: {isMounted ? apiVersion : "carregando..."}
                   </p>
                 </div>
               </div>

@@ -15,12 +15,12 @@ import { services } from "@/api";
 const { usuariosService } = services;
 import { useTitle } from "@/context/TitleContext";
 import { Usuario } from "@/types/admin/cadastro/usuarios";
+import { LoadingSpinner } from "@/components/LoadingPersonalizado";
 
 type Empresa = {
   razao_social: string;
 };
 
-// Estendendo o tipo Usuario para incluir campos adicionais e tornar campos opcionais
 type UserData = Partial<Usuario> & {
   empresa?: Empresa;
   [key: string]: unknown;
@@ -61,7 +61,6 @@ const UserProfile = () => {
         const user = Array.isArray(response.dados)
           ? response.dados[0]
           : response.dados;
-        // Type casting to handle the index signature requirement
         setUserData(user as unknown as UserData);
         setError(null);
       } catch (err) {
@@ -127,23 +126,38 @@ const UserProfile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-2 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando dados do usuário...</p>
-        </div>
-      </div>
+      <LoadingSpinner
+        fullScreen={true}
+        size="large"
+        text="Carregando dados do perfil..."
+      />
     );
   }
 
   if (error) {
     return (
       <div className="min-h-screen p-2 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+        <div className="text-center bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
+          <div className="w-16 h-16 bg-red-100 mx-auto rounded-full flex items-center justify-center mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-8 w-8 text-red-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <p className="text-red-600 text-lg font-medium mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-purple-800 transition duration-200 font-semibold"
           >
             Tentar Novamente
           </button>
@@ -155,7 +169,33 @@ const UserProfile = () => {
   if (!userData) {
     return (
       <div className="min-h-screen p-2 flex items-center justify-center">
-        <p className="text-gray-600">Usuário não encontrado</p>
+        <div className="text-center bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
+          <div className="w-16 h-16 bg-yellow-100 mx-auto rounded-full flex items-center justify-center mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-8 w-8 text-yellow-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <p className="text-gray-800 text-lg font-medium mb-4">
+            Usuário não encontrado
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-white px-6 py-3 rounded-lg hover:from-yellow-500 hover:to-yellow-600 transition duration-200 font-semibold"
+          >
+            Tentar Novamente
+          </button>
+        </div>
       </div>
     );
   }
