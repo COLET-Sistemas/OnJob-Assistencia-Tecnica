@@ -2,6 +2,7 @@ import {
   Cliente,
   ClienteContato,
   FormData as ClienteFormData,
+  ClienteApiResponse,
 } from "../../types/admin/cadastro/clientes";
 import api from "../api";
 
@@ -38,8 +39,8 @@ class ClientesService {
     });
   }
 
-  async getById(id: number | string): Promise<Cliente> {
-    return await api.get<Cliente>(this.baseUrl, { params: { id } });
+  async getById(id: number | string): Promise<ClienteApiResponse> {
+    return await api.get<ClienteApiResponse>(this.baseUrl, { params: { id } });
   }
 
   async create(data: ClienteFormData): Promise<Cliente> {

@@ -4,7 +4,6 @@ import { clientesService, regioesService } from "@/api/services";
 import { Loading } from "@/components/LoadingPersonalizado";
 import LocationPicker from "@/components/admin/common/LocationPicker";
 import StaticMap from "@/components/admin/common/StaticMap";
-import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import {
@@ -90,7 +89,6 @@ const useFormValidation = () => {
 
 const CadastrarCliente: React.FC = () => {
   const router = useRouter();
-  const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
   const { validateForm } = useFormValidation();
 
@@ -102,14 +100,11 @@ const CadastrarCliente: React.FC = () => {
   const [mapOpen, setMapOpen] = useState(false);
   const [showMapPreview, setShowMapPreview] = useState(false);
 
-  // Refs
-  const nomeFantasiaRef = useRef<HTMLInputElement>(null!);
+  const nomeRazaoSocialRef = useRef<HTMLInputElement>(null!);
 
-  // Definir título da página e focar no primeiro input
   useEffect(() => {
-    setTitle("Clientes");
-    nomeFantasiaRef.current?.focus();
-  }, [setTitle]);
+    nomeRazaoSocialRef.current?.focus();
+  }, []);
 
   const [formData, setFormData] = useState<ClienteFormData>({
     codigo_erp: "",
@@ -473,6 +468,7 @@ const CadastrarCliente: React.FC = () => {
                   placeholder="Razão social completa"
                   required
                   onChange={handleInputChange}
+                  inputRef={nomeRazaoSocialRef}
                 />
 
                 <InputField
@@ -483,7 +479,6 @@ const CadastrarCliente: React.FC = () => {
                   placeholder="Nome fantasia da empresa"
                   required
                   onChange={handleInputChange}
-                  inputRef={nomeFantasiaRef}
                 />
               </div>
 
@@ -692,7 +687,7 @@ const CadastrarCliente: React.FC = () => {
                 isLoading={isSubmitting}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-                  <span>Salvar Cliente</span>
+                <span>Salvar Cliente</span>
               </LoadingButton>
             </div>
           </footer>

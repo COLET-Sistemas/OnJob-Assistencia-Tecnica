@@ -55,3 +55,8 @@ export interface FormData {
   qtd_contatos?: number;
   contatos?: ClienteContato[];
 }
+export interface ClienteApiResponse {
+  total_registros: number;
+  total_paginas: number;
+  dados: Cliente[];
+}

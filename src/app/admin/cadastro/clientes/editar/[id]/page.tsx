@@ -4,7 +4,6 @@ import { clientesService, regioesService } from "@/api/services";
 import { Loading } from "@/components/LoadingPersonalizado";
 import LocationPicker from "@/components/admin/common/LocationPicker";
 import StaticMap from "@/components/admin/common/StaticMap";
-import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import {
@@ -39,6 +38,11 @@ interface FormErrors {
 interface FormValidation {
   isValid: boolean;
   errors: FormErrors;
+}
+
+interface ApiError {
+  erro?: string;
+  message?: string;
 }
 
 // Constants para facilitar manutenção
@@ -90,7 +94,6 @@ const EditarCliente: React.FC = () => {
   const params = useParams();
   const clienteId = params.id as string;
 
-  const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
   const { validateForm } = useFormValidation();
 
@@ -103,13 +106,7 @@ const EditarCliente: React.FC = () => {
   const [showMapPreview, setShowMapPreview] = useState(false);
   const [clienteCarregado, setClienteCarregado] = useState(false);
 
-  // Refs
-  const nomeFantasiaRef = useRef<HTMLInputElement>(null!);
-
-  // Definir título da página
-  useEffect(() => {
-    setTitle("Clientes");
-  }, [setTitle]);
+  const nomeRazaoSocialRef = useRef<HTMLInputElement>(null!);
 
   const [formData, setFormData] = useState<FormData>({
     codigo_erp: "",
@@ -129,6 +126,29 @@ const EditarCliente: React.FC = () => {
     regiao: undefined,
   });
 
+  // Helper function to check if error is ApiError
+  const isApiError = (error: unknown): error is ApiError => {
+    return (
+      typeof error === "object" &&
+      error !== null &&
+      ("erro" in error || "message" in error)
+    );
+  };
+
+  // Helper function to get error message
+  const getErrorMessage = useCallback(
+    (error: unknown, defaultMessage: string): string => {
+      if (isApiError(error)) {
+        return error.erro || error.message || defaultMessage;
+      }
+      if (typeof error === "string") {
+        return error;
+      }
+      return defaultMessage;
+    },
+    []
+  );
+
   // Carregar dados do cliente
   const carregouCliente = useRef(false);
   useEffect(() => {
@@ -137,7 +157,8 @@ const EditarCliente: React.FC = () => {
 
     const carregarCliente = async () => {
       try {
-        const cliente = await clientesService.getById(Number(clienteId));
+        const response = await clientesService.getById(clienteId);
+        const cliente = response.dados[0];
 
         if (cliente) {
           const regiaoFormatada = cliente.regiao
@@ -189,21 +210,11 @@ const EditarCliente: React.FC = () => {
         }
       } catch (error) {
         console.error("Erro ao carregar dados do cliente:", error);
-
-        // Verificar se o erro contém uma mensagem específica da API
-        if (error && typeof error === "object" && "erro" in error) {
-          showError(MESSAGES.loadError, error.erro as string);
-        } else if (error && typeof error === "object" && "message" in error) {
-          showError(MESSAGES.loadError, error.message as string);
-        } else if (typeof error === "string") {
-          showError(MESSAGES.loadError, error);
-        } else {
-          showError(
-            MESSAGES.loadError,
-            "Ocorreu um erro ao carregar os dados do cliente. Tente novamente."
-          );
-        }
-
+        const errorMessage = getErrorMessage(
+          error,
+          "Ocorreu um erro ao carregar os dados do cliente. Tente novamente."
+        );
+        showError(MESSAGES.loadError, errorMessage);
         router.push("/admin/cadastro/clientes");
       } finally {
         setLoading(false);
@@ -213,7 +224,7 @@ const EditarCliente: React.FC = () => {
     if (clienteId) {
       carregarCliente();
     }
-  }, [clienteId, router, showError]);
+  }, [clienteId, router, showError, getErrorMessage]);
 
   // Carregar as regiões disponíveis
   const carregouRegioes = useRef(false);
@@ -232,31 +243,22 @@ const EditarCliente: React.FC = () => {
         setRegioes(regioesAtivas);
       } catch (error) {
         console.error("Erro ao carregar regiões:", error);
-
-        // Verificar se o erro contém uma mensagem específica da API
-        if (error && typeof error === "object" && "erro" in error) {
-          showError("Erro ao carregar regiões", error.erro as string);
-        } else if (error && typeof error === "object" && "message" in error) {
-          showError("Erro ao carregar regiões", error.message as string);
-        } else if (typeof error === "string") {
-          showError("Erro ao carregar regiões", error);
-        } else {
-          showError(
-            "Erro ao carregar regiões",
-            "Não foi possível carregar as regiões. Tente novamente mais tarde."
-          );
-        }
+        const errorMessage = getErrorMessage(
+          error,
+          "Não foi possível carregar as regiões. Tente novamente mais tarde."
+        );
+        showError("Erro ao carregar regiões", errorMessage);
       } finally {
         setLoading(false);
       }
     };
     carregarRegioes();
-  }, [showError]);
+  }, [showError, getErrorMessage]);
 
   // Foca no primeiro campo quando o cliente for carregado
   useEffect(() => {
     if (clienteCarregado && !loading) {
-      nomeFantasiaRef.current?.focus();
+      nomeRazaoSocialRef.current?.focus();
     }
   }, [clienteCarregado, loading]);
 
@@ -272,7 +274,7 @@ const EditarCliente: React.FC = () => {
     cidade: string,
     uf: string,
     cep: string
-  ) => {
+  ): Promise<{ latitude: string; longitude: string } | null> => {
     try {
       const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -283,8 +285,6 @@ const EditarCliente: React.FC = () => {
 
       // Formata o endereço completo para a API do Google
       const enderecoCompleto = `${endereco}, ${numero}, ${cidade}, ${uf}, ${cep}, Brasil`;
-
-      // Codifica os parâmetros da URL
       const enderecoEncoded = encodeURIComponent(enderecoCompleto);
 
       // Faz a chamada para a API de Geocoding do Google
@@ -293,7 +293,6 @@ const EditarCliente: React.FC = () => {
       );
       const data = await response.json();
 
-      // Verifica se a requisição foi bem-sucedida e se há resultados
       if (data.status === "OK" && data.results.length > 0) {
         const { lat, lng } = data.results[0].geometry.location;
         return { latitude: lat.toString(), longitude: lng.toString() };
@@ -330,7 +329,6 @@ const EditarCliente: React.FC = () => {
             const numeroField = document.getElementById("input-numero");
             if (numeroField) {
               numeroField.focus();
-              // Scroll suave para o campo se necessário
               numeroField.scrollIntoView({
                 behavior: "smooth",
                 block: "center",
@@ -356,7 +354,6 @@ const EditarCliente: React.FC = () => {
 
   // Função para atualizar as coordenadas usando o Google Maps
   const atualizarCoordenadas = async () => {
-    // Verificar se tem os dados necessários para buscar as coordenadas
     if (
       !formData.endereco ||
       !formData.numero ||
@@ -384,8 +381,8 @@ const EditarCliente: React.FC = () => {
       if (coordenadas) {
         setFormData((prev) => ({
           ...prev,
-          latitude: coordenadas.latitude,
-          longitude: coordenadas.longitude,
+          latitude: parseFloat(coordenadas.latitude), // ou já deixar como number
+          longitude: parseFloat(coordenadas.longitude),
         }));
         setShowMapPreview(true);
       }
@@ -394,20 +391,11 @@ const EditarCliente: React.FC = () => {
       setMapOpen(true);
     } catch (error) {
       console.error("Erro ao atualizar coordenadas:", error);
-
-      // Verificar se o erro contém uma mensagem específica da API
-      if (error && typeof error === "object" && "erro" in error) {
-        showError("Erro ao buscar coordenadas", error.erro as string);
-      } else if (error && typeof error === "object" && "message" in error) {
-        showError("Erro ao buscar coordenadas", error.message as string);
-      } else if (typeof error === "string") {
-        showError("Erro ao buscar coordenadas", error);
-      } else {
-        showError(
-          "Erro ao buscar coordenadas",
-          "Não foi possível obter as coordenadas. Verifique o endereço e tente novamente."
-        );
-      }
+      const errorMessage = getErrorMessage(
+        error,
+        "Não foi possível obter as coordenadas. Verifique o endereço e tente novamente."
+      );
+      showError("Erro ao buscar coordenadas", errorMessage);
     }
   };
 
@@ -477,7 +465,7 @@ const EditarCliente: React.FC = () => {
     return validation.isValid;
   }, [formData, validateForm]);
 
-  // Envio do formulário
+  // Fixed handleSubmit with correct dependencies
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -490,7 +478,6 @@ const EditarCliente: React.FC = () => {
       setIsSubmitting(true);
 
       try {
-        // Formatar dados para envio conforme esperado pela API
         const clienteData = {
           codigo_erp: formData.codigo_erp || undefined,
           nome_fantasia: formData.nome_fantasia,
@@ -515,7 +502,6 @@ const EditarCliente: React.FC = () => {
           situacao: formData.situacao,
         };
 
-        // Enviar para a API - Update
         await clientesService.update(Number(clienteId), clienteData);
 
         router.push("/admin/cadastro/clientes");
@@ -523,25 +509,24 @@ const EditarCliente: React.FC = () => {
         showSuccess(MESSAGES.success, "Cliente atualizado com sucesso!");
       } catch (error) {
         console.error("Erro ao atualizar cliente:", error);
-
-        // Verificar se o erro contém uma mensagem específica da API
-        if (error && typeof error === "object" && "erro" in error) {
-          showError("Erro ao atualizar", error.erro as string);
-        } else if (error && typeof error === "object" && "message" in error) {
-          showError("Erro ao atualizar", error.message as string);
-        } else if (typeof error === "string") {
-          showError("Erro ao atualizar", error);
-        } else {
-          showError(
-            "Erro ao atualizar",
-            "Ocorreu um erro ao atualizar o cliente. Tente novamente."
-          );
-        }
+        const errorMessage = getErrorMessage(
+          error,
+          "Ocorreu um erro ao atualizar o cliente. Tente novamente."
+        );
+        showError("Erro ao atualizar", errorMessage);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [formData, validarFormulario, clienteId, router, showSuccess, showError]
+    [
+      formData,
+      validarFormulario,
+      clienteId,
+      router,
+      showSuccess,
+      showError,
+      getErrorMessage,
+    ]
   );
 
   if (loading) {
@@ -602,6 +587,7 @@ const EditarCliente: React.FC = () => {
                   placeholder="Razão social completa"
                   required
                   onChange={handleInputChange}
+                  inputRef={nomeRazaoSocialRef}
                 />
 
                 <InputField
@@ -612,7 +598,6 @@ const EditarCliente: React.FC = () => {
                   placeholder="Nome fantasia da empresa"
                   required
                   onChange={handleInputChange}
-                  inputRef={nomeFantasiaRef}
                 />
               </div>
 
