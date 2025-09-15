@@ -31,10 +31,6 @@ class MaquinasService {
       params.numero_serie = numeroSerie;
     }
 
-    if (modelo) {
-      params.modelo = modelo;
-    }
-
     if (descricao) {
       params.descricao = descricao;
     }

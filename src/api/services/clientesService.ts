@@ -51,7 +51,7 @@ class ClientesService {
     id: number | string,
     data: Partial<ClienteFormData>
   ): Promise<Cliente> {
-    return await api.put<Cliente>(`${this.baseUrl}/${id}`, data);
+    return await api.put<Cliente>(`${this.baseUrl}?id=${id}`, data);
   }
 
   async delete(id: number | string): Promise<void> {

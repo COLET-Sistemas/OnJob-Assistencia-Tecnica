@@ -171,13 +171,9 @@ const CadastrarCliente: React.FC = () => {
         return null;
       }
 
-      // Formata o endereço completo para a API do Google
       const enderecoCompleto = `${endereco}, ${numero}, ${cidade}, ${uf}, ${cep}, Brasil`;
-
-      // Codifica os parâmetros da URL
       const enderecoEncoded = encodeURIComponent(enderecoCompleto);
 
-      // Faz a chamada para a API de Geocoding do Google
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?address=${enderecoEncoded}&key=${apiKey}`
       );
@@ -687,7 +683,7 @@ const CadastrarCliente: React.FC = () => {
                 isLoading={isSubmitting}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-                <span>Salvar Cliente</span>
+                <span>Salvar</span>
               </LoadingButton>
             </div>
           </footer>

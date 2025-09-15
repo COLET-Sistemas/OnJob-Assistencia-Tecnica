@@ -803,7 +803,7 @@ const EditarCliente: React.FC = () => {
                 isLoading={isSubmitting}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-                <span>Salvar Alterações</span>
+                <span>Salvar</span>
               </LoadingButton>
             </div>
           </footer>
