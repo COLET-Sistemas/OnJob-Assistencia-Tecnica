@@ -15,7 +15,6 @@ import { maquinasService } from "@/api/services/maquinasService";
 
 interface MaquinasFilters {
   numero_serie: string;
-  modelo: string;
   descricao: string;
   incluir_inativos: string;
   [key: string]: string;
@@ -23,7 +22,6 @@ interface MaquinasFilters {
 
 const INITIAL_MAQUINAS_FILTERS: MaquinasFilters = {
   numero_serie: "",
-  modelo: "",
   descricao: "",
   incluir_inativos: "",
 };
@@ -100,7 +98,6 @@ const CadastroMaquinas = () => {
         paginacao.registrosPorPagina,
         filtrosAplicados.incluir_inativos === "true",
         filtrosAplicados.numero_serie?.trim() || undefined,
-        filtrosAplicados.modelo?.trim() || undefined,
         filtrosAplicados.descricao?.trim() || undefined
       );
 
@@ -275,12 +272,6 @@ const CadastroMaquinas = () => {
       placeholder: "Buscar por número de série...",
     },
     {
-      id: "modelo",
-      label: "Modelo",
-      type: "text" as const,
-      placeholder: "Buscar por modelo...",
-    },
-    {
       id: "descricao",
       label: "Descrição",
       type: "text" as const,
@@ -288,9 +279,9 @@ const CadastroMaquinas = () => {
     },
     {
       id: "incluir_inativos",
-      label: "Incluir Inativos",
+      label: "Exibir Inativos",
       type: "checkbox" as const,
-      placeholder: "Incluir máquinas inativas",
+      placeholder: "Exibir máquinas inativas",
     },
   ];
 

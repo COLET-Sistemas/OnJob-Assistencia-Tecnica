@@ -176,7 +176,7 @@ const CadastroUsuario = () => {
       header: "Status",
       accessor: "situacao" as keyof Usuario,
       render: (usuario: Usuario) => (
-        <TableStatusColumn status={usuario.situacao ? "true" : "false"} />
+        <TableStatusColumn status={String(usuario.situacao)} />
       ),
     },
   ];
@@ -234,16 +234,16 @@ const CadastroUsuario = () => {
 
   const filterOptions = [
     {
-      id: "incluir_inativos",
-      label: "Incluir Inativos",
-      type: "checkbox" as const,
-      placeholder: "Incluir usuários inativos",
-    },
-    {
       id: "apenas_tecnicos",
       label: "Apenas Técnicos",
       type: "checkbox" as const,
       placeholder: "Mostrar apenas usuários técnicos",
+    },
+    {
+      id: "incluir_inativos",
+      label: "Exibir Inativos",
+      type: "checkbox" as const,
+      placeholder: "Exibir usuários inativos",
     },
   ];
 

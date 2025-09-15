@@ -507,9 +507,9 @@ const CadastroClientes = () => {
     },
     {
       id: "incluir_inativos",
-      label: "Incluir Inativos",
+      label: "Exibir Inativos",
       type: "checkbox" as const,
-      placeholder: "Incluir clientes inativos",
+      placeholder: "Exibir clientes inativos",
     },
   ];
 

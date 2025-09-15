@@ -128,9 +128,9 @@ const CadastroMotivosPendencia = () => {
     },
     {
       id: "incluir_inativos",
-      label: "Incluir Inativos",
+      label: "Exibir Inativos",
       type: "checkbox" as const,
-      placeholder: "Incluir pendências inativas",
+      placeholder: "Exibir pendências inativas",
     },
   ];
 
