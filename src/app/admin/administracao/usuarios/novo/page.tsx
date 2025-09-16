@@ -122,7 +122,7 @@ export default function NovoUsuario() {
         nome: form.nome,
         email: form.email,
         id_empresa: Number(form.id_empresa),
-        situacao: form.situacao === "A",
+        situacao: form.situacao, 
         perfil_interno: form.perfil_interno,
         perfil_gestor_assistencia: form.perfil_gestor_assistencia,
         perfil_tecnico_proprio: form.perfil_tecnico_proprio,

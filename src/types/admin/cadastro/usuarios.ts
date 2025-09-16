@@ -35,10 +35,10 @@ export interface Usuario {
   perfil_tecnico_proprio: boolean;
   perfil_tecnico_terceirizado: boolean;
   administrador: boolean;
-  situacao: boolean; // Convertido para boolean para uso na aplicação
+  situacao: string; 
   data_situacao: string;
-  empresa?: Empresa; // Objeto empresa como no exemplo da API
-  id_empresa?: number; // Mantido para compatibilidade com código existente
+  empresa?: Empresa; 
+  id_empresa?: number; 
 }
 
 // Mantendo a interface original para compatibilidade com código existente

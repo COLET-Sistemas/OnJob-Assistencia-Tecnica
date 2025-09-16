@@ -8,6 +8,7 @@ import { useToast } from "@/components/admin/ui/ToastContainer";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import { ResetPasswordButton } from "@/components/admin/ui/ResetPasswordButton";
+import { ActivateButton } from "@/components/admin/ui/ActivateButton"; // Novo componente
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useFilters } from "@/hooks/useFilters";
 import { usuariosService as usuariosAPI } from "@/api/services/usuariosService";
@@ -194,6 +195,20 @@ const CadastroUsuario = () => {
     }
   };
 
+  // Nova função para ativar usuário
+  const handleActivate = async (id: number) => {
+    try {
+      await usuariosAPI.activate(id);
+      await refetch();
+
+      showSuccess("Ativação realizada!", "Usuário ativado com sucesso.");
+    } catch (error) {
+      console.error("Erro ao ativar usuário:", error);
+
+      showError("Erro ao ativar", error as Record<string, unknown>);
+    }
+  };
+
   // Função para atualizar um usuário específico na lista
   const updateUserInList = (userId: number, updates: Partial<Usuario>) => {
     if (!usuarios) return;
@@ -216,19 +231,37 @@ const CadastroUsuario = () => {
         id={usuario.id}
         editRoute="/admin/administracao/usuarios/editar"
       />
-      <DeleteButton
-        id={usuario.id}
-        onDelete={handleDelete}
-        confirmText="Deseja realmente inativar este usuário?"
-        confirmTitle="Inativação de Usuário"
-        itemName={`${usuario.nome} (${usuario.login})`}
-      />
-      <ResetPasswordButton
-        id={usuario.id}
-        userName={usuario.nome}
-        userLogin={usuario.login}
-        onUpdateUser={(updates) => updateUserInList(usuario.id, updates)}
-      />
+
+      {/* Renderizar botão de inativar/ativar baseado no status do usuário */}
+      {usuario.situacao === "A" ? (
+        // Usuário ativo - mostrar botão de inativar
+        <DeleteButton
+          id={usuario.id}
+          onDelete={handleDelete}
+          confirmText="Deseja realmente inativar este usuário?"
+          confirmTitle="Inativação de Usuário"
+          itemName={`${usuario.nome} (${usuario.login})`}
+        />
+      ) : (
+        // Usuário inativo - mostrar botão de ativar
+        <ActivateButton
+          id={usuario.id}
+          onActivate={handleActivate}
+          confirmText="Deseja realmente ativar este usuário?"
+          confirmTitle="Ativação de Usuário"
+          itemName={`${usuario.nome} (${usuario.login})`}
+        />
+      )}
+
+      {/* Botão de reset de senha apenas para usuários ativos */}
+      {usuario.situacao === "A" && (
+        <ResetPasswordButton
+          id={usuario.id}
+          userName={usuario.nome}
+          userLogin={usuario.login}
+          onUpdateUser={(updates) => updateUserInList(usuario.id, updates)}
+        />
+      )}
     </div>
   );
 

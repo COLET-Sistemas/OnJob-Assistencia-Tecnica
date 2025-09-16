@@ -61,8 +61,8 @@ class UsuariosService {
       login: usuarioAPI.login,
       email: usuarioAPI.email,
       telefone: usuarioAPI.telefone,
-      // Convertendo situacao de "A"/"I" para boolean
-      situacao: usuarioAPI.situacao === "A",
+      // Mantendo situacao como string ("A" ou "I")
+      situacao: usuarioAPI.situacao,
       data_situacao: usuarioAPI.data_situacao,
       perfil_interno: usuarioAPI.perfil_interno || false,
       perfil_gestor_assistencia: usuarioAPI.perfil_gestor_assistencia || false,
@@ -89,6 +89,19 @@ class UsuariosService {
 
   async delete(id: number | string): Promise<void> {
     await api.delete<void>(`${this.baseUrl}?id=${id}`);
+  }
+
+  // Nova função para ativar usuário
+  async activate(id: number | string): Promise<{
+    mensagem: string;
+    sucesso: boolean;
+  }> {
+    return await api.put<{
+      mensagem: string;
+      sucesso: boolean;
+    }>(`${this.baseUrl}?id=${id}`, {
+      situacao: "A", // Enviando "A" para ativar o usuário
+    });
   }
 
   async resetPassword(

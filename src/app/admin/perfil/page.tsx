@@ -19,26 +19,9 @@ import {
   Calendar,
   UserCheck,
 } from "lucide-react";
+import type { Usuario } from "@/types/admin/cadastro/usuarios";
 
-// Tipo para o usuário
-interface Usuario {
-  id: number;
-  nome: string;
-  login: string;
-  email: string;
-  situacao: boolean;
-  data_situacao: string;
-  perfil_interno?: boolean;
-  perfil_gestor_assistencia?: boolean;
-  administrador?: boolean;
-  perfil_tecnico_proprio?: boolean;
-  perfil_tecnico_terceirizado?: boolean;
-  senha_provisoria?: boolean;
-  empresa?: {
-    id_empresa: number;
-    razao_social: string;
-  };
-}
+// Tipo Usuario agora é importado de @/types/admin/cadastro/usuarios
 
 // Tipo para os dados de senha
 interface PasswordData {
@@ -321,7 +304,7 @@ const PerfilPage = () => {
                           Situação
                         </p>
                         <p className="text-[var(--neutral-graphite)] font-semibold">
-                          {userData?.situacao ? "Ativo" : "Inativo"}
+                          {userData?.situacao === "A" ? "Ativo" : "Inativo"}
                         </p>
                       </div>
                     </div>
