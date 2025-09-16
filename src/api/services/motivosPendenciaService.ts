@@ -29,12 +29,13 @@ class MotivosPendenciaService implements BaseService<MotivoPendencia> {
     id: number | string,
     data: Partial<MotivoPendencia>
   ): Promise<MotivoPendencia> {
-    return await api.put<MotivoPendencia>(`${this.baseUrl}/${id}`, data);
+    return await api.put<MotivoPendencia>(`${this.baseUrl}?id=${id}`, data);
   }
 
   async delete(id: number | string): Promise<void> {
-    await api.delete<void>(`${this.baseUrl}/${id}`);
+    await api.delete<void>(`${this.baseUrl}?id=${id}`);
   }
+
 }
 
 export const motivosPendenciaService = new MotivosPendenciaService();

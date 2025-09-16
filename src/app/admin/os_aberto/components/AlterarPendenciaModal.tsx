@@ -165,7 +165,7 @@ const AlterarPendenciaModal: React.FC<AlterarPendenciaModalProps> = ({
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-800"
                       disabled={loading}
                     >
-                      {motivos.map((motivo, index) => {
+                      {motivos.map((motivo) => {
                         // Verifica se este motivo tem a mesma descrição do motivo atual da OS
                         const isCurrentText =
                           currentMotivoText &&
@@ -186,7 +186,6 @@ const AlterarPendenciaModal: React.FC<AlterarPendenciaModalProps> = ({
                               isCurrent ? "font-bold bg-orange-50" : ""
                             }
                           >
-                            {index === 0 && isCurrent ? "➡️ " : ""}
                             {motivo.descricao}
                             {isCurrent ? " ✓" : ""}
                           </option>

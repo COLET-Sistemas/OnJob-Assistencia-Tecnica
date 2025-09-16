@@ -88,6 +88,7 @@ export interface OSDetalhada extends OSItem {
     cidade: string;
     uf: string;
     cep?: string;
+    id_regiao?:number;
   };
   contato?: {
     nome: string;

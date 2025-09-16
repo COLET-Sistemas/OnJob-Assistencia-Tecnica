@@ -25,11 +25,11 @@ class MotivosAtendimentoService implements BaseService<MotivoAtendimento> {
     id: number | string,
     data: Partial<MotivoAtendimento>
   ): Promise<MotivoAtendimento> {
-    return await api.put<MotivoAtendimento>(`${this.baseUrl}/${id}`, data);
+    return await api.put<MotivoAtendimento>(`${this.baseUrl}?id=${id}`, data);
   }
 
   async delete(id: number | string): Promise<void> {
-    await api.delete<void>(`${this.baseUrl}/${id}`);
+    await api.delete<void>(`${this.baseUrl}?id=${id}`);
   }
 }
 

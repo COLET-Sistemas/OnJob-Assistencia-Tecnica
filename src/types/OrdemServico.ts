@@ -25,6 +25,7 @@ export interface OrdemServico {
     cep?: string;
     latitude?: string;
     longitude?: string;
+    id_regiao?: number;
   };
   contato: {
     id: number;

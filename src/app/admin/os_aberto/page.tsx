@@ -15,6 +15,7 @@ import OSCard from "@/app/admin/os_aberto/components/OSCard";
 import SkeletonCard from "@/app/admin/os_aberto/components/SkeletonCard";
 import LiberacaoFinanceiraModal from "@/app/admin/os_aberto/components/LiberacaoFinanceiraModal";
 import AlterarPendenciaModal from "@/app/admin/os_aberto/components/AlterarPendenciaModal";
+import TecnicoModal from "@/app/admin/os_aberto/components/TecnicoModal";
 import { OrdemServico } from "@/types/OrdemServico";
 
 const CODIGO_SITUACAO = {
@@ -46,6 +47,15 @@ const TelaOSAbertas: React.FC = () => {
     osId: 0,
     currentMotivoId: 0,
     currentMotivoText: "",
+  });
+
+  const [modalTecnico, setModalTecnico] = useState({
+    isOpen: false,
+    osId: 0,
+    idRegiao: 0, // Adicionar esta linha
+    mode: "add" as "add" | "edit",
+    currentTecnicoId: 0,
+    currentTecnicoNome: "",
   });
 
   const [situacoes, setSituacoes] = useState({
@@ -140,7 +150,6 @@ const TelaOSAbertas: React.FC = () => {
       setOrdensServico(filteredOrdens);
     }
   }, [situacoes, allOrdensServico]);
-
 
   const toggleCardExpansion = useCallback((osId: number) => {
     setExpandedCards((prev) => {
@@ -290,6 +299,100 @@ const TelaOSAbertas: React.FC = () => {
     [fetchData, handleClosePendenciaModal]
   );
 
+  // Funções para lidar com o gerenciamento de técnicos
+  const handleOpenAdicionarTecnicoModal = useCallback(
+    (osId: number, idRegiao: number) => {
+      setModalTecnico({
+        isOpen: true,
+        osId,
+        idRegiao, // Adicionar esta linha
+        mode: "add",
+        currentTecnicoId: 0,
+        currentTecnicoNome: "",
+      });
+    },
+    []
+  );
+
+  const handleOpenAlterarTecnicoModal = useCallback(
+    (
+      osId: number,
+      idRegiao: number,
+      currentTecnicoId?: number,
+      currentTecnicoNome?: string
+    ) => {
+      setModalTecnico({
+        isOpen: true,
+        osId,
+        idRegiao, // Adicionar esta linha
+        mode: "edit",
+        currentTecnicoId: currentTecnicoId || 0,
+        currentTecnicoNome: currentTecnicoNome || "",
+      });
+    },
+    []
+  );
+
+  const handleCloseTecnicoModal = useCallback(() => {
+    setModalTecnico({
+      isOpen: false,
+      osId: 0,
+      idRegiao: 0, // Adicionar esta linha
+      mode: "add",
+      currentTecnicoId: 0,
+      currentTecnicoNome: "",
+    });
+  }, []);
+
+  // Crie estas funções wrapper dentro do componente TelaOSAbertas:
+  const createAdicionarTecnicoHandler = useCallback(
+    (os: OrdemServico) => {
+      return () =>
+        handleOpenAdicionarTecnicoModal(os.id_os, os.cliente.id_regiao || 0);
+    },
+    [handleOpenAdicionarTecnicoModal]
+  );
+
+  const createAlterarTecnicoHandler = useCallback(
+    (os: OrdemServico) => {
+      return (osId: number, tecnicoId?: number, tecnicoNome?: string) =>
+        handleOpenAlterarTecnicoModal(
+          osId,
+          os.cliente.id_regiao || 0,
+          tecnicoId,
+          tecnicoNome
+        );
+    },
+    [handleOpenAlterarTecnicoModal]
+  );
+
+  const handleConfirmTecnico = useCallback(
+    async (osId: number, tecnicoId: number, tecnicoNome: string) => {
+      try {
+        // Aqui você faria a chamada para a API para definir/alterar o técnico
+        // await ordensServicoService.definirTecnico(osId, tecnicoId);
+        console.log("Definir técnico:", { osId, tecnicoId, tecnicoNome });
+
+        // Atualiza os dados após a alteração
+        await fetchData();
+
+        if (modalTecnico.mode === "add") {
+          feedback.toast("Técnico adicionado com sucesso", "success");
+        } else {
+          feedback.toast("Técnico alterado com sucesso", "success");
+        }
+
+        handleCloseTecnicoModal();
+        return Promise.resolve();
+      } catch (error) {
+        console.error("Erro ao definir técnico:", error);
+        feedback.toast("Erro ao definir técnico", "error");
+        return Promise.reject(error);
+      }
+    },
+    [fetchData, handleCloseTecnicoModal, modalTecnico.mode]
+  );
+
   const filteredOrdens = useMemo(() => {
     return ordensServico.filter((os) => {
       // Verifica se a busca é específica por ID (quando começa com #)
@@ -425,6 +528,8 @@ const TelaOSAbertas: React.FC = () => {
                 formatGoogleMapsUrl={formatGoogleMapsUrl}
                 onLiberarFinanceiramente={handleOpenLiberacaoModal}
                 onAlterarPendencia={handleOpenPendenciaModal}
+                onAdicionarTecnico={createAdicionarTecnicoHandler(os)}
+                onAlterarTecnico={createAlterarTecnicoHandler(os)}
               />
             ))}
           </div>
@@ -451,6 +556,18 @@ const TelaOSAbertas: React.FC = () => {
         currentMotivoText={modalPendencia.currentMotivoText}
         onClose={handleClosePendenciaModal}
         onConfirm={handleConfirmAlterarPendencia}
+      />
+
+      {/* Modal de Gerenciamento de Técnico */}
+      <TecnicoModal
+        isOpen={modalTecnico.isOpen}
+        osId={modalTecnico.osId}
+        idRegiao={modalTecnico.idRegiao}
+        mode={modalTecnico.mode}
+        currentTecnicoId={modalTecnico.currentTecnicoId}
+        currentTecnicoNome={modalTecnico.currentTecnicoNome}
+        onClose={handleCloseTecnicoModal}
+        onConfirm={handleConfirmTecnico}
       />
     </div>
   );
