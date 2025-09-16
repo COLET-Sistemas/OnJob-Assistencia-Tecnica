@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, UserPlus, UserCog, User } from "lucide-react";
+import { X, UserPlus, UserCog, RotateCcw } from "lucide-react";
 import api from "../../../../api/api";
 
 interface Tecnico {
@@ -56,91 +56,113 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
   const [isLoadingTecnicos, setIsLoadingTecnicos] = useState(true);
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [showAllTecnicos, setShowAllTecnicos] = useState(false);
 
-  const fetchTecnicos = React.useCallback(async () => {
-    if (!idRegiao) {
-      console.warn("ID da região não fornecido");
-      setError("ID da região não encontrado");
-      return;
-    }
-
-    setIsLoadingTecnicos(true);
-    setError(null);
-
-    try {
-      console.log(`Buscando técnicos para região: ${idRegiao}`);
-
-      const data: ApiResponse = await api.get<ApiResponse>(
-        "/usuarios_regioes",
-        {
-          params: {
-            id_regiao: idRegiao,
-          },
-        }
-      );
-
-      console.log("Dados recebidos da API:", data);
-
-      // Filtrar apenas usuários que atendem a região específica
-      const tecnicosFormatados: Tecnico[] = data.dados
-        .filter((usuario) => {
-          return usuario.regioes.some(
-            (regiao) => regiao.id_regiao === idRegiao
-          );
-        })
-        .map((usuario) => ({
-          id: usuario.id_usuario,
-          nome: usuario.nome_usuario,
-          tipo: usuario.tipo,
-          ativo: true,
-        }));
-
-      console.log("Técnicos formatados:", tecnicosFormatados);
-
-      if (tecnicosFormatados.length === 0) {
-        setError("Nenhum técnico encontrado para esta região");
-        setTecnicos([]);
+  const fetchTecnicos = React.useCallback(
+    async (fetchAll = false) => {
+      if (!idRegiao && !fetchAll) {
+        console.warn("ID da região não fornecido");
+        setError("ID da região não encontrado");
         return;
       }
 
-      // Reordena a lista para mostrar o técnico atual no topo
-      const orderedTecnicos = [...tecnicosFormatados];
-      if (currentTecnicoId) {
-        const currentTecnicoIndex = orderedTecnicos.findIndex(
-          (tecnico) => tecnico.id === currentTecnicoId
+      setIsLoadingTecnicos(true);
+      setError(null);
+
+      try {
+        console.log(
+          `Buscando técnicos ${fetchAll ? "todos" : `para região: ${idRegiao}`}`
         );
 
-        if (currentTecnicoIndex !== -1) {
-          const currentTecnico = orderedTecnicos.splice(
-            currentTecnicoIndex,
-            1
-          )[0];
-          orderedTecnicos.unshift(currentTecnico);
+        // Parâmetros da requisição baseados no filtro
+        const params: Record<string, string | number | boolean> | undefined =
+          fetchAll ? undefined : { id_regiao: idRegiao };
+
+        const data: ApiResponse = await api.get<ApiResponse>(
+          "/usuarios_regioes",
+          params ? { params } : undefined
+        );
+
+        console.log("Dados recebidos da API:", data);
+
+        let tecnicosFormatados: Tecnico[];
+
+        if (fetchAll) {
+          // Se fetchAll for true, mostra todos os técnicos
+          tecnicosFormatados = data.dados.map((usuario) => ({
+            id: usuario.id_usuario,
+            nome: usuario.nome_usuario,
+            tipo: usuario.tipo,
+            ativo: true,
+          }));
+        } else {
+          // Filtrar apenas usuários que atendem a região específica
+          tecnicosFormatados = data.dados
+            .filter((usuario) => {
+              return usuario.regioes.some(
+                (regiao) => regiao.id_regiao === idRegiao
+              );
+            })
+            .map((usuario) => ({
+              id: usuario.id_usuario,
+              nome: usuario.nome_usuario,
+              tipo: usuario.tipo,
+              ativo: true,
+            }));
         }
 
-        // Define o técnico atual como selecionado
-        const currentTecnico = orderedTecnicos.find(
-          (tecnico) => tecnico.id === currentTecnicoId
-        );
-        setSelectedTecnico(currentTecnico || null);
-      } else {
-        // Se não tiver técnico atual na OS, seleciona o primeiro da lista
-        setSelectedTecnico(orderedTecnicos[0] || null);
-      }
+        console.log("Técnicos formatados:", tecnicosFormatados);
 
-      setTecnicos(orderedTecnicos);
-    } catch (error) {
-      console.error("Erro ao buscar técnicos da região:", error);
-      setError(
-        error instanceof Error
-          ? `Erro ao carregar técnicos: ${error.message}`
-          : "Erro ao carregar técnicos da região"
-      );
-      setTecnicos([]);
-    } finally {
-      setIsLoadingTecnicos(false);
-    }
-  }, [idRegiao, currentTecnicoId]);
+        if (tecnicosFormatados.length === 0) {
+          setError(
+            fetchAll
+              ? "Nenhum técnico encontrado"
+              : "Nenhum técnico encontrado para esta região"
+          );
+          setTecnicos([]);
+          return;
+        }
+
+        // Reordena a lista para mostrar o técnico atual no topo
+        const orderedTecnicos = [...tecnicosFormatados];
+        if (currentTecnicoId) {
+          const currentTecnicoIndex = orderedTecnicos.findIndex(
+            (tecnico) => tecnico.id === currentTecnicoId
+          );
+
+          if (currentTecnicoIndex !== -1) {
+            const currentTecnico = orderedTecnicos.splice(
+              currentTecnicoIndex,
+              1
+            )[0];
+            orderedTecnicos.unshift(currentTecnico);
+          }
+
+          // Define o técnico atual como selecionado
+          const currentTecnico = orderedTecnicos.find(
+            (tecnico) => tecnico.id === currentTecnicoId
+          );
+          setSelectedTecnico(currentTecnico || null);
+        } else {
+          // Se não tiver técnico atual na OS, seleciona o primeiro da lista
+          setSelectedTecnico(orderedTecnicos[0] || null);
+        }
+
+        setTecnicos(orderedTecnicos);
+      } catch (error) {
+        console.error("Erro ao buscar técnicos:", error);
+        setError(
+          error instanceof Error
+            ? `Erro ao carregar técnicos: ${error.message}`
+            : "Erro ao carregar técnicos"
+        );
+        setTecnicos([]);
+      } finally {
+        setIsLoadingTecnicos(false);
+      }
+    },
+    [idRegiao, currentTecnicoId]
+  );
 
   // Combinando os efeitos em um único efeito mais limpo
   useEffect(() => {
@@ -148,15 +170,26 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
     if (!isOpen) {
       setSelectedTecnico(null);
       setError(null);
+      setShowAllTecnicos(false);
       return;
     }
 
     // Quando o modal abre, carrega os dados
     if (idRegiao) {
       console.log(`Modal aberto para região: ${idRegiao}`);
-      fetchTecnicos();
+      fetchTecnicos(false);
     }
   }, [isOpen, idRegiao, fetchTecnicos]);
+
+  const handleResetFilter = () => {
+    setShowAllTecnicos(true);
+    fetchTecnicos(true);
+  };
+
+  const handleRestoreFilter = () => {
+    setShowAllTecnicos(false);
+    fetchTecnicos(false);
+  };
 
   const handleConfirm = async () => {
     if (!selectedTecnico) return;
@@ -175,12 +208,6 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
   const handleClose = () => {
     if (!isLoading) {
       onClose();
-    }
-  };
-
-  const handleRetry = () => {
-    if (!isLoadingTecnicos) {
-      fetchTecnicos();
     }
   };
 
@@ -299,6 +326,28 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
                         );
                       })}
                     </select>
+                  </div>
+                  {/* Botões de filtro */}
+                  <div className="flex gap-2 mb-3">
+                    {!showAllTecnicos ? (
+                      <button
+                        onClick={handleResetFilter}
+                        disabled={isLoading || isLoadingTecnicos}
+                        className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <RotateCcw size={12} />
+                        Ver todos os técnicos
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleRestoreFilter}
+                        disabled={isLoading || isLoadingTecnicos}
+                        className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <RotateCcw size={12} />
+                        Filtrar por região
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
