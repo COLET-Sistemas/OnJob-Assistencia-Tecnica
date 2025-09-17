@@ -52,7 +52,8 @@ const TelaOSAbertas: React.FC = () => {
   const [modalTecnico, setModalTecnico] = useState({
     isOpen: false,
     osId: 0,
-    idRegiao: 0, // Adicionar esta linha
+    idRegiao: 0,
+    nomeRegiao: "",
     mode: "add" as "add" | "edit",
     currentTecnicoId: 0,
     currentTecnicoNome: "",
@@ -301,11 +302,12 @@ const TelaOSAbertas: React.FC = () => {
 
   // Funções para lidar com o gerenciamento de técnicos
   const handleOpenAdicionarTecnicoModal = useCallback(
-    (osId: number, idRegiao: number) => {
+    (osId: number, idRegiao: number, nomeRegiao?: string) => {
       setModalTecnico({
         isOpen: true,
         osId,
-        idRegiao, // Adicionar esta linha
+        idRegiao,
+        nomeRegiao: nomeRegiao || "", // Adicionar esta linha
         mode: "add",
         currentTecnicoId: 0,
         currentTecnicoNome: "",
@@ -318,13 +320,15 @@ const TelaOSAbertas: React.FC = () => {
     (
       osId: number,
       idRegiao: number,
+      nomeRegiao?: string, // Adicionar este parâmetro
       currentTecnicoId?: number,
       currentTecnicoNome?: string
     ) => {
       setModalTecnico({
         isOpen: true,
         osId,
-        idRegiao, // Adicionar esta linha
+        idRegiao,
+        nomeRegiao: nomeRegiao || "", // Adicionar esta linha
         mode: "edit",
         currentTecnicoId: currentTecnicoId || 0,
         currentTecnicoNome: currentTecnicoNome || "",
@@ -337,20 +341,32 @@ const TelaOSAbertas: React.FC = () => {
     setModalTecnico({
       isOpen: false,
       osId: 0,
-      idRegiao: 0, // Adicionar esta linha
+      idRegiao: 0,
+      nomeRegiao: "", // Adicionar esta linha
       mode: "add",
       currentTecnicoId: 0,
       currentTecnicoNome: "",
     });
   }, []);
 
-  // Crie estas funções wrapper dentro do componente TelaOSAbertas:
+  const getNomeRegiao = useCallback((os: OrdemServico): string => {
+    if ("nome_regiao" in os.cliente && os.cliente.nome_regiao) {
+      return os.cliente.nome_regiao as string;
+    }
+    return os.cliente.cidade || "Região não informada";
+  }, []);
+
+  // Depois atualize as funções wrapper:
   const createAdicionarTecnicoHandler = useCallback(
     (os: OrdemServico) => {
       return () =>
-        handleOpenAdicionarTecnicoModal(os.id_os, os.cliente.id_regiao || 0);
+        handleOpenAdicionarTecnicoModal(
+          os.id_os,
+          os.cliente.id_regiao || 0,
+          getNomeRegiao(os)
+        );
     },
-    [handleOpenAdicionarTecnicoModal]
+    [handleOpenAdicionarTecnicoModal, getNomeRegiao]
   );
 
   const createAlterarTecnicoHandler = useCallback(
@@ -359,11 +375,12 @@ const TelaOSAbertas: React.FC = () => {
         handleOpenAlterarTecnicoModal(
           osId,
           os.cliente.id_regiao || 0,
+          getNomeRegiao(os),
           tecnicoId,
           tecnicoNome
         );
     },
-    [handleOpenAlterarTecnicoModal]
+    [handleOpenAlterarTecnicoModal, getNomeRegiao]
   );
 
   const handleConfirmTecnico = useCallback(
@@ -563,6 +580,7 @@ const TelaOSAbertas: React.FC = () => {
         isOpen={modalTecnico.isOpen}
         osId={modalTecnico.osId}
         idRegiao={modalTecnico.idRegiao}
+        nomeRegiao={modalTecnico.nomeRegiao} // Adicionar esta linha
         mode={modalTecnico.mode}
         currentTecnicoId={modalTecnico.currentTecnicoId}
         currentTecnicoNome={modalTecnico.currentTecnicoNome}

@@ -9,21 +9,60 @@ export interface OSStatusCount {
 }
 
 export interface OSItem {
-  id: number;
-  numero_os: string;
-  data_abertura: string;
+  id_os: number;
+  descricao_problema: string;
+  em_garantia: boolean;
+  abertura: {
+    data_abertura: string;
+    forma_abertura: string;
+    origem_abertura: string;
+    nome_usuario: string;
+    id_motivo_atendimento: number;
+    motivo_atendimento: string;
+  };
+  data_agendada: string;
+  data_fechamento: string;
   cliente: {
-    id: number;
-    nome_fantasia: string;
+    nome: string;
+    endereco: string;
+    numero: string;
+    complemento: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
+    cep: string;
+    latitude: string;
+    longitude: string;
+    id_regiao: number;
+    nome_regiao: string;
+  };
+  contato: {
+    nome: string;
+    telefone: string;
+    whatsapp: string;
+    email: string;
   };
   maquina: {
-    id: number;
     numero_serie: string;
+    descricao: string;
+    modelo: string;
   };
-  status: string | number;
-  tecnico?: {
+  situacao_os: {
+    codigo: number;
+    descricao: string;
+    id_motivo_pendencia: number;
+    motivo_pendencia: string;
+  };
+  tecnico: {
     id: number;
     nome: string;
+    tipo: string;
+    observacoes: string;
+  };
+  liberacao_financeira: {
+    liberada: boolean;
+    nome_usuario_liberacao: string;
+    data_liberacao: string;
   };
 }
 
@@ -72,11 +111,9 @@ export interface OSRevisao {
 }
 
 // Original interface (kept for backwards compatibility)
-export interface OSDetalhada extends OSItem {
-  data_agendada?: string;
-  data_fechamento?: string;
+export interface OSDetalhada {
   data_revisao?: string;
-  status: number; 
+  status: number;
   status_descricao: string;
   cliente: {
     id: number;
@@ -88,7 +125,7 @@ export interface OSDetalhada extends OSItem {
     cidade: string;
     uf: string;
     cep?: string;
-    id_regiao?:number;
+    id_regiao?: number;
   };
   contato?: {
     nome: string;
@@ -114,8 +151,6 @@ export interface OSDetalhada extends OSItem {
     descricao: string;
   };
   comentarios_pendencia?: string;
-  em_garantia?: boolean;
-  descricao_problema?: string;
   regiao: {
     id: number;
     nome: string;

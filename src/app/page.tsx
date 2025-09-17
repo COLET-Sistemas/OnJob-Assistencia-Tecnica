@@ -470,7 +470,7 @@ export default function LoginPage() {
                   ref={loginInputRef}
                   type="text"
                   value={login}
-                  onChange={(e) => setLogin(e.target.value)}
+                  onChange={(e) => setLogin(e.target.value.toLowerCase())}
                   onKeyPress={handleKeyPress}
                   className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-[#7C54BD] transition-all duration-300 text-gray-700 placeholder-gray-500 bg-white focus:bg-white focus:shadow-xl focus:shadow-[#7C54BD]/10"
                   placeholder="Digite seu usuário"

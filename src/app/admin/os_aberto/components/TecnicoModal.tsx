@@ -30,6 +30,7 @@ interface TecnicoModalProps {
   isOpen: boolean;
   osId: number;
   idRegiao: number;
+  nomeRegiao?: string; // Nova prop para o nome da região
   mode: "add" | "edit";
   currentTecnicoId?: number;
   currentTecnicoNome?: string;
@@ -45,6 +46,7 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
   isOpen,
   osId,
   idRegiao,
+  nomeRegiao, // Nova prop
   mode,
   currentTecnicoId,
   currentTecnicoNome,
@@ -196,6 +198,12 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
 
     setIsLoading(true);
     try {
+      // Enviar PATCH para liberar a OS com o técnico selecionado
+      await api.patch(`/ordens_servico/liberacao?id=${osId}`, {
+        id_tecnico: selectedTecnico.id,
+      });
+
+      // Chamar a função de callback se fornecida
       await onConfirm(osId, selectedTecnico.id, selectedTecnico.nome);
       onClose();
     } catch (error) {
@@ -211,6 +219,13 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
     }
   };
 
+  // Função para obter as classes do badge baseado no tipo
+  const getBadgeClasses = (tipo: "interno" | "terceiro") => {
+    return tipo === "interno"
+      ? "bg-amber-50 text-amber-600 border border-amber-100"
+      : "bg-blue-50 text-blue-600 border border-blue-100";
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -223,11 +238,13 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
       {/* Modal */}
       <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-in fade-in-0 zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {mode === "add"
-              ? `Adicionar Técnico - OS #${osId}`
-              : `Alterar Técnico - OS #${osId}`}
-          </h3>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {mode === "add"
+                ? `Selecionar Técnico - OS #${osId}`
+                : `Alterar Técnico - OS #${osId}`}
+            </h3>
+          </div>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -256,12 +273,14 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
               </div>
               <p className="text-red-600 mb-1">{error}</p>
               <p className="text-sm text-gray-500 mb-3">
-                Região ID: {idRegiao}
+                {nomeRegiao
+                  ? `Região: ${nomeRegiao} (ID: ${idRegiao})`
+                  : `Região ID: ${idRegiao}`}
               </p>
             </div>
           ) : (
             <>
-              <div className="flex items-start gap-3 mb-4">
+              <div className="flex items-start gap-3 mb-1">
                 <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                   {mode === "add" ? (
                     <UserPlus size={20} className="text-blue-600" />
@@ -287,67 +306,85 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
                     </div>
                   )}
 
-                  <div className="mb-3">
-                    <label
-                      htmlFor="tecnicoSelect"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Selecionar Técnico:
-                    </label>
-                    <select
-                      id="tecnicoSelect"
-                      value={selectedTecnico?.id || ""}
-                      onChange={(e) => {
-                        const tecnicoId = Number(e.target.value);
-                        const tecnico = tecnicos.find(
-                          (t) => t.id === tecnicoId
-                        );
-                        setSelectedTecnico(tecnico || null);
-                      }}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800"
-                      disabled={isLoading}
-                    >
-                      <option value="">Selecione um técnico...</option>
-                      {tecnicos.map((tecnico) => {
-                        const isCurrent = tecnico.id === currentTecnicoId;
+                  {/* Lista visual dos técnicos com badges */}
+                  {tecnicos.length > 0 && (
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Técnicos disponíveis:
+                      </label>
+                      <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-md">
+                        {tecnicos.map((tecnico) => {
+                          const isCurrent = tecnico.id === currentTecnicoId;
+                          const isSelected = selectedTecnico?.id === tecnico.id;
 
-                        return (
-                          <option
-                            key={tecnico.id}
-                            value={tecnico.id}
-                            className={isCurrent ? "font-bold bg-blue-50" : ""}
-                          >
-                            {tecnico.nome} (
-                            {tecnico.tipo === "interno"
-                              ? "Interno"
-                              : "Terceiro"}
-                            ){isCurrent ? " ✓" : ""}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
+                          return (
+                            <div
+                              key={tecnico.id}
+                              className={`px-3 py-2 border-b border-gray-100 last:border-b-0 flex items-center justify-between cursor-pointer hover:bg-gray-50 ${
+                                isSelected ? "bg-blue-50" : ""
+                              } ${isCurrent ? "bg-green-50" : ""}`}
+                              onClick={() => setSelectedTecnico(tecnico)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`text-sm text-gray-600 ${
+                                    isSelected || isCurrent ? "font-medium" : ""
+                                  }`}
+                                >
+                                  {tecnico.nome}
+                                </span>
+                                {isCurrent && (
+                                  <span className="text-green-600 text-xs">
+                                    ✓ Atual
+                                  </span>
+                                )}
+                              </div>
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-full ${getBadgeClasses(
+                                  tecnico.tipo
+                                )}`}
+                              >
+                                {tecnico.tipo === "interno"
+                                  ? "Interno"
+                                  : "Terceiro"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Botões de filtro */}
-                  <div className="flex gap-2 mb-3">
-                    {!showAllTecnicos ? (
-                      <button
-                        onClick={handleResetFilter}
-                        disabled={isLoading || isLoadingTecnicos}
-                        className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <RotateCcw size={12} />
-                        Ver todos os técnicos
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleRestoreFilter}
-                        disabled={isLoading || isLoadingTecnicos}
-                        className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <RotateCcw size={12} />
-                        Filtrar por região
-                      </button>
-                    )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">
+                      {nomeRegiao && !showAllTecnicos && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          Região: {nomeRegiao}
+                        </p>
+                      )}
+                    </span>
+                    <div className="flex gap-2">
+                      {!showAllTecnicos ? (
+                        <button
+                          onClick={handleResetFilter}
+                          disabled={isLoading || isLoadingTecnicos}
+                          className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <RotateCcw size={12} />
+                          Ver todos os técnicos
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleRestoreFilter}
+                          disabled={isLoading || isLoadingTecnicos}
+                          className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <RotateCcw size={12} />
+                          Filtrar por região
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -377,7 +414,7 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
             {isLoading
               ? "Processando..."
               : mode === "add"
-              ? "Adicionar Técnico"
+              ? "Selecionar Técnico"
               : "Alterar Técnico"}
           </button>
         </div>

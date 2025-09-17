@@ -75,10 +75,17 @@ export default function NovoUsuario() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
+    let newValue = type === "checkbox" ? checked : value;
+
+    if (name === "login") {
+      newValue = value.toLowerCase();
+    }
+
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: newValue,
     }));
+
     if (formErrors[name]) {
       setFormErrors((prev) => {
         const updated = { ...prev };
@@ -122,7 +129,7 @@ export default function NovoUsuario() {
         nome: form.nome,
         email: form.email,
         id_empresa: Number(form.id_empresa),
-        situacao: form.situacao, 
+        situacao: form.situacao,
         perfil_interno: form.perfil_interno,
         perfil_gestor_assistencia: form.perfil_gestor_assistencia,
         perfil_tecnico_proprio: form.perfil_tecnico_proprio,
