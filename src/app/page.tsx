@@ -16,50 +16,8 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import packageInfo from "../../package.json";
 
-// ✅ Import da função utilitária
-import { criptografarSenha } from "@/utils/cryptoPassword";
-
-interface Empresa {
-  id_empresa: number;
-  razao_social: string;
-  cnpj: string;
-  nome_bd: string;
-  endereco: string;
-  numero: string;
-  bairro: string;
-  cidade: string;
-  uf: string;
-  cep: string;
-  latitude: number;
-  longitude: number;
-  licenca_demo: boolean;
-  usuarios_ativos?: number;
-  usuarios_cadastrados?: number;
-  usuarios_licenciados?: number;
-  data_validade?: string;
-}
-
-interface LoginResponse {
-  token: string;
-  nome_usuario: string;
-  id_usuario: number;
-  email: string;
-  perfil: {
-    interno: boolean;
-    gestor: boolean;
-    tecnico_proprio: boolean;
-    tecnico_terceirizado: boolean;
-    admin: boolean;
-  };
-  empresa?: Empresa;
-  versao_api?: string | number;
-  senha_provisoria?: boolean;
-}
-
-interface LoginRequest {
-  login: string;
-  senha_criptografada: string;
-}
+// ✅ Import do serviço de login
+import { LoginService } from "@/api/services/login";
 
 export default function LoginPage() {
   const [login, setLogin] = useState("");
@@ -120,35 +78,6 @@ export default function LoginPage() {
     }
   }, []);
 
-  const authenticate = async (): Promise<LoginResponse | null> => {
-    try {
-      const loginData: LoginRequest = {
-        login,
-        senha_criptografada: criptografarSenha(senha),
-      };
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(loginData),
-      });
-
-      if (!response.ok) throw new Error("Credenciais inválidas");
-
-      const data: LoginResponse = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Erro na autenticação:", error);
-      return null;
-    }
-  };
-
-  const hasAdminAccess = (perfil: LoginResponse["perfil"]) =>
-    perfil.interno || perfil.gestor || perfil.admin;
-
-  const hasTechAccess = (perfil: LoginResponse["perfil"]) =>
-    perfil.tecnico_proprio || perfil.tecnico_terceirizado;
-
   const handleAdminAccess = async () => {
     if (!login.trim() || !senha.trim()) {
       setError("Por favor, preencha todos os campos.");
@@ -159,45 +88,10 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const authData = await authenticate();
+      const authData = await LoginService.authenticate(login, senha);
 
-      if (!authData) {
-        setError("Erro na autenticação. Verifique suas credenciais.");
-        return;
-      }
-
-      if (hasAdminAccess(authData.perfil)) {
-        // Dados principais fora do objeto empresa
-        localStorage.setItem("email", authData.email);
-        localStorage.setItem("id_usuario", String(authData.id_usuario));
-        localStorage.setItem("nome_usuario", authData.nome_usuario);
-        localStorage.setItem("token", authData.token);
-        localStorage.setItem("perfil", JSON.stringify(authData.perfil));
-        localStorage.setItem("versao_api", String(authData.versao_api));
-
-        // Objeto empresa completo
-        if (authData.empresa) {
-          const empresaObj = {
-            nome_bd: authData.empresa.nome_bd || "",
-            razao_social: authData.empresa.razao_social || "",
-            id_empresa: authData.empresa.id_empresa,
-            cnpj: authData.empresa.cnpj || "",
-            usuarios_ativos: authData.empresa.usuarios_ativos || 0,
-            usuarios_cadastrados: authData.empresa.usuarios_cadastrados || 0,
-            usuarios_licenciados: authData.empresa.usuarios_licenciados || 0,
-            latitude: Number(authData.empresa.latitude) || "",
-            longitude: Number(authData.empresa.longitude) || "",
-            data_validade: authData.empresa.data_validade || "",
-            licenca_demo: !!authData.empresa.licenca_demo,
-            cep: authData.empresa.cep || "",
-            bairro: authData.empresa.bairro || "",
-            cidade: authData.empresa.cidade || "",
-            endereco: authData.empresa.endereco || "",
-            numero: authData.empresa.numero || "",
-            uf: authData.empresa.uf || "",
-          };
-          localStorage.setItem("empresa", JSON.stringify(empresaObj));
-        }
+      if (LoginService.hasAdminAccess(authData.perfil)) {
+        LoginService.saveUserData(authData);
 
         // Verificar se a senha é provisória
         if (authData.senha_provisoria) {
@@ -212,7 +106,11 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error("Erro no handleAdminAccess:", error);
-      setError("Erro interno. Tente novamente.");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Erro interno. Tente novamente."
+      );
     } finally {
       setLoadingAdmin(false);
     }
@@ -228,58 +126,43 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const authData = await authenticate();
+      const authData = await LoginService.authenticate(login, senha);
 
-      if (!authData) {
-        setError("Erro na autenticação. Verifique suas credenciais.");
+      // ✅ Verificação específica para perfis técnicos
+      if (!LoginService.hasTechAccess(authData.perfil)) {
+        setError(
+          "Usuário não possui perfil técnico. Acesso negado ao Módulo Técnico."
+        );
         return;
       }
 
-      if (hasTechAccess(authData.perfil)) {
-        // Dados principais fora do objeto empresa
-        localStorage.setItem("email", authData.email);
-        localStorage.setItem("id_usuario", String(authData.id_usuario));
-        localStorage.setItem("nome_usuario", authData.nome_usuario);
-        localStorage.setItem("token", authData.token);
-        localStorage.setItem("perfil", JSON.stringify(authData.perfil));
-        localStorage.setItem("versao_api", String(authData.versao_api));
+      // ✅ Verificação adicional para garantir que pelo menos um dos perfis técnicos seja true
+      const { tecnico_proprio, tecnico_terceirizado } = authData.perfil;
 
-        // Objeto empresa completo
-        if (authData.empresa) {
-          const empresaObj = {
-            nome_bd: authData.empresa.nome_bd || "",
-            razao_social: authData.empresa.razao_social || "",
-            id_empresa: authData.empresa.id_empresa,
-            cnpj: authData.empresa.cnpj || "",
-            usuarios_ativos: authData.empresa.usuarios_ativos || 0,
-            usuarios_cadastrados: authData.empresa.usuarios_cadastrados || 0,
-            usuarios_licenciados: authData.empresa.usuarios_licenciados || 0,
-            latitude: authData.empresa.latitude || "",
-            longitude: authData.empresa.longitude || "",
-            data_validade: authData.empresa.data_validade || "",
-            licenca_demo: !!authData.empresa.licenca_demo,
-            cep: authData.empresa.cep || "",
-            bairro: authData.empresa.bairro || "",
-            cidade: authData.empresa.cidade || "",
-            endereco: authData.empresa.endereco || "",
-            numero: authData.empresa.numero || "",
-            uf: authData.empresa.uf || "",
-          };
-          localStorage.setItem("empresa", JSON.stringify(empresaObj));
-        }
+      if (!tecnico_proprio && !tecnico_terceirizado) {
+        setError(
+          "Usuário não é técnico próprio nem terceirizado. Acesso negado."
+        );
+        return;
+      }
 
-        // Verificar se a senha é provisória
-        if (authData.senha_provisoria) {
-          router.push("/alterar-senha");
-        } else {
-          router.push("/tecnico/dashboard");
-        }
+      // ✅ Se chegou até aqui, o usuário tem acesso técnico válido
+      LoginService.saveUserData(authData);
+
+      // Verificar se a senha é provisória
+      if (authData.senha_provisoria) {
+        router.push("/alterar-senha");
       } else {
-        setError("Usuário não tem permissão para acessar o Módulo Técnico.");
+        // ✅ Redirecionar para o dashboard técnico correto
+        router.push("/tecnico/dashboard");
       }
     } catch (error) {
       console.error("Erro no handleTechAccess:", error);
-      setError("Erro interno. Tente novamente.");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Erro interno. Tente novamente."
+      );
     } finally {
       setLoadingTech(false);
     }
@@ -580,7 +463,7 @@ export default function LoginPage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+                    d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
                   />
                 </svg>
                 Acessar Painel de Monitoramento

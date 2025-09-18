@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Wrench,
   AlertTriangle,
@@ -160,6 +161,7 @@ const StatusBadge = React.memo(({ status }: { status: string }) => {
 StatusBadge.displayName = "StatusBadge";
 
 const OSCard = React.memo(({ os }: { os: OSItem }) => {
+  const router = useRouter();
   const formatDate = useCallback((dateStr: string | null) => {
     if (!dateStr || dateStr.trim() === "") return "Não definida";
     try {
@@ -218,7 +220,8 @@ const OSCard = React.memo(({ os }: { os: OSItem }) => {
 
   return (
     <article
-      className={`bg-white rounded-lg shadow-sm border-l-4 ${getStatusBorderColor(
+      onClick={() => router.push(`/tecnico/os/${os.id_os}`)}
+      className={`bg-white rounded-lg cursor-pointer shadow-sm border-l-4 ${getStatusBorderColor(
         os.situacao_os?.descricao || ""
       )} border-r border-t border-b border-gray-200 p-4 mb-3 transition-all duration-200 hover:shadow-md`}
     >
