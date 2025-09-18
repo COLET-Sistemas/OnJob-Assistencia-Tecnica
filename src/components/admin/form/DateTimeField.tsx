@@ -23,7 +23,7 @@ const DateTimeField: React.FC<DateTimeFieldProps> = ({
     <div>
       <label
         htmlFor={id}
-        className="block text-sm font-medium text-gray-700 mb-1"
+        className="block text-md font-medium text-gray-700 mb-1"
       >
         {label} {required && <span className="text-red-500">*</span>}
       </label>
@@ -35,7 +35,7 @@ const DateTimeField: React.FC<DateTimeFieldProps> = ({
         required={required}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-md shadow-sm 
+        className="w-full px-3 py-2.5 border border-gray-200 text-gray-600 rounded-md shadow-sm 
                   focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]
                   placeholder:text-gray-500 disabled:bg-gray-100 disabled:text-gray-500"
       />

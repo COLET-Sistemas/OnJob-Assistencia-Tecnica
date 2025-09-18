@@ -25,7 +25,7 @@ const TextAreaField: React.FC<TextAreaFieldProps> = ({
     <div className={className}>
       <label
         htmlFor={id}
-        className="block text-sm font-medium text-gray-700 mb-1"
+        className="block text-md font-medium text-gray-700 mb-1"
       >
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
@@ -35,7 +35,7 @@ const TextAreaField: React.FC<TextAreaFieldProps> = ({
         value={value}
         onChange={onChange}
         rows={rows}
-        className="w-full px-3 py-2 border border-gray-300 text-gray-800 rounded-md shadow-sm focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] placeholder-gray-500"
+        className="w-full px-3 py-2 border border-gray-300 text-gray-800 rounded-md shadow-sm focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] placeholder-gray-500 placeholder:text-sm"
         placeholder={placeholder}
         required={required}
       />

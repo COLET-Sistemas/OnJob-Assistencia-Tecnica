@@ -2,12 +2,19 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Wrench,
-  User,
   AlertTriangle,
   CheckCircle,
   Clock,
   Settings,
   MapPin,
+  CircleCheck,
+  CircleX,
+  Bell,
+  Car,
+  PauseCircle,
+  FileSearch,
+  XCircle,
+  UserX,
 } from "lucide-react";
 import {
   ordensServicoService,
@@ -16,48 +23,134 @@ import {
 import { Loading } from "@/components/LoadingPersonalizado";
 
 const StatusBadge = React.memo(({ status }: { status: string }) => {
-  const statusInfo = useMemo(() => {
-    const statusStr = status.toLowerCase();
+  const statusMapping: Record<
+    string,
+    { label: string; className: string; icon: React.ReactNode }
+  > = useMemo(
+    () => ({
+      "1": {
+        label: "Pendente",
+        className: "bg-gray-100 text-gray-700 border border-gray-200",
+        icon: (
+          <span title="Pendente">
+            <Clock className="w-3.5 h-3.5 text-gray-500" />
+          </span>
+        ),
+      },
+      "2": {
+        label: "A atender",
+        className: "bg-blue-100 text-blue-700 border border-blue-200",
+        icon: (
+          <span title="A atender">
+            <Bell className="w-3.5 h-3.5 text-blue-600" />
+          </span>
+        ),
+      },
+      "3": {
+        label: "Em deslocamento",
+        className: "bg-purple-100 text-purple-700 border border-purple-200",
+        icon: (
+          <span title="Em deslocamento">
+            <Car className="w-3.5 h-3.5 text-purple-600" />
+          </span>
+        ),
+      },
+      "4": {
+        label: "Em atendimento",
+        className: "bg-orange-100 text-orange-700 border border-orange-200",
+        icon: (
+          <span title="Em atendimento">
+            <Wrench className="w-3.5 h-3.5 text-orange-600" />
+          </span>
+        ),
+      },
+      "5": {
+        label: "Atendimento interrompido",
+        className: "bg-amber-100 text-amber-700 border border-amber-200",
+        icon: (
+          <span title="Atendimento interrompido">
+            <PauseCircle className="w-3.5 h-3.5 text-amber-600" />
+          </span>
+        ),
+      },
+      "6": {
+        label: "Em Revisão",
+        className: "bg-indigo-100 text-indigo-700 border border-indigo-200",
+        icon: (
+          <span title="Em Revisão">
+            <FileSearch className="w-3.5 h-3.5 text-indigo-600" />
+          </span>
+        ),
+      },
+      "7": {
+        label: "Concluída",
+        className: "bg-green-100 text-green-700 border border-green-200",
+        icon: (
+          <span title="Concluída">
+            <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+          </span>
+        ),
+      },
+      "8": {
+        label: "Cancelada",
+        className: "bg-red-100 text-red-700 border border-red-200",
+        icon: (
+          <span title="Cancelada">
+            <XCircle className="w-3.5 h-3.5 text-red-600" />
+          </span>
+        ),
+      },
+      "9": {
+        label: "Cancelada pelo Cliente",
+        className: "bg-rose-100 text-rose-700 border border-rose-200",
+        icon: (
+          <span title="Cancelada pelo Cliente">
+            <UserX className="w-3.5 h-3.5 text-rose-600" />
+          </span>
+        ),
+      },
+    }),
+    []
+  );
 
-    switch (statusStr) {
-      case "pendente":
-        return {
-          color: "bg-amber-50 text-amber-700 border-amber-200 ring-amber-100",
-          icon: <AlertTriangle className="w-3.5 h-3.5" />,
-          label: "Pendente",
-        };
-      case "a atender":
-        return {
-          color: "bg-blue-50 text-blue-700 border-blue-200 ring-blue-100",
-          icon: <Clock className="w-3.5 h-3.5" />,
-          label: "A Atender",
-        };
-      case "em execução":
-        return {
-          color:
-            "bg-orange-50 text-orange-700 border-orange-200 ring-orange-100",
-          icon: <Wrench className="w-3.5 h-3.5" />,
-          label: "Em Execução",
-        };
-      case "finalizada":
-        return {
-          color:
-            "bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-100",
-          icon: <CheckCircle className="w-3.5 h-3.5" />,
-          label: "Finalizada",
-        };
-      default:
-        return {
-          color: "bg-slate-50 text-slate-700 border-slate-200 ring-slate-100",
-          icon: <AlertTriangle className="w-3.5 h-3.5" />,
-          label: status,
-        };
+  // Assumindo que o status pode vir como ID ou descrição
+  const getStatusInfo = () => {
+    // Se for um ID numérico (string), use o mapeamento direto
+    if (statusMapping[status]) {
+      return statusMapping[status];
     }
-  }, [status]);
+
+    // Se for descrição, tente mapear baseado no texto
+    const statusStr = status.toLowerCase();
+    if (statusStr.includes("pendente")) return statusMapping["1"];
+    if (statusStr.includes("atender")) return statusMapping["2"];
+    if (statusStr.includes("deslocamento")) return statusMapping["3"];
+    if (
+      statusStr.includes("atendimento") &&
+      !statusStr.includes("interrompido")
+    )
+      return statusMapping["4"];
+    if (statusStr.includes("interrompido")) return statusMapping["5"];
+    if (statusStr.includes("revisão")) return statusMapping["6"];
+    if (statusStr.includes("concluída") || statusStr.includes("finalizada"))
+      return statusMapping["7"];
+    if (statusStr.includes("cancelada") && statusStr.includes("cliente"))
+      return statusMapping["9"];
+    if (statusStr.includes("cancelada")) return statusMapping["8"];
+
+    // Status padrão se não encontrar correspondência
+    return {
+      label: status,
+      className: "bg-gray-100 text-gray-700 border border-gray-200",
+      icon: <AlertTriangle className="w-3.5 h-3.5 text-gray-500" />,
+    };
+  };
+
+  const statusInfo = getStatusInfo();
 
   return (
     <div
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium ring-1 transition-all duration-200 ${statusInfo.color}`}
+      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${statusInfo.className}`}
     >
       {statusInfo.icon}
       <span>{statusInfo.label}</span>
@@ -72,7 +165,6 @@ const OSCard = React.memo(({ os }: { os: OSItem }) => {
     try {
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return dateStr;
-      // Formatar como dd/MM/yyyy HH:mm
       const dia = String(date.getDate()).padStart(2, "0");
       const mes = String(date.getMonth() + 1).padStart(2, "0");
       const ano = date.getFullYear();
@@ -84,65 +176,98 @@ const OSCard = React.memo(({ os }: { os: OSItem }) => {
     }
   }, []);
 
-  // Card compacto, sem botão expandir, valores à esquerda, situação à direita, nome do cliente ao lado do número da OS
+  // Definir cor da borda lateral baseada no status
+  const getStatusBorderColor = (status: string) => {
+    // Se for um ID numérico (string), use o mapeamento direto
+    const statusMappingBorder: Record<string, string> = {
+      "1": "border-l-gray-500",
+      "2": "border-l-blue-500",
+      "3": "border-l-purple-500",
+      "4": "border-l-orange-500",
+      "5": "border-l-amber-500",
+      "6": "border-l-indigo-500",
+      "7": "border-l-green-500",
+      "8": "border-l-red-500",
+      "9": "border-l-rose-500",
+    };
+
+    if (statusMappingBorder[status]) {
+      return statusMappingBorder[status];
+    }
+
+    // Se for descrição, tente mapear baseado no texto
+    const statusStr = status.toLowerCase();
+    if (statusStr.includes("pendente")) return "border-l-gray-500";
+    if (statusStr.includes("atender")) return "border-l-blue-500";
+    if (statusStr.includes("deslocamento")) return "border-l-purple-500";
+    if (
+      statusStr.includes("atendimento") &&
+      !statusStr.includes("interrompido")
+    )
+      return "border-l-orange-500";
+    if (statusStr.includes("interrompido")) return "border-l-amber-500";
+    if (statusStr.includes("revisão")) return "border-l-indigo-500";
+    if (statusStr.includes("concluída") || statusStr.includes("finalizada"))
+      return "border-l-green-500";
+    if (statusStr.includes("cancelada") && statusStr.includes("cliente"))
+      return "border-l-rose-500";
+    if (statusStr.includes("cancelada")) return "border-l-red-500";
+
+    return "border-l-gray-500";
+  };
+
   return (
-    <article className="group bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-slate-300 hover:-translate-y-0.5">
-      <div className="flex flex-row items-center justify-between gap-2 px-4 py-3">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span className="text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 px-3 py-1 rounded shadow-sm whitespace-nowrap">
-            #{os.id_os}
-          </span>
-          <span className="text-sm font-semibold text-slate-800 truncate max-w-xs">
-            {os.cliente?.nome}
-          </span>
+    <article
+      className={`bg-white rounded-lg shadow-sm border-l-4 ${getStatusBorderColor(
+        os.situacao_os?.descricao || ""
+      )} border-r border-t border-b border-gray-200 p-4 mb-3 transition-all duration-200 hover:shadow-md`}
+    >
+      {/* Header com número da OS e status */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-gray-900 mb-1">
+            OS #{os.id_os} - {os.cliente?.nome}
+          </h3>
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            <MapPin className="w-3 h-3 text-gray-500" />
+            <span>
+              {os.cliente?.cidade}, {os.cliente?.uf}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 min-w-0">
-          <StatusBadge status={os.situacao_os?.descricao || ""} />
-        </div>
+        <StatusBadge status={os.situacao_os?.descricao || ""} />
       </div>
-      <div className="flex flex-col sm:flex-row items-start justify-start gap-2 px-4 pb-2">
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-slate-400" />
-          <span className="text-xs text-slate-700">
-            {os.cliente?.cidade}, {os.cliente?.uf}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Settings className="w-4 h-4 text-slate-500" />
-          <span className="text-xs text-slate-700 font-semibold">
-            {os.maquina?.modelo}
-          </span>
-          {os.maquina?.numero_serie && (
-            <span className="text-xs text-slate-400 font-mono ml-2">
-              S/N: {os.maquina.numero_serie}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-blue-500" />
-          <span className="text-xs text-blue-700 font-semibold">
-            {formatDate(os.data_agendada)}
-          </span>
-        </div>
-        {os.tecnico && (
-          <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-purple-600" />
-            <span className="text-xs text-purple-700 font-semibold">
-              {os.tecnico.nome}
-            </span>
-            {os.tecnico.tipo && (
-              <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full ml-1">
-                {os.tecnico.tipo}
-              </span>
+
+      {/* Informações da máquina */}
+      <div className="mb-3">
+        <div className="flex items-center gap-1 text-sm text-gray-700 mb-1">
+          <Settings className="w-3 h-3 text-gray-500" />
+          <span className="font-medium">{os.maquina?.modelo}</span>
+
+          <div
+            className="w-4 h-4 flex items-center justify-center"
+            title={os.em_garantia ? "Em garantia" : "Fora da garantia"}
+          >
+            {os.em_garantia ? (
+              <CircleCheck className="w-4 h-4 text-emerald-500" />
+            ) : (
+              <CircleX className="w-4 h-4 text-amber-500" />
             )}
           </div>
-        )}
+        </div>
+      </div>
+
+      {/* Footer com data e técnico */}
+      <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-2 text-xs text-gray-600">
+          <Clock className="w-3 h-3 text-gray-500" />
+          <span>Agendado: {formatDate(os.data_agendada)}</span>
+        </div>
       </div>
     </article>
   );
 });
 
-// Removido bloco duplicado do card antigo
 OSCard.displayName = "OSCard";
 
 export default function OSAbertoMobile() {
@@ -159,7 +284,7 @@ export default function OSAbertoMobile() {
         const response = await ordensServicoService.getPendentes();
         setOsList(response.dados);
       } catch {
-        setError("Erro ao carregar ordens de serviço em aberto.");
+        setError("Erro ao carregar ordens de serviço.");
       } finally {
         setLoading(false);
       }
@@ -168,27 +293,14 @@ export default function OSAbertoMobile() {
     fetchOS();
   }, []);
 
-  const statsData = useMemo(() => {
-    const total = osList.length;
-    const pendentes = osList.filter((os) =>
-      os.situacao_os?.descricao.toLowerCase().includes("pendente")
-    ).length;
-    const emExecucao = osList.filter((os) =>
-      os.situacao_os?.descricao.toLowerCase().includes("execução")
-    ).length;
-    const aAtender = osList.filter((os) =>
-      os.situacao_os?.descricao.toLowerCase().includes("atender")
-    ).length;
-
-    return { total, pendentes, emExecucao, aAtender };
-  }, [osList]);
+  // Estatísticas removidas conforme solicitado
 
   if (loading) {
     return (
       <Loading
         fullScreen={true}
         preventScroll={false}
-        text="Carregando motivos de atendimento..."
+        text="Carregando suas ordens de serviço..."
         size="large"
       />
     );
@@ -196,16 +308,14 @@ export default function OSAbertoMobile() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-        <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-8 max-w-md w-full text-center shadow-lg">
-          <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center bg-red-100 rounded-full">
-            <AlertTriangle className="w-8 h-8 text-red-500" />
-          </div>
-          <h2 className="text-lg font-bold text-red-700 mb-2">Erro</h2>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full text-center">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+          <h2 className="text-lg font-semibold text-red-800 mb-2">Erro</h2>
           <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition"
+            className="px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition"
           >
             Tentar novamente
           </button>
@@ -216,14 +326,14 @@ export default function OSAbertoMobile() {
 
   if (osList.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 max-w-md w-full text-center shadow-lg">
-          <CheckCircle className="w-12 h-12 mx-auto mb-4 text-emerald-500" />
-          <h2 className="text-lg font-bold text-slate-800 mb-2">
-            Nenhuma OS em aberto
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-8 max-w-md w-full text-center shadow-sm">
+          <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
+          <h2 className="text-lg font-semibold text-gray-800 mb-2">
+            Nenhuma OS atribuída
           </h2>
-          <p className="text-slate-600">
-            Você não possui ordens de serviço pendentes no momento.
+          <p className="text-gray-600">
+            Você não possui ordens de serviço atribuídas no momento.
           </p>
         </div>
       </div>
@@ -231,43 +341,18 @@ export default function OSAbertoMobile() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-2 sm:px-6 lg:px-12">
-      {/* Estatísticas rápidas */}
-      <section className="mb-8 max-w-5xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-4 flex flex-col items-center border border-slate-200 shadow-sm">
-            <span className="text-xs text-slate-500 mb-1">Total</span>
-            <span className="text-2xl font-bold text-indigo-700">
-              {statsData.total}
-            </span>
-          </div>
-          <div className="bg-white rounded-xl p-4 flex flex-col items-center border border-slate-200 shadow-sm">
-            <span className="text-xs text-slate-500 mb-1">Pendentes</span>
-            <span className="text-2xl font-bold text-amber-600">
-              {statsData.pendentes}
-            </span>
-          </div>
-          <div className="bg-white rounded-xl p-4 flex flex-col items-center border border-slate-200 shadow-sm">
-            <span className="text-xs text-slate-500 mb-1">A Atender</span>
-            <span className="text-2xl font-bold text-blue-600">
-              {statsData.aAtender}
-            </span>
-          </div>
-          <div className="bg-white rounded-xl p-4 flex flex-col items-center border border-slate-200 shadow-sm">
-            <span className="text-xs text-slate-500 mb-1">Em Execução</span>
-            <span className="text-2xl font-bold text-orange-600">
-              {statsData.emExecucao}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* Lista de OSs */}
-      <section className="max-w-5xl mx-auto space-y-6">
+    <main className="min-h-screen bg-gray-50">
+      {/* Header removido. Apenas lista de OSs */}
+      <div className="bg-white border-b border-gray-200 px-4 py-6">
+        <h1 className="text-xl font-semibold text-gray-900 mb-4">
+          Minhas Ordens de Serviço
+        </h1>
+      </div>
+      <div className="p-4">
         {osList.map((os) => (
           <OSCard key={os.id_os} os={os} />
         ))}
-      </section>
+      </div>
     </main>
   );
 }

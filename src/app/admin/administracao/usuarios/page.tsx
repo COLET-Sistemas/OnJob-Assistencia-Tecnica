@@ -8,7 +8,7 @@ import { useToast } from "@/components/admin/ui/ToastContainer";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import { ResetPasswordButton } from "@/components/admin/ui/ResetPasswordButton";
-import { ActivateButton } from "@/components/admin/ui/ActivateButton"; // Novo componente
+import { ActivateButton } from "@/components/admin/ui/ActivateButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useFilters } from "@/hooks/useFilters";
 import { usuariosService as usuariosAPI } from "@/api/services/usuariosService";
@@ -252,16 +252,12 @@ const CadastroUsuario = () => {
           itemName={`${usuario.nome} (${usuario.login})`}
         />
       )}
-
-      {/* Botão de reset de senha apenas para usuários ativos */}
-      {usuario.situacao === "A" && (
-        <ResetPasswordButton
-          id={usuario.id}
-          userName={usuario.nome}
-          userLogin={usuario.login}
-          onUpdateUser={(updates) => updateUserInList(usuario.id, updates)}
-        />
-      )}
+      <ResetPasswordButton
+        id={usuario.id}
+        userName={usuario.nome}
+        userLogin={usuario.login}
+        onUpdateUser={(updates) => updateUserInList(usuario.id, updates)}
+      />
     </div>
   );
 

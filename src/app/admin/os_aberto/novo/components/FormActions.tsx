@@ -1,6 +1,5 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface FormActionsProps {
@@ -45,10 +44,7 @@ const FormActions: React.FC<FormActionsProps> = ({ isSaving }) => {
               Salvando...
             </>
           ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              Salvar
-            </>
+            <>Salvar</>
           )}
         </button>
       </div>

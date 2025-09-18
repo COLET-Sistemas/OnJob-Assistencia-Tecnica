@@ -15,6 +15,7 @@ import {
 import { clientesService } from "@/api/services/clientesService";
 import { maquinasService } from "@/api/services/maquinasService";
 import { motivosPendenciaService } from "@/api/services/motivosPendenciaService";
+import { motivosAtendimentoService } from "@/api/services/motivosAtendimentoService";
 import { ordensServicoService } from "@/api/services/ordensServicoService";
 import { usuariosService } from "@/api/services/usuariosService";
 import { Cliente, ClienteContato } from "@/types/admin/cadastro/clientes";
@@ -75,17 +76,22 @@ const NovaOrdemServico = () => {
   >([]);
   const [selectedMotivoPendencia, setSelectedMotivoPendencia] =
     useState<MotivoPendenciaOption | null>(null);
+  // Motivo de Atendimento
+  const [motivosAtendimentoOptions, setMotivosAtendimentoOptions] = useState<
+    MotivoPendenciaOption[]
+  >([]);
+  const [selectedMotivoAtendimento, setSelectedMotivoAtendimento] =
+    useState<MotivoPendenciaOption | null>(null);
   const [descricaoProblema, setDescricaoProblema] = useState("");
   const [formaAbertura, setFormaAbertura] = useState<FormaAberturaOption>({
-    value: "telefone",
+    value: "Telefone",
     label: "Telefone",
   });
-  const [formaAberturaInput, setFormaAberturaInput] = useState("");
   const [dataAgendada, setDataAgendada] = useState("");
   const formaAberturaOptions: FormaAberturaOption[] = [
-    { value: "email", label: "Email" },
-    { value: "telefone", label: "Telefone" },
-    { value: "whatsapp", label: "WhatsApp" },
+    { value: "Email", label: "Email" },
+    { value: "Telefone", label: "Telefone" },
+    { value: "WhatsApp", label: "WhatsApp" },
   ];
   const [isSearchingClientes, setIsSearchingClientes] = useState(false);
   const [loadingMaquinas, setLoadingMaquinas] = useState(false);
@@ -112,6 +118,7 @@ const NovaOrdemServico = () => {
     maquina?: boolean;
     contato?: boolean;
     motivoPendencia?: boolean;
+    motivoAtendimento?: boolean;
     descricaoProblema?: boolean;
     formaAbertura?: boolean;
     customContatoNome?: boolean;
@@ -154,7 +161,7 @@ const NovaOrdemServico = () => {
     if (maquinaOption && maquinaOption.value === -1) {
       // Usuário selecionou "Buscar outra máquina..."
       setSelectedMaquina(null);
-      setMaquinaInput(""); // Limpar o campo de busca
+      setMaquinaInput("");
     } else {
       setSelectedMaquina(maquinaOption);
     }
@@ -188,6 +195,18 @@ const NovaOrdemServico = () => {
           setMotivosPendenciaOptions(motivosPendenciaOpts);
         }
 
+        // Carregar motivos de atendimento usando o service
+        const motivosAtendimentoData = await motivosAtendimentoService.getAll({
+          situacao: "A",
+        });
+        const motivosAtendimentoOpts = motivosAtendimentoData.map(
+          (motivo: { id: number; descricao: string; situacao: string }) => ({
+            value: motivo.id,
+            label: motivo.descricao,
+          })
+        );
+        setMotivosAtendimentoOptions(motivosAtendimentoOpts);
+
         // Carregar técnicos apenas se ainda não foram carregados
         if (!tecnicosLoaded.current) {
           tecnicosLoaded.current = true;
@@ -201,10 +220,18 @@ const NovaOrdemServico = () => {
             ? tecnicosResponse
             : tecnicosResponse.dados || [];
 
-          const tecnicosOpts = tecnicos.map((tecnico: Usuario) => ({
-            value: tecnico.id,
-            label: tecnico.nome,
-          }));
+          const tecnicosOpts = tecnicos.map((tecnico: Usuario) => {
+            let tipo = "";
+            if (tecnico.perfil_tecnico_terceirizado) {
+              tipo = " (Terceiro)";
+            } else if (tecnico.perfil_interno) {
+              tipo = " (Interno)";
+            }
+            return {
+              value: tecnico.id,
+              label: `${tecnico.nome}${tipo}`,
+            };
+          });
 
           setTecnicosOptions(tecnicosOpts);
           setLoadingTecnicos(false);
@@ -236,7 +263,7 @@ const NovaOrdemServico = () => {
       // Acessa os dados dos clientes no array 'dados'
       const options = response.dados.map((cliente: Cliente) => ({
         value: cliente.id_cliente || cliente.id || 0,
-        label: `${cliente.nome_fantasia} (${cliente.codigo_erp || "-"})`,
+        label: `${cliente.razao_social} (${cliente.codigo_erp || "-"})`,
       }));
       setClienteOptions(options);
     } catch (error) {
@@ -411,6 +438,7 @@ const NovaOrdemServico = () => {
       maquina?: boolean;
       contato?: boolean;
       motivoPendencia?: boolean;
+      motivoAtendimento?: boolean;
       descricaoProblema?: boolean;
       formaAbertura?: boolean;
       customContatoNome?: boolean;
@@ -436,25 +464,17 @@ const NovaOrdemServico = () => {
       validationErrors.formaAbertura = true;
     }
 
-    // Validar motivo de pendência
-    if (!selectedMotivoPendencia) {
-      validationErrors.motivoPendencia = true;
-    }
-
     // Validar contato
     if (!selectedContato) {
       validationErrors.contato = true;
     } else if (selectedContato.isCustom && !customContatoNome.trim()) {
-      // Validar nome do contato personalizado
       validationErrors.customContatoNome = true;
       setShowNameError(true);
     }
 
-    // Se houver erros, atualizar o estado e abortar o envio
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
 
-      // Rolar até o primeiro campo com erro
       const firstErrorField = document.querySelector(".campo-erro");
       if (firstErrorField) {
         firstErrorField.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -463,13 +483,10 @@ const NovaOrdemServico = () => {
       return;
     }
 
-    // Limpar erros se tudo estiver válido
     setErrors({});
-
     setIsSaving(true);
 
     try {
-      // Verificamos anteriormente que esses valores não são nulos, mas vamos garantir isso novamente
       if (!selectedCliente || !selectedMaquina || !formaAbertura) {
         console.error("Valores necessários não encontrados");
         return;
@@ -479,6 +496,7 @@ const NovaOrdemServico = () => {
         id_cliente: number;
         id_maquina: number;
         id_motivo_pendencia?: number;
+        id_motivo_atendimento?: number;
         descricao_problema: string;
         origem_abertura: string;
         forma_abertura: string;
@@ -503,6 +521,11 @@ const NovaOrdemServico = () => {
         id_regiao: 1,
       };
 
+      // Adicione id_motivo_atendimento apenas se selecionado
+      if (selectedMotivoAtendimento && selectedMotivoAtendimento.value) {
+        osData.id_motivo_atendimento = selectedMotivoAtendimento.value;
+      }
+
       // Adicione data_agendada apenas se não estiver vazia
       if (dataAgendada && dataAgendada.trim() !== "") {
         osData.data_agendada = dataAgendada.replace("T", " ");
@@ -511,7 +534,6 @@ const NovaOrdemServico = () => {
       // Adicionar informações de contato com os novos campos
       if (selectedContato) {
         if (selectedContato.isCustom) {
-          // Usando contato personalizado
           if (customContatoNome.trim()) {
             osData.nome_contato_abertura = customContatoNome.trim();
 
@@ -529,7 +551,6 @@ const NovaOrdemServico = () => {
             }
           }
         } else {
-          // Usando contato da lista
           osData.id_contato = selectedContato.value;
           osData.id_contato_abertura = selectedContato.value;
           osData.nome_contato_abertura =
@@ -653,6 +674,7 @@ const NovaOrdemServico = () => {
               noOptionsMessageFn={() =>
                 "Nenhum contato encontrado para este cliente"
               }
+              isDisabled={!selectedCliente}
             />
           </motion.div>
         </motion.div>
@@ -712,22 +734,31 @@ const NovaOrdemServico = () => {
                   : "Nenhuma máquina encontrada"
               }
               components={{ Option: MachineOption }}
+              isDisabled={!selectedCliente}
             />
           </motion.div>
 
-          {/* Técnico */}
+          {/* Motivo de Atendimento */}
           <motion.div>
             <CustomSelect
-              id="tecnico"
-              label="Técnico"
-              placeholder="Selecione o técnico (opcional)"
-              options={tecnicosOptions}
-              value={selectedTecnico}
-              onChange={handleTecnicoSelectChange}
+              id="motivo-atendimento"
+              label="Motivo de Atendimento"
+              placeholder="Selecione o motivo de atendimento"
+              options={motivosAtendimentoOptions}
+              value={selectedMotivoAtendimento}
+              onChange={(option) => {
+                setSelectedMotivoAtendimento(
+                  option as MotivoPendenciaOption | null
+                );
+                if (option)
+                  setErrors((prev) => ({ ...prev, motivoAtendimento: false }));
+              }}
               inputValue=""
               onInputChange={() => {}}
-              isLoading={loadingTecnicos}
-              noOptionsMessageFn={() => "Nenhum técnico encontrado"}
+              isLoading={false}
+              noOptionsMessageFn={() =>
+                "Nenhum motivo de atendimento cadastrado"
+              }
             />
           </motion.div>
         </motion.div>
@@ -737,30 +768,36 @@ const NovaOrdemServico = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-4 gap-6"
         >
+          {/* Técnico */}
+          <motion.div>
+            <CustomSelect
+              id="tecnico"
+              label="Técnico"
+              placeholder="Selecione o técnico"
+              options={tecnicosOptions}
+              value={selectedTecnico}
+              onChange={handleTecnicoSelectChange}
+              inputValue=""
+              onInputChange={() => {}}
+              isLoading={loadingTecnicos}
+              noOptionsMessageFn={() => "Nenhum técnico encontrado"}
+            />
+          </motion.div>
+
           {/* Motivo de Pendência */}
           <motion.div>
             <CustomSelect
               id="motivo-pendencia"
               label="Motivo de Pendência"
-              required
               placeholder="Selecione o motivo de pendência"
               options={motivosPendenciaOptions}
               value={selectedMotivoPendencia}
-              onChange={(option) => {
-                handleMotivoPendenciaSelectChange(option);
-                if (option)
-                  setErrors((prev) => ({ ...prev, motivoPendencia: false }));
-              }}
+              onChange={handleMotivoPendenciaSelectChange}
               inputValue=""
               onInputChange={() => {}}
               isLoading={false}
-              error={
-                errors.motivoPendencia
-                  ? "Motivo de pendência é obrigatório"
-                  : ""
-              }
               noOptionsMessageFn={() => "Nenhum motivo de pendência cadastrado"}
             />
           </motion.div>
@@ -768,59 +805,23 @@ const NovaOrdemServico = () => {
           {/* Forma de Abertura */}
           <motion.div>
             <CustomSelect
-              id="forma-abertura"
+              id="forma_abertura"
               label="Forma de Abertura"
               required
-              placeholder="Selecione ou digite a forma de abertura"
-              options={[
-                ...formaAberturaOptions,
-                // Adiciona a opção digitada pelo usuário se não estiver na lista
-                ...(formaAberturaInput &&
-                !formaAberturaOptions.some(
-                  (opt) =>
-                    opt.label.toLowerCase() === formaAberturaInput.toLowerCase()
-                )
-                  ? [
-                      {
-                        value: formaAberturaInput.toLowerCase(),
-                        label: formaAberturaInput,
-                      },
-                    ]
-                  : []),
-              ]}
+              placeholder="Selecione a forma de abertura"
+              options={formaAberturaOptions}
               value={formaAbertura}
               onChange={(option) => {
-                if (option) {
-                  setFormaAbertura(option as FormaAberturaOption);
-                  setErrors((prev) => ({ ...prev, formaAbertura: false }));
-                } else {
-                  setFormaAbertura({ value: "telefone", label: "Telefone" });
-                }
+                setFormaAbertura(option as FormaAberturaOption);
+                setErrors((prev) => ({ ...prev, formaAbertura: false }));
               }}
-              inputValue={formaAberturaInput}
-              onInputChange={(value) => {
-                setFormaAberturaInput(value);
-                if (
-                  value &&
-                  !formaAberturaOptions.some(
-                    (opt) => opt.label.toLowerCase() === value.toLowerCase()
-                  )
-                ) {
-                  setFormaAbertura({
-                    value: value.toLowerCase().replace(/\s+/g, "_"),
-                    label: value,
-                  });
-                }
-              }}
+              inputValue=""
+              onInputChange={() => {}}
               isLoading={false}
               error={
                 errors.formaAbertura ? "Forma de abertura é obrigatória" : ""
               }
-              noOptionsMessageFn={({ inputValue }) =>
-                inputValue
-                  ? `Use "${inputValue}" como forma de abertura`
-                  : "Nenhuma forma de abertura disponível"
-              }
+              noOptionsMessageFn={() => "Nenhuma forma encontrada"}
             />
           </motion.div>
 

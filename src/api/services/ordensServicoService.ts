@@ -320,7 +320,20 @@ class OrdensServicoService {
     qtde_registros: number;
     dados: OSItem[];
   }> {
-    return api.get(`${this.baseUrl}?resumido=s&situacao=1,2,3,4,5`);
+    // Recuperar o id_usuario do localStorage
+    const idUsuario = localStorage.getItem("id_usuario");
+
+    const params: Record<string, string> = {
+      resumido: "s",
+      situacao: "2,3,4,5",
+    };
+
+    // Adicionar id_tecnico apenas se o id_usuario existir no localStorage
+    if (idUsuario) {
+      params.id_tecnico = idUsuario;
+    }
+
+    return api.get(`${this.baseUrl}`, { params });
   }
 
   async getDashboard(params = {}): Promise<{

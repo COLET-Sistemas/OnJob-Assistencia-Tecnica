@@ -3,6 +3,7 @@ import { OrdemServico } from "../../../../types/OrdemServico";
 import {
   Calendar,
   User,
+  AlertOctagon,
   MapPin,
   AlertCircle,
   Settings,
@@ -384,8 +385,8 @@ const OSCard: React.FC<OSCardProps> = ({
                           </span>
                         </span>
                       ) : (
-                        <span className="text-amber-600 text-xs flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" />
+                        <span className="text-red-600 text-xs flex items-center gap-1">
+                          <AlertOctagon className="w-3 h-3" />
                           Aguardando liberação financeira
                         </span>
                       )}
@@ -414,10 +415,17 @@ const OSCard: React.FC<OSCardProps> = ({
                 {/* Motivo Pendência quando existir */}
                 {os.situacao_os.motivo_pendencia && (
                   <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="text-xs text-gray-700 font-medium">
-                        Motivo da Pendência:
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <div className="flex items-center gap-1.5">
+                        <AlertTriangle className="w-3 h-3 text-gray-500" />
+                        <span className="flex items-center gap-1 pt-0.5">
+                          Motivo da Pendência:
+                          <span className="text-gray-600 font-normal">
+                            {os.situacao_os.motivo_pendencia}
+                          </span>
+                        </span>
                       </div>
+
                       {onAlterarPendencia && (
                         <button
                           onClick={(e) => {
@@ -429,8 +437,8 @@ const OSCard: React.FC<OSCardProps> = ({
                             );
                           }}
                           className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-600 
-                                  hover:bg-amber-100 rounded-md text-xs font-medium transition-colors 
-                                  border border-amber-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+            hover:bg-amber-100 rounded-md text-xs font-medium transition-colors 
+            border border-amber-200 transform hover:scale-105 active:scale-95 cursor-pointer"
                           title="Alterar pendência"
                         >
                           <Edit className="w-3 h-3" />
@@ -438,8 +446,22 @@ const OSCard: React.FC<OSCardProps> = ({
                         </button>
                       )}
                     </div>
-                    <div className="px-3 py-1.5 bg-orange-50 border border-orange-100 rounded text-orange-700 text-xs">
-                      {os.situacao_os.motivo_pendencia}
+                  </div>
+                )}
+
+                {/* Motivo Atendimento quando existir */}
+                {os.abertura && os.abertura.motivo_atendimento && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <div className="flex items-center gap-1.5">
+                        <AlertCircle className="w-3 h-3 text-gray-500" />
+                        <span className="flex items-center gap-1 pt-0.5">
+                          Motivo do Atendimento:
+                          <span className="text-gray-600 font-normal">
+                            {os.abertura.motivo_atendimento}
+                          </span>
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}

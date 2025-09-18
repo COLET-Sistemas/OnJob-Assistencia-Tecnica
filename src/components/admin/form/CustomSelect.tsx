@@ -81,7 +81,8 @@ interface CustomSelectProps {
   error?: string;
   minCharsToSearch?: number;
   noOptionsMessageFn?: (obj: { inputValue: string }) => string;
-  components?: SelectProps<OptionType>["components"]; // Allow custom components for react-select
+  components?: SelectProps<OptionType>["components"]; 
+  isDisabled?: boolean;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -99,6 +100,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   minCharsToSearch = 3,
   noOptionsMessageFn,
   components,
+  isDisabled = false,
 }) => {
   // Using a properly typed ref for react-select that handles the methods we need
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -152,6 +154,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         menuPosition="fixed"
         components={components}
         ref={selectRef}
+        isDisabled={isDisabled}
       />
       {error && <div className="text-red-500 text-sm mt-1">{error}</div>}
     </div>
