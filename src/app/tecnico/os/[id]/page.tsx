@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
+import MobileHeader from "@/components/tecnico/MobileHeader";
 import {
-  ArrowLeft,
   MapPin,
   User,
   Phone,
@@ -26,7 +26,6 @@ import {
   DollarSign,
   History,
   Package,
-
 } from "lucide-react";
 import {
   ordensServicoService,
@@ -98,7 +97,10 @@ const StatusBadge = React.memo(({ status }: { status: string }) => {
     if (statusStr.includes("pendente")) return statusMapping["1"];
     if (statusStr.includes("atender")) return statusMapping["2"];
     if (statusStr.includes("deslocamento")) return statusMapping["3"];
-    if (statusStr.includes("atendimento") && !statusStr.includes("interrompido"))
+    if (
+      statusStr.includes("atendimento") &&
+      !statusStr.includes("interrompido")
+    )
       return statusMapping["4"];
     if (statusStr.includes("interrompido")) return statusMapping["5"];
     if (statusStr.includes("revisão")) return statusMapping["6"];
@@ -141,10 +143,12 @@ const InfoCard = React.memo(
     className?: string;
   }) => {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 ${className}`}>
+      <div
+        className={`bg-white rounded-xl shadow-md border border-gray-100 p-4 transition hover:shadow-lg ${className}`}
+      >
         <div className="flex items-center gap-2 mb-3">
-          {icon}
-          <h3 className="font-semibold text-gray-900">{title}</h3>
+          <div className="p-2 rounded-full bg-blue-50">{icon}</div>
+          <h3 className="font-semibold text-gray-900 text-base">{title}</h3>
         </div>
         {children}
       </div>
@@ -199,8 +203,6 @@ export default function OSDetalheMobile() {
     }
   }, []);
 
-
-
   useEffect(() => {
     const fetchOS = async () => {
       if (!params?.id) {
@@ -214,10 +216,10 @@ export default function OSDetalheMobile() {
 
       try {
         const response = await ordensServicoService.getById(Number(params.id));
-        
+
         // A API pode retornar um array ou um objeto único
         const osData = Array.isArray(response) ? response[0] : response;
-        
+
         if (!osData) {
           setError("OS não encontrada");
           return;
@@ -236,80 +238,84 @@ export default function OSDetalheMobile() {
 
   if (loading) {
     return (
-      <Loading
-        fullScreen={true}
-        preventScroll={false}
-        text="Carregando detalhes da OS..."
-        size="large"
-      />
+      <>
+        <MobileHeader
+          title={`Detalhes da OS`}
+          onMenuClick={() => router.back()}
+        />
+        <Loading
+          fullScreen={true}
+          preventScroll={false}
+          text="Carregando detalhes da OS..."
+          size="large"
+        />
+      </>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full text-center">
-          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-          <h2 className="text-lg font-semibold text-red-800 mb-2">Erro</h2>
-          <p className="text-red-600 mb-4">{error}</p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => router.back()}
-              className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md font-medium hover:bg-gray-700 transition"
-            >
-              Voltar
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition"
-            >
-              Tentar novamente
-            </button>
+      <>
+        <MobileHeader
+          title={`Detalhes da OS`}
+          onMenuClick={() => router.back()}
+        />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full text-center">
+            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+            <h2 className="text-lg font-semibold text-red-800 mb-2">Erro</h2>
+            <p className="text-red-600 mb-4">{error}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => router.back()}
+                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md font-medium hover:bg-gray-700 transition"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition"
+              >
+                Tentar novamente
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!os) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">
-            OS não encontrada
-          </h2>
-          <button
-            onClick={() => router.back()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition"
-          >
-            Voltar
-          </button>
+      <>
+        <MobileHeader
+          title={`Detalhes da OS`}
+          onMenuClick={() => router.back()}
+        />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="text-center">
+            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">
+              OS não encontrada
+            </h2>
+            <button
+              onClick={() => router.back()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition"
+            >
+              Voltar
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* Header fixo */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-semibold text-gray-900 truncate">
-              OS #{os.id_os}
-            </h1>
-          </div>
-          <StatusBadge status={os.situacao_os?.descricao || ""} />
-        </div>
-      </div>
-
+      <MobileHeader
+        title={os.id_os ? `OS #${os.id_os}` : "Detalhes da OS"}
+        onMenuClick={() => router.back()}
+      />
       {/* Conteúdo */}
       <div className="p-4 space-y-4">
         {/* Informações Básicas */}
@@ -343,12 +349,16 @@ export default function OSDetalheMobile() {
                 {os.em_garantia ? (
                   <>
                     <CircleCheck className="w-4 h-4 text-green-500" />
-                    <span className="text-green-700 font-medium">Em garantia</span>
+                    <span className="text-green-700 font-medium">
+                      Em garantia
+                    </span>
                   </>
                 ) : (
                   <>
                     <CircleX className="w-4 h-4 text-red-500" />
-                    <span className="text-red-700 font-medium">Fora da garantia</span>
+                    <span className="text-red-700 font-medium">
+                      Fora da garantia
+                    </span>
                   </>
                 )}
               </div>
@@ -370,18 +380,34 @@ export default function OSDetalheMobile() {
           <InfoItem
             label="Endereço"
             value={
-              os.cliente?.endereco
-                ? `${os.cliente.endereco}, ${os.cliente.numero || "S/N"} - ${
+              os.cliente?.endereco ? (
+                <button
+                  onClick={() =>
+                    window.open(
+                      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        `${os.cliente.endereco}, ${
+                          os.cliente.numero || "S/N"
+                        } - ${os.cliente.bairro}, ${os.cliente.cidade}/${
+                          os.cliente.uf
+                        }`
+                      )}`,
+                      "_blank"
+                    )
+                  }
+                  className="text-blue-600 underline hover:text-blue-800"
+                >
+                  {`${os.cliente.endereco}, ${os.cliente.numero || "S/N"} - ${
                     os.cliente.bairro
-                  }, ${os.cliente.cidade}/${os.cliente.uf}`
-                : "Não informado"
+                  }, ${os.cliente.cidade}/${os.cliente.uf}`}
+                </button>
+              ) : (
+                "Não informado"
+              )
             }
             icon={<MapPin className="w-4 h-4 text-gray-500" />}
           />
-          <InfoItem
-            label="CEP"
-            value={os.cliente?.cep || "Não informado"}
-          />
+
+          <InfoItem label="CEP" value={os.cliente?.cep || "Não informado"} />
         </InfoCard>
 
         {/* Informações de Contato */}
@@ -401,7 +427,23 @@ export default function OSDetalheMobile() {
           />
           <InfoItem
             label="WhatsApp"
-            value={os.contato?.whatsapp || "Não informado"}
+            value={
+              os.contato?.whatsapp ? (
+                <button
+                  onClick={() =>
+                    window.open(
+                      `https://wa.me/${os.contato.whatsapp.replace(/\D/g, "")}`,
+                      "_blank"
+                    )
+                  }
+                  className="text-green-600 underline hover:text-green-800"
+                >
+                  {os.contato.whatsapp}
+                </button>
+              ) : (
+                "Não informado"
+              )
+            }
             icon={<MessageSquare className="w-4 h-4 text-gray-500" />}
           />
           <InfoItem
@@ -445,9 +487,11 @@ export default function OSDetalheMobile() {
             <InfoItem
               label="Tipo"
               value={
-                os.tecnico.tipo === "interno" ? "Técnico Interno" : 
-                os.tecnico.tipo === "terceiro" ? "Técnico Terceirizado" : 
-                os.tecnico.tipo || "Não informado"
+                os.tecnico.tipo === "interno"
+                  ? "Técnico Interno"
+                  : os.tecnico.tipo === "terceiro"
+                  ? "Técnico Terceirizado"
+                  : os.tecnico.tipo || "Não informado"
               }
             />
             {os.tecnico.observacoes && (
@@ -473,12 +517,16 @@ export default function OSDetalheMobile() {
                   {os.liberacao_financeira.liberada ? (
                     <>
                       <CircleCheck className="w-4 h-4 text-green-500" />
-                      <span className="text-green-700 font-medium">Liberada</span>
+                      <span className="text-green-700 font-medium">
+                        Liberada
+                      </span>
                     </>
                   ) : (
                     <>
                       <CircleX className="w-4 h-4 text-red-500" />
-                      <span className="text-red-700 font-medium">Não liberada</span>
+                      <span className="text-red-700 font-medium">
+                        Não liberada
+                      </span>
                     </>
                   )}
                 </div>
@@ -488,7 +536,10 @@ export default function OSDetalheMobile() {
               <>
                 <InfoItem
                   label="Liberado por"
-                  value={os.liberacao_financeira.nome_usuario_liberacao || "Não informado"}
+                  value={
+                    os.liberacao_financeira.nome_usuario_liberacao ||
+                    "Não informado"
+                  }
                   icon={<User className="w-4 h-4 text-gray-500" />}
                 />
                 <InfoItem
@@ -525,7 +576,10 @@ export default function OSDetalheMobile() {
             icon={<History className="w-5 h-5 text-cyan-600" />}
           >
             {os.fats.map((fat, index) => (
-              <div key={index} className="border border-gray-100 rounded-lg p-3 mb-3 last:mb-0">
+              <div
+                key={index}
+                className="border border-gray-100 rounded-lg p-3 mb-3 last:mb-0"
+              >
                 <InfoItem
                   label="Data"
                   value={formatDate(fat.data)}
@@ -545,9 +599,14 @@ export default function OSDetalheMobile() {
                 )}
                 {fat.pecas && fat.pecas.length > 0 && (
                   <div className="mt-2">
-                    <p className="text-xs font-medium text-gray-600 mb-2">Peças utilizadas:</p>
+                    <p className="text-xs font-medium text-gray-600 mb-2">
+                      Peças utilizadas:
+                    </p>
                     {fat.pecas.map((peca, pecaIndex) => (
-                      <div key={pecaIndex} className="text-sm text-gray-700 ml-4">
+                      <div
+                        key={pecaIndex}
+                        className="text-sm text-gray-700 ml-4"
+                      >
                         • {peca.nome} (Qty: {peca.quantidade})
                       </div>
                     ))}

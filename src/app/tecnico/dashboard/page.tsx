@@ -23,6 +23,8 @@ import {
 } from "@/api/services/ordensServicoService";
 import { Loading } from "@/components/LoadingPersonalizado";
 
+import MobileHeader from "@/components/tecnico/MobileHeader";
+
 const StatusBadge = React.memo(({ status }: { status: string }) => {
   const statusMapping: Record<
     string,
@@ -278,6 +280,17 @@ export default function OSAbertoMobile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Handlers para os botões do header
+  const handleMenuClick = () => {
+    console.log("Menu clicado");
+    // Implementar abertura do menu lateral
+  };
+
+  const handleAddClick = () => {
+    console.log("Adicionar clicado");
+    // Implementar ação de adicionar nova OS
+  };
+
   useEffect(() => {
     const fetchOS = async () => {
       setLoading(true);
@@ -296,61 +309,80 @@ export default function OSAbertoMobile() {
     fetchOS();
   }, []);
 
-  // Estatísticas removidas conforme solicitado
-
   if (loading) {
     return (
-      <Loading
-        fullScreen={true}
-        preventScroll={false}
-        text="Carregando suas ordens de serviço..."
-        size="large"
-      />
+      <>
+        <MobileHeader
+          title="OS Abertas"
+          onMenuClick={handleMenuClick}
+          onAddClick={handleAddClick}
+        />
+        <Loading
+          fullScreen={true}
+          preventScroll={false}
+          text="Carregando suas ordens de serviço..."
+          size="large"
+        />
+      </>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full text-center">
-          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-          <h2 className="text-lg font-semibold text-red-800 mb-2">Erro</h2>
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition"
-          >
-            Tentar novamente
-          </button>
+      <>
+        <MobileHeader
+          title="OS Abertas"
+          onMenuClick={handleMenuClick}
+          onAddClick={handleAddClick}
+        />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full text-center">
+            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+            <h2 className="text-lg font-semibold text-red-800 mb-2">Erro</h2>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition"
+            >
+              Tentar novamente
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (osList.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white border border-gray-200 rounded-lg p-8 max-w-md w-full text-center shadow-sm">
-          <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">
-            Nenhuma OS atribuída
-          </h2>
-          <p className="text-gray-600">
-            Você não possui ordens de serviço atribuídas no momento.
-          </p>
+      <>
+        <MobileHeader
+          title="OS Abertas"
+          onMenuClick={handleMenuClick}
+          onAddClick={handleAddClick}
+        />
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+          <div className="bg-white border border-gray-200 rounded-lg p-8 max-w-md w-full text-center shadow-sm">
+            <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">
+              Nenhuma OS atribuída
+            </h2>
+            <p className="text-gray-600">
+              Você não possui ordens de serviço atribuídas no momento.
+            </p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* Header removido. Apenas lista de OSs */}
-      <div className="bg-white border-b border-gray-200 px-4 py-6">
-        <h1 className="text-xl font-semibold text-gray-900 mb-4">
-          Minhas Ordens de Serviço
-        </h1>
-      </div>
+      <MobileHeader
+        title="OS Abertas"
+        onMenuClick={handleMenuClick}
+        onAddClick={handleAddClick}
+      />
+
       <div className="p-4">
         {osList.map((os) => (
           <OSCard key={os.id_os} os={os} />
