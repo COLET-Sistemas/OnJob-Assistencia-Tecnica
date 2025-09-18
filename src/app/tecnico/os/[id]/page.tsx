@@ -26,6 +26,8 @@ import {
   DollarSign,
   History,
   Package,
+  ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 import {
   ordensServicoService,
@@ -41,48 +43,48 @@ const StatusBadge = React.memo(({ status }: { status: string }) => {
     () => ({
       "1": {
         label: "Pendente",
-        className: "bg-gray-100 text-gray-700 border border-gray-200",
-        icon: <Clock className="w-4 h-4 text-gray-500" />,
+        className: "bg-slate-50 text-slate-600 border-slate-200",
+        icon: <Clock className="w-3 h-3" />,
       },
       "2": {
         label: "A atender",
-        className: "bg-blue-100 text-blue-700 border border-blue-200",
-        icon: <Bell className="w-4 h-4 text-blue-600" />,
+        className: "bg-blue-50 text-blue-600 border-blue-200",
+        icon: <Bell className="w-3 h-3" />,
       },
       "3": {
         label: "Em deslocamento",
-        className: "bg-purple-100 text-purple-700 border border-purple-200",
-        icon: <Car className="w-4 h-4 text-purple-600" />,
+        className: "bg-purple-50 text-purple-600 border-purple-200",
+        icon: <Car className="w-3 h-3" />,
       },
       "4": {
         label: "Em atendimento",
-        className: "bg-orange-100 text-orange-700 border border-orange-200",
-        icon: <Wrench className="w-4 h-4 text-orange-600" />,
+        className: "bg-orange-50 text-orange-600 border-orange-200",
+        icon: <Wrench className="w-3 h-3" />,
       },
       "5": {
-        label: "Atendimento interrompido",
-        className: "bg-amber-100 text-amber-700 border border-amber-200",
-        icon: <PauseCircle className="w-4 h-4 text-amber-600" />,
+        label: "Interrompido",
+        className: "bg-amber-50 text-amber-600 border-amber-200",
+        icon: <PauseCircle className="w-3 h-3" />,
       },
       "6": {
         label: "Em Revisão",
-        className: "bg-indigo-100 text-indigo-700 border border-indigo-200",
-        icon: <FileSearch className="w-4 h-4 text-indigo-600" />,
+        className: "bg-indigo-50 text-indigo-600 border-indigo-200",
+        icon: <FileSearch className="w-3 h-3" />,
       },
       "7": {
         label: "Concluída",
-        className: "bg-green-100 text-green-700 border border-green-200",
-        icon: <CheckCircle className="w-4 h-4 text-green-600" />,
+        className: "bg-emerald-50 text-emerald-600 border-emerald-200",
+        icon: <CheckCircle className="w-3 h-3" />,
       },
       "8": {
         label: "Cancelada",
-        className: "bg-red-100 text-red-700 border border-red-200",
-        icon: <XCircle className="w-4 h-4 text-red-600" />,
+        className: "bg-red-50 text-red-600 border-red-200",
+        icon: <XCircle className="w-3 h-3" />,
       },
       "9": {
         label: "Cancelada pelo Cliente",
-        className: "bg-rose-100 text-rose-700 border border-rose-200",
-        icon: <UserX className="w-4 h-4 text-rose-600" />,
+        className: "bg-rose-50 text-rose-600 border-rose-200",
+        icon: <UserX className="w-3 h-3" />,
       },
     }),
     []
@@ -112,8 +114,8 @@ const StatusBadge = React.memo(({ status }: { status: string }) => {
 
     return {
       label: status,
-      className: "bg-gray-100 text-gray-700 border border-gray-200",
-      icon: <AlertTriangle className="w-4 h-4 text-gray-500" />,
+      className: "bg-slate-50 text-slate-600 border-slate-200",
+      icon: <AlertTriangle className="w-3 h-3" />,
     };
   };
 
@@ -121,7 +123,7 @@ const StatusBadge = React.memo(({ status }: { status: string }) => {
 
   return (
     <div
-      className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium ${statusInfo.className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${statusInfo.className}`}
     >
       {statusInfo.icon}
       <span>{statusInfo.label}</span>
@@ -130,55 +132,153 @@ const StatusBadge = React.memo(({ status }: { status: string }) => {
 });
 StatusBadge.displayName = "StatusBadge";
 
-const InfoCard = React.memo(
+const Section = React.memo(
   ({
     title,
     icon,
     children,
-    className = "",
+    collapsible = false,
+    defaultExpanded = true,
   }: {
     title: string;
     icon: React.ReactNode;
     children: React.ReactNode;
-    className?: string;
+    collapsible?: boolean;
+    defaultExpanded?: boolean;
   }) => {
+    const [expanded, setExpanded] = useState(defaultExpanded);
+
     return (
-      <div
-        className={`bg-white rounded-xl shadow-md border border-gray-100 p-4 transition hover:shadow-lg ${className}`}
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <div className="p-2 rounded-full bg-blue-50">{icon}</div>
-          <h3 className="font-semibold text-gray-900 text-base">{title}</h3>
+      <div className="bg-white rounded-lg border border-slate-200">
+        <div
+          className={`flex items-center justify-between p-4 ${
+            collapsible ? "cursor-pointer" : ""
+          }`}
+          onClick={() => collapsible && setExpanded(!expanded)}
+        >
+          <div className="flex items-center gap-2">
+            <div className="text-slate-600">{icon}</div>
+            <h3 className="font-medium text-slate-900 text-sm">{title}</h3>
+          </div>
+          {collapsible && (
+            <ChevronRight
+              className={`w-4 h-4 text-slate-400 transition-transform ${
+                expanded ? "rotate-90" : ""
+              }`}
+            />
+          )}
         </div>
-        {children}
+        {(!collapsible || expanded) && (
+          <div className="px-4 pb-4 space-y-3">{children}</div>
+        )}
       </div>
     );
   }
 );
-InfoCard.displayName = "InfoCard";
+Section.displayName = "Section";
 
-const InfoItem = React.memo(
+const Field = React.memo(
   ({
     label,
     value,
     icon,
+    action,
   }: {
     label: string;
     value: string | React.ReactNode;
     icon?: React.ReactNode;
+    action?: () => void;
   }) => {
+    if (!value || value === "Não informado") return null;
+
     return (
-      <div className="flex items-start gap-2 py-2 border-b border-gray-100 last:border-b-0">
-        {icon && <div className="mt-0.5">{icon}</div>}
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-gray-600 mb-1">{label}</p>
-          <div className="text-sm text-gray-900">{value}</div>
+      <div
+        className={`flex items-start justify-between gap-3 ${
+          action
+            ? "cursor-pointer hover:bg-slate-50 -mx-2 px-2 py-1 rounded"
+            : ""
+        }`}
+        onClick={action}
+      >
+        <div className="flex items-start gap-2 min-w-0 flex-1">
+          {icon && (
+            <div className="text-slate-400 mt-0.5 flex-shrink-0">{icon}</div>
+          )}
+          <div className="min-w-0">
+            <p className="text-xs text-slate-500 mb-0.5">{label}</p>
+            <div className="text-sm text-slate-900 break-words">{value}</div>
+          </div>
         </div>
+        {action && (
+          <ExternalLink className="w-3 h-3 text-slate-400 flex-shrink-0 mt-1" />
+        )}
       </div>
     );
   }
 );
-InfoItem.displayName = "InfoItem";
+Field.displayName = "Field";
+
+const QuickActions = React.memo(({ os }: { os: OSDetalhadaV2 }) => {
+  const actions = [];
+
+  if (os.cliente?.endereco) {
+    const enderecoCompleto = `${os.cliente.endereco}${
+      os.cliente.numero ? `, ${os.cliente.numero}` : ""
+    } - ${os.cliente.bairro}, ${os.cliente.cidade}/${os.cliente.uf}`;
+    actions.push({
+      icon: <MapPin className="w-4 h-4" />,
+      label: "Ver no mapa",
+      action: () =>
+        window.open(
+          `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            enderecoCompleto
+          )}`,
+          "_blank"
+        ),
+      color: "text-blue-600 bg-blue-50",
+    });
+  }
+
+  if (os.contato?.telefone) {
+    actions.push({
+      icon: <Phone className="w-4 h-4" />,
+      label: "Ligar",
+      action: () => window.open(`tel:${os.contato.telefone}`),
+      color: "text-emerald-600 bg-emerald-50",
+    });
+  }
+
+  if (os.contato?.whatsapp && os.contato.whatsapp.trim() !== "") {
+    actions.push({
+      icon: <MessageSquare className="w-4 h-4" />,
+      label: "WhatsApp",
+      action: () =>
+        window.open(
+          `https://wa.me/${os.contato.whatsapp.replace(/\D/g, "")}`,
+          "_blank"
+        ),
+      color: "text-green-600 bg-green-50",
+    });
+  }
+
+  if (actions.length === 0) return null;
+
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1">
+      {actions.map((action, index) => (
+        <button
+          key={index}
+          onClick={action.action}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap ${action.color} border border-current border-opacity-20`}
+        >
+          {action.icon}
+          {action.label}
+        </button>
+      ))}
+    </div>
+  );
+});
+QuickActions.displayName = "QuickActions";
 
 export default function OSDetalheMobile() {
   const router = useRouter();
@@ -188,19 +288,9 @@ export default function OSDetalheMobile() {
   const [error, setError] = useState("");
 
   const formatDate = useCallback((dateStr: string | null) => {
-    if (!dateStr || dateStr.trim() === "") return "Não definida";
-    try {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return dateStr;
-      const dia = String(date.getDate()).padStart(2, "0");
-      const mes = String(date.getMonth() + 1).padStart(2, "0");
-      const ano = date.getFullYear();
-      const horas = String(date.getHours()).padStart(2, "0");
-      const minutos = String(date.getMinutes()).padStart(2, "0");
-      return `${dia}/${mes}/${ano} ${horas}:${minutos}`;
-    } catch {
-      return dateStr;
-    }
+    if (!dateStr || dateStr.trim() === "") return null;
+    // API já retorna no formato DD/MM/YYYY HH:MM
+    return dateStr;
   }, []);
 
   useEffect(() => {
@@ -216,8 +306,6 @@ export default function OSDetalheMobile() {
 
       try {
         const response = await ordensServicoService.getById(Number(params.id));
-
-        // A API pode retornar um array ou um objeto único
         const osData = Array.isArray(response) ? response[0] : response;
 
         if (!osData) {
@@ -240,13 +328,13 @@ export default function OSDetalheMobile() {
     return (
       <>
         <MobileHeader
-          title={`Detalhes da OS`}
+          title="Detalhes da OS"
           onMenuClick={() => router.back()}
         />
         <Loading
           fullScreen={true}
           preventScroll={false}
-          text="Carregando detalhes da OS..."
+          text="Carregando..."
           size="large"
         />
       </>
@@ -257,24 +345,24 @@ export default function OSDetalheMobile() {
     return (
       <>
         <MobileHeader
-          title={`Detalhes da OS`}
+          title="Detalhes da OS"
           onMenuClick={() => router.back()}
         />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full text-center">
-            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-            <h2 className="text-lg font-semibold text-red-800 mb-2">Erro</h2>
-            <p className="text-red-600 mb-4">{error}</p>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full text-center shadow-sm border border-red-200">
+            <AlertTriangle className="w-8 h-8 mx-auto mb-3 text-red-500" />
+            <h2 className="font-medium text-slate-900 mb-2">Erro</h2>
+            <p className="text-sm text-slate-600 mb-4">{error}</p>
             <div className="flex gap-2">
               <button
                 onClick={() => router.back()}
-                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md font-medium hover:bg-gray-700 transition"
+                className="flex-1 px-3 py-2 bg-slate-100 text-slate-700 rounded text-sm font-medium"
               >
                 Voltar
               </button>
               <button
                 onClick={() => window.location.reload()}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition"
+                className="flex-1 px-3 py-2 bg-red-600 text-white rounded text-sm font-medium"
               >
                 Tentar novamente
               </button>
@@ -289,18 +377,18 @@ export default function OSDetalheMobile() {
     return (
       <>
         <MobileHeader
-          title={`Detalhes da OS`}
+          title="Detalhes da OS"
           onMenuClick={() => router.back()}
         />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
           <div className="text-center">
-            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">
+            <AlertTriangle className="w-8 h-8 mx-auto mb-3 text-slate-400" />
+            <h2 className="font-medium text-slate-900 mb-3">
               OS não encontrada
             </h2>
             <button
               onClick={() => router.back()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition"
+              className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium"
             >
               Voltar
             </button>
@@ -311,301 +399,360 @@ export default function OSDetalheMobile() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-slate-50">
       <MobileHeader
         title={os.id_os ? `OS #${os.id_os}` : "Detalhes da OS"}
         onMenuClick={() => router.back()}
       />
-      {/* Conteúdo */}
-      <div className="p-4 space-y-4">
-        {/* Informações Básicas */}
-        <InfoCard
-          title="Informações da OS"
-          icon={<FileSearch className="w-5 h-5 text-blue-600" />}
-        >
-          <InfoItem
-            label="Descrição do Problema"
-            value={os.descricao_problema || "Não informado"}
-            icon={<MessageSquare className="w-4 h-4 text-gray-500" />}
-          />
-          <InfoItem
-            label="Data de Abertura"
-            value={formatDate(os.abertura?.data_abertura)}
-            icon={<Calendar className="w-4 h-4 text-gray-500" />}
-          />
-          <InfoItem
-            label="Data Agendada"
-            value={formatDate(os.data_agendada)}
-            icon={<Clock className="w-4 h-4 text-gray-500" />}
-          />
-          <InfoItem
-            label="Motivo do Atendimento"
-            value={os.abertura?.motivo_atendimento || "Não informado"}
-          />
-          <InfoItem
-            label="Garantia"
-            value={
-              <div className="flex items-center gap-2">
-                {os.em_garantia ? (
-                  <>
-                    <CircleCheck className="w-4 h-4 text-green-500" />
-                    <span className="text-green-700 font-medium">
-                      Em garantia
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <CircleX className="w-4 h-4 text-red-500" />
-                    <span className="text-red-700 font-medium">
-                      Fora da garantia
-                    </span>
-                  </>
-                )}
-              </div>
-            }
-            icon={<Shield className="w-4 h-4 text-gray-500" />}
-          />
-        </InfoCard>
 
-        {/* Informações do Cliente */}
-        <InfoCard
-          title="Cliente"
-          icon={<User className="w-5 h-5 text-green-600" />}
-        >
-          <InfoItem
-            label="Nome"
-            value={os.cliente?.nome || "Não informado"}
-            icon={<User className="w-4 h-4 text-gray-500" />}
+      {/* Status Header */}
+      <div className="bg-white border-b border-slate-200 p-4">
+        <div className="flex items-center justify-between mb-2">
+          <StatusBadge status={os.situacao_os?.codigo?.toString() || "1"} />
+          {os.em_garantia && (
+            <div className="flex items-center gap-1 text-xs text-emerald-600">
+              <Shield className="w-3 h-3" />
+              <span>Garantia</span>
+            </div>
+          )}
+        </div>
+        {os.descricao_problema && (
+          <p className="text-sm text-slate-700 mt-2">{os.descricao_problema}</p>
+        )}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="p-4">
+        <QuickActions os={os} />
+      </div>
+
+      {/* Content Sections */}
+      <div className="px-4 pb-6 space-y-4">
+        {/* Datas */}
+        <Section title="Datas" icon={<Calendar className="w-4 h-4" />}>
+          <Field
+            label="Abertura"
+            value={formatDate(os.abertura?.data_abertura)}
+            icon={<Clock className="w-3 h-3" />}
           />
-          <InfoItem
+          <Field
+            label="Agendada"
+            value={formatDate(os.data_agendada)}
+            icon={<Calendar className="w-3 h-3" />}
+          />
+          {os.data_fechamento && (
+            <Field
+              label="Fechamento"
+              value={formatDate(os.data_fechamento)}
+              icon={<CheckCircle className="w-3 h-3" />}
+            />
+          )}
+        </Section>
+
+        {/* Cliente */}
+        <Section title="Cliente" icon={<User className="w-4 h-4" />}>
+          <Field
+            label="Nome"
+            value={os.cliente?.nome}
+            icon={<User className="w-3 h-3" />}
+          />
+          <Field
+            label="Região"
+            value={os.cliente?.nome_regiao}
+            icon={<MapPin className="w-3 h-3" />}
+          />
+          <Field
             label="Endereço"
             value={
-              os.cliente?.endereco ? (
-                <button
-                  onClick={() =>
+              os.cliente?.endereco &&
+              `${os.cliente.endereco}${
+                os.cliente.numero ? `, ${os.cliente.numero}` : ""
+              } - ${os.cliente.bairro}, ${os.cliente.cidade}/${os.cliente.uf}`
+            }
+            icon={<MapPin className="w-3 h-3" />}
+            action={
+              os.cliente?.endereco
+                ? () =>
                     window.open(
                       `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                        `${os.cliente.endereco}, ${
-                          os.cliente.numero || "S/N"
+                        `${os.cliente.endereco}${
+                          os.cliente.numero ? `, ${os.cliente.numero}` : ""
                         } - ${os.cliente.bairro}, ${os.cliente.cidade}/${
                           os.cliente.uf
                         }`
                       )}`,
                       "_blank"
                     )
-                  }
-                  className="text-blue-600 underline hover:text-blue-800"
-                >
-                  {`${os.cliente.endereco}, ${os.cliente.numero || "S/N"} - ${
-                    os.cliente.bairro
-                  }, ${os.cliente.cidade}/${os.cliente.uf}`}
-                </button>
-              ) : (
-                "Não informado"
-              )
+                : undefined
             }
-            icon={<MapPin className="w-4 h-4 text-gray-500" />}
           />
-
-          <InfoItem label="CEP" value={os.cliente?.cep || "Não informado"} />
-        </InfoCard>
-
-        {/* Informações de Contato */}
-        <InfoCard
-          title="Contato"
-          icon={<Phone className="w-5 h-5 text-purple-600" />}
-        >
-          <InfoItem
-            label="Nome do Contato"
-            value={os.contato?.nome || "Não informado"}
-            icon={<User className="w-4 h-4 text-gray-500" />}
+          <Field label="CEP" value={os.cliente?.cep} />
+          <Field
+            label="Contato"
+            value={os.contato?.nome}
+            icon={<User className="w-3 h-3" />}
           />
-          <InfoItem
+          <Field
             label="Telefone"
-            value={os.contato?.telefone || "Não informado"}
-            icon={<Phone className="w-4 h-4 text-gray-500" />}
-          />
-          <InfoItem
-            label="WhatsApp"
-            value={
-              os.contato?.whatsapp ? (
-                <button
-                  onClick={() =>
-                    window.open(
-                      `https://wa.me/${os.contato.whatsapp.replace(/\D/g, "")}`,
-                      "_blank"
-                    )
-                  }
-                  className="text-green-600 underline hover:text-green-800"
-                >
-                  {os.contato.whatsapp}
-                </button>
-              ) : (
-                "Não informado"
-              )
+            value={os.contato?.telefone}
+            icon={<Phone className="w-3 h-3" />}
+            action={
+              os.contato?.telefone
+                ? () => window.open(`tel:${os.contato.telefone}`)
+                : undefined
             }
-            icon={<MessageSquare className="w-4 h-4 text-gray-500" />}
           />
-          <InfoItem
+          {os.contato?.whatsapp && (
+            <Field
+              label="WhatsApp"
+              value={os.contato.whatsapp}
+              icon={<MessageSquare className="w-3 h-3" />}
+              action={() =>
+                window.open(
+                  `https://wa.me/${os.contato.whatsapp.replace(/\D/g, "")}`,
+                  "_blank"
+                )
+              }
+            />
+          )}
+          <Field
             label="Email"
-            value={os.contato?.email || "Não informado"}
-            icon={<Mail className="w-4 h-4 text-gray-500" />}
+            value={os.contato?.email}
+            icon={<Mail className="w-3 h-3" />}
+            action={
+              os.contato?.email
+                ? () => window.open(`mailto:${os.contato.email}`)
+                : undefined
+            }
           />
-        </InfoCard>
+        </Section>
 
-        {/* Informações da Máquina */}
-        <InfoCard
-          title="Máquina"
-          icon={<Settings className="w-5 h-5 text-orange-600" />}
-        >
-          <InfoItem
+        {/* Máquina */}
+        <Section title="Equipamento" icon={<Settings className="w-4 h-4" />}>
+          <Field
             label="Modelo"
-            value={os.maquina?.modelo || "Não informado"}
-            icon={<Settings className="w-4 h-4 text-gray-500" />}
+            value={os.maquina?.modelo}
+            icon={<Settings className="w-3 h-3" />}
           />
-          <InfoItem
-            label="Descrição"
-            value={os.maquina?.descricao || "Não informado"}
-          />
-          <InfoItem
-            label="Número de Série"
-            value={os.maquina?.numero_serie || "Não informado"}
-          />
-        </InfoCard>
+          <Field label="Descrição" value={os.maquina?.descricao} />
+          <Field label="Número de Série" value={os.maquina?.numero_serie} />
+        </Section>
+
+        {/* Abertura */}
+        {os.abertura && (
+          <Section
+            title="Abertura"
+            icon={<FileSearch className="w-4 h-4" />}
+            collapsible={true}
+            defaultExpanded={false}
+          >
+            <Field
+              label="Aberto por"
+              value={os.abertura.nome_usuario}
+              icon={<User className="w-3 h-3" />}
+            />
+            <Field
+              label="Forma"
+              value={
+                os.abertura.forma_abertura === "whats"
+                  ? "WhatsApp"
+                  : os.abertura.forma_abertura === "telefone"
+                  ? "Telefone"
+                  : os.abertura.forma_abertura === "email"
+                  ? "Email"
+                  : os.abertura.forma_abertura
+              }
+              icon={<MessageSquare className="w-3 h-3" />}
+            />
+            <Field
+              label="Origem"
+              value={
+                os.abertura.origem_abertura === "I"
+                  ? "Interno"
+                  : os.abertura.origem_abertura === "T"
+                  ? "Terceiro"
+                  : os.abertura.origem_abertura === "C"
+                  ? "Cliente"
+                  : os.abertura.origem_abertura
+              }
+            />
+            <Field
+              label="Motivo do Atendimento"
+              value={os.abertura.motivo_atendimento}
+            />
+          </Section>
+        )}
 
         {/* Técnico */}
         {os.tecnico?.nome && (
-          <InfoCard
-            title="Técnico"
-            icon={<Wrench className="w-5 h-5 text-indigo-600" />}
-          >
-            <InfoItem
+          <Section title="Técnico" icon={<Wrench className="w-4 h-4" />}>
+            <Field
               label="Nome"
               value={os.tecnico.nome}
-              icon={<User className="w-4 h-4 text-gray-500" />}
+              icon={<User className="w-3 h-3" />}
             />
-            <InfoItem
+            <Field
               label="Tipo"
               value={
                 os.tecnico.tipo === "interno"
-                  ? "Técnico Interno"
+                  ? "Interno"
                   : os.tecnico.tipo === "terceiro"
-                  ? "Técnico Terceirizado"
-                  : os.tecnico.tipo || "Não informado"
+                  ? "Terceirizado"
+                  : os.tecnico.tipo
               }
             />
-            {os.tecnico.observacoes && (
-              <InfoItem
-                label="Observações"
-                value={os.tecnico.observacoes}
-                icon={<MessageSquare className="w-4 h-4 text-gray-500" />}
-              />
-            )}
-          </InfoCard>
+            <Field label="Observações" value={os.tecnico.observacoes} />
+          </Section>
         )}
 
-        {/* Liberação Financeira */}
-        {os.liberacao_financeira && (
-          <InfoCard
-            title="Liberação Financeira"
-            icon={<DollarSign className="w-5 h-5 text-green-600" />}
-          >
-            <InfoItem
-              label="Status"
-              value={
-                <div className="flex items-center gap-2">
-                  {os.liberacao_financeira.liberada ? (
-                    <>
-                      <CircleCheck className="w-4 h-4 text-green-500" />
-                      <span className="text-green-700 font-medium">
-                        Liberada
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <CircleX className="w-4 h-4 text-red-500" />
-                      <span className="text-red-700 font-medium">
-                        Não liberada
-                      </span>
-                    </>
-                  )}
-                </div>
-              }
-            />
-            {os.liberacao_financeira.liberada && (
-              <>
-                <InfoItem
-                  label="Liberado por"
-                  value={
-                    os.liberacao_financeira.nome_usuario_liberacao ||
-                    "Não informado"
-                  }
-                  icon={<User className="w-4 h-4 text-gray-500" />}
-                />
-                <InfoItem
-                  label="Data da Liberação"
-                  value={formatDate(os.liberacao_financeira.data_liberacao)}
-                  icon={<Calendar className="w-4 h-4 text-gray-500" />}
-                />
-              </>
-            )}
-          </InfoCard>
-        )}
-
-        {/* Peças Utilizadas */}
+        {/* Peças */}
         {os.pecas_corrigidas && os.pecas_corrigidas.length > 0 && (
-          <InfoCard
+          <Section
             title="Peças Utilizadas"
-            icon={<Package className="w-5 h-5 text-amber-600" />}
+            icon={<Package className="w-4 h-4" />}
+            collapsible={true}
+            defaultExpanded={false}
           >
             {os.pecas_corrigidas.map((peca, index) => (
-              <InfoItem
+              <Field
                 key={index}
                 label={peca.nome}
-                value={`Quantidade: ${peca.quantidade}`}
-                icon={<Package className="w-4 h-4 text-gray-500" />}
+                value={`Qty: ${peca.quantidade}`}
+                icon={<Package className="w-3 h-3" />}
               />
             ))}
-          </InfoCard>
+          </Section>
         )}
 
         {/* FATs */}
         {os.fats && os.fats.length > 0 && (
-          <InfoCard
-            title="Relatórios de Atendimento (FATs)"
-            icon={<History className="w-5 h-5 text-cyan-600" />}
+          <Section
+            title={`Relatórios de Atendimento (${os.fats.length})`}
+            icon={<History className="w-4 h-4" />}
+            collapsible={true}
+            defaultExpanded={false}
           >
             {os.fats.map((fat, index) => (
               <div
                 key={index}
-                className="border border-gray-100 rounded-lg p-3 mb-3 last:mb-0"
+                className="bg-slate-50 rounded-lg p-3 space-y-2 mb-3"
               >
-                <InfoItem
-                  label="Data"
-                  value={formatDate(fat.data)}
-                  icon={<Calendar className="w-4 h-4 text-gray-500" />}
-                />
-                <InfoItem
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-slate-600">
+                    FAT #{fat.id_fat}
+                  </span>
+                  {fat.data_atendimento && (
+                    <span className="text-xs text-slate-500">
+                      {fat.data_atendimento}
+                    </span>
+                  )}
+                </div>
+
+                <Field
                   label="Técnico"
-                  value={fat.tecnico?.nome || "Não informado"}
-                  icon={<User className="w-4 h-4 text-gray-500" />}
+                  value={fat.tecnico?.nome}
+                  icon={<User className="w-3 h-3" />}
                 />
-                {fat.observacoes && (
-                  <InfoItem
-                    label="Observações"
-                    value={fat.observacoes}
-                    icon={<MessageSquare className="w-4 h-4 text-gray-500" />}
+
+                <Field label="Motivo" value={fat.motivo_atendimento} />
+
+                <Field
+                  label="Atendente no Local"
+                  value={fat.nome_atendente}
+                  icon={<User className="w-3 h-3" />}
+                />
+
+                <Field
+                  label="Contato do Atendente"
+                  value={
+                    fat.contato_atendente && fat.contato_atendente !== "-"
+                      ? fat.contato_atendente
+                      : null
+                  }
+                  icon={<Phone className="w-3 h-3" />}
+                />
+
+                <Field
+                  label="Problema Descrito"
+                  value={fat.descricao_problema}
+                  icon={<AlertTriangle className="w-3 h-3" />}
+                />
+
+                <Field
+                  label="Solução Aplicada"
+                  value={fat.solucao_encontrada}
+                  icon={<CheckCircle className="w-3 h-3" />}
+                />
+
+                <Field
+                  label="Testes Realizados"
+                  value={fat.testes_realizados}
+                  icon={<FileSearch className="w-3 h-3" />}
+                />
+
+                <Field label="Sugestões" value={fat.sugestoes} />
+
+                <Field
+                  label="Observações"
+                  value={fat.observacoes}
+                  icon={<MessageSquare className="w-3 h-3" />}
+                />
+
+                {fat.numero_ciclos > 0 && (
+                  <Field
+                    label="Número de Ciclos"
+                    value={fat.numero_ciclos.toString()}
+                    icon={<Settings className="w-3 h-3" />}
                   />
                 )}
-                {fat.pecas && fat.pecas.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-xs font-medium text-gray-600 mb-2">
-                      Peças utilizadas:
+
+                {/* Deslocamentos */}
+                {fat.deslocamentos && fat.deslocamentos.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-xs font-medium text-slate-600 mb-2">
+                      Deslocamentos:
                     </p>
-                    {fat.pecas.map((peca, pecaIndex) => (
+                    {fat.deslocamentos.map((desl, deslIndex) => (
+                      <div
+                        key={deslIndex}
+                        className="bg-white rounded p-2 mb-2 text-xs"
+                      >
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-slate-600">Ida:</span>{" "}
+                            <span className="text-slate-500">
+                              {desl.km_ida?.toFixed(1)}km ({desl.tempo_ida_min}
+                              min)
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-600">Volta:</span>{" "}
+                            <span className="text-slate-500">
+                              {desl.km_volta?.toFixed(1)}km (
+                              {desl.tempo_volta_min}min)
+                            </span>
+                          </div>
+                        </div>
+                        {desl.observacoes && (
+                          <div className="mt-1 text-slate-600">
+                            {desl.observacoes}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Peças utilizadas no FAT */}
+                {fat.pecas_utilizadas && fat.pecas_utilizadas.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-xs font-medium text-slate-600 mb-2">
+                      Peças utilizadas neste atendimento:
+                    </p>
+                    {fat.pecas_utilizadas.map((peca, pecaIndex) => (
                       <div
                         key={pecaIndex}
-                        className="text-sm text-gray-700 ml-4"
+                        className="text-sm text-slate-700 ml-2"
                       >
                         • {peca.nome} (Qty: {peca.quantidade})
                       </div>
@@ -614,66 +761,65 @@ export default function OSDetalheMobile() {
                 )}
               </div>
             ))}
-          </InfoCard>
+          </Section>
         )}
 
-        {/* Revisão */}
-        {os.revisao_os && (
-          <InfoCard
-            title="Revisão da OS"
-            icon={<FileSearch className="w-5 h-5 text-indigo-600" />}
+        {/* Outros campos condicionais */}
+        {os.liberacao_financeira && (
+          <Section
+            title="Financeiro"
+            icon={<DollarSign className="w-4 h-4" />}
+            collapsible={true}
+            defaultExpanded={false}
           >
-            <InfoItem
-              label="Revisado por"
-              value={os.revisao_os.nome || "Não informado"}
-              icon={<User className="w-4 h-4 text-gray-500" />}
+            <Field
+              label="Status"
+              value={
+                <div className="flex items-center gap-1.5">
+                  {os.liberacao_financeira.liberada ? (
+                    <>
+                      <CircleCheck className="w-3 h-3 text-emerald-500" />
+                      <span className="text-emerald-600 text-xs">Liberada</span>
+                    </>
+                  ) : (
+                    <>
+                      <CircleX className="w-3 h-3 text-red-500" />
+                      <span className="text-red-600 text-xs">Não liberada</span>
+                    </>
+                  )}
+                </div>
+              }
             />
-            <InfoItem
-              label="Data da Revisão"
-              value={formatDate(os.revisao_os.data)}
-              icon={<Calendar className="w-4 h-4 text-gray-500" />}
-            />
-            {os.revisao_os.observacoes && (
-              <InfoItem
-                label="Observações"
-                value={os.revisao_os.observacoes}
-                icon={<MessageSquare className="w-4 h-4 text-gray-500" />}
-              />
+            {os.liberacao_financeira.liberada && (
+              <>
+                <Field
+                  label="Liberado por"
+                  value={os.liberacao_financeira.nome_usuario_liberacao}
+                />
+                <Field
+                  label="Data"
+                  value={formatDate(os.liberacao_financeira.data_liberacao)}
+                />
+              </>
             )}
-          </InfoCard>
+          </Section>
         )}
 
-        {/* Motivo de Pendência */}
         {os.situacao_os?.motivo_pendencia && (
-          <InfoCard
-            title="Motivo da Pendência"
-            icon={<AlertTriangle className="w-5 h-5 text-yellow-600" />}
+          <Section
+            title="Pendência"
+            icon={<AlertTriangle className="w-4 h-4" />}
           >
-            <InfoItem
+            <Field
               label="Motivo"
               value={os.situacao_os.motivo_pendencia}
-              icon={<AlertTriangle className="w-4 h-4 text-gray-500" />}
+              icon={<AlertTriangle className="w-3 h-3" />}
             />
-          </InfoCard>
-        )}
-
-        {/* Data de Fechamento */}
-        {os.data_fechamento && (
-          <InfoCard
-            title="Finalização"
-            icon={<CheckCircle className="w-5 h-5 text-green-600" />}
-          >
-            <InfoItem
-              label="Data de Fechamento"
-              value={formatDate(os.data_fechamento)}
-              icon={<Calendar className="w-4 h-4 text-gray-500" />}
-            />
-          </InfoCard>
+          </Section>
         )}
       </div>
 
-      {/* Espaço extra no final para melhor navegação */}
-      <div className="h-8"></div>
+      <div className="h-6"></div>
     </main>
   );
 }

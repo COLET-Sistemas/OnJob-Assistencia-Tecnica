@@ -110,6 +110,46 @@ export interface OSRevisao {
   observacoes: string;
 }
 
+// Deslocamento interface for FATs
+export interface OSDeslocamento {
+  id_deslocamento: number;
+  km_ida: number;
+  km_volta: number;
+  tempo_ida_min: number;
+  tempo_volta_min: number;
+  observacoes: string;
+}
+
+// Peça utilizada em FAT
+export interface OSPecaUtilizada {
+  id?: number;
+  nome: string;
+  quantidade: number;
+}
+
+// FAT detalhado conforme API response
+export interface OSFatDetalhado {
+  id_fat: number;
+  data_atendimento: string;
+  descricao_problema: string;
+  solucao_encontrada: string;
+  testes_realizados: string;
+  sugestoes: string;
+  observacoes: string;
+  numero_ciclos: number;
+  tecnico: {
+    id: number;
+    nome: string;
+    tipo: "interno" | "terceiro" | string;
+  };
+  id_motivo_atendimento: number;
+  motivo_atendimento: string;
+  nome_atendente: string;
+  contato_atendente: string;
+  pecas_utilizadas: OSPecaUtilizada[];
+  deslocamentos: OSDeslocamento[];
+}
+
 // Original interface (kept for backwards compatibility)
 export interface OSDetalhada {
   data_revisao?: string;
@@ -160,7 +200,7 @@ export interface OSDetalhada {
   revisao?: OSRevisao;
 }
 
-// Extended interface to match the new API response format
+// Updated interface to match the complete API response format
 export interface OSDetalhadaV2 {
   id_os: number;
   descricao_problema: string;
@@ -188,6 +228,8 @@ export interface OSDetalhadaV2 {
     cep: string;
     latitude: string;
     longitude: string;
+    id_regiao: number;
+    nome_regiao: string;
   };
   contato: {
     id: number;
@@ -237,20 +279,8 @@ export interface OSDetalhadaV2 {
     valor: number;
     observacoes: string;
   }>;
-  fats: Array<{
-    id: number;
-    data: string;
-    tecnico: {
-      id: number;
-      nome: string;
-    };
-    observacoes: string;
-    pecas: Array<{
-      id: number;
-      nome: string;
-      quantidade: number;
-    }>;
-  }>;
+  // Updated FATs structure to match actual API response
+  fats: OSFatDetalhado[];
 }
 
 interface OSPaginada {
@@ -349,7 +379,7 @@ class OrdensServicoService {
   }
 
   async getById(id: number): Promise<OSDetalhadaV2 | OSDetalhadaV2[]> {
-    // This method now uses the new interface format that matches the API response
+    // This method now uses the updated interface format that matches the complete API response
     return api.get<OSDetalhadaV2 | OSDetalhadaV2[]>(`${this.baseUrl}`, {
       params: { id },
     });
