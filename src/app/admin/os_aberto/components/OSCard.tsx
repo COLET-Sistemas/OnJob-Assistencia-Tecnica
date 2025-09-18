@@ -347,7 +347,7 @@ const OSCard: React.FC<OSCardProps> = ({
                 <div className="flex items-center gap-2 mb-2">
                   <AlertCircle className="w-4 h-4 text-indigo-500" />
                   <h4 className="font-medium text-gray-700">
-                    Descrição do Problema
+                    Descrição do Problema: {os.abertura.motivo_atendimento}
                   </h4>
                 </div>
                 <p className="text-gray-800 text-sm mb-3">
@@ -448,24 +448,6 @@ const OSCard: React.FC<OSCardProps> = ({
                     </div>
                   </div>
                 )}
-
-                {/* Motivo Atendimento quando existir */}
-                {os.abertura && os.abertura.motivo_atendimento && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="flex justify-between text-xs text-gray-600">
-                      <div className="flex items-center gap-1.5">
-                        <AlertCircle className="w-3 h-3 text-gray-500" />
-                        <span className="flex items-center gap-1 pt-0.5">
-                          Motivo do Atendimento:
-                          <span className="text-gray-600 font-normal">
-                            {os.abertura.motivo_atendimento}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {/* Observações do técnico quando existirem */}
                 {os.tecnico.observacoes && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
