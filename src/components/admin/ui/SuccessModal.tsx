@@ -50,8 +50,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 
         <div className="p-6">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-              <CheckCircle size={20} className="text-purple-600" />
+            <div className="flex-shrink-0 w-10 h-10 bg-[color:var(--primary)_/0.12] rounded-full flex items-center justify-center">
+              <CheckCircle size={20} className="text-[color:var(--primary)]" />
             </div>
             <div className="flex-1 break-words">
               <p className="text-sm text-gray-600 mb-2 whitespace-normal break-words">
@@ -70,13 +70,13 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                             .replace(/^\w/, (c) => c.toUpperCase())}
                           :
                         </p>
-                        <div className="bg-purple-50 border border-purple-200 rounded-md p-3 flex items-center justify-between">
-                          <p className="text-lg font-mono font-bold text-purple-800 break-all flex-1 mr-2">
+                        <div className="bg-[color:var(--primary)_/0.08] border border-[color:var(--primary)_/0.12] rounded-md p-3 flex items-center justify-between">
+                          <p className="text-lg font-mono font-bold text-[color:var(--primary)_/0.95] break-all flex-1 mr-2">
                             {value}
                           </p>
                           <button
                             onClick={() => copyToClipboard(value)}
-                            className="p-2 rounded-md bg-purple-200 hover:bg-purple-300 text-purple-800 transition-colors"
+                            className="p-2 rounded-md bg-[color:var(--primary)_/0.2] hover:bg-[color:var(--primary)_/0.28] text-[color:var(--primary)_/0.95] transition-colors"
                             title="Copiar senha"
                           >
                             {copied ? (
@@ -101,7 +101,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-[color:var(--primary)] rounded-md hover:bg-[color:color-mix(in srgb, var(--primary) 70%, black)] transition-colors"
           >
             Fechar
           </button>

@@ -117,20 +117,29 @@ export interface OSDeslocamento {
   km_volta: number;
   tempo_ida_min: number;
   tempo_volta_min: number;
+  valor_km?: number;
+  valor_total?: number;
   observacoes: string;
 }
 
 // Peça utilizada em FAT
 export interface OSPecaUtilizada {
   id?: number;
+  id_peca?: number;
   nome: string;
+  codigo?: string;
   quantidade: number;
+  valor_unitario?: number;
+  valor_total?: number;
 }
 
-// FAT detalhado conforme API response
+// FAT detalhado conforme API response - VERSÃO ATUALIZADA
 export interface OSFatDetalhado {
   id_fat: number;
   data_atendimento: string;
+  hora_inicio?: string;
+  hora_fim?: string;
+  tempo_total_min?: number;
   descricao_problema: string;
   solucao_encontrada: string;
   testes_realizados: string;
@@ -146,6 +155,16 @@ export interface OSFatDetalhado {
   motivo_atendimento: string;
   nome_atendente: string;
   contato_atendente: string;
+  // Campos adicionais que podem estar presentes
+  status_fat?: string;
+  aprovado?: boolean;
+  data_aprovacao?: string;
+  usuario_aprovacao?: string;
+  valor_mao_obra?: number;
+  valor_deslocamento?: number;
+  valor_pecas?: number;
+  valor_total?: number;
+  // Arrays relacionados
   pecas_utilizadas: OSPecaUtilizada[];
   deslocamentos: OSDeslocamento[];
 }
@@ -200,13 +219,60 @@ export interface OSDetalhada {
   revisao?: OSRevisao;
 }
 
-// Updated interface to match the complete API response format
+// Interface para peças corrigidas
+export interface OSPecaCorrigida {
+  id: number;
+  id_peca?: number;
+  nome: string;
+  codigo?: string;
+  quantidade: number;
+  valor_unitario?: number;
+  valor_total?: number;
+  data_correcao?: string;
+}
+
+// Interface para deslocamentos corrigidos
+export interface OSDeslocamentoCorrigido {
+  id: number;
+  data: string;
+  km_ida?: number;
+  km_volta?: number;
+  tempo_ida_min?: number;
+  tempo_volta_min?: number;
+  valor_km?: number;
+  valor: number;
+  observacoes: string;
+  data_correcao?: string;
+}
+
+// Interface para anexos da OS
+export interface OSAnexo {
+  id: number;
+  nome_arquivo: string;
+  tipo_arquivo: string;
+  tamanho: number;
+  data_upload: string;
+  usuario_upload: string;
+  url?: string;
+}
+
+// Interface para histórico detalhado
+export interface OSHistoricoDetalhado extends OSHistorico {
+  ip_usuario?: string;
+  detalhes_alteracao?: Record<string, unknown>;
+  anexos?: OSAnexo[];
+}
+
+// VERSÃO ATUALIZADA DA OSDetalhadaV2 - COM NOVOS CAMPOS
 export interface OSDetalhadaV2 {
   id_os: number;
+  numero_os?: string;
   descricao_problema: string;
   em_garantia: boolean;
+  prioridade?: "baixa" | "media" | "alta" | "critica";
   abertura: {
     data_abertura: string;
+    hora_abertura?: string;
     forma_abertura: string;
     origem_abertura: string;
     id_usuario: number;
@@ -216,9 +282,12 @@ export interface OSDetalhadaV2 {
   };
   data_agendada: string;
   data_fechamento: string;
+  // Informações do cliente expandidas
   cliente: {
     id: number;
     nome: string;
+    nome_fantasia?: string;
+    cnpj_cpf?: string;
     endereco: string;
     numero: string;
     complemento: string;
@@ -231,56 +300,87 @@ export interface OSDetalhadaV2 {
     id_regiao: number;
     nome_regiao: string;
   };
+  // Informações de contato expandidas
   contato: {
     id: number;
     nome: string;
+    cargo?: string;
     telefone: string;
     whatsapp: string;
     email: string;
+    telefone_alternativo?: string;
   };
+  // Informações da máquina expandidas
   maquina: {
     id: number;
     numero_serie: string;
     descricao: string;
     modelo: string;
+    marca?: string;
+    ano_fabricacao?: number;
+    horas_trabalhadas?: number;
+    ultima_manutencao?: string;
   };
+  // Situação da OS expandida
   situacao_os: {
     codigo: number;
     descricao: string;
     id_motivo_pendencia: number;
     motivo_pendencia: string;
+    data_alteracao?: string;
+    usuario_alteracao?: string;
   };
+  // Informações do técnico expandidas
   tecnico: {
     id: number;
     nome: string;
     tipo: "interno" | "terceiro" | string;
     observacoes: string;
+    telefone?: string;
+    email?: string;
+    especialidades?: string[];
   };
+  // Liberação financeira expandida
   liberacao_financeira: {
     liberada: boolean;
     id_usuario_liberacao: number;
     nome_usuario_liberacao: string;
     data_liberacao: string;
+    motivo_liberacao?: string;
+    valor_autorizado?: number;
   };
+  // Revisão da OS expandida
   revisao_os: {
     id_usuario: number;
     nome: string;
     data: string;
     observacoes: string;
+    aprovada?: boolean;
+    nota_qualidade?: number;
   };
-  pecas_corrigidas: Array<{
-    id: number;
-    nome: string;
-    quantidade: number;
-  }>;
-  deslocamentos_corrigidos: Array<{
-    id: number;
-    data: string;
-    valor: number;
-    observacoes: string;
-  }>;
-  // Updated FATs structure to match actual API response
+  // Custos e valores
+  custos?: {
+    valor_mao_obra: number;
+    valor_pecas: number;
+    valor_deslocamento: number;
+    valor_outros: number;
+    valor_total: number;
+    moeda?: string;
+  };
+  // Arrays de dados relacionados expandidos
+  pecas_corrigidas: OSPecaCorrigida[];
+  deslocamentos_corrigidos: OSDeslocamentoCorrigido[];
   fats: OSFatDetalhado[];
+  historico?: OSHistoricoDetalhado[];
+  anexos?: OSAnexo[];
+  // Campos adicionais que podem estar presentes
+  observacoes_internas?: string;
+  data_criacao?: string;
+  data_ultima_alteracao?: string;
+  usuario_ultima_alteracao?: string;
+  tags?: string[];
+  categoria?: string;
+  subcategoria?: string;
 }
 
 interface OSPaginada {
@@ -371,18 +471,25 @@ class OrdensServicoService {
     total_paginas: number;
     nro_pagina: number;
     qtde_registros: number;
-    dados: Record<string, unknown>[]; // Tipo mais seguro que any
+    dados: Record<string, unknown>[];
   }> {
     return api.get(`${this.baseUrl}`, {
       params: { situacao: "1,2,3,4,5", resumido: "S", ...params },
     });
   }
 
-  async getById(id: number): Promise<OSDetalhadaV2 | OSDetalhadaV2[]> {
-    // This method now uses the updated interface format that matches the complete API response
-    return api.get<OSDetalhadaV2 | OSDetalhadaV2[]>(`${this.baseUrl}`, {
-      params: { id },
-    });
+  // MÉTODO ATUALIZADO - getById agora retorna sempre OSDetalhadaV2
+  async getById(id: number): Promise<OSDetalhadaV2> {
+    const response = await api.get<OSDetalhadaV2 | OSDetalhadaV2[]>(
+      `${this.baseUrl}`,
+      {
+        params: { id },
+      }
+    );
+
+    // Se a API retornar um array, pega o primeiro elemento
+    // Se retornar um objeto, retorna diretamente
+    return Array.isArray(response) ? response[0] : response;
   }
 
   async create(data: OSForm): Promise<OSDetalhada> {
