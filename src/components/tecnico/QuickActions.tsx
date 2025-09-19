@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, memo } from "react";
 import { Navigation, Phone, MessageSquare, Mail } from "lucide-react";
 import type { OSDetalhadaV2 } from "@/api/services/ordensServicoService";
 
@@ -11,28 +11,69 @@ interface QuickAction {
   disabled: boolean;
 }
 
+// Componente Action Button minimalista
+const ActionButton = memo<{
+  action: QuickAction;
+  index: number;
+}>(({ action, index }) => (
+  <button
+    onClick={action.action}
+    disabled={action.disabled}
+    className={`
+      group relative flex flex-col items-center gap-2 p-4 
+      rounded-xl border transition-all duration-200 ease-out
+      min-w-[80px] bg-white hover:bg-gray-50
+      ${action.color}
+      ${
+        action.disabled
+          ? "opacity-50 cursor-not-allowed border-gray-200"
+          : "hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 border-gray-200 hover:border-gray-300"
+      }
+    `}
+    style={{
+      animationDelay: `${index * 100}ms`,
+    }}
+  >
+    {/* Ícone simples */}
+    <div className="flex items-center justify-center w-8 h-8">
+      {action.icon}
+    </div>
+
+    {/* Label */}
+    <span className="text-xs font-medium text-gray-700 text-center">
+      {action.label}
+    </span>
+  </button>
+));
+
+ActionButton.displayName = "ActionButton";
+
 export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
   const [currentLocation, setCurrentLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
+  const [isLocationLoading, setIsLocationLoading] = useState(false);
 
   const getCurrentLocation = useCallback(() => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation || isLocationLoading) return;
 
+    setIsLocationLoading(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setCurrentLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
+        setIsLocationLoading(false);
       },
       (error) => {
         console.error("Erro ao obter localização:", error);
+        setIsLocationLoading(false);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 300000 }
     );
-  }, []);
+  }, [isLocationLoading]);
 
   useEffect(() => {
     getCurrentLocation();
@@ -112,31 +153,40 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
 
     if (isMobile) {
       const modal = document.createElement("div");
-      modal.className =
-        "fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4";
+      modal.className = `
+        fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4
+        animate-in fade-in duration-200
+      `;
 
       const modalContent = document.createElement("div");
-      modalContent.className =
-        "bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl";
+      modalContent.className = `
+        bg-white rounded-2xl p-6 w-full max-w-sm 
+        shadow-2xl animate-in slide-in-from-bottom-4 duration-300
+      `;
       modalContent.innerHTML = `
-        <h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">Escolher app de navegação</h3>
+        <div class="text-center mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-1">Escolher Navegação</h3>
+        </div>
         <div class="space-y-3">
-   <button id="google-maps-btn" class="w-full flex items-center justify-center gap-3 p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all">
-  <!-- SVG no lugar do ícone -->
-  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 48 48">
+          <button id="google-maps-btn" class="w-full flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors duration-200">
+            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 48 48">
     <path fill="#48b564" d="M35.76,26.36h0.01c0,0-3.77,5.53-6.94,9.64c-2.74,3.55-3.54,6.59-3.77,8.06	C24.97,44.6,24.53,45,24,45s-0.97-0.4-1.06-0.94c-0.23-1.47-1.03-4.51-3.77-8.06c-0.42-0.55-0.85-1.12-1.28-1.7L28.24,22l8.33-9.88	C37.49,14.05,38,16.21,38,18.5C38,21.4,37.17,24.09,35.76,26.36z"></path>
     <path fill="#fcc60e" d="M28.24,22L17.89,34.3c-2.82-3.78-5.66-7.94-5.66-7.94h0.01c-0.3-0.48-0.57-0.97-0.8-1.48L19.76,15	c-0.79,0.95-1.26,2.17-1.26,3.5c0,3.04,2.46,5.5,5.5,5.5C25.71,24,27.24,23.22,28.24,22z"></path>
     <path fill="#2c85eb" d="M28.4,4.74l-8.57,10.18L13.27,9.2C15.83,6.02,19.69,4,24,4C25.54,4,27.02,4.26,28.4,4.74z"></path>
     <path fill="#ed5748" d="M19.83,14.92L19.76,15l-8.32,9.88C10.52,22.95,10,20.79,10,18.5c0-3.54,1.23-6.79,3.27-9.3	L19.83,14.92z"></path>
     <path fill="#5695f6" d="M28.24,22c0.79-0.95,1.26-2.17,1.26-3.5c0-3.04-2.46-5.5-5.5-5.5c-1.71,0-3.24,0.78-4.24,2L28.4,4.74	c3.59,1.22,6.53,3.91,8.17,7.38L28.24,22z"></path>
   </svg>
+            </div>
+            <div class="flex-1 text-left">
+              <div class="font-medium text-gray-900">Google Maps</div>
+             
+            </div>
+          </button>
 
-  <span class="font-medium text-gray-800">Google Maps</span>
-</button>
-
-     <button id="waze-btn" class="w-full flex items-center justify-center gap-3 p-4 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all">
-  <div class="w-8 h-8">
-    <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+          <button id="waze-btn" class="w-full flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors duration-200">
+            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+           <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
          width="100%" height="100%" viewBox="0 0 200 200" enable-background="new 0 0 200 200" xml:space="preserve">
       <g>
         <path fill="#303030" d="M99.513,76.832c0,4.719-3.825,8.545-8.544,8.545c-4.718,0-8.544-3.826-8.544-8.545
@@ -164,18 +214,23 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
           c3-0.405,6-0.602,8.969-0.602C151.047,32.51,186.732,68.302,172.925,110.281"/>
       </g>
     </svg>
-  </div>
-  <span class="font-medium text-gray-800">Waze</span>
-</button>
+            </div>
+            <div class="flex-1 text-left">
+              <div class="font-medium text-gray-900">Waze</div>
+             
+            </div>
+          </button>
 
-
-          <button id="cancel-btn" class="w-full p-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">Cancelar</button>
+          <button id="cancel-btn" class="w-full p-3 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium">
+            Cancelar
+          </button>
         </div>
       `;
 
       modal.appendChild(modalContent);
       document.body.appendChild(modal);
 
+      // Event listeners
       document
         .getElementById("google-maps-btn")
         ?.addEventListener("click", () => {
@@ -202,6 +257,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
     }
   }, [openNavigation]);
 
+  // Actions com cores minimalistas
   const actions: QuickAction[] = useMemo(() => {
     const actionList: QuickAction[] = [];
 
@@ -210,71 +266,59 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
       (os.cliente?.latitude && os.cliente?.longitude)
     ) {
       actionList.push({
-        icon: <Navigation className="w-4 h-4" />,
-        label: "Traçar rota",
+        icon: <Navigation className="w-5 h-5 text-blue-600" />,
+        label: "Navegar",
         action: showNavigationModal,
-        color: "text-blue-600 bg-blue-50 border-blue-200",
-        disabled: false,
+        color: "hover:border-blue-300",
+        disabled: isLocationLoading,
       });
     }
 
     if (os.contato?.telefone) {
       actionList.push({
-        icon: <Phone className="w-4 h-4" />,
+        icon: <Phone className="w-5 h-5 text-green-600" />,
         label: "Ligar",
         action: () => window.open(`tel:${os.contato!.telefone}`),
-        color: "text-emerald-600 bg-emerald-50 border-emerald-200",
+        color: "hover:border-green-300",
         disabled: false,
       });
     }
 
     if (os.contato?.whatsapp?.trim()) {
       actionList.push({
-        icon: <MessageSquare className="w-4 h-4" />,
+        icon: <MessageSquare className="w-5 h-5 text-emerald-600" />,
         label: "WhatsApp",
         action: () =>
           window.open(
             `https://wa.me/${os.contato!.whatsapp.replace(/\D/g, "")}`,
             "_blank"
           ),
-        color: "text-green-600 bg-green-50 border-green-200",
+        color: "hover:border-emerald-300",
         disabled: false,
       });
     }
 
     if (os.contato?.email) {
       actionList.push({
-        icon: <Mail className="w-4 h-4" />,
+        icon: <Mail className="w-5 h-5 text-purple-600" />,
         label: "E-mail",
         action: () => window.open(`mailto:${os.contato!.email}`),
-        color: "text-blue-600 bg-blue-50 border-blue-200",
+        color: "hover:border-purple-300",
         disabled: false,
       });
     }
 
     return actionList;
-  }, [os, showNavigationModal]);
+  }, [os, showNavigationModal, isLocationLoading]);
 
   if (actions.length === 0) return null;
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
       {actions.map((action, index) => (
-        <button
-          key={index}
-          onClick={action.action}
-          disabled={action.disabled}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium whitespace-nowrap border ${
-            action.color
-          } ${
-            action.disabled
-              ? "opacity-50 cursor-not-allowed"
-              : "hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm"
-          }`}
-        >
-          {action.icon}
-          {action.label}
-        </button>
+        <div key={index} className="flex-shrink-0">
+          <ActionButton action={action} index={index} />
+        </div>
       ))}
     </div>
   );

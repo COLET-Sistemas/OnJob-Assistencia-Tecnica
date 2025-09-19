@@ -5,9 +5,9 @@ import MobileHeader from "@/components/tecnico/MobileHeader";
 import StatusBadge from "@/components/tecnico/StatusBadge";
 import {
   MapPin,
+  Building,
   User,
-  Phone,
-  Mail,
+  Briefcase,
   Settings,
   Calendar,
   CircleX,
@@ -274,7 +274,7 @@ export default function OSDetalheMobile() {
       </div>
 
       {/* Content Sections */}
-      <div className="px-4 pb-6 space-y-4 mt-2">
+      <div className="px-4 pb-2 space-y-4 mt-2">
         <div className="flex items-center justify-between">
           <StatusBadge status={os.situacao_os?.codigo?.toString()} />
 
@@ -288,11 +288,11 @@ export default function OSDetalheMobile() {
         </div>
 
         {/* Cliente */}
-        <Section title="Cliente" icon={<User className="w-4 h-4" />}>
+        <Section title="Cliente" icon={<Building className="w-4 h-4" />}>
           <Field
-            label="Nome"
+            label="Nome Empresa"
             value={os.cliente?.nome}
-            icon={<User className="w-3 h-3" />}
+            icon={<Briefcase className="w-3 h-3" />}
           />
           <Field
             label="Endereço"
@@ -322,23 +322,6 @@ export default function OSDetalheMobile() {
             label="Contato"
             value={os.contato?.nome}
             icon={<User className="w-3 h-3" />}
-          />
-          <Field
-            label="Telefone"
-            value={os.contato?.telefone}
-            icon={<Phone className="w-3 h-3" />}
-          />
-          {os.contato?.whatsapp && (
-            <Field
-              label="WhatsApp"
-              value={os.contato.whatsapp}
-              icon={<MessageSquare className="w-3 h-3" />}
-            />
-          )}
-          <Field
-            label="Email"
-            value={os.contato?.email}
-            icon={<Mail className="w-3 h-3" />}
           />
         </Section>
 
@@ -451,15 +434,24 @@ export default function OSDetalheMobile() {
           </div>
         )}
       </div>
+      <div className="p-4">
+        <div className="flex gap-3">
 
-      {/* Action Button - Final da página */}
-      <div className="p-5 ">
-        <button
-          onClick={() => setShowActions(true)}
-          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl active:scale-98 transition-all duration-200"
-        >
-          Ações da OS
-        </button>
+          <button
+            onClick={() => {
+            }}
+            className="flex-1 bg-white text-purple-600 py-3 px-4 rounded-lg text-sm font-medium border border-purple-300 hover:border-purple-500 hover:bg-purple-50 transition-all duration-200"
+          >
+            Criar FAT
+          </button>
+
+          <button
+            onClick={() => setShowActions(true)}
+            className="flex-1 bg-purple-600 text-white py-3 px-4 rounded-lg text-sm font-medium hover:bg-purple-700 transition-all duration-200"
+          >
+            Ações da OS
+          </button>
+        </div>
       </div>
 
       {/* Action Modal */}
