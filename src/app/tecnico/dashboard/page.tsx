@@ -228,12 +228,12 @@ const OSCard = React.memo(({ os }: { os: OSItem }) => {
       )} border-r border-t border-b border-gray-200 p-4 mb-3 transition-all duration-200 hover:shadow-md`}
     >
       {/* Header com número da OS e status */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-gray-900 mb-1">
             OS #{os.id_os} - {os.cliente?.nome}
           </h3>
-          <div className="flex items-center gap-1 text-xs text-gray-500">
+          <div className="flex items-center gap-1 text-xs text-gray-500 ">
             <MapPin className="w-3 h-3 text-gray-500" />
             <span>
               {os.cliente?.cidade}, {os.cliente?.uf}
@@ -245,7 +245,7 @@ const OSCard = React.memo(({ os }: { os: OSItem }) => {
 
       {/* Informações da máquina */}
       <div className="mb-3">
-        <div className="flex items-center gap-1 text-sm text-gray-700 mb-1">
+        <div className="flex items-center gap-1 text-sm text-gray-700">
           <Settings className="w-3 h-3 text-gray-500" />
           <span className="font-medium">{os.maquina?.modelo}</span>
 
@@ -283,12 +283,10 @@ export default function OSAbertoMobile() {
   // Handlers para os botões do header
   const handleMenuClick = () => {
     console.log("Menu clicado");
-    // Implementar abertura do menu lateral
   };
 
   const handleAddClick = () => {
     console.log("Adicionar clicado");
-    // Implementar ação de adicionar nova OS
   };
 
   useEffect(() => {
@@ -313,7 +311,7 @@ export default function OSAbertoMobile() {
     return (
       <>
         <MobileHeader
-          title="OS Abertas"
+          title="OSs a Atender"
           onMenuClick={handleMenuClick}
           onAddClick={handleAddClick}
         />
@@ -331,7 +329,7 @@ export default function OSAbertoMobile() {
     return (
       <>
         <MobileHeader
-          title="OS Abertas"
+          title="OSs a Atender"
           onMenuClick={handleMenuClick}
           onAddClick={handleAddClick}
         />
@@ -356,7 +354,7 @@ export default function OSAbertoMobile() {
     return (
       <>
         <MobileHeader
-          title="OS Abertas"
+          title="OSs a Atender"
           onMenuClick={handleMenuClick}
           onAddClick={handleAddClick}
         />
@@ -378,7 +376,7 @@ export default function OSAbertoMobile() {
   return (
     <main className="min-h-screen bg-gray-50">
       <MobileHeader
-        title="OS Abertas"
+        title="OSs a Atender"
         onMenuClick={handleMenuClick}
         onAddClick={handleAddClick}
       />
