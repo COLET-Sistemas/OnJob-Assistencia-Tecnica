@@ -91,24 +91,23 @@ const CadastroClientes = () => {
     registrosPorPagina: 25,
   });
 
-  // Funções de filtro modificadas para usar estado local
   const handleApplyFilters = () => {
-    setLocalShowFilters(false); // Fecha o menu localmente
-    isReloadingRef.current = true; // Marca que vamos recarregar
-    aplicarFiltros(); // Aplica os filtros através do hook
+    setLocalShowFilters(false);
+    isReloadingRef.current = true; 
+    aplicarFiltros(); 
   };
 
   const handleClearFilters = () => {
-    setLocalShowFilters(false); // Fecha o menu localmente
-    isReloadingRef.current = true; // Marca que vamos recarregar
-    limparFiltros(); // Limpa os filtros através do hook
+    setLocalShowFilters(false); 
+    isReloadingRef.current = true;
+    limparFiltros();
   };
 
   const handleToggleFilters = () => {
     if (!isReloadingRef.current) {
-      setLocalShowFilters(!localShowFilters); // Toggle local apenas se não estiver recarregando
+      setLocalShowFilters(!localShowFilters);
     }
-    toggleFilters(); // Toggle através do hook
+    toggleFilters(); 
   };
 
   const fetchClientes = useCallback(async (): Promise<Cliente[]> => {
@@ -136,7 +135,6 @@ const CadastroClientes = () => {
 
       return response.dados;
     } finally {
-      // Depois de recarregar, permitir mudanças no estado do menu
       setTimeout(() => {
         isReloadingRef.current = false;
       }, 500);
@@ -198,7 +196,6 @@ const CadastroClientes = () => {
         const response = await clientesService.getContacts(clientId);
 
         if (response && response.contatos) {
-          // Força uma atualização dos dados para recarregar com os contatos
           await refetch();
         }
       } catch (error) {

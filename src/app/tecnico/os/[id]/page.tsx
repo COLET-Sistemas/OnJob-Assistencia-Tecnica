@@ -129,21 +129,92 @@ export default function OSDetalheMobile() {
       setShowActions(false);
       console.log("Ação selecionada:", action, "OS:", os?.id_os);
 
-      const actionMessages: Record<string, string> = {
-        iniciar_deslocamento: "Deslocamento iniciado",
-        iniciar_atendimento: "Atendimento iniciado",
-        pausar_atendimento: "Atendimento pausado",
-        retomar_atendimento: "Atendimento retomado",
-        interromper_atendimento: "Atendimento interrompido",
-        concluir_atendimento: "Atendimento concluído",
-        concluir_os: "OS concluída",
-        cancelar_atendimento: "Atendimento cancelado",
-      };
+      if (!os?.id_os) {
+        alert("Erro: ID da OS não encontrado");
+        return;
+      }
 
-      alert(actionMessages[action] || "Ação executada");
+      try {
+        // Mensagens de feedback para o usuário
+        const actionMessages: Record<string, string> = {
+          iniciar_deslocamento: "Iniciando deslocamento...",
+          iniciar_atendimento: "Iniciando atendimento...",
+          pausar_atendimento: "Pausando atendimento...",
+          retomar_atendimento: "Retomando atendimento...",
+          interromper_atendimento: "Interrompendo atendimento...",
+          concluir_os: "Concluindo OS...",
+          cancelar_atendimento: "Cancelando atendimento...",
+        };
+
+        // Exibir mensagem de carregamento
+        const loadingMessage = actionMessages[action] || "Processando ação...";
+        alert(loadingMessage);
+
+        // Aqui você implementaria as chamadas para a API
+        switch (action) {
+          case "iniciar_deslocamento":
+            // await ordensServicoService.iniciarDeslocamento(os.id_os);
+            break;
+          case "iniciar_atendimento":
+            // await ordensServicoService.iniciarAtendimento(os.id_os);
+            break;
+          case "pausar_atendimento":
+            // await ordensServicoService.pausarAtendimento(os.id_os);
+            break;
+          case "retomar_atendimento":
+            // await ordensServicoService.retomarAtendimento(os.id_os);
+            break;
+          case "interromper_atendimento":
+            // await ordensServicoService.interromperAtendimento(os.id_os);
+            break;
+          case "concluir_os":
+            // await ordensServicoService.concluirOS(os.id_os);
+            break;
+          case "cancelar_atendimento":
+            // await ordensServicoService.cancelarAtendimento(os.id_os);
+            break;
+          default:
+            console.warn("Ação não reconhecida:", action);
+        }
+
+        // Recarregar os dados da OS após a ação
+        await fetchOS();
+
+        // Mensagem de sucesso
+        const successMessages: Record<string, string> = {
+          iniciar_deslocamento: "Deslocamento iniciado com sucesso!",
+          iniciar_atendimento: "Atendimento iniciado com sucesso!",
+          pausar_atendimento: "Atendimento pausado com sucesso!",
+          retomar_atendimento: "Atendimento retomado com sucesso!",
+          interromper_atendimento: "Atendimento interrompido com sucesso!",
+          concluir_os: "OS concluída com sucesso!",
+          cancelar_atendimento: "Atendimento cancelado com sucesso!",
+        };
+
+        alert(successMessages[action] || "Ação executada com sucesso!");
+      } catch (error) {
+        console.error("Erro ao executar ação:", error);
+        alert("Erro ao executar a ação. Tente novamente.");
+      }
     },
     [os?.id_os]
   );
+
+  const handleCreateFAT = useCallback(() => {
+    if (!os?.id_os) {
+      alert("Erro: ID da OS não encontrado");
+      return;
+    }
+
+    // Navegar para página de criação de FAT ou abrir modal
+    console.log("Criar FAT para OS:", os.id_os);
+
+    // Exemplo de navegação (ajuste conforme sua estrutura de rotas)
+    // router.push(`/tecnico/os/${os.id_os}/fat/criar`);
+
+    // Ou abrir modal de criação de FAT
+    alert("Funcionalidade de criar FAT será implementada aqui");
+  }, [os?.id_os]);
 
   const fetchOS = useCallback(async () => {
     if (!params?.id) {
@@ -165,7 +236,8 @@ export default function OSDetalheMobile() {
       }
 
       setOs(osData);
-    } catch {
+    } catch (error) {
+      console.error("Erro ao carregar OS:", error);
       setError("Erro ao carregar detalhes da OS.");
     } finally {
       setLoading(false);
@@ -434,12 +506,12 @@ export default function OSDetalheMobile() {
           </div>
         )}
       </div>
+
+      {/* Bottom Action Buttons */}
       <div className="p-4">
         <div className="flex gap-3">
-
           <button
-            onClick={() => {
-            }}
+            onClick={handleCreateFAT}
             className="flex-1 bg-white text-purple-600 py-3 px-4 rounded-lg text-sm font-medium border border-purple-300 hover:border-purple-500 hover:bg-purple-50 transition-all duration-200"
           >
             Criar FAT
@@ -454,11 +526,12 @@ export default function OSDetalheMobile() {
         </div>
       </div>
 
-      {/* Action Modal */}
+      {/* Action Modal - Agora passando a OS como parâmetro */}
       <OSActionModal
         isOpen={showActions}
         onClose={() => setShowActions(false)}
         onAction={handleAction}
+        os={os}
       />
     </main>
   );
