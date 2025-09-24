@@ -425,9 +425,74 @@ interface OSFinalizadaForm {
 
 class OrdensServicoService {
   private baseUrl = "/ordens_servico";
+  private cache = new Map<string, { data: unknown; timestamp: number }>();
+  private pendingRequests = new Map<string, Promise<unknown>>();
+  private readonly CACHE_DURATION = 30000; // 30 segundos
+
+  // Método para limpar cache expirado
+  private cleanExpiredCache() {
+    const now = Date.now();
+    for (const [key, value] of this.cache.entries()) {
+      if (now - value.timestamp > this.CACHE_DURATION) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  // Método para obter dados do cache ou fazer nova requisição
+  private async getCachedOrFetch<T>(
+    cacheKey: string,
+    fetchFn: () => Promise<T>,
+    useCache = true
+  ): Promise<T> {
+    // Limpar cache expirado
+    this.cleanExpiredCache();
+
+    // Se não usar cache, executar diretamente
+    if (!useCache) {
+      return fetchFn();
+    }
+
+    // Verificar se existe uma requisição pendente para evitar duplicatas
+    if (this.pendingRequests.has(cacheKey)) {
+      console.log(`Aguardando requisição pendente: ${cacheKey}`);
+      return this.pendingRequests.get(cacheKey) as Promise<T>;
+    }
+
+    // Verificar cache
+    const cached = this.cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      console.log(`Dados obtidos do cache: ${cacheKey}`);
+      return cached.data as T;
+    }
+
+    // Criar nova requisição
+    console.log(`Fazendo nova requisição: ${cacheKey}`);
+    const promise = fetchFn()
+      .then((data) => {
+        // Salvar no cache
+        this.cache.set(cacheKey, { data, timestamp: Date.now() });
+        // Remover da lista de pendentes
+        this.pendingRequests.delete(cacheKey);
+        return data;
+      })
+      .catch((error) => {
+        // Remover da lista de pendentes em caso de erro
+        this.pendingRequests.delete(cacheKey);
+        throw error;
+      });
+
+    // Adicionar à lista de requisições pendentes
+    this.pendingRequests.set(cacheKey, promise);
+
+    return promise;
+  }
 
   async getCountByStatus(): Promise<OSStatusCount> {
-    return api.get<OSStatusCount>(`${this.baseUrl}/count_status`);
+    const cacheKey = "count_status";
+    return this.getCachedOrFetch(cacheKey, () =>
+      api.get<OSStatusCount>(`${this.baseUrl}/count_status`)
+    );
   }
 
   async getAll(params: OSFilterParams = {}): Promise<OSPaginada> {
@@ -440,7 +505,12 @@ class OrdensServicoService {
       }
     });
 
-    return api.get<OSPaginada>(this.baseUrl, { params: cleanParams });
+    const cacheKey = `all_${JSON.stringify(cleanParams)}`;
+    return this.getCachedOrFetch(
+      cacheKey,
+      () => api.get<OSPaginada>(this.baseUrl, { params: cleanParams }),
+      false // Não usar cache para listagem geral
+    );
   }
 
   async getPendentes(): Promise<{
@@ -463,7 +533,10 @@ class OrdensServicoService {
       params.id_tecnico = idUsuario;
     }
 
-    return api.get(`${this.baseUrl}`, { params });
+    const cacheKey = `pendentes_${idUsuario || "all"}`;
+    return this.getCachedOrFetch(cacheKey, () =>
+      api.get(`${this.baseUrl}`, { params })
+    );
   }
 
   async getDashboard(params = {}): Promise<{
@@ -473,65 +546,144 @@ class OrdensServicoService {
     qtde_registros: number;
     dados: Record<string, unknown>[];
   }> {
-    return api.get(`${this.baseUrl}`, {
-      params: { situacao: "1,2,3,4,5", resumido: "S", ...params },
-    });
+    const cacheKey = `dashboard_${JSON.stringify(params)}`;
+    return this.getCachedOrFetch(cacheKey, () =>
+      api.get(`${this.baseUrl}`, {
+        params: { situacao: "1,2,3,4,5", resumido: "S", ...params },
+      })
+    );
   }
 
-  // MÉTODO ATUALIZADO - getById agora retorna sempre OSDetalhadaV2
-  async getById(id: number): Promise<OSDetalhadaV2> {
-    const response = await api.get<OSDetalhadaV2 | OSDetalhadaV2[]>(
-      `${this.baseUrl}`,
-      {
-        params: { id },
-      }
-    );
+  // MÉTODO OTIMIZADO - getById com cache inteligente
+  async getById(id: number, forceRefresh = false): Promise<OSDetalhadaV2> {
+    const cacheKey = `os_detail_${id}`;
 
-    // Se a API retornar um array, pega o primeiro elemento
-    // Se retornar um objeto, retorna diretamente
-    return Array.isArray(response) ? response[0] : response;
+    return this.getCachedOrFetch(
+      cacheKey,
+      async () => {
+        console.log(`Buscando OS ${id} na API`);
+        const response = await api.get<OSDetalhadaV2 | OSDetalhadaV2[]>(
+          `${this.baseUrl}`,
+          {
+            params: { id },
+          }
+        );
+
+        // Se a API retornar um array, pega o primeiro elemento
+        // Se retornar um objeto, retorna diretamente
+        return Array.isArray(response) ? response[0] : response;
+      },
+      !forceRefresh // Usar cache apenas se não for forçar refresh
+    );
   }
 
   async create(data: OSForm): Promise<OSDetalhada> {
-    return api.post<OSDetalhada>(this.baseUrl, data);
+    const result = await api.post<OSDetalhada>(this.baseUrl, data);
+    // Limpar caches relacionados
+    this.cache.clear();
+    return result;
   }
 
   async atribuirTecnico(id: number, data: OSTecnicoForm): Promise<OSDetalhada> {
-    return api.put<OSDetalhada>(`${this.baseUrl}/${id}/atribuir`, data);
+    const result = await api.put<OSDetalhada>(
+      `${this.baseUrl}/${id}/atribuir`,
+      data
+    );
+    // Invalidar cache específico da OS
+    this.cache.delete(`os_detail_${id}`);
+    this.cache.delete("count_status");
+    return result;
   }
 
   async iniciarAtendimento(id: number): Promise<OSDetalhada> {
-    return api.put<OSDetalhada>(`${this.baseUrl}/${id}/iniciar`, {});
+    const result = await api.put<OSDetalhada>(
+      `${this.baseUrl}/${id}/iniciar`,
+      {}
+    );
+    // Invalidar cache específico da OS
+    this.cache.delete(`os_detail_${id}`);
+    this.cache.delete("count_status");
+    return result;
   }
 
   async colocarPendente(
     id: number,
     data: OSPendenciaForm
   ): Promise<OSDetalhada> {
-    return api.put<OSDetalhada>(`${this.baseUrl}/${id}/pendente`, data);
+    const result = await api.put<OSDetalhada>(
+      `${this.baseUrl}/${id}/pendente`,
+      data
+    );
+    // Invalidar cache específico da OS
+    this.cache.delete(`os_detail_${id}`);
+    this.cache.delete("count_status");
+    return result;
   }
 
   async finalizarOS(id: number, data: OSFinalizadaForm): Promise<OSDetalhada> {
-    return api.put<OSDetalhada>(`${this.baseUrl}/${id}/finalizar`, data);
+    const result = await api.put<OSDetalhada>(
+      `${this.baseUrl}/${id}/finalizar`,
+      data
+    );
+    // Invalidar cache específico da OS
+    this.cache.delete(`os_detail_${id}`);
+    this.cache.delete("count_status");
+    return result;
   }
 
   async cancel(id: number): Promise<void> {
     await api.delete<void>(`${this.baseUrl}/${id}`);
+    // Invalidar cache específico da OS
+    this.cache.delete(`os_detail_${id}`);
+    this.cache.delete("count_status");
   }
 
   async liberarFinanceiramente(id: number): Promise<OSDetalhada> {
-    return api.patch<OSDetalhada>(`${this.baseUrl}/liberacao?id=${id}`, {
-      liberada_financeira: true,
-    });
+    const result = await api.patch<OSDetalhada>(
+      `${this.baseUrl}/liberacao?id=${id}`,
+      {
+        liberada_financeira: true,
+      }
+    );
+    // Invalidar cache específico da OS
+    this.cache.delete(`os_detail_${id}`);
+    return result;
   }
 
   async alterarMotivoPendencia(
     id: number,
     idMotivo: number | null
   ): Promise<OSDetalhada> {
-    return api.patch<OSDetalhada>(`${this.baseUrl}/liberacao?id=${id}`, {
-      id_motivo_pendencia: idMotivo,
-    });
+    const result = await api.patch<OSDetalhada>(
+      `${this.baseUrl}/liberacao?id=${id}`,
+      {
+        id_motivo_pendencia: idMotivo,
+      }
+    );
+    // Invalidar cache específico da OS
+    this.cache.delete(`os_detail_${id}`);
+    return result;
+  }
+
+  // Método para invalidar cache específico
+  invalidateCache(key?: string) {
+    if (key) {
+      this.cache.delete(key);
+    } else {
+      this.cache.clear();
+    }
+  }
+
+  // Método para invalidar cache de uma OS específica
+  invalidateOSCache(id: number) {
+    this.cache.delete(`os_detail_${id}`);
+    this.cache.delete("count_status");
+    // Invalidar também caches de listagem que possam conter esta OS
+    for (const key of this.cache.keys()) {
+      if (key.startsWith("pendentes_") || key.startsWith("dashboard_")) {
+        this.cache.delete(key);
+      }
+    }
   }
 }
 

@@ -1,4 +1,5 @@
 "use client";
+
 type MenuOption = {
   label: string;
   onClick: () => void;
@@ -40,20 +41,23 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   // Funções de ação do menu
   const handlePerfil = () => {
     setMenuOpen(false);
-    // Redirecionar para perfil (ajuste conforme necessário)
     window.location.href = "/tecnico/perfil";
+  };
+  const handleSobre = () => {
+    setMenuOpen(false);
+    window.location.href = "/tecnico/sobre";
   };
   const handleSair = () => {
     setMenuOpen(false);
-    // Lógica de logout (ajuste conforme necessário)
     if (typeof window !== "undefined") {
       localStorage.clear();
-      window.location.href = "/alterar-senha";
+      window.location.href = "/";
     }
   };
 
   const menuOptions: MenuOption[] = [
     { label: "Perfil", onClick: handlePerfil },
+    { label: "Sobre", onClick: handleSobre },
     { label: "Sair", onClick: handleSair },
   ];
 

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import StatusBadge from "@/components/tecnico/StatusBadge";
@@ -119,86 +119,85 @@ export default function OSDetalheMobile() {
   const [error, setError] = useState("");
   const [showActions, setShowActions] = useState(false);
 
+  // Ref para controlar se já está carregando e evitar chamadas duplas
+  const isLoadingRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const formatDate = useCallback((dateStr: string | null) => {
     if (!dateStr?.trim()) return null;
     return dateStr;
   }, []);
 
-  const handleAction = useCallback(
-    async (action: string) => {
-      setShowActions(false);
-      console.log("Ação selecionada:", action, "OS:", os?.id_os);
-
-      if (!os?.id_os) {
-        alert("Erro: ID da OS não encontrado");
+  // Função otimizada para recarregar dados da OS
+  const fetchOS = useCallback(
+    async (force = false) => {
+      if (!params?.id) {
+        setError("ID da OS não fornecido");
+        setLoading(false);
         return;
       }
 
+      // Evitar múltiplas chamadas simultâneas
+      if (isLoadingRef.current && !force) {
+        console.log("Já está carregando, pulando chamada duplicada");
+        return;
+      }
+
+      // Cancelar requisição anterior se existir
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Criar novo AbortController
+      abortControllerRef.current = new AbortController();
+
+      isLoadingRef.current = true;
+      setLoading(true);
+      setError("");
+
       try {
-        // Mensagens de feedback para o usuário
-        const actionMessages: Record<string, string> = {
-          iniciar_deslocamento: "Iniciando deslocamento...",
-          iniciar_atendimento: "Iniciando atendimento...",
-          pausar_atendimento: "Pausando atendimento...",
-          retomar_atendimento: "Retomando atendimento...",
-          interromper_atendimento: "Interrompendo atendimento...",
-          concluir_os: "Concluindo OS...",
-          cancelar_atendimento: "Cancelando atendimento...",
-        };
+        console.log(`Carregando OS ID: ${params.id}`);
+        const response = await ordensServicoService.getById(Number(params.id));
 
-        // Exibir mensagem de carregamento
-        const loadingMessage = actionMessages[action] || "Processando ação...";
-        alert(loadingMessage);
-
-        // Aqui você implementaria as chamadas para a API
-        switch (action) {
-          case "iniciar_deslocamento":
-            // await ordensServicoService.iniciarDeslocamento(os.id_os);
-            break;
-          case "iniciar_atendimento":
-            // await ordensServicoService.iniciarAtendimento(os.id_os);
-            break;
-          case "pausar_atendimento":
-            // await ordensServicoService.pausarAtendimento(os.id_os);
-            break;
-          case "retomar_atendimento":
-            // await ordensServicoService.retomarAtendimento(os.id_os);
-            break;
-          case "interromper_atendimento":
-            // await ordensServicoService.interromperAtendimento(os.id_os);
-            break;
-          case "concluir_os":
-            // await ordensServicoService.concluirOS(os.id_os);
-            break;
-          case "cancelar_atendimento":
-            // await ordensServicoService.cancelarAtendimento(os.id_os);
-            break;
-          default:
-            console.warn("Ação não reconhecida:", action);
+        // Verificar se a requisição foi cancelada
+        if (abortControllerRef.current?.signal.aborted) {
+          console.log("Requisição cancelada");
+          return;
         }
 
-        // Recarregar os dados da OS após a ação
-        await fetchOS();
+        const osData = Array.isArray(response) ? response[0] : response;
 
-        // Mensagem de sucesso
-        const successMessages: Record<string, string> = {
-          iniciar_deslocamento: "Deslocamento iniciado com sucesso!",
-          iniciar_atendimento: "Atendimento iniciado com sucesso!",
-          pausar_atendimento: "Atendimento pausado com sucesso!",
-          retomar_atendimento: "Atendimento retomado com sucesso!",
-          interromper_atendimento: "Atendimento interrompido com sucesso!",
-          concluir_os: "OS concluída com sucesso!",
-          cancelar_atendimento: "Atendimento cancelado com sucesso!",
-        };
+        if (!osData) {
+          setError("OS não encontrada");
+          return;
+        }
 
-        alert(successMessages[action] || "Ação executada com sucesso!");
+        console.log("OS carregada com sucesso:", osData.id_os);
+        setOs(osData);
       } catch (error) {
-        console.error("Erro ao executar ação:", error);
-        alert("Erro ao executar a ação. Tente novamente.");
+        // Não mostrar erro se foi cancelado
+
+        if ((error as { name?: string })?.name === "AbortError") {
+          console.log("Requisição foi cancelada");
+          return;
+        }
+
+        console.error("Erro ao carregar OS:", error);
+        setError("Erro ao carregar detalhes da OS.");
+      } finally {
+        isLoadingRef.current = false;
+        setLoading(false);
       }
     },
-    [os?.id_os]
+    [params?.id]
   );
+
+  // Callback otimizado para quando uma ação for executada com sucesso
+  const handleActionSuccess = useCallback(() => {
+    console.log("Ação executada com sucesso, recarregando OS...");
+    // Forçar recarregamento após ação
+    fetchOS(true);
+  }, [fetchOS]);
 
   const handleCreateFAT = useCallback(() => {
     if (!os?.id_os) {
@@ -206,47 +205,43 @@ export default function OSDetalheMobile() {
       return;
     }
 
-    // Navegar para página de criação de FAT ou abrir modal
-    console.log("Criar FAT para OS:", os.id_os);
-
-    // Exemplo de navegação (ajuste conforme sua estrutura de rotas)
-    // router.push(`/tecnico/os/${os.id_os}/fat/criar`);
-
     // Ou abrir modal de criação de FAT
     alert("Funcionalidade de criar FAT será implementada aqui");
   }, [os?.id_os]);
 
-  const fetchOS = useCallback(async () => {
-    if (!params?.id) {
-      setError("ID da OS não fornecido");
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const response = await ordensServicoService.getById(Number(params.id));
-      const osData = Array.isArray(response) ? response[0] : response;
-
-      if (!osData) {
-        setError("OS não encontrada");
-        return;
-      }
-
-      setOs(osData);
-    } catch (error) {
-      console.error("Erro ao carregar OS:", error);
-      setError("Erro ao carregar detalhes da OS.");
-    } finally {
-      setLoading(false);
-    }
-  }, [params?.id]);
-
+  // Effect otimizado com cleanup
   useEffect(() => {
-    fetchOS();
+    let mounted = true;
+
+    const loadOS = async () => {
+      if (mounted) {
+        await fetchOS();
+      }
+    };
+
+    loadOS();
+
+    // Cleanup function
+    return () => {
+      mounted = false;
+      isLoadingRef.current = false;
+
+      // Cancelar requisição pendente
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
   }, [fetchOS]);
+
+  // Cleanup no unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -287,7 +282,7 @@ export default function OSDetalheMobile() {
                 Voltar
               </button>
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => fetchOS(true)}
                 className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-colors"
               >
                 Tentar novamente
@@ -526,11 +521,11 @@ export default function OSDetalheMobile() {
         </div>
       </div>
 
-      {/* Action Modal - Agora passando a OS como parâmetro */}
+      {/* Action Modal - Agora com callback de sucesso */}
       <OSActionModal
         isOpen={showActions}
         onClose={() => setShowActions(false)}
-        onAction={handleAction}
+        onSuccess={handleActionSuccess}
         os={os}
       />
     </main>
