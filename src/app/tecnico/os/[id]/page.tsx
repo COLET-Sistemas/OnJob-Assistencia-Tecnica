@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import ActionButtons from "@/components/tecnico/ActionButtons";
 import { useRouter, useParams } from "next/navigation";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import StatusBadge from "@/components/tecnico/StatusBadge";
@@ -26,7 +27,7 @@ import {
 } from "@/api/services/ordensServicoService";
 import FATCard from "@/components/tecnico/FATCard";
 import { Loading } from "@/components/LoadingPersonalizado";
-import OSActionModal from "@/components/tecnico/OSActionModal";
+// import OSActionModal from "@/components/tecnico/OSActionModal";
 import QuickActions from "@/components/tecnico/QuickActions";
 
 const Section = React.memo(
@@ -117,7 +118,7 @@ export default function OSDetalheMobile() {
   const [os, setOs] = useState<OSDetalhadaV2 | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showActions, setShowActions] = useState(false);
+  // const [showActions, setShowActions] = useState(false);
 
   // Ref para controlar se já está carregando e evitar chamadas duplas
   const isLoadingRef = useRef(false);
@@ -173,9 +174,8 @@ export default function OSDetalheMobile() {
         }
 
         console.log("OS carregada com sucesso:", osData.id_os);
-        setOs(osData); 
-      } catch (error) {
-        // Tratamento de erro...
+        setOs(osData);
+      } catch {
       } finally {
         isLoadingRef.current = false;
         setLoading(false);
@@ -185,11 +185,9 @@ export default function OSDetalheMobile() {
   );
 
   // Callback otimizado para quando uma ação for executada com sucesso
-  const handleActionSuccess = useCallback(() => {
-    console.log("Ação executada com sucesso, recarregando OS...");
-    // Forçar recarregamento após ação
-    fetchOS(true); // O parâmetro true força o reload
-  }, [fetchOS]);
+  // const handleActionSuccess = useCallback(() => {
+  //   fetchOS(true);
+  // }, [fetchOS]);
 
   // Effect otimizado com cleanup
   useEffect(() => {
@@ -208,7 +206,6 @@ export default function OSDetalheMobile() {
       mounted = false;
       isLoadingRef.current = false;
 
-      // Cancelar requisição pendente
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
@@ -484,25 +481,14 @@ export default function OSDetalheMobile() {
         )}
       </div>
 
-      {/* Bottom Action Buttons */}
+      {/* Bottom Action Buttons - Componente reutilizável */}
       <div className="p-4">
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowActions(true)}
-            className="flex-1 bg-purple-600 text-white py-3 px-4 rounded-lg text-sm font-medium hover:bg-purple-700 transition-all duration-200"
-          >
-            Ações da OS
-          </button>
-        </div>
+        <ActionButtons
+          fats={os.fats}
+          id_os={os.id_os}
+          onActionSuccess={() => fetchOS(true)}
+        />
       </div>
-
-      {/* Action Modal - Agora com callback de sucesso */}
-      <OSActionModal
-        isOpen={showActions}
-        onClose={() => setShowActions(false)}
-        onSuccess={handleActionSuccess}
-        os={os}
-      />
     </main>
   );
 }

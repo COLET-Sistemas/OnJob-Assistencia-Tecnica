@@ -385,24 +385,28 @@ export default function FATDetalheMobile() {
         >
           <Field
             label="Solução Encontrada"
-            value={fat.solucao_encontrada || "Não informada"}
+            value={fat.solucao_encontrada ?? "Não informada"}
             icon={<CheckSquare className="w-3 h-3" />}
           />
+
           <Field
             label="Testes Realizados"
-            value={fat.testes_realizados || "Não informado"}
+            value={fat.testes_realizados ?? "Não informado"}
             icon={<Eye className="w-3 h-3" />}
           />
+
           <Field
             label="Sugestões"
-            value={fat.sugestoes || "Nenhuma sugestão"}
+            value={fat.sugestoes ?? "Nenhuma sugestão"}
             icon={<MessageSquare className="w-3 h-3" />}
           />
+
           <Field
             label="Observações"
-            value={fat.observacoes || "Sem observações"}
+            value={fat.observacoes ?? "Sem observações"}
             icon={<FileText className="w-3 h-3" />}
           />
+
           {fat.numero_ciclos != null && fat.numero_ciclos > 0 && (
             <Field
               label="Número de Ciclos"
@@ -411,25 +415,26 @@ export default function FATDetalheMobile() {
             />
           )}
         </Section>
-
         {/* Máquina */}
-        <Section title="Máquina" icon={<Settings className="w-4 h-4" />}>
-          <Field
-            label="Modelo"
-            value={fat.maquina.modelo}
-            icon={<Settings className="w-3 h-3" />}
-          />
-          <Field
-            label="Descrição"
-            value={fat.maquina.descricao}
-            icon={<FileText className="w-3 h-3" />}
-          />
-          <Field
-            label="Número de Série"
-            value={fat.maquina.numero_serie}
-            icon={<Settings className="w-3 h-3" />}
-          />
-        </Section>
+        {fat.maquina?.modelo && fat.maquina.modelo.trim() !== "" && (
+          <Section title="Máquina" icon={<Settings className="w-4 h-4" />}>
+            <Field
+              label="Modelo"
+              value={fat.maquina.modelo}
+              icon={<Settings className="w-3 h-3" />}
+            />
+            <Field
+              label="Descrição"
+              value={fat.maquina.descricao}
+              icon={<FileText className="w-3 h-3" />}
+            />
+            <Field
+              label="Número de Série"
+              value={fat.maquina.numero_serie}
+              icon={<Settings className="w-3 h-3" />}
+            />
+          </Section>
+        )}
 
         {/* Peças Utilizadas */}
         {fat.pecas && fat.pecas.length > 0 && (

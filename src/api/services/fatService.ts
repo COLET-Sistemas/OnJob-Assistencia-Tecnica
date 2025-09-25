@@ -40,30 +40,24 @@ export interface FATDeslocamento {
   tempo_ida_min: number | null;
   tempo_volta_min: number | null;
   observacoes?: string;
-  // Campos removidos que não existem na API:
-  // valor_km, valor_total
 }
 
 // Interface para peça utilizada - ATUALIZADA
 export interface FATPeca {
-  id_fat_peca: number; // era "id" antes
-  codigo_peca: string; // era "codigo" antes
-  descricao_peca: string; // era "nome" antes
+  id_fat_peca: number; 
+  codigo_peca: string; 
+  descricao_peca: string; 
   quantidade: number;
-  observacoes?: string; // novo campo
-  // Campos removidos que não existem na API:
-  // id_peca, valor_unitario, valor_total
+  observacoes?: string; 
 }
 
 // Interface para foto - ATUALIZADA
 export interface FATFoto {
-  id_fat_foto: number; // era "id_foto" antes
+  id_fat_foto: number; 
   nome_arquivo: string;
-  tipo: string; // novo campo
+  tipo: string; 
   descricao?: string;
-  data_cadastro: string; // era "data_upload" antes
-  // Campos removidos que não existem na API:
-  // url, usuario_upload
+  data_cadastro: string; 
 }
 
 // Interface para ocorrência
@@ -101,17 +95,13 @@ export interface FATDetalhada {
   fotos?: FATFoto[];
   ocorrencias?: FATOcorrencia[];
 
-  // Campos removidos que não existem na API:
-  // hora_inicio, hora_fim, tempo_total_min, valor_mao_obra,
-  // valor_deslocamento, valor_pecas, valor_total, aprovado,
-  // data_aprovacao, usuario_aprovacao
 }
 
 class FATService {
   private baseUrl = "/fats";
   private cache = new Map<string, { data: unknown; timestamp: number }>();
   private pendingRequests = new Map<string, Promise<unknown>>();
-  private readonly CACHE_DURATION = 30000; // 30 segundos
+  private readonly CACHE_DURATION = 30000; 
 
   // Método para limpar cache expirado
   private cleanExpiredCache() {
@@ -191,7 +181,7 @@ class FATService {
 
         return response[0];
       },
-      !forceRefresh // Usar cache apenas se não for forçar refresh
+      !forceRefresh 
     );
   }
 
