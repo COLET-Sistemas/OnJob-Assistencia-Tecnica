@@ -1,25 +1,18 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
+import { useRouter } from "next/navigation";
 import {
   Car,
-  ChevronRight,
-  User,
-  AlertTriangle,
   CheckCircle,
   FileSearch,
-  MessageSquare,
-  Settings,
-  Package,
   Clock,
   Bell,
   PauseCircle,
   XCircle,
   UserX,
-  SquareUserRound,
   Wrench,
 } from "lucide-react";
 
-// Status mapping for id_motivo_atendimento
 const statusConfig = {
   1: {
     label: "Pendente",
@@ -68,52 +61,24 @@ const statusConfig = {
   },
 };
 
-// Minimal Field helper used by the FATCard component
-const Field = React.memo(
-  ({
-    label,
-    value,
-    icon,
-  }: {
-    label: string;
-    value: string | React.ReactNode | null | undefined;
-    icon?: React.ReactNode;
-  }) => {
-    if (!value || (typeof value === "string" && value === "Não informado"))
-      return null;
-
-    return (
-      <div className="flex items-start gap-2 min-w-0">
-        {icon && (
-          <div className="text-slate-400 mt-0.5 flex-shrink-0">{icon}</div>
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="text-xs text-slate-500 mb-0.5 font-medium">{label}</p>
-          <div className="text-sm text-slate-900 break-words leading-relaxed">
-            {value}
-          </div>
-        </div>
-      </div>
-    );
-  }
-);
-
-Field.displayName = "Field";
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function FATCard({ fat }: { fat: any; index: number }) {
-  const [expanded, setExpanded] = useState(false);
+  const router = useRouter();
 
   // Get status configuration based on situacao
   const statusId = fat.situacao || 1;
   const status =
     statusConfig[statusId as keyof typeof statusConfig] || statusConfig[1];
 
+  const handleClick = () => {
+    router.push(`/tecnico/os/fat/${fat.id_fat}`);
+  };
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <div
         className="p-4 cursor-pointer hover:bg-slate-50 transition-colors duration-200"
-        onClick={() => setExpanded(!expanded)}
+        onClick={handleClick}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -126,7 +91,6 @@ export default function FATCard({ fat }: { fat: any; index: number }) {
               <h4 className="font-semibold text-slate-900 text-sm">
                 FAT #{fat.id_fat}
               </h4>
-
               <p className="text-xs text-slate-500 mt-0.5">{status.label}</p>
             </div>
           </div>
@@ -136,172 +100,15 @@ export default function FATCard({ fat }: { fat: any; index: number }) {
                 {fat.data_atendimento}
               </span>
             )}
-            <ChevronRight
-              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                expanded ? "rotate-90" : ""
-              }`}
-            />
           </div>
         </div>
 
-        {!expanded && fat.motivo_atendimento && (
+        {fat.motivo_atendimento && (
           <p className="text-sm text-slate-600 mt-2 line-clamp-2 bg-slate-50 p-2 rounded">
             {fat.motivo_atendimento}
           </p>
         )}
       </div>
-
-      {expanded && (
-        <div className="border-t border-slate-100 bg-slate-50">
-          <div className="p-4 space-y-4">
-            <Field label="Motivo" value={fat.motivo_atendimento} />
-
-            <Field
-              label="Técnico"
-              value={fat.tecnico.nome}
-              icon={<SquareUserRound className="w-3 h-3" />}
-            />
-            <Field
-              label="Atendente no Local"
-              value={
-                fat.contato_atendente
-                  ? `${fat.nome_atendente} - (${fat.contato_atendente})`
-                  : fat.nome_atendente
-              }
-              icon={<User className="w-3 h-3" />}
-            />
-            <Field
-              label="Problema Descrito"
-              value={fat.descricao_problema}
-              icon={<AlertTriangle className="w-3 h-3" />}
-            />
-            <Field
-              label="Solução Aplicada"
-              value={fat.solucao_encontrada}
-              icon={<CheckCircle className="w-3 h-3" />}
-            />
-            <Field
-              label="Testes Realizados"
-              value={fat.testes_realizados}
-              icon={<FileSearch className="w-3 h-3" />}
-            />
-            <Field
-              label="Sugestões"
-              value={fat.sugestoes}
-              icon={<MessageSquare className="w-3 h-3" />}
-            />
-            <Field
-              label="Observações"
-              value={fat.observacoes}
-              icon={<MessageSquare className="w-3 h-3" />}
-            />
-
-            {fat.numero_ciclos > 0 && (
-              <Field
-                label="Número de Ciclos"
-                value={fat.numero_ciclos.toString()}
-                icon={<Settings className="w-3 h-3" />}
-              />
-            )}
-
-            {fat.deslocamentos && fat.deslocamentos.length > 0 && (
-              <div className="mt-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Car className="w-4 h-4 text-slate-600" />
-                  <h5 className="text-sm font-semibold text-slate-700">
-                    Deslocamentos
-                  </h5>
-                </div>
-                <div className="space-y-3">
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                  {fat.deslocamentos.map((desl: any, deslIndex: number) => (
-                    <div
-                      key={deslIndex}
-                      className="bg-white rounded-lg p-4 border border-slate-200"
-                    >
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-                          <div>
-                            <span className="text-xs text-slate-500">Ida</span>
-                            <p className="text-sm font-medium text-slate-900">
-                              {desl.km_ida?.toFixed(1)}km
-                            </p>
-                            <p className="text-xs text-slate-600">
-                              {desl.tempo_ida_min} minutos
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                          <div>
-                            <span className="text-xs text-slate-500">
-                              Volta
-                            </span>
-                            <p className="text-sm font-medium text-slate-900">
-                              {desl.km_volta?.toFixed(1)}km
-                            </p>
-                            <p className="text-xs text-slate-600">
-                              {desl.tempo_volta_min} minutos
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      {desl.observacoes && (
-                        <div className="pt-3 border-t border-slate-100">
-                          <p className="text-xs text-slate-500 mb-1">
-                            Observações:
-                          </p>
-                          <p className="text-sm text-slate-700 bg-slate-50 p-2 rounded">
-                            {desl.observacoes}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {fat.pecas_utilizadas && fat.pecas_utilizadas.length > 0 && (
-              <div className="mt-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Package className="w-4 h-4 text-slate-600" />
-                  <h5 className="text-sm font-semibold text-slate-700">
-                    Peças Utilizadas ({fat.pecas_utilizadas.length})
-                  </h5>
-                </div>
-                <div className="space-y-2">
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                  {fat.pecas_utilizadas.map((peca: any, pecaIndex: number) => (
-                    <div
-                      key={pecaIndex}
-                      className="bg-white rounded-lg p-3 border border-slate-200"
-                    >
-                      <div className="flex items-start gap-3">
-                        <Package className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-slate-900 truncate">
-                              {peca.codigo}
-                            </span>
-                            <span className="text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded flex-shrink-0 ml-2">
-                              Qtd: {Number(peca.quantidade).toFixed(0)}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-600 leading-relaxed">
-                            {peca.descricao}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -25,29 +25,15 @@ import {
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void; // Callback para atualizar a OS após sucesso
+  onSuccess: () => void; 
   os: OSDetalhadaV2 | null;
 };
 
-// Definição dos status das OS
-const OS_STATUS = {
-  ABERTA: 1,
-  ATRIBUIDA: 2,
-  DESLOCAMENTO: 3,
-  EM_ATENDIMENTO: 4,
-  PAUSADA: 5,
-  EM_REVISAO: 6,
-  CONCLUIDA: 7,
-  CANCELADA: 8,
-} as const;
 
-// Ações que precisam de descrição
-const ACOES_COM_DESCRICAO = [
+// Ações que têm descrição obrigatória
+const ACOES_DESCRICAO_OBRIGATORIA = [
   "pausar_atendimento",
-  "retomar_atendimento",
-  "interromper_atendimento",
   "cancelar_atendimento",
-  "concluir_os",
 ];
 
 // Mapeamento das ações para ocorrências
@@ -61,63 +47,58 @@ const ACAO_PARA_OCORRENCIA: Record<string, string> = {
   concluir_os: "concluir os",
 };
 
+// Labels para as ações
+const ACAO_LABELS: Record<string, string> = {
+  iniciar_deslocamento: "Iniciar Deslocamento",
+  iniciar_atendimento: "Iniciar Atendimento",
+  pausar_atendimento: "Pausar Atendimento",
+  retomar_atendimento: "Retomar Atendimento",
+  interromper_atendimento: "Interromper Atendimento",
+  cancelar_atendimento: "Cancelar Atendimento",
+  concluir_os: "Concluir OS",
+};
+
+// Tipo para as ações disponíveis
+type ActionItem = {
+  key: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
 const OSActionModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, os }) => {
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [descricao, setDescricao] = useState("");
-  const [loadingAction, setLoadingAction] = useState<string | null>(null); // Estado para controlar qual botão está em loading
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [showDescriptionInput, setShowDescriptionInput] = useState(false);
 
-  // Função para verificar se a OS tem pendência
-  const temPendencia = (os: OSDetalhadaV2): boolean => {
-    return os.situacao_os?.id_motivo_pendencia > 0;
+  // Função para obter a data de hoje no formato brasileiro DD/MM/YYYY
+  const getDataHoje = (): string => {
+    const hoje = new Date();
+    const dia = hoje.getDate().toString().padStart(2, "0");
+    const mes = (hoje.getMonth() + 1).toString().padStart(2, "0");
+    const ano = hoje.getFullYear();
+    return `${dia}/${mes}/${ano}`;
   };
 
-  // Função para verificar liberação financeira
-  const temLiberacaoFinanceira = (os: OSDetalhadaV2): boolean => {
-    return os.liberacao_financeira?.liberada === true;
-  };
-
-  // Função para obter a FAT ativa do técnico atual
-  const getFatAtivaTecnico = (os: OSDetalhadaV2): OSFatDetalhado | null => {
-    const idTecnicoLogado = parseInt(localStorage.getItem("id_usuario") || "0");
-
+  // Função para obter a última FAT (maior id_fat)
+  const getUltimaFat = (os: OSDetalhadaV2): OSFatDetalhado | null => {
     if (!os.fats || os.fats.length === 0) return null;
 
-    return (
-      os.fats.find(
-        (fat) =>
-          fat.tecnico.id === idTecnicoLogado &&
-          (fat.status_fat === "4" || fat.status_fat === "5")
-      ) || null
-    );
+    // Ordena por id_fat decrescente e pega a primeira (maior id_fat)
+    return os.fats.sort((a, b) => (b.id_fat || 0) - (a.id_fat || 0))[0];
   };
 
-  // Função para obter FAT em deslocamento do técnico atual
-  const getFatDeslocamentoTecnico = (
-    os: OSDetalhadaV2
-  ): OSFatDetalhado | null => {
-    const idTecnicoLogado = parseInt(localStorage.getItem("id_usuario") || "0");
+  // Função para verificar se a data_atendimento da FAT é igual a hoje
+  const fatEhDeHoje = (fat: OSFatDetalhado): boolean => {
+    if (!fat.data_atendimento) return false;
 
-    if (!os.fats || os.fats.length === 0) return null;
+    // Se a data contém espaço, pega apenas a parte da data (antes do espaço)
+    const dataFat = fat.data_atendimento.includes(" ")
+      ? fat.data_atendimento.split(" ")[0]
+      : fat.data_atendimento;
 
-    return (
-      os.fats.find(
-        (fat) => fat.tecnico.id === idTecnicoLogado && fat.status_fat === "3"
-      ) || null
-    );
-  };
-
-  // Função para verificar se FAT tem dados obrigatórios para conclusão
-  const fatTemDadosObrigatorios = (fat: OSFatDetalhado): boolean => {
-    const temDescricaoOuSolucaoOuObs = !!(
-      fat.descricao_problema?.trim() ||
-      fat.solucao_encontrada?.trim() ||
-      fat.observacoes?.trim()
-    );
-
-    const temCiclos = (fat.numero_ciclos || 0) > 0;
-
-    return temDescricaoOuSolucaoOuObs && temCiclos;
+    const dataHoje = getDataHoje();
+    return dataFat === dataHoje;
   };
 
   // Fechar modal e resetar estados
@@ -129,7 +110,6 @@ const OSActionModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, os }) => {
     onClose();
   }, [onClose]);
 
-  // Executar ação
   const executarAcao = useCallback(
     async (action: string, descricaoOcorrencia?: string) => {
       if (!os?.id_os) {
@@ -160,35 +140,18 @@ const OSActionModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, os }) => {
         // Mostrar mensagem de sucesso
         alert(response.mensagem);
 
-        // Chamar callback de sucesso para atualizar a OS
-        onSuccess();
+        // CHAMADA DO CALLBACK DE SUCESSO - AQUI ACONTECE A ATUALIZAÇÃO
+        onSuccess(); // Isso chama handleActionSuccess em OSDetalheMobile
 
         // Fechar modal
         handleClose();
       } catch (error: unknown) {
         console.error("Erro ao executar ação:", error);
-
-        // Mostrar mensagem de erro
-        let mensagemErro = "Erro ao executar a ação. Tente novamente.";
-
-        if (error && typeof error === "object") {
-          if (
-            "response" in error &&
-            error.response &&
-            typeof error.response === "object" &&
-            "data" in error.response &&
-            error.response.data &&
-            typeof error.response.data === "object" &&
-            "mensagem" in error.response.data &&
-            typeof error.response.data.mensagem === "string"
-          ) {
-            mensagemErro = error.response.data.mensagem;
-          } else if ("message" in error && typeof error.message === "string") {
-            mensagemErro = error.message;
-          }
+        if (error instanceof Error) {
+          alert(`Erro: ${error.message}`);
+        } else {
+          alert("Erro desconhecido ao executar ação");
         }
-
-        alert(mensagemErro);
       } finally {
         setLoadingAction(null);
       }
@@ -196,27 +159,34 @@ const OSActionModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, os }) => {
     [os?.id_os, onSuccess, handleClose]
   );
 
-  // Lidar com ação selecionada
-  const handleActionClick = useCallback(
-    (action: string) => {
-      if (ACOES_COM_DESCRICAO.includes(action)) {
-        setSelectedAction(action);
-        setShowDescriptionInput(true);
-        setDescricao("");
-      } else {
-        // Executar diretamente para ações sem descrição
-        executarAcao(action);
-      }
-    },
-    [executarAcao]
-  );
+  // Lidar com ação selecionada - agora todas as ações mostram o campo de descrição
+  const handleActionClick = useCallback((action: string) => {
+    setSelectedAction(action);
+    setShowDescriptionInput(true);
+    setDescricao("");
+  }, []);
+
+  // Validar se pode confirmar a ação
+  const canConfirm = useCallback(() => {
+    if (!selectedAction) return false;
+
+    // Se for ação obrigatória, precisa ter descrição
+    if (ACOES_DESCRICAO_OBRIGATORIA.includes(selectedAction)) {
+      return descricao.trim().length > 0;
+    }
+
+    // Para outras ações, pode estar vazio (opcional)
+    return true;
+  }, [selectedAction, descricao]);
 
   // Confirmar ação com descrição
   const handleConfirmWithDescription = useCallback(() => {
-    if (selectedAction) {
-      executarAcao(selectedAction, descricao);
+    if (selectedAction && canConfirm()) {
+      // Só envia descrição se não estiver vazia
+      const descricaoParaEnviar = descricao.trim() || undefined;
+      executarAcao(selectedAction, descricaoParaEnviar);
     }
-  }, [selectedAction, descricao, executarAcao]);
+  }, [selectedAction, descricao, executarAcao, canConfirm]);
 
   // Cancelar entrada de descrição
   const handleCancelDescription = useCallback(() => {
@@ -225,98 +195,115 @@ const OSActionModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, os }) => {
     setDescricao("");
   }, []);
 
-  // Definir ações disponíveis baseadas nas condições
-  const getAvailableActions = (): Array<{
-    key: string;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-  }> => {
+  // Definir ações disponíveis baseada na nova lógica
+  const getAvailableActions = (): ActionItem[] => {
     if (!os) return [];
 
-    const actions = [];
-    const semPendencia = !temPendencia(os);
-    const comLiberacao = temLiberacaoFinanceira(os);
-    const fatAtiva = getFatAtivaTecnico(os);
-    const fatDeslocamento = getFatDeslocamentoTecnico(os);
+    const actions: ActionItem[] = [];
+    const ultimaFat = getUltimaFat(os);
+    const situacaoOsCodigo = os.situacao_os?.codigo;
 
-    // 1. Iniciar deslocamento
-    if (semPendencia && comLiberacao && !fatAtiva && !fatDeslocamento) {
-      actions.push({
-        key: "iniciar_deslocamento",
-        label: "Iniciar deslocamento",
-        icon: MapPin,
-      });
+    // Se não há FAT ou a data_atendimento da última FAT é diferente de hoje
+    if (!ultimaFat || !fatEhDeHoje(ultimaFat)) {
+      actions.push(
+        {
+          key: "iniciar_deslocamento",
+          label: "Iniciar deslocamento",
+          icon: MapPin,
+        },
+        {
+          key: "iniciar_atendimento",
+          label: "Iniciar Atendimento",
+          icon: Play,
+        },
+        {
+          key: "cancelar_atendimento",
+          label: "Cancelar",
+          icon: XCircle,
+        }
+      );
+      return actions;
     }
 
-    // 2. Iniciar atendimento
-    if (semPendencia && comLiberacao && !fatAtiva) {
-      actions.push({
-        key: "iniciar_atendimento",
-        label: "Iniciar Atendimento",
-        icon: Play,
-      });
-    }
+    // Se a FAT é de hoje, verificar situacao_os.codigo e fats.status_fat
+    const fatStatusFat = ultimaFat.status_fat;
 
-    // 3. Pausar atendimento
-    if (semPendencia && comLiberacao && fatAtiva?.status_fat === "4") {
-      actions.push({
-        key: "pausar_atendimento",
-        label: "Pausar Atendimento",
-        icon: Pause,
-      });
-    }
-
-    // 4. Retomar atendimento
-    if (semPendencia && comLiberacao && fatAtiva?.status_fat === "5") {
-      actions.push({
-        key: "retomar_atendimento",
-        label: "Retomar Atendimento",
-        icon: RotateCcw,
-      });
-    }
-
-    // 5. Interromper atendimento
-    if (
-      fatAtiva &&
-      (fatAtiva.status_fat === "4" || fatAtiva.status_fat === "5")
-    ) {
-      actions.push({
-        key: "interromper_atendimento",
-        label: "Interromper",
-        icon: StopCircle,
-      });
-    }
-
-    // 6. Cancelar atendimento
-    if (
-      fatAtiva &&
-      (fatAtiva.status_fat === "4" || fatAtiva.status_fat === "5")
-    ) {
-      actions.push({
-        key: "cancelar_atendimento",
-        label: "Cancelar",
-        icon: XCircle,
-      });
-    }
-
-    // 7. Concluir OS
-    const osNaoRevisadaNemConcluida =
-      os.situacao_os?.codigo !== OS_STATUS.EM_REVISAO &&
-      os.situacao_os?.codigo !== OS_STATUS.CONCLUIDA;
-
-    if (
-      semPendencia &&
-      comLiberacao &&
-      osNaoRevisadaNemConcluida &&
-      fatAtiva &&
-      (fatAtiva.status_fat === "4" || fatAtiva.status_fat === "5") &&
-      fatTemDadosObrigatorios(fatAtiva)
-    ) {
-      actions.push({
-        key: "concluir_os",
-        label: "Concluir OS",
-        icon: CheckCircle,
-      });
+    if (situacaoOsCodigo === 2 && (!fatStatusFat || fatStatusFat === "")) {
+      // situacao_os.codigo=2 e fats.status_fat for vazio
+      actions.push(
+        {
+          key: "iniciar_deslocamento",
+          label: "Iniciar deslocamento",
+          icon: MapPin,
+        },
+        {
+          key: "iniciar_atendimento",
+          label: "Iniciar Atendimento",
+          icon: Play,
+        },
+        {
+          key: "cancelar_atendimento",
+          label: "Cancelar",
+          icon: XCircle,
+        }
+      );
+    } else if (situacaoOsCodigo === 3 && fatStatusFat === "3") {
+      // situacao_os.codigo=3 e fats.status_fat=3
+      actions.push(
+        {
+          key: "iniciar_atendimento",
+          label: "Iniciar Atendimento",
+          icon: Play,
+        },
+        {
+          key: "cancelar_atendimento",
+          label: "Cancelar",
+          icon: XCircle,
+        }
+      );
+    } else if (situacaoOsCodigo === 4 && fatStatusFat === "4") {
+      // situacao_os.codigo=4 e fats.status_fat=4
+      actions.push(
+        {
+          key: "pausar_atendimento",
+          label: "Pausar Atendimento",
+          icon: Pause,
+        },
+        {
+          key: "interromper_atendimento",
+          label: "Interromper",
+          icon: StopCircle,
+        },
+        {
+          key: "cancelar_atendimento",
+          label: "Cancelar",
+          icon: XCircle,
+        }
+      );
+    } else if (situacaoOsCodigo === 5 && fatStatusFat === "5") {
+      // situacao_os.codigo=5 e fats.status_fat=5
+      actions.push(
+        {
+          key: "retomar_atendimento",
+          label: "Retomar Atendimento",
+          icon: RotateCcw,
+        },
+        {
+          key: "interromper_atendimento",
+          label: "Interromper",
+          icon: StopCircle,
+        },
+        {
+          key: "cancelar_atendimento",
+          label: "Cancelar",
+          icon: XCircle,
+        },
+        {
+          key: "concluir_os",
+          label: "Concluir OS",
+          icon: CheckCircle,
+        }
+      );
     }
 
     return actions;
@@ -340,6 +327,9 @@ const OSActionModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, os }) => {
 
   const availableActions = getAvailableActions();
   const hasAnyLoading = loadingAction !== null;
+  const isDescricaoObrigatoria = selectedAction
+    ? ACOES_DESCRICAO_OBRIGATORIA.includes(selectedAction)
+    : false;
 
   if (!isOpen) return null;
 
@@ -383,27 +373,35 @@ const OSActionModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, os }) => {
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-slate-700">
               <MessageCircle className="w-4 h-4" />
-              <span className="font-medium">
-                {selectedAction === "pausar_atendimento" &&
-                  "Pausar Atendimento"}
-                {selectedAction === "retomar_atendimento" &&
-                  "Retomar Atendimento"}
-                {selectedAction === "interromper_atendimento" &&
-                  "Interromper Atendimento"}
-                {selectedAction === "cancelar_atendimento" &&
-                  "Cancelar Atendimento"}
-                {selectedAction === "concluir_os" && "Concluir OS"}
-              </span>
+              <span className="font-medium">{ACAO_LABELS[selectedAction]}</span>
+              {isDescricaoObrigatoria && (
+                <span className="text-red-500 text-sm font-normal">*</span>
+              )}
             </div>
 
-            <textarea
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Digite uma descrição (opcional)..."
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7c54bd] focus:border-transparent resize-none"
-              rows={3}
-              disabled={hasAnyLoading}
-            />
+            <div className="space-y-2">
+              <textarea
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder={
+                  isDescricaoObrigatoria
+                    ? "Digite uma descrição (obrigatória)..."
+                    : "Digite uma descrição (opcional)..."
+                }
+                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#7c54bd] focus:border-transparent resize-none transition-colors placeholder:text-slate-500 ${
+                  isDescricaoObrigatoria && !descricao.trim()
+                    ? "border-red-300 bg-red-50"
+                    : "border-gray-300"
+                }`}
+                rows={3}
+                disabled={hasAnyLoading}
+              />
+              {isDescricaoObrigatoria && (
+                <p className="text-xs text-red-600">
+                  * Descrição obrigatória para esta ação
+                </p>
+              )}
+            </div>
 
             <div className="flex gap-3">
               <button
@@ -415,7 +413,7 @@ const OSActionModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, os }) => {
               </button>
               <button
                 onClick={handleConfirmWithDescription}
-                disabled={hasAnyLoading}
+                disabled={hasAnyLoading || !canConfirm()}
                 className="flex-1 px-4 py-3 bg-[#7c54bd] text-white rounded-xl text-sm font-medium hover:bg-[#6a4ba0] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingAction === selectedAction ? (

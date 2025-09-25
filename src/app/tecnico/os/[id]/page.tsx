@@ -137,7 +137,7 @@ export default function OSDetalheMobile() {
         return;
       }
 
-      // Evitar múltiplas chamadas simultâneas
+      // Evitar múltiplas chamadas simultâneas, exceto quando force=true
       if (isLoadingRef.current && !force) {
         console.log("Já está carregando, pulando chamada duplicada");
         return;
@@ -173,17 +173,9 @@ export default function OSDetalheMobile() {
         }
 
         console.log("OS carregada com sucesso:", osData.id_os);
-        setOs(osData);
+        setOs(osData); 
       } catch (error) {
-        // Não mostrar erro se foi cancelado
-
-        if ((error as { name?: string })?.name === "AbortError") {
-          console.log("Requisição foi cancelada");
-          return;
-        }
-
-        console.error("Erro ao carregar OS:", error);
-        setError("Erro ao carregar detalhes da OS.");
+        // Tratamento de erro...
       } finally {
         isLoadingRef.current = false;
         setLoading(false);
@@ -196,18 +188,8 @@ export default function OSDetalheMobile() {
   const handleActionSuccess = useCallback(() => {
     console.log("Ação executada com sucesso, recarregando OS...");
     // Forçar recarregamento após ação
-    fetchOS(true);
+    fetchOS(true); // O parâmetro true força o reload
   }, [fetchOS]);
-
-  const handleCreateFAT = useCallback(() => {
-    if (!os?.id_os) {
-      alert("Erro: ID da OS não encontrado");
-      return;
-    }
-
-    // Ou abrir modal de criação de FAT
-    alert("Funcionalidade de criar FAT será implementada aqui");
-  }, [os?.id_os]);
 
   // Effect otimizado com cleanup
   useEffect(() => {
@@ -505,13 +487,6 @@ export default function OSDetalheMobile() {
       {/* Bottom Action Buttons */}
       <div className="p-4">
         <div className="flex gap-3">
-          <button
-            onClick={handleCreateFAT}
-            className="flex-1 bg-white text-purple-600 py-3 px-4 rounded-lg text-sm font-medium border border-purple-300 hover:border-purple-500 hover:bg-purple-50 transition-all duration-200"
-          >
-            Criar FAT
-          </button>
-
           <button
             onClick={() => setShowActions(true)}
             className="flex-1 bg-purple-600 text-white py-3 px-4 rounded-lg text-sm font-medium hover:bg-purple-700 transition-all duration-200"
