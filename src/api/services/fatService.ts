@@ -44,20 +44,20 @@ export interface FATDeslocamento {
 
 // Interface para peça utilizada - ATUALIZADA
 export interface FATPeca {
-  id_fat_peca: number; 
-  codigo_peca: string; 
-  descricao_peca: string; 
+  id_fat_peca: number;
+  codigo_peca: string;
+  descricao_peca: string;
   quantidade: number;
-  observacoes?: string; 
+  observacoes?: string;
 }
 
 // Interface para foto - ATUALIZADA
 export interface FATFoto {
-  id_fat_foto: number; 
+  id_fat_foto: number;
   nome_arquivo: string;
-  tipo: string; 
+  tipo: string;
   descricao?: string;
-  data_cadastro: string; 
+  data_cadastro: string;
 }
 
 // Interface para ocorrência
@@ -94,14 +94,68 @@ export interface FATDetalhada {
   pecas?: FATPeca[];
   fotos?: FATFoto[];
   ocorrencias?: FATOcorrencia[];
-
 }
 
 class FATService {
+  // Método para criar peça utilizada (POST deve enviar codigo_peca)
+  async createPeca(data: {
+    id_fat: number;
+    codigo_peca?: string;
+    descricao_peca: string;
+    quantidade: number;
+    observacoes?: string;
+  }): Promise<FATPeca> {
+    // Garante que o campo enviado seja codigo_peca
+    const payload = {
+      ...data,
+      codigo_peca: data.codigo_peca || "",
+    };
+    const result = await api.post<FATPeca>(`/fats_pecas`, payload);
+    this.invalidateFATCache(data.id_fat);
+    return result;
+  }
+  // Métodos para CRUD de deslocamento
+  async createDeslocamento(data: {
+    id_fat: number;
+    km_ida: number;
+    km_volta: number;
+    tempo_ida_min: number;
+    tempo_volta_min: number;
+    observacoes?: string;
+  }): Promise<FATDeslocamento> {
+    const result = await api.post<FATDeslocamento>(`/fats_deslocamentos`, data);
+    this.invalidateFATCache(data.id_fat);
+    return result;
+  }
+
+  async updateDeslocamento(data: {
+    id_deslocamento: number;
+    id_fat: number;
+    km_ida: number;
+    km_volta: number;
+    tempo_ida_min: number;
+    tempo_volta_min: number;
+    observacoes?: string;
+  }): Promise<FATDeslocamento> {
+    const result = await api.put<FATDeslocamento>(
+      `/fats_deslocamentos?id=${data.id_deslocamento}`,
+      data
+    );
+    this.invalidateFATCache(data.id_fat);
+    return result;
+  }
+
+  async deleteDeslocamento(
+    id_deslocamento: number,
+    id_fat?: number
+  ): Promise<void> {
+    await api.delete(`/fats_deslocamentos?id=${id_deslocamento}`);
+    if (id_fat) this.invalidateFATCache(id_fat);
+  }
   private baseUrl = "/fats";
   private cache = new Map<string, { data: unknown; timestamp: number }>();
   private pendingRequests = new Map<string, Promise<unknown>>();
-  private readonly CACHE_DURATION = 30000; 
+  private readonly CACHE_DURATION = 30000;
 
   // Método para limpar cache expirado
   private cleanExpiredCache() {
@@ -181,7 +235,7 @@ class FATService {
 
         return response[0];
       },
-      !forceRefresh 
+      !forceRefresh
     );
   }
 
@@ -208,8 +262,9 @@ class FATService {
     id_fat: number,
     data: Partial<FATDetalhada>
   ): Promise<FATDetalhada> {
+    // Envia o PUT para /fats?id=1
     const result = await api.put<FATDetalhada>(
-      `${this.baseUrl}/${id_fat}`,
+      `${this.baseUrl}?id=${id_fat}`,
       data
     );
     // Invalidar cache específico da FAT

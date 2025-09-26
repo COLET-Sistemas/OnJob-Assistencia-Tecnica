@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface OcorrenciaModalProps {
   open: boolean;
@@ -7,6 +7,7 @@ interface OcorrenciaModalProps {
   loading?: boolean;
   title?: string;
   label?: string;
+  id_os?: number;
 }
 
 const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
@@ -16,8 +17,26 @@ const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
   loading = false,
   title = "Registrar Ocorrência",
   label = "Descrição da ocorrência (opcional)",
+  id_os,
 }) => {
   const [descricao, setDescricao] = useState("");
+
+  // Limpa o input quando o modal abre ou fecha
+  useEffect(() => {
+    if (!open) {
+      setDescricao("");
+    }
+  }, [open]);
+
+  const handleClose = () => {
+    setDescricao(""); // Limpa o input ao fechar
+    onClose();
+  };
+
+  const handleSave = () => {
+    console.log("Modal handleSave called with:", { descricao, id_os });
+    onSave(descricao);
+  };
 
   if (!open) return null;
 
@@ -41,14 +60,14 @@ const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
         <div className="flex gap-3 mt-2">
           <button
             className="flex-1 px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-colors"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={loading}
           >
             Cancelar
           </button>
           <button
             className="flex-1 px-4 py-2 rounded-lg bg-[#7c54bd] text-white font-medium hover:bg-[#6841b1] transition-colors"
-            onClick={() => onSave(descricao)}
+            onClick={handleSave}
             disabled={loading}
           >
             {loading ? "Salvando..." : "Salvar"}

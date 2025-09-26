@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import MobileHeader from "@/components/tecnico/MobileHeader";
+import ActionButtonsFat from "@/components/tecnico/ActionButtonsFat";
 import {
   User,
   Settings,
@@ -10,6 +11,7 @@ import {
   FileSearch,
   MessageSquare,
   Package,
+  Car,
   ChevronRight,
   FileText,
   Wrench,
@@ -22,7 +24,41 @@ import {
 } from "lucide-react";
 import { fatService, type FATDetalhada } from "@/api/services/fatService";
 import { Loading } from "@/components/LoadingPersonalizado";
+
 import StatusBadge from "@/components/tecnico/StatusBadge";
+
+// Botão de ação para FAT, inspirado no QuickActions
+type ActionButtonFatProps = {
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  color: string;
+};
+function ActionButtonFat({
+  label,
+  icon,
+  onClick,
+  color,
+}: ActionButtonFatProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        group relative flex flex-col items-center gap-2 p-4 
+        rounded-xl border transition-all duration-200 ease-out
+        min-w-[80px] bg-white hover:bg-gray-50
+        ${color}
+        hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 border-gray-200 hover:border-gray-300
+      `}
+      type="button"
+    >
+      <div className="flex items-center justify-center w-8 h-8">{icon}</div>
+      <span className="text-xs font-medium text-gray-700 text-center">
+        {label}
+      </span>
+    </button>
+  );
+}
 
 // Componente Section reutilizável
 const Section = React.memo(
@@ -242,6 +278,37 @@ export default function FATDetalheMobile() {
     };
   }, []);
 
+  // Handlers para os botões de ação
+  const handleIniciarAtendimento = useCallback(() => {
+    console.log("Iniciar atendimento");
+    // TODO: implementar ação
+  }, []);
+
+  const handlePausarAtendimento = useCallback(() => {
+    console.log("Pausar atendimento");
+    // TODO: implementar ação
+  }, []);
+
+  const handleRetomarAtendimento = useCallback(() => {
+    console.log("Retomar atendimento");
+    // TODO: implementar ação
+  }, []);
+
+  const handleInterromperAtendimento = useCallback(() => {
+    console.log("Interromper atendimento");
+    // TODO: implementar ação
+  }, []);
+
+  const handleCancelarAtendimento = useCallback(() => {
+    console.log("Cancelar atendimento");
+    // TODO: implementar ação
+  }, []);
+
+  const handleConcluirAtendimento = useCallback(() => {
+    console.log("Concluir atendimento");
+    // TODO: implementar ação
+  }, []);
+
   if (loading) {
     return (
       <>
@@ -336,6 +403,45 @@ export default function FATDetalheMobile() {
               </span>{" "}
               {fat.descricao_problema}
             </p>
+            {/* Botões de ação abaixo da descrição */}
+            <div className="flex gap-3 mt-4 overflow-x-auto pb-2 scrollbar-hide">
+              <ActionButtonFat
+                label="Atendimento"
+                icon={<Wrench className="w-5 h-5 text-blue-600" />}
+                onClick={() => {
+                  if (params?.id) {
+                    router.push(`/tecnico/os/fat/${params.id}/atendimento`);
+                  }
+                }}
+                color="hover:border-blue-300"
+              />
+              <ActionButtonFat
+                label="Peças"
+                icon={<Package className="w-5 h-5 text-green-600" />}
+                onClick={() => {
+                  if (params?.id) {
+                    router.push(`/tecnico/os/fat/${params.id}/pecas`);
+                  }
+                }}
+                color="hover:border-green-300"
+              />
+              <ActionButtonFat
+                label="Deslocamento"
+                icon={<Car className="w-5 h-5 text-emerald-600" />}
+                onClick={() => {
+                  if (params?.id) {
+                    router.push(`/tecnico/os/fat/${params.id}/deslocamento`);
+                  }
+                }}
+                color="hover:border-emerald-300"
+              />
+              <ActionButtonFat
+                label="Fotos"
+                icon={<Camera className="w-5 h-5 text-purple-600" />}
+                onClick={() => {}}
+                color="hover:border-purple-300"
+              />
+            </div>
           </div>
         )}
 
@@ -383,38 +489,59 @@ export default function FATDetalheMobile() {
           title="Detalhes do Atendimento"
           icon={<Wrench className="w-4 h-4" />}
         >
-          <Field
-            label="Solução Encontrada"
-            value={fat.solucao_encontrada ?? "Não informada"}
-            icon={<CheckSquare className="w-3 h-3" />}
-          />
+          {(fat.solucao_encontrada && fat.solucao_encontrada !== "") ||
+          (fat.testes_realizados && fat.testes_realizados !== "") ||
+          (fat.sugestoes && fat.sugestoes !== "") ||
+          (fat.observacoes && fat.observacoes !== "") ||
+          (fat.numero_ciclos != null && fat.numero_ciclos > 0) ? (
+            <>
+              {fat.solucao_encontrada && (
+                <Field
+                  label="Solução Encontrada"
+                  value={fat.solucao_encontrada}
+                  icon={<CheckSquare className="w-3 h-3" />}
+                />
+              )}
 
-          <Field
-            label="Testes Realizados"
-            value={fat.testes_realizados ?? "Não informado"}
-            icon={<Eye className="w-3 h-3" />}
-          />
+              {fat.testes_realizados && (
+                <Field
+                  label="Testes Realizados"
+                  value={fat.testes_realizados}
+                  icon={<Eye className="w-3 h-3" />}
+                />
+              )}
 
-          <Field
-            label="Sugestões"
-            value={fat.sugestoes ?? "Nenhuma sugestão"}
-            icon={<MessageSquare className="w-3 h-3" />}
-          />
+              {fat.sugestoes && (
+                <Field
+                  label="Sugestões"
+                  value={fat.sugestoes}
+                  icon={<MessageSquare className="w-3 h-3" />}
+                />
+              )}
 
-          <Field
-            label="Observações"
-            value={fat.observacoes ?? "Sem observações"}
-            icon={<FileText className="w-3 h-3" />}
-          />
+              {fat.observacoes && (
+                <Field
+                  label="Observações"
+                  value={fat.observacoes}
+                  icon={<FileText className="w-3 h-3" />}
+                />
+              )}
 
-          {fat.numero_ciclos != null && fat.numero_ciclos > 0 && (
-            <Field
-              label="Número de Ciclos"
-              value={fat.numero_ciclos.toString()}
-              icon={<Timer className="w-3 h-3" />}
-            />
+              {fat.numero_ciclos != null && fat.numero_ciclos > 0 && (
+                <Field
+                  label="Número de Ciclos"
+                  value={fat.numero_ciclos.toString()}
+                  icon={<Timer className="w-3 h-3" />}
+                />
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-slate-500 italic">
+              Não há informações sobre o atendimento
+            </p>
           )}
         </Section>
+
         {/* Máquina */}
         {fat.maquina?.modelo && fat.maquina.modelo.trim() !== "" && (
           <Section title="Máquina" icon={<Settings className="w-4 h-4" />}>
@@ -612,8 +739,18 @@ export default function FATDetalheMobile() {
         )}
       </div>
 
-      {/* Bottom spacing para evitar cortar conteúdo */}
-      <div className="h-4"></div>
+      {/* Botões de ação no final da página */}
+      <ActionButtonsFat
+        fat={fat}
+        id_os={fat.id_os}
+        onIniciarAtendimento={handleIniciarAtendimento}
+        onPausarAtendimento={handlePausarAtendimento}
+        onRetomarAtendimento={handleRetomarAtendimento}
+        onInterromperAtendimento={handleInterromperAtendimento}
+        onCancelarAtendimento={handleCancelarAtendimento}
+        onConcluirAtendimento={handleConcluirAtendimento}
+        onActionSuccess={() => fetchFAT(true)}
+      />
     </main>
   );
 }
