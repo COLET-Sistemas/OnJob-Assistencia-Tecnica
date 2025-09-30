@@ -18,7 +18,6 @@ import {
   Camera,
   CheckSquare,
   Eye,
-  Truck,
   Timer,
   History,
 } from "lucide-react";
@@ -44,7 +43,7 @@ function ActionButtonFat({
     <button
       onClick={onClick}
       className={`
-        group relative flex flex-col items-center gap-2 p-4 
+        group relative flex flex-col items-center gap-2 p-3 
         rounded-xl border transition-all duration-200 ease-out
         min-w-[80px] bg-white hover:bg-gray-50
         ${color}
@@ -52,7 +51,7 @@ function ActionButtonFat({
       `}
       type="button"
     >
-      <div className="flex items-center justify-center w-8 h-8">{icon}</div>
+      <div className="flex items-center justify-center w-7 h-7">{icon}</div>
       <span className="text-xs font-medium text-gray-700 text-center">
         {label}
       </span>
@@ -386,7 +385,7 @@ export default function FATDetalheMobile() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50 pb-30">
       <MobileHeader
         title={fat.id_fat ? `FAT #${fat.id_fat}` : "Detalhes da FAT"}
         onMenuClick={() => router.back()}
@@ -403,45 +402,6 @@ export default function FATDetalheMobile() {
               </span>{" "}
               {fat.descricao_problema}
             </p>
-            {/* Botões de ação abaixo da descrição */}
-            <div className="flex gap-3 mt-4 overflow-x-auto pb-2 scrollbar-hide">
-              <ActionButtonFat
-                label="Atendimento"
-                icon={<Wrench className="w-5 h-5 text-blue-600" />}
-                onClick={() => {
-                  if (params?.id) {
-                    router.push(`/tecnico/os/fat/${params.id}/atendimento`);
-                  }
-                }}
-                color="hover:border-blue-300"
-              />
-              <ActionButtonFat
-                label="Peças"
-                icon={<Package className="w-5 h-5 text-green-600" />}
-                onClick={() => {
-                  if (params?.id) {
-                    router.push(`/tecnico/os/fat/${params.id}/pecas`);
-                  }
-                }}
-                color="hover:border-green-300"
-              />
-              <ActionButtonFat
-                label="Deslocamento"
-                icon={<Car className="w-5 h-5 text-emerald-600" />}
-                onClick={() => {
-                  if (params?.id) {
-                    router.push(`/tecnico/os/fat/${params.id}/deslocamento`);
-                  }
-                }}
-                color="hover:border-emerald-300"
-              />
-              <ActionButtonFat
-                label="Fotos"
-                icon={<Camera className="w-5 h-5 text-purple-600" />}
-                onClick={() => {}}
-                color="hover:border-purple-300"
-              />
-            </div>
           </div>
         )}
 
@@ -609,7 +569,7 @@ export default function FATDetalheMobile() {
         {fat.deslocamentos && fat.deslocamentos.length > 0 && (
           <Section
             title={`Deslocamentos (${fat.deslocamentos.length})`}
-            icon={<Truck className="w-4 h-4" />}
+            icon={<Car className="w-4 h-4" />}
             collapsible={true}
             defaultExpanded={false}
           >
@@ -739,18 +699,64 @@ export default function FATDetalheMobile() {
         )}
       </div>
 
-      {/* Botões de ação no final da página */}
-      <ActionButtonsFat
-        fat={fat}
-        id_os={fat.id_os}
-        onIniciarAtendimento={handleIniciarAtendimento}
-        onPausarAtendimento={handlePausarAtendimento}
-        onRetomarAtendimento={handleRetomarAtendimento}
-        onInterromperAtendimento={handleInterromperAtendimento}
-        onCancelarAtendimento={handleCancelarAtendimento}
-        onConcluirAtendimento={handleConcluirAtendimento}
-        onActionSuccess={() => fetchFAT(true)}
-      />
+      {/* Botões de ação fixos na parte inferior */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50">
+        <div className="p-4">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            <ActionButtonFat
+              label="Deslocamento"
+              icon={<Car className="w-5 h-5 text-emerald-600" />}
+              onClick={() => {
+                if (params?.id) {
+                  router.push(`/tecnico/os/fat/${params.id}/deslocamento`);
+                }
+              }}
+              color="hover:border-emerald-300"
+            />
+            <ActionButtonFat
+              label="Atendimento"
+              icon={<Wrench className="w-5 h-5 text-blue-600" />}
+              onClick={() => {
+                if (params?.id) {
+                  router.push(`/tecnico/os/fat/${params.id}/atendimento`);
+                }
+              }}
+              color="hover:border-blue-300"
+            />
+            <ActionButtonFat
+              label="Peças"
+              icon={<Package className="w-5 h-5 text-green-600" />}
+              onClick={() => {
+                if (params?.id) {
+                  router.push(`/tecnico/os/fat/${params.id}/pecas`);
+                }
+              }}
+              color="hover:border-green-300"
+            />
+            <ActionButtonFat
+              label="Fotos"
+              icon={<Camera className="w-5 h-5 text-purple-600" />}
+              onClick={() => {}}
+              color="hover:border-purple-300"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Botões de ação de status (mantidos no final do conteúdo) */}
+      <div className="px-4 pb-6">
+        <ActionButtonsFat
+          fat={fat}
+          id_os={fat.id_os}
+          onIniciarAtendimento={handleIniciarAtendimento}
+          onPausarAtendimento={handlePausarAtendimento}
+          onRetomarAtendimento={handleRetomarAtendimento}
+          onInterromperAtendimento={handleInterromperAtendimento}
+          onCancelarAtendimento={handleCancelarAtendimento}
+          onConcluirAtendimento={handleConcluirAtendimento}
+          onActionSuccess={() => fetchFAT(true)}
+        />
+      </div>
     </main>
   );
 }

@@ -172,15 +172,15 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
         label: "Descrição da ocorrência (opcional)",
       },
       interromper: {
-        title: "Interromper Atendimento",
+        title: "Concluir FAT",
         label: "Descrição da ocorrência (opcional)",
       },
       cancelar: {
-        title: "Cancelar Atendimento",
+        title: "Cancelar OS",
         label: "Descrição da ocorrência (obrigatório)",
       },
       concluir: {
-        title: "Concluir Atendimento",
+        title: "Concluir OS",
         label: "Descrição da ocorrência (opcional)",
       },
     };
@@ -287,9 +287,7 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
                   <Square className="w-3.5 h-3.5 transition-all duration-300 group-hover:scale-110" />
                 )}
               </span>
-              <span className="flex-1 text-left font-medium">
-                Interromper Atendimento
-              </span>
+              <span className="flex-1 text-left font-medium">Concluir FAT</span>
               <div className={gradientOverlay}></div>
             </button>
           )}
@@ -311,9 +309,7 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
                 <X className="w-3.5 h-3.5 transition-all duration-300 group-hover:scale-110" />
               )}
             </span>
-            <span className="flex-1 text-left font-medium">
-              Cancelar Atendimento
-            </span>
+            <span className="flex-1 text-left font-medium">Cancelar OS</span>
             {!cancelarDisabled && modalOpen === null && (
               <div className={gradientOverlay}></div>
             )}
@@ -336,9 +332,7 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
                   <CheckCircle className="w-3.5 h-3.5 transition-all duration-300 group-hover:scale-110" />
                 )}
               </span>
-              <span className="flex-1 text-left font-medium">
-                Concluir Atendimento
-              </span>
+              <span className="flex-1 text-left font-medium">Concluir OS</span>
               <div className={gradientOverlay}></div>
             </button>
           )}

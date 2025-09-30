@@ -1,18 +1,130 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, memo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { fatService, type FATDeslocamento } from "@/api/services/fatService";
 import api from "@/api/api";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import {
-  Car,
+  ArrowRight,
+  ArrowLeft,
   Trash2,
   Edit3,
   Plus,
   Clock,
   MapPin,
+  Car,
   FileText,
+  AlertCircle,
 } from "lucide-react";
+// Componente de loading minimalista
+const LoadingSpinner = memo(() => (
+  <div className="flex items-center justify-center py-12">
+    <div className="w-6 h-6 border-2 border-slate-200 border-t-emerald-500 rounded-full animate-spin"></div>
+  </div>
+));
+LoadingSpinner.displayName = "LoadingSpinner";
+
+// Componente de erro
+const ErrorMessage = memo(({ message }: { message: string }) => (
+  <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 animate-slideInUp">
+    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+    <span className="text-sm leading-relaxed">{message}</span>
+  </div>
+));
+ErrorMessage.displayName = "ErrorMessage";
+
+// Card de deslocamento minimalista e profissional
+const DeslocamentoItem = memo(
+  ({
+    desloc,
+    isExpanded,
+    onExpand,
+    onEdit,
+    onDelete,
+  }: {
+    desloc: FATDeslocamento;
+    isExpanded: boolean;
+    onExpand: (id: number) => void;
+    onEdit: (d: FATDeslocamento) => void;
+    onDelete: (id?: number) => void;
+  }) => (
+    <div
+      className={`bg-white border border-slate-200 rounded-xl animate-slideInUp p-0 overflow-hidden transition-all duration-200 ${
+        isExpanded ? "shadow-md ring-1 ring-emerald-200" : "hover:shadow-sm"
+      }`}
+      style={{ cursor: "pointer" }}
+      onClick={() => onExpand(desloc.id_deslocamento)}
+    >
+      {/* Header com ida e volta lado a lado */}
+      <div className="flex items-center justify-between px-4 py-2">
+        {/* Ida */}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="flex items-center gap-1 text-emerald-600">
+            <ArrowRight className="w-4 h-4" />
+            <span className="font-mono text-[15px] font-semibold text-slate-800">
+              {desloc.km_ida} km
+            </span>
+            <Clock className="w-3.5 h-3.5 text-slate-500 ml-1" />
+            <span className="text-xs text-slate-500">
+              {desloc.tempo_ida_min}min
+            </span>
+          </span>
+        </div>
+        {/* Volta */}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="flex items-center gap-1 text-blue-600">
+            <ArrowLeft className="w-4 h-4" />
+            <span className="font-mono text-[15px] font-semibold text-slate-800">
+              {desloc.km_volta} km
+            </span>
+            <Clock className="w-3.5 h-3.5 text-slate-500 ml-1" />
+            <span className="text-xs text-slate-500">
+              {desloc.tempo_volta_min}min
+            </span>
+          </span>
+        </div>
+      </div>
+      {/* Observações minimalista na mesma linha */}
+      {desloc.observacoes && (
+        <div className="flex items-center gap-2 px-4 pb-2 pt-0.5 text-xs text-slate-600">
+          <FileText className="w-3 h-3 flex-shrink-0" />
+          <span className="font-semibold uppercase tracking-wider">Obs:</span>
+          <span className="truncate text-slate-700" title={desloc.observacoes}>
+            {desloc.observacoes}
+          </span>
+        </div>
+      )}
+      {/* Botões de ação só aparecem quando expandido */}
+      {isExpanded && (
+        <div className="flex flex-row gap-2 px-4 pb-3 pt-1">
+          <button
+            type="button"
+            className="flex-1 flex items-center justify-center h-9 bg-slate-100 text-slate-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-all font-medium text-sm gap-2 border border-slate-200"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(desloc);
+            }}
+            title="Editar"
+          >
+            <Edit3 className="w-4 h-4" /> Editar
+          </button>
+          <button
+            type="button"
+            className="flex-1 flex items-center justify-center h-9 bg-slate-100 text-slate-700 rounded-lg hover:bg-red-50 hover:text-red-600 transition-all font-medium text-sm gap-2 border border-slate-200"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(desloc.id_deslocamento);
+            }}
+            title="Excluir"
+          >
+            <Trash2 className="w-4 h-4" /> Excluir
+          </button>
+        </div>
+      )}
+    </div>
+  )
+);
+DeslocamentoItem.displayName = "DeslocamentoItem";
 
 export default function FATDeslocamentoPage() {
   const router = useRouter();
@@ -21,6 +133,7 @@ export default function FATDeslocamentoPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<FATDeslocamento | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [form, setForm] = useState<{
     id_deslocamento?: number;
     id_fat: number;
@@ -112,6 +225,10 @@ export default function FATDeslocamentoPage() {
     }
   };
 
+  const handleExpand = useCallback((id: number) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  }, []);
+
   const handleEdit = (desloc: FATDeslocamento) => {
     setEditing(desloc);
     setForm({
@@ -123,6 +240,7 @@ export default function FATDeslocamentoPage() {
       tempo_volta_min: desloc.tempo_volta_min ?? "",
       observacoes: desloc.observacoes || "",
     });
+    setExpandedId(desloc.id_deslocamento);
   };
 
   const handleDelete = async (id_deslocamento?: number) => {
@@ -146,10 +264,26 @@ export default function FATDeslocamentoPage() {
       tempo_volta_min: "",
       observacoes: "",
     });
+    setExpandedId(null);
   };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <style jsx>{`
+        @keyframes slideInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-slideInUp {
+          animation: slideInUp 0.2s ease-out forwards;
+        }
+      `}</style>
       <MobileHeader title="Deslocamentos" onMenuClick={() => router.back()} />
 
       <div className="p-4 max-w-lg mx-auto space-y-4">
@@ -280,106 +414,52 @@ export default function FATDeslocamentoPage() {
               )}
             </div>
 
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-700 text-sm font-medium">{error}</p>
-              </div>
-            )}
+            {error && <ErrorMessage message={error} />}
           </form>
         </div>
 
         {/* Lista de deslocamentos */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-medium text-slate-700">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between py-2">
+            <h3 className="font-semibold text-slate-800 text-base flex items-center gap-2">
+              <ArrowRight className="w-5 h-5 text-slate-500" />
               Deslocamentos
             </h3>
-            <div className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-xs font-medium">
-              {deslocamentos.length}
-            </div>
+            {deslocamentos.length > 0 && (
+              <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">
+                {deslocamentos.length}
+              </span>
+            )}
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600"></div>
-            </div>
+            <LoadingSpinner />
           ) : deslocamentos.length === 0 ? (
-            <div className="text-center p-8 bg-white/50 rounded-xl border-2 border-dashed border-slate-200">
-              <Car className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-              <p className="text-slate-600 font-medium text-sm">
+            <div className="text-center py-12 text-slate-500">
+              <div className="p-3 bg-slate-100 rounded-lg w-14 h-14 mx-auto mb-3 flex items-center justify-center">
+                <ArrowRight className="w-7 h-7 text-slate-400" />
+              </div>
+              <p className="font-medium text-sm mb-1">
                 Nenhum deslocamento cadastrado
               </p>
-              <p className="text-slate-500 text-xs mt-1">
-                Adicione o primeiro deslocamento
+              <p className="text-xs">
+                Adicione o primeiro deslocamento usando o formulário acima
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {deslocamentos.map((d) => (
+            <div className="space-y-3">
+              {deslocamentos.map((desloc, index) => (
                 <div
-                  key={d.id_deslocamento}
-                  className="bg-white/80 backdrop-blur-sm rounded-xl p-3 border border-white/20 shadow-sm hover:shadow-md transition-all"
+                  key={desloc.id_deslocamento}
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 space-y-2">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5 text-slate-600">
-                            <MapPin className="w-3 h-3" />
-                            <span className="text-xs font-medium">
-                              Distância
-                            </span>
-                          </div>
-                          <div className="text-slate-800 font-medium text-sm">
-                            {d.km_ida} km → {d.km_volta} km
-                          </div>
-                        </div>
-
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5 text-slate-600">
-                            <Clock className="w-3 h-3" />
-                            <span className="text-xs font-medium">Tempo</span>
-                          </div>
-                          <div className="text-slate-800 font-medium text-sm">
-                            {d.tempo_ida_min}min → {d.tempo_volta_min}min
-                          </div>
-                        </div>
-                      </div>
-
-                      {d.observacoes && (
-                        <div className="p-2 bg-slate-50 rounded-lg">
-                          <div className="flex items-center gap-1.5 text-slate-600 mb-1">
-                            <FileText className="w-3 h-3" />
-                            <span className="text-xs font-medium uppercase tracking-wider">
-                              Obs
-                            </span>
-                          </div>
-                          <p className="text-slate-700 text-xs leading-relaxed">
-                            {d.observacoes}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Botões de ação - Sempre visíveis em mobile */}
-                    <div className="flex flex-col gap-1.5 ml-2">
-                      <button
-                        onClick={() => handleEdit(d)}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md active:scale-95 transition-all hover:from-blue-600 hover:to-blue-700"
-                        title="Editar"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
-
-                      <button
-                        onClick={() => handleDelete(d.id_deslocamento)}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md active:scale-95 transition-all hover:from-red-600 hover:to-red-700"
-                        title="Excluir"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                  <DeslocamentoItem
+                    desloc={desloc}
+                    isExpanded={expandedId === desloc.id_deslocamento}
+                    onExpand={handleExpand}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
                 </div>
               ))}
             </div>

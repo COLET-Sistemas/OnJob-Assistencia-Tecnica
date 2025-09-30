@@ -70,13 +70,15 @@ const PecaEncontrada = memo(({ peca }: { peca: PecaBusca }) => (
 
 PecaEncontrada.displayName = "PecaEncontrada";
 
-// Componente de item de peça
+// Card de peça com expansão apenas para botões
 const PecaItem = memo(
   ({
     peca,
+    isExpanded,
     isEditing,
     editQuantidade,
     editLoading,
+    onExpand,
     onEdit,
     onEditSave,
     onEditCancel,
@@ -84,113 +86,131 @@ const PecaItem = memo(
     onDelete,
   }: {
     peca: FATPecaVinculada;
+    isExpanded: boolean;
     isEditing: boolean;
     editQuantidade: number | "";
     editLoading: boolean;
+    onExpand: (id: number) => void;
     onEdit: (id: number, quantidade: number) => void;
     onEditSave: (id: number) => void;
     onEditCancel: () => void;
     onEditChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onDelete: (id: number) => void;
   }) => (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-sm animate-slideInUp">
-      {/* Header com código */}
-      <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 rounded-t-lg">
-        <div className="flex items-center gap-2">
-          <Hash className="w-4 h-4 text-slate-500" />
-          <span className="font-mono text-sm font-semibold text-red-700">
+    <div
+      className={`bg-white border border-slate-100 rounded-lg animate-slideInUp p-0 overflow-hidden transition-all duration-200 ${
+        isExpanded ? "shadow-lg ring-2 ring-emerald-200" : ""
+      }`}
+      style={{ cursor: isEditing ? "default" : "pointer" }}
+      onClick={() => !isEditing && onExpand(peca.id_fat_peca)}
+    >
+      {/* Header com código e quantidade */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 bg-white">
+        <div className="flex items-center gap-1">
+          <Hash className="w-4 h-4 text-slate-400" />
+          <span className="font-mono text-sm font-semibold text-slate-700">
             {peca.codigo_peca}
           </span>
         </div>
-      </div>
-
-      {/* Conteúdo */}
-      <div className="p-4">
-        {/* Descrição */}
-        <p className="text-slate-800 text-sm font-medium mb-4 leading-5">
-          {peca.descricao_peca}
-        </p>
-
-        {/* Quantidade e ações */}
-        <div className="flex items-center justify-between">
-          {/* Seção de quantidade */}
-          <div className="flex items-center gap-3">
-            {isEditing ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={1}
-                  value={editQuantidade}
-                  onChange={onEditChange}
-                  className="w-16 px-2 py-1 text-sm font-medium border border-slate-300 rounded focus:border-emerald-500 focus:outline-none"
-                  disabled={editLoading}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") onEditSave(peca.id_fat_peca);
-                    if (e.key === "Escape") onEditCancel();
-                  }}
-                  autoFocus
-                />
-                <span className="text-xs text-slate-500">
-                  {peca.unidade_medida}
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-slate-800">
-                  {peca.quantidade}
-                </span>
-                <span className="text-xs text-slate-500 font-medium">
-                  {peca.unidade_medida}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Botões de ação */}
-          <div className="flex items-center gap-1">
-            {isEditing ? (
-              <>
-                <button
-                  type="button"
-                  className="flex items-center justify-center w-8 h-8 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 active:scale-95 transition-all"
-                  onClick={() => onEditSave(peca.id_fat_peca)}
-                  disabled={editLoading}
-                  title="Salvar"
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  className="flex items-center justify-center w-8 h-8 bg-slate-400 text-white rounded-md hover:bg-slate-500 active:scale-95 transition-all"
-                  onClick={onEditCancel}
-                  disabled={editLoading}
-                  title="Cancelar"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 rounded-md hover:bg-blue-100 hover:text-blue-600 active:scale-95 transition-all"
-                  onClick={() => onEdit(peca.id_fat_peca, peca.quantidade)}
-                  title="Editar quantidade"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => onDelete(peca.id_fat_peca)}
-                  className="flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 rounded-md hover:bg-red-100 hover:text-red-600 active:scale-95 transition-all"
-                  title="Excluir peça"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </>
-            )}
-          </div>
+        <div className="flex items-center gap-1">
+          {isEditing ? (
+            <>
+              <input
+                type="number"
+                min={1}
+                value={editQuantidade}
+                onChange={onEditChange}
+                className="w-12 px-1 py-0.5 text-sm font-semibold border border-slate-200 rounded focus:border-emerald-400 focus:outline-none text-slate-700 bg-white"
+                disabled={editLoading}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") onEditSave(peca.id_fat_peca);
+                  if (e.key === "Escape") onEditCancel();
+                }}
+                autoFocus
+                style={{ minWidth: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <span className="text-xs text-slate-400 font-medium ml-0.5">
+                {peca.unidade_medida}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="text-base font-bold text-slate-700">
+                {peca.quantidade}
+              </span>
+              <span className="text-xs text-slate-400 font-medium ml-0.5">
+                {peca.unidade_medida}
+              </span>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Descrição sempre visível */}
+      <div className="px-3 pt-2 pb-1">
+        <p className="text-slate-700 text-xs font-medium leading-5">
+          {peca.descricao_peca}
+        </p>
+      </div>
+
+      {/* Botões de ação só aparecem quando expandido */}
+      {isExpanded && (
+        <div className="flex flex-row gap-2 px-3 pb-3 pt-1">
+          {isEditing ? (
+            <>
+              <button
+                type="button"
+                className="flex-1 flex items-center justify-center h-10 bg-emerald-500 text-white rounded hover:bg-emerald-600 transition-all border border-transparent font-medium text-sm gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditSave(peca.id_fat_peca);
+                }}
+                disabled={editLoading}
+                title="Salvar"
+              >
+                <Check className="w-4 h-4" /> Salvar
+              </button>
+              <button
+                type="button"
+                className="flex-1 flex items-center justify-center h-10 bg-slate-200 text-slate-600 rounded hover:bg-slate-300 transition-all border border-transparent font-medium text-sm gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditCancel();
+                }}
+                disabled={editLoading}
+                title="Cancelar"
+              >
+                <X className="w-4 h-4" /> Cancelar
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="flex-1 flex items-center justify-center h-10 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all border border-transparent font-medium text-sm gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(peca.id_fat_peca, peca.quantidade);
+                }}
+                title="Editar quantidade"
+              >
+                <Edit3 className="w-4 h-4" /> Editar
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(peca.id_fat_peca);
+                }}
+                className="flex-1 flex items-center justify-center h-10 bg-red-500 text-white rounded hover:bg-red-600 transition-all border border-transparent font-medium text-sm gap-2"
+                title="Excluir peça"
+              >
+                <Trash2 className="w-4 h-4" /> Excluir
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 );
@@ -207,7 +227,8 @@ export default function FATPecasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Estados de edição
+  // Estados de expansão e edição
+  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
   const [editQuantidade, setEditQuantidade] = useState<number | "">("");
   const [editLoading, setEditLoading] = useState(false);
@@ -215,11 +236,16 @@ export default function FATPecasPage() {
   // Estados do formulário
   const [form, setForm] = useState({
     codigo_peca: "",
+    descricao_peca: "",
     quantidade: "" as number | "",
   });
   const [pecaEncontrada, setPecaEncontrada] = useState<PecaBusca | null>(null);
   const [buscando, setBuscando] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [modoSemCodigo, setModoSemCodigo] = useState(false);
+
+  // Ref para o input de quantidade
+  const quantidadeInputRef = React.useRef<HTMLInputElement>(null);
 
   // Função para buscar peças
   const fetchPecas = useCallback(async () => {
@@ -247,6 +273,15 @@ export default function FATPecasPage() {
   }, [fetchPecas]);
 
   // Handlers de edição
+
+  // Expansão de card
+  const handleExpand = useCallback((id: number) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+    setEditId(null);
+    setEditQuantidade("");
+    setError("");
+  }, []);
+
   const handleEditClick = useCallback((id: number, quantidade: number) => {
     setEditId(id);
     setEditQuantidade(quantidade);
@@ -296,8 +331,15 @@ export default function FATPecasPage() {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const codigo_peca = e.target.value;
       setForm((prev) => ({ ...prev, codigo_peca }));
-      setPecaEncontrada(null);
       setError("");
+    },
+    []
+  );
+
+  const handleDescricaoChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const descricao_peca = e.target.value;
+      setForm((prev) => ({ ...prev, descricao_peca }));
     },
     []
   );
@@ -318,6 +360,15 @@ export default function FATPecasPage() {
       if (res.dados && res.dados.length > 0) {
         const peca = res.dados[0];
         setPecaEncontrada(peca);
+        // Preenche automaticamente a descrição se encontrar
+        setForm((prev) => ({
+          ...prev,
+          descricao_peca: peca.descricao,
+        }));
+        // Foca no input de quantidade após encontrar a peça
+        setTimeout(() => {
+          quantidadeInputRef.current?.focus();
+        }, 100);
       } else {
         setPecaEncontrada(null);
         setError("Código de peça não encontrado");
@@ -345,8 +396,15 @@ export default function FATPecasPage() {
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError("");
-      if (!form.codigo_peca || !pecaEncontrada) {
+
+      // Se não está no modo sem código, valida o código
+      if (!modoSemCodigo && !form.codigo_peca.trim()) {
         setError("Digite um código de peça válido.");
+        return;
+      }
+
+      if (!form.descricao_peca.trim()) {
+        setError("Digite a descrição da peça.");
         return;
       }
       if (!form.quantidade || Number(form.quantidade) <= 0) {
@@ -357,13 +415,14 @@ export default function FATPecasPage() {
       try {
         await api.post("/fats_pecas", {
           id_fat: Number(params.id),
-          codigo_peca: form.codigo_peca,
-          descricao_peca: pecaEncontrada.descricao,
+          codigo_peca: modoSemCodigo ? "SEM CÓDIGO" : form.codigo_peca.trim(),
+          descricao_peca: form.descricao_peca.trim(),
           quantidade: Number(form.quantidade),
-          unidade_medida: pecaEncontrada.unidade_medida,
+          unidade_medida: pecaEncontrada?.unidade_medida || "UN",
         });
-        setForm({ codigo_peca: "", quantidade: "" });
+        setForm({ codigo_peca: "", descricao_peca: "", quantidade: "" });
         setPecaEncontrada(null);
+        setModoSemCodigo(false);
         fetchPecas();
       } catch {
         setError("Erro ao vincular peça à FAT");
@@ -371,7 +430,7 @@ export default function FATPecasPage() {
         setSubmitting(false);
       }
     },
-    [form, pecaEncontrada, params.id, fetchPecas]
+    [form, pecaEncontrada, params.id, fetchPecas, modoSemCodigo]
   );
 
   const handleDelete = useCallback(
@@ -387,16 +446,19 @@ export default function FATPecasPage() {
     [fetchPecas]
   );
 
-  // Auto busca quando código tem 3+ caracteres
-  useEffect(() => {
-    const delayedSearch = setTimeout(() => {
-      if (form.codigo_peca.length >= 3 && !pecaEncontrada && !buscando) {
-        handlePesquisarPeca();
-      }
-    }, 600);
+  const handleNaoSeiCodigo = useCallback(() => {
+    setModoSemCodigo(true);
+    setForm((prev) => ({ ...prev, codigo_peca: "" }));
+    setPecaEncontrada(null);
+    setError("");
+  }, []);
 
-    return () => clearTimeout(delayedSearch);
-  }, [form.codigo_peca, pecaEncontrada, buscando, handlePesquisarPeca]);
+  const handleVoltarComCodigo = useCallback(() => {
+    setModoSemCodigo(false);
+    setForm({ codigo_peca: "", descricao_peca: "", quantidade: "" });
+    setPecaEncontrada(null);
+    setError("");
+  }, []);
 
   const pecasCount = useMemo(() => pecas.length, [pecas]);
 
@@ -432,40 +494,90 @@ export default function FATPecasPage() {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Campo de busca */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                Código da Peça
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={form.codigo_peca}
-                  onChange={handleCodigoChange}
-                  className="w-full px-4 py-3 pr-12 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
-                  placeholder="Digite o código para buscar..."
-                  required
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  {buscando ? (
-                    <div className="w-4 h-4 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin"></div>
-                  ) : (
-                    <Search className="w-4 h-4 text-slate-400" />
-                  )}
+            {/* Campo de código - só aparece se não estiver no modo sem código */}
+            {!modoSemCodigo && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                    Código da Peça
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={form.codigo_peca}
+                      onChange={handleCodigoChange}
+                      className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
+                      placeholder="Digite o código..."
+                      required={!modoSemCodigo}
+                    />
+                    <button
+                      type="button"
+                      onClick={handlePesquisarPeca}
+                      disabled={buscando || !form.codigo_peca.trim()}
+                      className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-medium text-sm active:scale-[0.98]"
+                    >
+                      {buscando ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      ) : (
+                        <Search className="w-4 h-4" />
+                      )}
+                      Buscar
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
+
+                {/* Botão "Não sei o código" */}
+                <button
+                  type="button"
+                  onClick={handleNaoSeiCodigo}
+                  className="w-full py-2 text-sm text-slate-600 hover:text-slate-800 underline transition-colors"
+                >
+                  Não sei o código
+                </button>
+              </>
+            )}
 
             {/* Peça encontrada */}
-            {pecaEncontrada && <PecaEncontrada peca={pecaEncontrada} />}
+            {pecaEncontrada && !modoSemCodigo && (
+              <PecaEncontrada peca={pecaEncontrada} />
+            )}
 
-            {/* Campo quantidade */}
-            {pecaEncontrada && (
+            {/* Modo sem código - mostra campo de descrição */}
+            {modoSemCodigo && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                    Descrição da Peça
+                  </label>
+                  <input
+                    type="text"
+                    value={form.descricao_peca}
+                    onChange={handleDescricaoChange}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
+                    placeholder="Digite a descrição da peça..."
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleVoltarComCodigo}
+                  className="w-full py-2 text-sm text-slate-600 hover:text-slate-800 underline transition-colors"
+                >
+                  Voltar para busca por código
+                </button>
+              </>
+            )}
+
+            {/* Campo quantidade - sempre aparece quando tem peça encontrada ou está no modo sem código */}
+            {(pecaEncontrada || modoSemCodigo) && (
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
                   Quantidade
                 </label>
                 <input
+                  ref={quantidadeInputRef}
                   type="number"
                   value={form.quantidade}
                   onChange={handleQuantidadeChange}
@@ -477,8 +589,8 @@ export default function FATPecasPage() {
               </div>
             )}
 
-            {/* Botão submit */}
-            {pecaEncontrada && (
+            {/* Botão submit - aparece quando tem peça encontrada ou está no modo sem código */}
+            {(pecaEncontrada || modoSemCodigo) && (
               <button
                 type="submit"
                 disabled={submitting}
@@ -536,9 +648,11 @@ export default function FATPecasPage() {
                 >
                   <PecaItem
                     peca={peca}
+                    isExpanded={expandedId === peca.id_fat_peca}
                     isEditing={editId === peca.id_fat_peca}
                     editQuantidade={editQuantidade}
                     editLoading={editLoading}
+                    onExpand={handleExpand}
                     onEdit={handleEditClick}
                     onEditSave={handleEditSave}
                     onEditCancel={handleEditCancel}

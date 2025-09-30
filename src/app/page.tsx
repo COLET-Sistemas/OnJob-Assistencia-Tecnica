@@ -10,13 +10,14 @@ import {
   Settings,
   Shield,
   User,
+  BarChart3,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import packageInfo from "../../package.json";
 
-// ✅ Import do serviço de login
+// Import do serviço de login
 import { LoginService } from "@/api/services/login";
 
 export default function LoginPage() {
@@ -93,7 +94,6 @@ export default function LoginPage() {
       if (LoginService.hasAdminAccess(authData.perfil)) {
         LoginService.saveUserData(authData);
 
-        // Verificar se a senha é provisória
         if (authData.senha_provisoria) {
           router.push("/alterar-senha");
         } else {
@@ -128,7 +128,6 @@ export default function LoginPage() {
     try {
       const authData = await LoginService.authenticate(login, senha);
 
-      // ✅ Verificação específica para perfis técnicos
       if (!LoginService.hasTechAccess(authData.perfil)) {
         setError(
           "Usuário não possui perfil técnico. Acesso negado ao Módulo Técnico."
@@ -136,7 +135,6 @@ export default function LoginPage() {
         return;
       }
 
-      // ✅ Verificação adicional para garantir que pelo menos um dos perfis técnicos seja true
       const { tecnico_proprio, tecnico_terceirizado } = authData.perfil;
 
       if (!tecnico_proprio && !tecnico_terceirizado) {
@@ -146,14 +144,11 @@ export default function LoginPage() {
         return;
       }
 
-      // ✅ Se chegou até aqui, o usuário tem acesso técnico válido
       LoginService.saveUserData(authData);
 
-      // Verificar se a senha é provisória
       if (authData.senha_provisoria) {
         router.push("/alterar-senha");
       } else {
-        // ✅ Redirecionar para o dashboard técnico correto
         router.push("/tecnico/dashboard");
       }
     } catch (error) {
@@ -185,101 +180,112 @@ export default function LoginPage() {
   if (!isMounted) return null;
 
   return (
-    <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-[55%] bg-[#F6C647] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-15">
-          <div className="absolute top-20 left-10 w-32 h-32 rounded-full border-2 border-[#75FABD]"></div>
-          <div className="absolute top-40 right-20 w-24 h-24 rounded-full bg-[#7C54BD] opacity-20"></div>
-          <div className="absolute bottom-32 left-1/4 w-16 h-16 rotate-45 border-2 border-[#7C54BD]"></div>
-          <div className="absolute bottom-20 right-1/3 w-20 h-20 rounded-full border border-white"></div>
-          <div className="absolute top-1/2 left-1/2 w-12 h-12 rounded-full bg-[#75FABD] opacity-20"></div>
+    <div className="min-h-screen flex bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Left Panel - Desktop Only */}
+      <div className="hidden lg:flex lg:w-[55%] bg-gradient-to-br from-[#7B54BE] via-[#6844AA] to-[#553499] relative overflow-hidden">
+        {/* Animated Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-10 w-40 h-40 rounded-full border-4 border-[#FDAD15]"></div>
+          <div className="absolute top-40 right-20 w-32 h-32 rounded-full bg-[#FDAD15] opacity-30 blur-3xl"></div>
+          <div className="absolute bottom-32 left-1/4 w-24 h-24 rotate-45 border-4 border-[#FDAD15]"></div>
+          <div className="absolute bottom-20 right-1/3 w-28 h-28 rounded-full border-2 border-white opacity-40"></div>
+          <div className="absolute top-1/2 left-1/2 w-16 h-16 rounded-full bg-[#FDAD15] opacity-20"></div>
+          <div className="absolute top-1/3 right-1/4 w-20 h-20 rotate-12 border-2 border-white opacity-30"></div>
         </div>
 
-        <div className="relative z-10 flex flex-col justify-center px-12 py-16 text-white">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent"></div>
+
+        <div className="relative z-10 flex flex-col justify-center px-16 py-12 text-white">
+          {/* Logo Section */}
           <div className="mb-12">
-            <div className="mb-6">
-              <Image
-                src="/images/logoEscrito.png"
-                alt="OnJob Sistema de Assistência Técnica"
-                width={320}
-                height={100}
-                priority
-                className="h-36 w-auto object-contain"
-              />
+            <div className="flex items-center space-x-4 mb-8">
+              <div className="mb-6">
+                <Image
+                  src="/images/logoEscrito.png"
+                  alt="OnJob Sistema de Assistência Técnica"
+                  width={320}
+                  height={100}
+                  priority
+                  className="h-36 w-auto object-contain"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="mb-8">
+          {/* Main Heading */}
+          <div className="mb-12">
             <h2 className="text-5xl font-bold mb-6 leading-tight">
               Sistema de
-              <span className="block text-[#7C54BD]  bg-clip-text ">
-                Assistencia Técnica
+              <span className="block bg-gradient-to-r from-[#FDAD15] to-[#FFC845] bg-clip-text text-transparent">
+                Assistência Técnica
               </span>
             </h2>
-            <p className="text-gray-800 text-xl leading-relaxed font-light">
+            <p className="text-white/90 text-xl leading-relaxed font-light">
               Plataforma integrada para otimização de processos de trabalho, com
               módulos administrativos e operacionais modernos.
             </p>
           </div>
 
-          <div className="space-y-8">
-            <div className="flex items-center space-x-5">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#7C54BD] shadow-lg">
-                <Settings className="w-6 h-6 text-[#75FABD]" />
+          {/* Features */}
+          <div className="space-y-6">
+            <div className="flex items-start space-x-4 bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 hover:bg-white/10 transition-all duration-300">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#FDAD15] to-[#E89D05] shadow-lg flex-shrink-0">
+                <Settings className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-gray-800">
+                <h3 className="font-semibold text-lg text-white mb-1">
                   Módulo Administrativo
                 </h3>
-                <p className="text-gray-700 text-sm leading-relaxed">
+                <p className="text-white/80 text-sm leading-relaxed">
                   Gestão completa de usuários, criação de ordens de serviço,
                   relatórios avançados e configurações
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-5">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#75FABD] shadow-lg">
-                <Shield className="w-6 h-6 text-[#7C54BD]" />
+            <div className="flex items-start space-x-4 bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 hover:bg-white/10 transition-all duration-300">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#7B54BE] to-[#553499] shadow-lg flex-shrink-0">
+                <Shield className="w-7 h-7 text-[#FDAD15]" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-gray-800">
+                <h3 className="font-semibold text-lg text-white mb-1">
                   Módulo Técnico
                 </h3>
-                <p className="text-gray-700 text-sm leading-relaxed">
+                <p className="text-white/80 text-sm leading-relaxed">
                   Interface otimizada para técnicos com recursos mobile e
                   operações de campo
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-5">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#7C54BD] shadow-lg">
-                <Database className="w-6 h-6 text-[#75FABD]" />
+            <div className="flex items-start space-x-4 bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 hover:bg-white/10 transition-all duration-300">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#FDAD15] to-[#E89D05] shadow-lg flex-shrink-0">
+                <Database className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-gray-800">
+                <h3 className="font-semibold text-lg text-white mb-1">
                   Segurança Avançada
                 </h3>
-                <p className="text-gray-700 text-sm leading-relaxed">
+                <p className="text-white/80 text-sm leading-relaxed">
                   Criptografia de última geração e controle de acesso multinível
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="mt-16 pt-8 border-t border-gray-700/20">
-            <div className="text-center">
-              <p className="text-gray-700 text-sm">
-                Tecnologia que transforma a forma como você trabalha
-              </p>
-            </div>
+          {/* Footer */}
+          <div className="mt-12 pt-8 border-t border-white/10">
+            <p className="text-white/70 text-sm text-center">
+              Tecnologia que transforma a forma como você trabalha
+            </p>
           </div>
         </div>
       </div>
 
+      {/* Right Panel - Login Form */}
       <div className="w-full lg:w-[45%] flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md">
+          {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
             <div className="flex justify-center mb-6">
               <Image
@@ -297,14 +303,15 @@ export default function LoginPage() {
             <p className="text-gray-600">Faça login para continuar</p>
           </div>
 
+          {/* Desktop Header */}
           <div className="hidden lg:block text-center mb-10">
-            <div className="w-25 h-25 rounded-3xl flex items-center justify-center mx-auto mb-6 bg-[#7C54BD] shadow-xl">
-              <div className="w-18 h-18 rounded-2xl bg-[#F6C647] flex items-center justify-center">
+            <div className="w-28 h-28 rounded-3xl flex items-center justify-center mx-auto mb-6 bg-gradient-to-br from-[#7B54BE] to-[#553499] shadow-2xl transform hover:scale-105 transition-transform duration-300">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#FDAD15] to-[#E89D05] flex items-center justify-center shadow-inner">
                 <Image
                   src="/images/logo.png"
                   alt="OnJob Logo"
-                  width={25}
-                  height={25}
+                  width={56}
+                  height={56}
                   className="h-14 w-14 object-contain"
                 />
               </div>
@@ -317,13 +324,14 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {/* Error Alert */}
           {error && (
             <div
               className={`mb-6 p-4 ${
                 redirectReason
                   ? "bg-amber-50 border-amber-200"
                   : "bg-red-50 border-red-200"
-              } border rounded-2xl flex items-start space-x-3 animate-shake shadow-sm`}
+              } border-2 rounded-2xl flex items-start space-x-3 animate-shake shadow-sm`}
             >
               <AlertTriangle
                 className={`w-5 h-5 ${
@@ -333,67 +341,83 @@ export default function LoginPage() {
               <p
                 className={`${
                   redirectReason ? "text-amber-700" : "text-red-700"
-                } text-sm`}
+                } text-sm font-medium`}
               >
                 {error}
               </p>
             </div>
           )}
 
-          <div className="space-y-6">
+          {/* Login Form */}
+          <div className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold mb-3 text-gray-800">
+              <label
+                htmlFor="login-input"
+                className="block text-sm font-semibold mb-2 text-gray-700"
+              >
                 Usuário
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-[#7C54BD]" />
+                  <User className="h-5 w-5 text-[#7B54BE]" />
                 </div>
                 <input
+                  id="login-input"
                   ref={loginInputRef}
                   type="text"
                   value={login}
                   onChange={(e) => setLogin(e.target.value.toLowerCase())}
                   onKeyPress={handleKeyPress}
-                  className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-[#7C54BD] transition-all duration-300 text-gray-700 placeholder-gray-500 bg-white focus:bg-white focus:shadow-xl focus:shadow-[#7C54BD]/10"
+                  className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:border-[#7B54BE] focus:ring-4 focus:ring-[#7B54BE]/10 focus:outline-none transition-all duration-300 text-gray-700 placeholder-gray-400 bg-white"
                   placeholder="Digite seu usuário"
+                  disabled={loadingAdmin || loadingTech}
                   required
+                  autoComplete="username"
                 />
               </div>
             </div>
+
             <div>
-              <label className="block text-sm font-semibold mb-3 text-gray-800">
+              <label
+                htmlFor="password-input"
+                className="block text-sm font-semibold mb-2 text-gray-700"
+              >
                 Senha
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-[#7C54BD]" />
+                  <Lock className="h-5 w-5 text-[#7B54BE]" />
                 </div>
                 <input
+                  id="password-input"
                   type={showPassword ? "text" : "password"}
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 rounded-2xl focus:border-[#7C54BD] transition-all duration-300 text-gray-700 placeholder-gray-500 bg-white focus:bg-white focus:shadow-xl focus:shadow-[#7C54BD]/10"
+                  className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 rounded-xl focus:border-[#7B54BE] focus:ring-4 focus:ring-[#7B54BE]/10 focus:outline-none transition-all duration-300 text-gray-700 placeholder-gray-400 bg-white"
                   placeholder="Digite sua senha"
+                  disabled={loadingAdmin || loadingTech}
                   required
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  disabled={loadingAdmin || loadingTech}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-[#7C54BD] transition-colors" />
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-[#7B54BE] transition-colors" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-[#7C54BD] transition-colors" />
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-[#7B54BE] transition-colors" />
                   )}
                 </button>
               </div>
             </div>
 
-            <div className="space-y-4 pt-6">
-              {/* Botão Administrativo - só aparece em desktop */}
+            {/* Buttons */}
+            <div className="space-y-3 pt-4">
               {!isMobile && (
                 <button
                   onClick={handleAdminAccess}
@@ -403,9 +427,8 @@ export default function LoginPage() {
                     !login.trim() ||
                     !senha.trim()
                   }
-                  className={`w-full text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-[#75FABD]/25 transform hover:-translate-y-1 active:scale-95 bg-[#75FABD] ${
-                    loadingAdmin ? "animate-pulse scale-95" : ""
-                  }`}
+                  className="w-full bg-gradient-to-r from-[#FDAD15] to-[#FFC845] text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-[#FDAD15]/30 transform hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-[#FDAD15]/30"
+                  aria-label="Acessar Módulo Administrativo"
                 >
                   {loadingAdmin ? (
                     <>
@@ -421,15 +444,13 @@ export default function LoginPage() {
                 </button>
               )}
 
-              {/* Botão Técnico */}
               <button
                 onClick={handleTechAccess}
                 disabled={
                   loadingAdmin || loadingTech || !login.trim() || !senha.trim()
                 }
-                className={`w-full text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-[#7C54BD]/25 transform hover:-translate-y-1 active:scale-95 bg-[#7C54BD] ${
-                  loadingTech ? "animate-pulse scale-95" : ""
-                }`}
+                className="w-full bg-gradient-to-r from-[#7B54BE] to-[#553499] text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-[#7B54BE]/30 transform hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-[#7B54BE]/30"
+                aria-label="Acessar Módulo Técnico"
               >
                 {loadingTech ? (
                   <>
@@ -446,26 +467,14 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="mt-10 pt-6 border-t border-gray-200 text-center">
+          {/* Footer */}
+          <div className="mt-8 pt-6 border-t border-gray-200 text-center">
             <div className="mb-4">
               <a
                 href="/dashboard-panel"
-                className="inline-flex items-center text-sm text-[#7C54BD] hover:text-[#5A3B95] transition-colors"
+                className="inline-flex items-center text-sm text-[#7B54BE] hover:text-[#553499] font-medium transition-colors focus:outline-none focus:underline"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4 mr-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
-                  />
-                </svg>
+                <BarChart3 className="h-4 w-4 mr-2" />
                 Acessar Painel de Monitoramento
               </a>
             </div>
@@ -484,15 +493,14 @@ export default function LoginPage() {
             transform: translateX(0);
           }
           25% {
-            transform: translateX(-5px);
+            transform: translateX(-8px);
           }
           75% {
-            transform: translateX(5px);
+            transform: translateX(8px);
           }
         }
-
         .animate-shake {
-          animation: shake 0.5s ease-in-out;
+          animation: shake 0.4s ease-in-out;
         }
       `}</style>
     </div>

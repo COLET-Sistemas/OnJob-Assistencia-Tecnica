@@ -62,13 +62,13 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   ];
 
   return (
-    <header className="bg-[#7c54bd] text-white relative">
+    <header className="bg-[#7B54BE] text-white relative">
       <div className="flex items-center justify-between px-4 py-3">
         {/* Esquerda: botão de adicionar (dashboard) ou voltar (outras telas) */}
         {onAddClick ? (
           <button
             onClick={onAddClick}
-            className="p-2 hover:bg-[#7c54bd] rounded-lg transition-colors"
+            className="p-2 hover:bg-[#7B54BE] rounded-lg transition-colors"
             aria-label="Adicionar"
           >
             <Plus className="w-6 h-6" />
@@ -76,7 +76,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
         ) : (
           <button
             onClick={onMenuClick}
-            className="p-2 hover:bg-[#7c54bd] rounded-lg transition-colors"
+            className="p-2 hover:bg-[#7B54BE] rounded-lg transition-colors"
             aria-label="Voltar"
             style={{ visibility: onMenuClick ? "visible" : "hidden" }}
           >
@@ -91,7 +91,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((open) => !open)}
-              className="p-2 hover:bg-[#7c54bd] rounded-lg transition-colors"
+              className="p-2 hover:bg-[#7B54BE] rounded-lg transition-colors"
               aria-label="Menu"
             >
               <Menu className="w-6 h-6" />

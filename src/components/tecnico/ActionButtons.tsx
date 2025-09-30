@@ -1,21 +1,15 @@
+import Toast from "@/components/ui/Toast";
 import React, { useState } from "react";
 import { Car, Play, Loader2 } from "lucide-react";
 import OcorrenciaModal from "./OcorrenciaModal";
 import { ocorrenciasOSService } from "@/api/services/ocorrenciaOSService";
 
-interface Fat {
-  id_fat: number;
-  status_fat?: string;
-}
-
 interface ActionButtonsProps {
-  fats: Fat[] | undefined;
   id_os?: number;
   onActionSuccess?: () => void;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
-  fats,
   id_os,
   onActionSuccess,
 }) => {
@@ -24,17 +18,12 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     null | "deslocamento" | "atendimento"
   >(null);
   const [modalLoading, setModalLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<"success" | "error" | null>(
+    null
+  );
 
-  let enableActions = false;
-  if (!fats || fats.length === 0) {
-    enableActions = true;
-  } else {
-    // Pega a FAT com maior id_fat
-    const lastFat = fats.reduce((prev, curr) =>
-      prev.id_fat > curr.id_fat ? prev : curr
-    );
-    enableActions = lastFat.status_fat === "7";
-  }
+  // Removido: validação para habilitar/desabilitar botões
 
   // Abre modal ao clicar
   const handleDeslocamento = () => setModalOpen("deslocamento");
@@ -44,6 +33,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   const handleSaveOcorrencia = async (descricao: string) => {
     if (!id_os || !modalOpen) return;
     setModalLoading(true);
+    setMessage(null);
+    setMessageType(null);
     try {
       await ocorrenciasOSService.registrarOcorrencia({
         id_os,
@@ -54,9 +45,33 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         descricao_ocorrencia: descricao,
       });
       setModalOpen(null);
+      setMessage("Ação realizada com sucesso!");
+      setMessageType("success");
       if (onActionSuccess) onActionSuccess();
-    } catch {
-      // TODO: feedback de erro
+    } catch (error: unknown) {
+      let errorMsg = "Erro ao realizar ação.";
+
+      interface ErrorResponse {
+        response?: {
+          data?: {
+            erro?: string;
+          };
+        };
+        message?: string;
+      }
+
+      const err = error as ErrorResponse;
+      if (
+        err.response &&
+        err.response.data &&
+        typeof err.response.data.erro === "string"
+      ) {
+        errorMsg = err.response.data.erro;
+      } else if (typeof err.message === "string") {
+        errorMsg = err.message;
+      }
+      setMessage(errorMsg);
+      setMessageType("error");
       setModalOpen(null);
     } finally {
       setModalLoading(false);
@@ -70,13 +85,18 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 
   return (
     <>
+      {message && (
+        <Toast
+          message={message}
+          type={messageType || "success"}
+          onClose={() => setMessage(null)}
+        />
+      )}
       <div className="flex gap-3">
         <button
-          disabled={!enableActions || modalOpen !== null}
+          disabled={modalOpen !== null}
           className={
-            baseBtn +
-            " " +
-            (!enableActions || modalOpen !== null ? disabledBtn : hoverBtn)
+            baseBtn + " " + (modalOpen !== null ? disabledBtn : hoverBtn)
           }
           onClick={handleDeslocamento}
         >
@@ -91,11 +111,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </button>
         <button
-          disabled={!enableActions || modalOpen !== null}
+          disabled={modalOpen !== null}
           className={
-            baseBtn +
-            " " +
-            (!enableActions || modalOpen !== null ? disabledBtn : hoverBtn)
+            baseBtn + " " + (modalOpen !== null ? disabledBtn : hoverBtn)
           }
           onClick={handleAtendimento}
         >

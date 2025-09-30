@@ -299,7 +299,7 @@ export default function OSDetalheMobile() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50 pb-30">
       <MobileHeader
         title={os.id_os ? `OS #${os.id_os}` : "Detalhes da OS"}
         onMenuClick={() => router.back()}
@@ -312,11 +312,6 @@ export default function OSDetalheMobile() {
             {os.abertura.motivo_atendimento}: {os.descricao_problema}
           </p>
         )}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="p-3 bg-white border-b border-slate-100">
-        <QuickActions os={os} />
       </div>
 
       {/* Content Sections */}
@@ -481,13 +476,14 @@ export default function OSDetalheMobile() {
         )}
       </div>
 
-      {/* Bottom Action Buttons - Componente reutilizável */}
+      {/* ActionButtons (Deslocamento e Novo Atendimento) - Não fixos */}
       <div className="p-4">
-        <ActionButtons
-          fats={os.fats}
-          id_os={os.id_os}
-          onActionSuccess={() => fetchOS(true)}
-        />
+        <ActionButtons id_os={os.id_os} onActionSuccess={() => fetchOS(true)} />
+      </div>
+
+      {/* Quick Actions - Fixo na parte inferior */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 p-3 safe-area-bottom">
+        <QuickActions os={os} />
       </div>
     </main>
   );

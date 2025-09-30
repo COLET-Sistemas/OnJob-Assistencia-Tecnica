@@ -91,7 +91,9 @@ export default function FATCard({ fat }: { fat: any; index: number }) {
               <h4 className="font-semibold text-slate-900 text-sm">
                 FAT #{fat.id_fat}
               </h4>
-              <p className="text-xs text-slate-500 mt-0.5">{status.label}</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {fat.descricao_situacao || status.label}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
