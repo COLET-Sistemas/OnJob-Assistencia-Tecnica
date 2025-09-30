@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export default function DashboardPage() {
+export default function RelatorioPage() {
   return (
     <div
       style={{
@@ -20,10 +20,10 @@ export default function DashboardPage() {
         priority
       />
       <h1 style={{ fontSize: "2rem", color: "#333", marginBottom: "1rem" }}>
-        Funcionalidade do Dashboard será liberada em breve.
+        Funcionalidade será liberada em breve.
       </h1>
       <p style={{ color: "#666" }}>
-        Estamos trabalhando para trazer essa funcionalidade o quanto antes!
+        Nossa equipe já está trabalhando para entregar a melhor experiência.
       </p>
     </div>
   );

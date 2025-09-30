@@ -2,7 +2,6 @@
 
 import {
   AlertTriangle,
-  Database,
   Eye,
   EyeOff,
   Loader2,
@@ -11,14 +10,187 @@ import {
   Shield,
   User,
   BarChart3,
+  Zap,
+  CheckCircle2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Image from "next/image";
 import packageInfo from "../../package.json";
 
 // Import do serviço de login
 import { LoginService } from "@/api/services/login";
+
+// Tipos
+interface LoginInputProps {
+  id: string;
+  label: string;
+  type: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onKeyPress: (e: React.KeyboardEvent) => void;
+  placeholder: string;
+  disabled: boolean;
+  icon: React.ComponentType<{ className?: string }>;
+  showToggle?: boolean;
+  onToggle?: () => void;
+  showPassword?: boolean;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+}
+
+interface FeatureCardProps {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  gradient: string;
+}
+
+interface LoginButtonProps {
+  onClick: () => void;
+  disabled: boolean;
+  loading: boolean;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+  variant?: "primary" | "secondary";
+}
+
+// Componente de input otimizado com memo
+const LoginInput = memo<LoginInputProps>(
+  ({
+    id,
+    label,
+    type,
+    value,
+    onChange,
+    onKeyPress,
+    placeholder,
+    disabled,
+    icon: Icon,
+    showToggle,
+    onToggle,
+    showPassword,
+    inputRef,
+  }) => (
+    <div>
+      <label
+        htmlFor={id}
+        className="block text-sm font-semibold mb-2 text-gray-700"
+      >
+        {label}
+      </label>
+      <div className="relative group">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <Icon className="h-5 w-5 text-[#7B54BE]" />
+        </div>
+        <input
+          id={id}
+          ref={inputRef}
+          type={type}
+          value={value}
+          onChange={onChange}
+          onKeyPress={onKeyPress}
+          className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 rounded-xl focus:border-[#7B54BE] focus:ring-4 focus:ring-[#7B54BE]/10 focus:outline-none transition-all duration-300 text-gray-700 placeholder-gray-400 bg-white hover:border-gray-300"
+          placeholder={placeholder}
+          disabled={disabled}
+          required
+          autoComplete={type === "password" ? "current-password" : "username"}
+        />
+        {showToggle && onToggle && (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="absolute inset-y-0 right-0 pr-4 flex items-center group"
+            aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            disabled={disabled}
+          >
+            {showPassword ? (
+              <EyeOff className="h-5 w-5 text-gray-400 group-hover:text-[#7B54BE] transition-colors" />
+            ) : (
+              <Eye className="h-5 w-5 text-gray-400 group-hover:text-[#7B54BE] transition-colors" />
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+);
+
+LoginInput.displayName = "LoginInput";
+
+// Componente de feature card otimizado
+const FeatureCard = memo<FeatureCardProps>(
+  ({ icon: Icon, title, description, gradient }) => (
+    <div className="flex items-start space-x-4 bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 transition-colors duration-300 cursor-default">
+      <div
+        className={`w-14 h-14 rounded-xl flex items-center justify-center ${gradient} shadow-lg flex-shrink-0`}
+      >
+        <Icon className="w-7 h-7 text-white" />
+      </div>
+      <div>
+        <h3 className="font-semibold text-lg text-white mb-1">{title}</h3>
+        <p className="text-white/80 text-sm leading-relaxed">{description}</p>
+      </div>
+    </div>
+  )
+);
+
+FeatureCard.displayName = "FeatureCard";
+
+// Componente de botão de login otimizado
+const LoginButton = memo<LoginButtonProps>(
+  ({
+    onClick,
+    disabled,
+    loading,
+    icon: Icon,
+    children,
+    variant = "primary",
+  }) => {
+    const baseClasses =
+      "w-full font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4";
+
+    const variantClasses =
+      variant === "primary"
+        ? "bg-gradient-to-r from-[#FDAD15] to-[#FFC845] text-white hover:shadow-lg focus:ring-[#FDAD15]/30"
+        : "bg-gradient-to-r from-[#7B54BE] to-[#553499] text-white hover:shadow-lg focus:ring-[#7B54BE]/30";
+
+    return (
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`${baseClasses} ${variantClasses}`}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Validando...</span>
+          </>
+        ) : (
+          <>
+            <Icon className="w-5 h-5" />
+            <span>{children}</span>
+          </>
+        )}
+      </button>
+    );
+  }
+);
+
+LoginButton.displayName = "LoginButton";
+
+// Padrões decorativos minimalistas
+const DecorativePattern = memo(() => (
+  <div className="absolute inset-0 opacity-10 overflow-hidden">
+    <div className="absolute top-20 left-10 w-40 h-40 rounded-full border-4 border-[#FDAD15]"></div>
+    <div className="absolute top-40 right-20 w-32 h-32 rounded-full bg-[#75f9bd] opacity-30 blur-3xl"></div>
+    <div className="absolute bottom-32 left-1/4 w-24 h-24 rotate-45 border-4 border-[#7B54BE]"></div>
+    <div className="absolute bottom-20 right-1/3 w-28 h-28 rounded-full border-2 border-white opacity-30"></div>
+    <div className="absolute top-1/2 left-1/2 w-16 h-16 rounded-full bg-[#abc7e0] opacity-20"></div>
+    <div className="absolute top-1/3 right-1/4 w-20 h-20 rotate-12 border-2 border-[#75f9bd] opacity-30"></div>
+  </div>
+));
+
+DecorativePattern.displayName = "DecorativePattern";
 
 export default function LoginPage() {
   const [login, setLogin] = useState("");
@@ -34,10 +206,24 @@ export default function LoginPage() {
   const loginInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
+  const checkDevice = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobileDevice =
+      /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(
+        userAgent
+      );
+    const isSmallScreen = window.innerWidth <= 1024;
+    const isTouchDevice =
+      "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+    setIsMobile(isMobileDevice || isSmallScreen || isTouchDevice);
+  }, []);
+
   useEffect(() => {
     setIsMounted(true);
 
-    // Verificar se há mensagem de redirecionamento armazenada
     if (typeof window !== "undefined") {
       const reason = sessionStorage.getItem("loginRedirectReason");
       if (reason) {
@@ -49,21 +235,6 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    const checkDevice = () => {
-      if (typeof window === "undefined") return;
-
-      const userAgent = navigator.userAgent.toLowerCase();
-      const isMobileDevice =
-        /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(
-          userAgent
-        );
-      const isSmallScreen = window.innerWidth <= 1024;
-      const isTouchDevice =
-        "ontouchstart" in window || navigator.maxTouchPoints > 0;
-
-      setIsMobile(isMobileDevice || isSmallScreen || isTouchDevice);
-    };
-
     const timer = setTimeout(checkDevice, 100);
     window.addEventListener("resize", checkDevice);
 
@@ -71,7 +242,7 @@ export default function LoginPage() {
       clearTimeout(timer);
       window.removeEventListener("resize", checkDevice);
     };
-  }, []);
+  }, [checkDevice]);
 
   useEffect(() => {
     if (loginInputRef.current) {
@@ -79,7 +250,7 @@ export default function LoginPage() {
     }
   }, []);
 
-  const handleAdminAccess = async () => {
+  const handleAdminAccess = useCallback(async () => {
     if (!login.trim() || !senha.trim()) {
       setError("Por favor, preencha todos os campos.");
       return;
@@ -114,9 +285,9 @@ export default function LoginPage() {
     } finally {
       setLoadingAdmin(false);
     }
-  };
+  }, [login, senha, router]);
 
-  const handleTechAccess = async () => {
+  const handleTechAccess = useCallback(async () => {
     if (!login.trim() || !senha.trim()) {
       setError("Por favor, preencha todos os campos.");
       return;
@@ -161,54 +332,76 @@ export default function LoginPage() {
     } finally {
       setLoadingTech(false);
     }
-  };
+  }, [login, senha, router]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && login.trim() && senha.trim()) {
-      e.preventDefault();
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && login.trim() && senha.trim()) {
+        e.preventDefault();
 
-      if (loadingAdmin || loadingTech) return;
+        if (loadingAdmin || loadingTech) return;
 
-      if (isMobile) {
-        handleTechAccess();
-      } else {
-        handleAdminAccess();
+        if (isMobile) {
+          handleTechAccess();
+        } else {
+          handleAdminAccess();
+        }
       }
-    }
-  };
+    },
+    [
+      login,
+      senha,
+      loadingAdmin,
+      loadingTech,
+      isMobile,
+      handleAdminAccess,
+      handleTechAccess,
+    ]
+  );
+
+  const handleLoginChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setLogin(e.target.value.toLowerCase());
+    },
+    []
+  );
+
+  const handleSenhaChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSenha(e.target.value);
+    },
+    []
+  );
+
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword((prev) => !prev);
+  }, []);
 
   if (!isMounted) return null;
 
-  return (
-    <div className="min-h-screen flex bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Left Panel - Desktop Only */}
-      <div className="hidden lg:flex lg:w-[55%] bg-gradient-to-br from-[#7B54BE] via-[#6844AA] to-[#553499] relative overflow-hidden">
-        {/* Animated Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-40 h-40 rounded-full border-4 border-[#FDAD15]"></div>
-          <div className="absolute top-40 right-20 w-32 h-32 rounded-full bg-[#FDAD15] opacity-30 blur-3xl"></div>
-          <div className="absolute bottom-32 left-1/4 w-24 h-24 rotate-45 border-4 border-[#FDAD15]"></div>
-          <div className="absolute bottom-20 right-1/3 w-28 h-28 rounded-full border-2 border-white opacity-40"></div>
-          <div className="absolute top-1/2 left-1/2 w-16 h-16 rounded-full bg-[#FDAD15] opacity-20"></div>
-          <div className="absolute top-1/3 right-1/4 w-20 h-20 rotate-12 border-2 border-white opacity-30"></div>
-        </div>
+  const isFormValid = login.trim() && senha.trim();
+  const isLoading = loadingAdmin || loadingTech;
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent"></div>
+  return (
+    <div className="min-h-screen flex bg-gradient-to-br from-[#FFF8E1] via-white to-[#F3E5F5]">
+      {/* Left Panel - Desktop Only */}
+      <div className="hidden lg:flex lg:w-[55%] bg-gradient-to-br from-[#abc7e0] via-[#9bbdd9] to-[#89b3d4] relative overflow-hidden">
+        <DecorativePattern />
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
 
         <div className="relative z-10 flex flex-col justify-center px-16 py-12 text-white">
           {/* Logo Section */}
           <div className="mb-12">
-            <div className="flex items-center space-x-4 mb-8">
-              <div className="mb-6">
-                <Image
-                  src="/images/logoEscrito.png"
-                  alt="OnJob Sistema de Assistência Técnica"
-                  width={320}
-                  height={100}
-                  priority
-                  className="h-36 w-auto object-contain"
-                />
-              </div>
+            <div className="mb-6">
+              <Image
+                src="/images/logoEscrito.png"
+                alt="OnJob Sistema de Assistência Técnica"
+                width={320}
+                height={100}
+                priority
+                className="h-36 w-auto object-contain drop-shadow-2xl"
+              />
             </div>
           </div>
 
@@ -216,7 +409,7 @@ export default function LoginPage() {
           <div className="mb-12">
             <h2 className="text-5xl font-bold mb-6 leading-tight">
               Sistema de
-              <span className="block bg-gradient-to-r from-[#FDAD15] to-[#FFC845] bg-clip-text text-transparent">
+              <span className="block bg-[#7B54BE] bg-clip-text text-transparent">
                 Assistência Técnica
               </span>
             </h2>
@@ -228,56 +421,36 @@ export default function LoginPage() {
 
           {/* Features */}
           <div className="space-y-6">
-            <div className="flex items-start space-x-4 bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 hover:bg-white/10 transition-all duration-300">
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#FDAD15] to-[#E89D05] shadow-lg flex-shrink-0">
-                <Settings className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg text-white mb-1">
-                  Módulo Administrativo
-                </h3>
-                <p className="text-white/80 text-sm leading-relaxed">
-                  Gestão completa de usuários, criação de ordens de serviço,
-                  relatórios avançados e configurações
-                </p>
-              </div>
-            </div>
+            <FeatureCard
+              icon={Settings}
+              title="Módulo Administrativo"
+              description="Gestão completa de usuários, criação de ordens de serviço, relatórios avançados e configurações"
+              gradient="bg-gradient-to-br from-[#FDAD15] to-[#E89D05]"
+            />
 
-            <div className="flex items-start space-x-4 bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 hover:bg-white/10 transition-all duration-300">
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#7B54BE] to-[#553499] shadow-lg flex-shrink-0">
-                <Shield className="w-7 h-7 text-[#FDAD15]" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg text-white mb-1">
-                  Módulo Técnico
-                </h3>
-                <p className="text-white/80 text-sm leading-relaxed">
-                  Interface otimizada para técnicos com recursos mobile e
-                  operações de campo
-                </p>
-              </div>
-            </div>
+            <FeatureCard
+              icon={Shield}
+              title="Módulo Técnico"
+              description="Interface otimizada para técnicos com recursos mobile e operações de campo"
+              gradient="bg-gradient-to-br from-[#7B54BE] to-[#553499]"
+            />
 
-            <div className="flex items-start space-x-4 bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 hover:bg-white/10 transition-all duration-300">
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#FDAD15] to-[#E89D05] shadow-lg flex-shrink-0">
-                <Database className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg text-white mb-1">
-                  Segurança Avançada
-                </h3>
-                <p className="text-white/80 text-sm leading-relaxed">
-                  Criptografia de última geração e controle de acesso multinível
-                </p>
-              </div>
-            </div>
+            <FeatureCard
+              icon={Zap}
+              title="Performance Otimizada"
+              description="Sistema rápido e responsivo com tecnologia de última geração"
+              gradient="bg-gradient-to-br from-[#75f9bd] to-[#4de8a5]"
+            />
           </div>
 
           {/* Footer */}
           <div className="mt-12 pt-8 border-t border-white/10">
-            <p className="text-white/70 text-sm text-center">
-              Tecnologia que transforma a forma como você trabalha
-            </p>
+            <div className="flex items-center justify-center space-x-2">
+              <CheckCircle2 className="w-5 h-5 text-[#75f9bd]" />
+              <p className="text-white/70 text-sm">
+                Tecnologia que transforma a forma como você trabalha
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -305,8 +478,8 @@ export default function LoginPage() {
 
           {/* Desktop Header */}
           <div className="hidden lg:block text-center mb-10">
-            <div className="w-28 h-28 rounded-3xl flex items-center justify-center mx-auto mb-6 bg-gradient-to-br from-[#7B54BE] to-[#553499] shadow-2xl transform hover:scale-105 transition-transform duration-300">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#FDAD15] to-[#E89D05] flex items-center justify-center shadow-inner">
+            <div className="w-28 h-28 rounded-3xl flex items-center justify-center mx-auto mb-6 bg-gradient-to-br from-[#7B54BE] to-[#553499] shadow-2xl">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#abc7e0] to-[#89b3d4] flex items-center justify-center shadow-inner">
                 <Image
                   src="/images/logo.png"
                   alt="OnJob Logo"
@@ -350,120 +523,57 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <div className="space-y-5">
-            <div>
-              <label
-                htmlFor="login-input"
-                className="block text-sm font-semibold mb-2 text-gray-700"
-              >
-                Usuário
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-[#7B54BE]" />
-                </div>
-                <input
-                  id="login-input"
-                  ref={loginInputRef}
-                  type="text"
-                  value={login}
-                  onChange={(e) => setLogin(e.target.value.toLowerCase())}
-                  onKeyPress={handleKeyPress}
-                  className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:border-[#7B54BE] focus:ring-4 focus:ring-[#7B54BE]/10 focus:outline-none transition-all duration-300 text-gray-700 placeholder-gray-400 bg-white"
-                  placeholder="Digite seu usuário"
-                  disabled={loadingAdmin || loadingTech}
-                  required
-                  autoComplete="username"
-                />
-              </div>
-            </div>
+            <LoginInput
+              id="login-input"
+              label="Usuário"
+              type="text"
+              value={login}
+              onChange={handleLoginChange}
+              onKeyPress={handleKeyPress}
+              placeholder="Digite seu usuário"
+              disabled={isLoading}
+              icon={User}
+              inputRef={loginInputRef}
+            />
 
-            <div>
-              <label
-                htmlFor="password-input"
-                className="block text-sm font-semibold mb-2 text-gray-700"
-              >
-                Senha
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-[#7B54BE]" />
-                </div>
-                <input
-                  id="password-input"
-                  type={showPassword ? "text" : "password"}
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 rounded-xl focus:border-[#7B54BE] focus:ring-4 focus:ring-[#7B54BE]/10 focus:outline-none transition-all duration-300 text-gray-700 placeholder-gray-400 bg-white"
-                  placeholder="Digite sua senha"
-                  disabled={loadingAdmin || loadingTech}
-                  required
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center"
-                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                  disabled={loadingAdmin || loadingTech}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-[#7B54BE] transition-colors" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-[#7B54BE] transition-colors" />
-                  )}
-                </button>
-              </div>
-            </div>
+            <LoginInput
+              id="password-input"
+              label="Senha"
+              type={showPassword ? "text" : "password"}
+              value={senha}
+              onChange={handleSenhaChange}
+              onKeyPress={handleKeyPress}
+              placeholder="Digite sua senha"
+              disabled={isLoading}
+              icon={Lock}
+              showToggle
+              onToggle={togglePasswordVisibility}
+              showPassword={showPassword}
+            />
 
             {/* Buttons */}
             <div className="space-y-3 pt-4">
               {!isMobile && (
-                <button
+                <LoginButton
                   onClick={handleAdminAccess}
-                  disabled={
-                    loadingAdmin ||
-                    loadingTech ||
-                    !login.trim() ||
-                    !senha.trim()
-                  }
-                  className="w-full bg-gradient-to-r from-[#FDAD15] to-[#FFC845] text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-[#FDAD15]/30 transform hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-[#FDAD15]/30"
-                  aria-label="Acessar Módulo Administrativo"
+                  disabled={!isFormValid || isLoading}
+                  loading={loadingAdmin}
+                  icon={Settings}
+                  variant="primary"
                 >
-                  {loadingAdmin ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Validando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Settings className="w-5 h-5" />
-                      <span>Acessar Módulo Administrativo</span>
-                    </>
-                  )}
-                </button>
+                  Acessar Módulo Administrativo
+                </LoginButton>
               )}
 
-              <button
+              <LoginButton
                 onClick={handleTechAccess}
-                disabled={
-                  loadingAdmin || loadingTech || !login.trim() || !senha.trim()
-                }
-                className="w-full bg-gradient-to-r from-[#7B54BE] to-[#553499] text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-[#7B54BE]/30 transform hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-[#7B54BE]/30"
-                aria-label="Acessar Módulo Técnico"
+                disabled={!isFormValid || isLoading}
+                loading={loadingTech}
+                icon={Shield}
+                variant="secondary"
               >
-                {loadingTech ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Validando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Shield className="w-5 h-5" />
-                    <span>Acessar Módulo Técnico</span>
-                  </>
-                )}
-              </button>
+                Acessar Módulo Técnico
+              </LoginButton>
             </div>
           </div>
 
@@ -499,6 +609,7 @@ export default function LoginPage() {
             transform: translateX(8px);
           }
         }
+
         .animate-shake {
           animation: shake 0.4s ease-in-out;
         }
