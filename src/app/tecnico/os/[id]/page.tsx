@@ -157,7 +157,6 @@ export default function OSDetalheMobile() {
       setError("");
 
       try {
-        console.log(`Carregando OS ID: ${params.id}`);
         const response = await ordensServicoService.getById(Number(params.id));
 
         // Verificar se a requisição foi cancelada
@@ -308,9 +307,9 @@ export default function OSDetalheMobile() {
       {/* Status Header */}
       <div className="bg-white">
         {os.descricao_problema && (
-          <p className="text-md text-slate-700 leading-relaxed bg-slate-100 p-3 rounded-lg">
+          <div className="text-md text-slate-700 leading-relaxed bg-slate-100 p-3 rounded-lg break-words whitespace-pre-wrap max-h-[200px] overflow-y-auto custom-scrollbar">
             {os.abertura.motivo_atendimento}: {os.descricao_problema}
-          </p>
+          </div>
         )}
       </div>
 

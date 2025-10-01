@@ -205,12 +205,12 @@ const OsCard: React.FC<OsCardProps> = ({ os }) => {
 
         {/* Descrição do problema - sem título e com fundo diferente */}
         <div className="mt-auto">
-          <p
-            className="text-xs line-clamp-2 text-gray-700 bg-gray-50 p-2 rounded-md border border-gray-100"
+          <div
+            className="text-xs text-gray-700 bg-gray-50 p-2 rounded-md border border-gray-100 break-words whitespace-pre-wrap max-h-[80px] overflow-y-auto custom-scrollbar"
             title={os.descricao_problema}
           >
             {os.descricao_problema || "Sem descrição"}
-          </p>
+          </div>
         </div>
 
         {/* Tags importantes */}

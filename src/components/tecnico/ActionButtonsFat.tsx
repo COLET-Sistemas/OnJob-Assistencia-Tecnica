@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import OcorrenciaModal from "./OcorrenciaModal";
 import { ocorrenciasOSService } from "@/api/services/ocorrenciaOSService";
+import Toast from "./Toast";
 
 interface ActionButtonsFatProps {
   fat: FATDetalhada;
@@ -46,6 +47,15 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
     | "concluir"
   >(null);
   const [modalLoading, setModalLoading] = useState(false);
+  const [toast, setToast] = useState<{
+    visible: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    visible: false,
+    message: "",
+    type: "success",
+  });
 
   // Verifica se tem campos de atendimento preenchidos
   const temCamposAtendimento = Boolean(
@@ -79,6 +89,23 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
   };
   const handleConcluir = () => setModalOpen("concluir");
 
+  // Função para exibir toast com mensagem e tipo
+  const showToast = (
+    message: string,
+    type: "success" | "error" = "success"
+  ) => {
+    setToast({
+      visible: true,
+      message,
+      type,
+    });
+
+    // Auto-esconder após 3.5 segundos
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, visible: false }));
+    }, 3500);
+  };
+
   // Salva ocorrência e chama callback original se existir
   const handleSaveOcorrencia = async (descricao: string) => {
     console.log("handleSaveOcorrencia called with:", {
@@ -89,13 +116,14 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
 
     if (!id_os || !modalOpen) {
       console.log("Missing id_os or modalOpen:", { id_os, modalOpen });
+      showToast("Erro: Dados incompletos para esta operação", "error");
       return;
     }
 
     // Validação para campos obrigatórios (pausar e cancelar)
     const isRequired = modalOpen === "pausar" || modalOpen === "cancelar";
     if (isRequired && (!descricao || descricao.trim() === "")) {
-      alert("A descrição é obrigatória para esta ação.");
+      showToast("A descrição é obrigatória para esta ação", "error");
       return;
     }
 
@@ -112,17 +140,23 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
         concluir: "concluir os",
       };
 
+      // Mapear mensagens de sucesso para cada ação
+      const mensagensMap: Record<string, string> = {
+        iniciar: "Atendimento iniciado com sucesso!",
+        pausar: "Atendimento pausado com sucesso!",
+        retomar: "Atendimento retomado com sucesso!",
+        interromper: "FAT concluída com sucesso!",
+        cancelar: "Atendimento cancelado com sucesso!",
+        concluir: "OS concluída com sucesso!",
+      };
+
       const payload = {
         id_os: id_os,
         ocorrencia: ocorrenciaMap[modalOpen],
         descricao_ocorrencia: descricao,
       };
 
-      console.log("Sending API request with payload:", payload);
-
       await ocorrenciasOSService.registrarOcorrencia(payload);
-
-      console.log("API request successful");
 
       // Chamar callback original se existir
       switch (modalOpen) {
@@ -146,10 +180,56 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
           break;
       }
 
+      // Mostrar mensagem de sucesso
+      showToast(mensagensMap[modalOpen], "success");
+
       setModalOpen(null);
       if (onActionSuccess) onActionSuccess();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("API request failed:", error);
+
+      // Extrair mensagem de erro da resposta da API, com formato específico {"erro":"mensagem"}
+      let errorMessage = "Erro ao processar a solicitação";
+
+      if (error && typeof error === "object") {
+        // Caso 1: Erro no formato da API com response.data.erro
+        if (
+          "response" in error &&
+          error.response &&
+          typeof error.response === "object" &&
+          "data" in error.response
+        ) {
+          const responseData = error.response.data;
+
+          // Se data.erro for uma string, use diretamente
+          if (
+            responseData &&
+            typeof responseData === "object" &&
+            "erro" in responseData
+          ) {
+            errorMessage = String(responseData.erro);
+          }
+          // Se for uma string JSON com formato {"erro":"mensagem"}
+          else if (responseData && typeof responseData === "string") {
+            const match = responseData.match(/\{"erro":"([^"]+)"\}/);
+            if (match && match[1]) {
+              errorMessage = match[1];
+            }
+          }
+        }
+        // Caso 2: Erro com propriedade message (padrão JavaScript)
+        else if ("message" in error && typeof error.message === "string") {
+          // Verificar se a mensagem está no formato {"erro":"mensagem"}
+          const match = error.message.match(/\{"erro":"([^"]+)"\}/);
+          if (match && match[1]) {
+            errorMessage = match[1];
+          } else {
+            errorMessage = error.message;
+          }
+        }
+      }
+
+      showToast(errorMessage, "error");
       setModalOpen(null);
     } finally {
       setModalLoading(false);
@@ -204,6 +284,15 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
 
   return (
     <>
+      {/* Toast para exibir mensagens de sucesso ou erro */}
+      {toast.visible && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast((prev) => ({ ...prev, visible: false }))}
+        />
+      )}
+
       <div className="bg-white border-t border-slate-200 p-4 flex flex-wrap gap-3 justify-center">
         {/* INICIAR ATENDIMENTO: Exibir se situacao.codigo = 3 */}
         {situacaoCodigo === 3 && (

@@ -48,7 +48,7 @@ const Section = React.memo(
 
 Section.displayName = "Section";
 
-// Componente de TextArea otimizado
+// Componente de TextArea otimizado com autoexpansão
 const TextAreaField = React.memo(
   ({
     name,
@@ -65,19 +65,45 @@ const TextAreaField = React.memo(
     rows?: number;
     disabled?: boolean;
   }) => {
+    const textAreaRef = React.useRef<HTMLTextAreaElement>(null);
+
+    // Função para ajustar altura automaticamente
+    const adjustHeight = React.useCallback(() => {
+      const textArea = textAreaRef.current;
+      if (textArea) {
+        textArea.style.height = "auto";
+        textArea.style.height = textArea.scrollHeight + "px";
+      }
+    }, []);
+
+    // Ajusta a altura no carregamento inicial e quando o valor muda
+    React.useEffect(() => {
+      adjustHeight();
+    }, [value, adjustHeight]);
+
+    // Handler de mudança personalizado
+    const handleTextAreaChange = (
+      e: React.ChangeEvent<HTMLTextAreaElement>
+    ) => {
+      onChange(e);
+      adjustHeight();
+    };
+
     return (
       <textarea
+        ref={textAreaRef}
         name={name}
         value={value}
-        onChange={onChange}
+        onChange={handleTextAreaChange}
         disabled={disabled}
-        className={`w-full px-4 py-3 rounded-lg border transition-all outline-none resize-none text-sm leading-relaxed ${
+        className={`w-full px-4 py-3 rounded-lg border transition-all outline-none min-h-[80px] text-sm leading-relaxed ${
           disabled
             ? "bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed"
             : "bg-white border-slate-200 text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         }`}
         rows={rows}
         placeholder={placeholder}
+        style={{ overflow: "hidden", resize: "none" }}
       />
     );
   }
@@ -349,7 +375,7 @@ export default function FATAtendimentoPage() {
               value={form.descricao_problema}
               onChange={handleChange}
               placeholder="Descreva o problema apresentado pelo cliente..."
-              rows={2}
+              rows={3}
               disabled={!isDescricaoEditable}
             />
             {/* Motivo de Atendimento */}
@@ -406,7 +432,7 @@ export default function FATAtendimentoPage() {
             value={form.solucao_encontrada}
             onChange={handleChange}
             placeholder="Descreva a solução encontrada para o problema..."
-            rows={2}
+            rows={3}
           />
         </Section>
 
@@ -417,7 +443,7 @@ export default function FATAtendimentoPage() {
             value={form.testes_realizados}
             onChange={handleChange}
             placeholder="Descreva os testes realizados na máquina..."
-            rows={2}
+            rows={3}
           />
         </Section>
 
@@ -428,7 +454,7 @@ export default function FATAtendimentoPage() {
             value={form.sugestoes}
             onChange={handleChange}
             placeholder="Sugestões para o cliente ou equipe técnica..."
-            rows={2}
+            rows={3}
           />
         </Section>
 
@@ -439,7 +465,7 @@ export default function FATAtendimentoPage() {
             value={form.observacoes}
             onChange={handleChange}
             placeholder="Observações adicionais sobre o atendimento..."
-            rows={2}
+            rows={3}
           />
         </Section>
 

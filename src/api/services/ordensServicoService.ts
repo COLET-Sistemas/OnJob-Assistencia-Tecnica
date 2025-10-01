@@ -455,19 +455,16 @@ class OrdensServicoService {
 
     // Verificar se existe uma requisição pendente para evitar duplicatas
     if (this.pendingRequests.has(cacheKey)) {
-      console.log(`Aguardando requisição pendente: ${cacheKey}`);
       return this.pendingRequests.get(cacheKey) as Promise<T>;
     }
 
     // Verificar cache
     const cached = this.cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      console.log(`Dados obtidos do cache: ${cacheKey}`);
       return cached.data as T;
     }
 
     // Criar nova requisição
-    console.log(`Fazendo nova requisição: ${cacheKey}`);
     const promise = fetchFn()
       .then((data) => {
         // Salvar no cache
@@ -561,7 +558,6 @@ class OrdensServicoService {
     return this.getCachedOrFetch(
       cacheKey,
       async () => {
-        console.log(`Buscando OS ${id} na API`);
         const response = await api.get<OSDetalhadaV2 | OSDetalhadaV2[]>(
           `${this.baseUrl}`,
           {

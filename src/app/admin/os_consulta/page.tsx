@@ -1086,14 +1086,14 @@ const ConsultaOSPage: React.FC = () => {
                             </span>
                           </p>
                         )}
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
+                        <div className="text-sm flex flex-wrap gap-2">
                           <span className="font-medium text-gray-700 min-w-[120px]">
                             Descrição:
                           </span>{" "}
-                          <span className="text-gray-800">
+                          <div className="text-gray-800 break-words whitespace-pre-wrap flex-1 max-h-[150px] overflow-y-auto custom-scrollbar">
                             {item.descricao_problema || "-"}
-                          </span>
-                        </p>
+                          </div>
+                        </div>
                         <p className="text-sm flex flex-wrap items-baseline gap-2">
                           <span className="font-medium text-gray-700 min-w-[120px]">
                             Liberada Financ.:

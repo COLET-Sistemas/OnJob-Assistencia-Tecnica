@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { fatService, type FATDetalhada } from "@/api/services/fatService";
 import { Loading } from "@/components/LoadingPersonalizado";
+import Toast from "@/components/tecnico/Toast";
 
 import StatusBadge from "@/components/tecnico/StatusBadge";
 
@@ -149,6 +150,31 @@ export default function FATDetalheMobile() {
   const [fat, setFat] = useState<FATDetalhada | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState<{
+    visible: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    visible: false,
+    message: "",
+    type: "success",
+  });
+
+  // Função auxiliar para mostrar toast com auto-hide
+  const showToast = useCallback(
+    (message: string, type: "success" | "error" = "success") => {
+      // Define o toast como visível com a mensagem e tipo
+      console.log(`Showing toast: ${message} (${type})`); // Para debug
+      setToast({
+        visible: true,
+        message,
+        type,
+      });
+
+      // Opcional: pode deixar o auto-hide para o componente Toast através do onClose
+    },
+    []
+  );
 
   // Ref para controlar se já está carregando
   const isLoadingRef = useRef(false);
@@ -164,6 +190,31 @@ export default function FATDetalheMobile() {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}min`;
+  }, []);
+
+  // Função para extrair mensagem de erro da API
+  const extractErrorMessage = useCallback((error: unknown): string => {
+    let errorMessage = "Ocorreu um erro durante a operação";
+
+    if (error && typeof error === "object") {
+      if (
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "status" in error.response &&
+        error.response.status === 409 &&
+        "data" in error.response &&
+        error.response.data &&
+        typeof error.response.data === "object" &&
+        "erro" in error.response.data
+      ) {
+        errorMessage = String(error.response.data.erro);
+      } else if ("message" in error && typeof error.message === "string") {
+        errorMessage = error.message;
+      }
+    }
+
+    return errorMessage;
   }, []);
 
   // Função para buscar dados da FAT
@@ -190,7 +241,6 @@ export default function FATDetalheMobile() {
       setError("");
 
       try {
-        console.log(`Carregando FAT ID: ${params.id}`);
         const response = await fatService.getById(Number(params.id), force);
 
         if (abortControllerRef.current?.signal.aborted) {
@@ -202,8 +252,6 @@ export default function FATDetalheMobile() {
           setError("FAT não encontrada");
           return;
         }
-
-        console.log("FAT carregada com sucesso:", response.id_fat);
         setFat(response);
       } catch (error: unknown) {
         if (abortControllerRef.current?.signal.aborted) {
@@ -278,37 +326,199 @@ export default function FATDetalheMobile() {
   }, []);
 
   // Handlers para os botões de ação
-  const handleIniciarAtendimento = useCallback(() => {
+  const handleIniciarAtendimento = useCallback(async () => {
     console.log("Iniciar atendimento");
-    // TODO: implementar ação
-  }, []);
+    try {
+      setLoading(true);
+      // TODO: implementar API call para iniciar atendimento
+      // Exemplo: const response = await fatService.iniciarAtendimento(fat?.id_fat);
 
-  const handlePausarAtendimento = useCallback(() => {
+      try {
+        // Simulando uma chamada à API com timeout (remover na implementação real)
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Simulando sucesso da API
+        const responseMessage = "Atendimento iniciado com sucesso!";
+
+        showToast(responseMessage, "success");
+
+        // Recarregar detalhes da FAT após sucesso
+        await fetchFAT(true);
+      } catch (error) {
+        console.error("Erro ao iniciar atendimento:", error);
+
+        const errorMessage = extractErrorMessage(error);
+
+        showToast(errorMessage, "error");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchFAT, extractErrorMessage, showToast]);
+
+  const handlePausarAtendimento = useCallback(async () => {
     console.log("Pausar atendimento");
-    // TODO: implementar ação
-  }, []);
+    try {
+      setLoading(true);
+      // TODO: implementar API call para pausar atendimento
+      // Exemplo: const response = await fatService.pausarAtendimento(fat?.id_fat);
 
-  const handleRetomarAtendimento = useCallback(() => {
+      try {
+        // Simulando uma chamada à API com timeout (remover na implementação real)
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Simulando sucesso da API
+        const responseMessage = "Atendimento pausado com sucesso!";
+
+        showToast(responseMessage, "success");
+
+        // Recarregar detalhes da FAT após sucesso
+        await fetchFAT(true);
+      } catch (error) {
+        console.error("Erro ao pausar atendimento:", error);
+
+        const errorMessage = extractErrorMessage(error);
+
+        showToast(errorMessage, "error");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchFAT, extractErrorMessage, showToast]);
+
+  const handleRetomarAtendimento = useCallback(async () => {
     console.log("Retomar atendimento");
-    // TODO: implementar ação
-  }, []);
+    try {
+      setLoading(true);
+      // TODO: implementar API call para retomar atendimento
+      // Exemplo: const response = await fatService.retomarAtendimento(fat?.id_fat);
 
-  const handleInterromperAtendimento = useCallback(() => {
+      try {
+        // Simulando uma chamada à API com timeout (remover na implementação real)
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Simulando sucesso da API
+        const responseMessage = "Atendimento retomado com sucesso!";
+
+        showToast(responseMessage, "success");
+
+        // Recarregar detalhes da FAT após sucesso
+        await fetchFAT(true);
+      } catch (error) {
+        console.error("Erro ao retomar atendimento:", error);
+
+        const errorMessage = extractErrorMessage(error);
+
+        showToast(errorMessage, "error");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchFAT, extractErrorMessage, showToast]);
+
+  const handleInterromperAtendimento = useCallback(async () => {
     console.log("Interromper atendimento");
-    // TODO: implementar ação
-  }, []);
+    try {
+      setLoading(true);
+      // TODO: implementar API call para interromper atendimento
+      // Exemplo: const response = await fatService.interromperAtendimento(fat?.id_fat);
 
-  const handleCancelarAtendimento = useCallback(() => {
+      try {
+        // Simulando uma chamada à API com timeout (remover na implementação real)
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Simulando sucesso da API
+        const responseMessage = "Atendimento interrompido com sucesso!";
+
+        showToast(responseMessage, "success");
+
+        // Recarregar detalhes da FAT após sucesso
+        await fetchFAT(true);
+      } catch (error) {
+        console.error("Erro ao interromper atendimento:", error);
+
+        const errorMessage = extractErrorMessage(error);
+
+        showToast(errorMessage, "error");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchFAT, extractErrorMessage, showToast]);
+
+  const handleCancelarAtendimento = useCallback(async () => {
     console.log("Cancelar atendimento");
-    // TODO: implementar ação
-  }, []);
+    try {
+      setLoading(true);
+      // TODO: implementar API call para cancelar atendimento
+      // Exemplo: const response = await fatService.cancelarAtendimento(fat?.id_fat);
 
-  const handleConcluirAtendimento = useCallback(() => {
+      try {
+        // Simulando uma chamada à API com timeout (remover na implementação real)
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Simulando sucesso da API (na implementação real, virá da resposta da API)
+        const responseMessage = "Atendimento cancelado com sucesso!";
+
+        // Mostrar mensagem de sucesso
+        showToast(responseMessage, "success");
+
+        // Aguardar um momento para o usuário ver a mensagem antes de redirecionar
+        setTimeout(() => {
+          router.push("/tecnico/os");
+        }, 1500);
+      } catch (error) {
+        console.error("Erro ao cancelar atendimento:", error);
+
+        // Capturar mensagem de erro da API
+        const errorMessage = extractErrorMessage(error);
+
+        showToast(errorMessage, "error");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [router, extractErrorMessage, showToast]);
+
+  const handleConcluirAtendimento = useCallback(async () => {
     console.log("Concluir atendimento");
-    // TODO: implementar ação
-  }, []);
+    try {
+      setLoading(true);
+      // TODO: implementar API call para concluir atendimento
+      // Exemplo: const response = await fatService.concluirAtendimento(fat?.id_fat);
 
-  if (loading) {
+      try {
+        // Simulando uma chamada à API com timeout (remover na implementação real)
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Simulando sucesso da API (na implementação real, virá da resposta da API)
+        const responseMessage = "Atendimento concluído com sucesso!";
+
+        // Mostrar mensagem de sucesso
+        showToast(responseMessage, "success");
+
+        // Aguardar um momento para o usuário ver a mensagem antes de redirecionar
+        setTimeout(() => {
+          router.push("/tecnico/os");
+        }, 1500);
+      } catch (error) {
+        console.error("Erro ao concluir atendimento:", error);
+
+        // Capturar mensagem de erro da API
+        const errorMessage = extractErrorMessage(error);
+
+        showToast(errorMessage, "error");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [router, extractErrorMessage, showToast]);
+
+  // Mostrar tela de carregamento apenas quando estiver carregando inicialmente
+  // Para ações subsequentes, mostrar um overlay de carregamento sobre o conteúdo
+  const initialLoading = loading && !fat;
+
+  if (initialLoading) {
     return (
       <>
         <MobileHeader
@@ -391,17 +601,37 @@ export default function FATDetalheMobile() {
         onMenuClick={() => router.back()}
       />
 
+      {/* Toast para mensagens de sucesso e erro - fixo na tela quando visível */}
+      {toast.visible && (
+        <div className="fixed inset-x-0 bottom-20 z-[9999] flex items-center justify-center pointer-events-none">
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast((prev) => ({ ...prev, visible: false }))}
+          />
+        </div>
+      )}
+
+      {/* Overlay de carregamento para ações após carregamento inicial */}
+      {loading && fat && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[100]">
+          <div className="bg-white p-4 rounded-xl shadow-lg">
+            <Loading fullScreen={false} size="medium" text="Processando..." />
+          </div>
+        </div>
+      )}
+
       {/* Header com informações principais */}
       <div className="bg-white border-b border-slate-100">
         {/* Problema descrição */}
         {fat.descricao_problema && (
           <div className="p-4">
-            <p className="text-md text-slate-700 leading-relaxed bg-slate-100 p-3 rounded-lg">
+            <div className="text-md text-slate-700 leading-relaxed bg-slate-100 p-3 rounded-lg break-words whitespace-pre-wrap max-h-[200px] overflow-y-auto custom-scrollbar">
               <span className="font-medium">
                 {fat.motivo_atendimento.descricao}:
               </span>{" "}
               {fat.descricao_problema}
-            </p>
+            </div>
           </div>
         )}
 

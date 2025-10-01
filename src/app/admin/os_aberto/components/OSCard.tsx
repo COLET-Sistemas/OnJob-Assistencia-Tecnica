@@ -344,9 +344,9 @@ const OSCard: React.FC<OSCardProps> = ({
                     Descrição do Problema: {os.abertura.motivo_atendimento}
                   </h4>
                 </div>
-                <p className="text-gray-800 text-sm mb-3">
+                <div className="text-gray-800 text-sm mb-3 break-words whitespace-pre-wrap max-h-[250px] overflow-y-auto custom-scrollbar">
                   {os.descricao_problema || "Sem descrição fornecida"}
-                </p>
+                </div>
 
                 {/* Informações de Abertura */}
                 <div className="mt-3 pt-3 border-t border-gray-100">
