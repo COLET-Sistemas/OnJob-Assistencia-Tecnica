@@ -1,4 +1,4 @@
-import Toast from "@/components/ui/Toast";
+import Toast from "@/components/tecnico/Toast";
 import React, { useState } from "react";
 import { Car, Play, Loader2 } from "lucide-react";
 import OcorrenciaModal from "./OcorrenciaModal";
@@ -107,7 +107,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
               <Car className="w-4 h-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3" />
             )}
           </span>
-          <span className="flex-1 text-left font-medium">Novo Deslocam.</span>
+          <span className="flex-1 text-left font-medium">
+            Iniciar Deslocam.
+          </span>
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </button>
         <button
@@ -124,7 +126,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
               <Play className="w-4 h-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3" />
             )}
           </span>
-          <span className="flex-1 text-left font-medium">Novo Atendimento</span>
+          <span className="flex-1 text-left font-medium">
+            Iniciar Atendimento
+          </span>
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </button>
       </div>

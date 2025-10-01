@@ -521,7 +521,6 @@ export default function FATPecasPage() {
                       ) : (
                         <Search className="w-4 h-4" />
                       )}
-                      Buscar
                     </button>
                   </div>
                 </div>

@@ -411,7 +411,7 @@ const NovaOrdemServico = () => {
         // Adiciona a opção para inserir um contato personalizado
         const customOption: ContatoOption = {
           value: -1,
-          label: "Inserir outro contato",
+          label: "Inserir contato não cadastrado",
           contato: { id: -1, telefone: "", email: "", situacao: "A" },
           isCustom: true,
         };

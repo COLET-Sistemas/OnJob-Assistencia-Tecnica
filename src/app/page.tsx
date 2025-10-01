@@ -464,10 +464,10 @@ export default function LoginPage() {
               <Image
                 src="/images/logoEscrito.png"
                 alt="OnJob Sistema de Assistência Técnica"
-                width={200}
-                height={50}
+                width={350}
+                height={100}
                 priority
-                className="h-12 w-auto object-contain"
+                className="h-24 w-auto object-contain"
               />
             </div>
             <h2 className="text-xl font-semibold mb-2 text-gray-800">

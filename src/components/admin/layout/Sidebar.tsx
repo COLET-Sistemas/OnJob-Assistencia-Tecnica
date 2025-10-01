@@ -21,6 +21,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import { LucideIcon } from "lucide-react";
+import Image from "next/image";
 import packageInfo from "../../../../package.json";
 
 interface MenuItem {
@@ -43,11 +44,6 @@ const menuItems: MenuItem[] = [
     icon: Home,
     path: "/admin/dashboard",
   },
-  // {
-  //   key: "OS_section",
-  //   label: "Ordens de Serviço",
-  //   isSection: true,
-  // },
   {
     key: "os_aberto",
     label: "Ordens de Serviço",
@@ -72,11 +68,6 @@ const menuItems: MenuItem[] = [
     icon: BarChart3,
     path: "/admin/relatorios",
   },
-  // {
-  //   key: "cadastros_section",
-  //   label: "Central de Cadastros",
-  //   isSection: true,
-  // },
   {
     key: "central_cadastro",
     label: "Cadastros",
@@ -140,10 +131,8 @@ export default function Sidebar({ isOpen }: SidebarProps) {
   const [apiVersion, setApiVersion] = useState<string>("não definido");
   const [isMounted, setIsMounted] = useState(false);
 
-  // Check if component is mounted (client-side)
   useEffect(() => {
     setIsMounted(true);
-    // Only access localStorage after component mounts
     if (typeof window !== "undefined") {
       const version = localStorage.getItem("versao_api") || "não definido";
       setApiVersion(version);
@@ -203,7 +192,6 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     determineExpandedMenus()
   );
 
-  // Atualizar o activeMenu e expandedMenus quando o pathname mudar
   React.useEffect(() => {
     const newActiveKey = findActiveMenuKey(pathname, menuItems);
     if (newActiveKey) {
@@ -230,7 +218,6 @@ export default function Sidebar({ isOpen }: SidebarProps) {
       activeMenu === item.key || (item.path && pathname === item.path);
     const isSection = item.isSection;
 
-    // Verifica se algum item do submenu está ativo
     const hasActiveChild =
       hasSubmenu &&
       item.submenu?.some(
@@ -244,7 +231,6 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           )
       );
 
-    // Se for uma seção de menu, renderize com um estilo de título
     if (isSection) {
       return (
         <div key={item.key} className="px-4 py-3 mt-5 mb-2 mx-2">
@@ -256,135 +242,112 @@ export default function Sidebar({ isOpen }: SidebarProps) {
       );
     }
 
-    return (
-      <div key={item.key} className="relative">
-        {/* Indicador de item ativo */}
-        {(isActive || hasActiveChild) && (
-          <div
-            className={`absolute left-0 top-0 bottom-0 w-1.5 ${
-              isActive ? "bg-[#F6C647]" : hasActiveChild ? "bg-[#F6C647]" : ""
-            } rounded-r-full`}
-          />
-        )}
-
-        {/* Wrapper condicional com Link se tiver path e não tiver submenu */}
-        {!hasSubmenu && item.path ? (
-          <Link href={item.path} className="block w-full">
+    const menuContent = (
+      <div
+        className={`flex items-center justify-between px-4 py-3.5 cursor-pointer transition-all duration-200 group ${
+          isActive
+            ? "bg-gradient-to-r from-white/15 to-white/10 text-white shadow-sm"
+            : hasActiveChild
+            ? "bg-white/8 text-white/95"
+            : "text-white/75 hover:text-white hover:bg-white/10"
+        } ${
+          level > 0 ? "ml-2 border-l-2 border-white/10" : ""
+        } rounded-xl mx-2 my-0.5`}
+        style={{ paddingLeft: `${level > 0 ? 0.75 : 1}rem` }}
+        onClick={() => {
+          if (hasSubmenu) {
+            toggleSubmenu(item.key);
+          } else {
+            setActiveMenu(item.key);
+          }
+        }}
+      >
+        <div className="flex items-center space-x-3">
+          {Icon && (
             <div
-              className={`flex items-center justify-between px-4 py-3 cursor-pointer transition-all duration-200 ${
+              className={`p-2 rounded-lg transition-all duration-200 ${
                 isActive
-                  ? "bg-white/15 text-white font-medium"
+                  ? "bg-[#F6C647] text-[#7C54BD] shadow-md scale-105"
                   : hasActiveChild
-                  ? "bg-white/10 text-white/90"
-                  : "text-white/80 hover:text-white hover:bg-white/10"
-              } ${
-                level > 0 ? "ml-2 border-l border-white/10" : ""
-              } rounded-lg mx-2 my-0.5`}
-              style={{ paddingLeft: `${1.25 + level * 1}rem` }}
-              onClick={() => setActiveMenu(item.key)}
+                  ? "bg-[#F6C647]/90 text-[#7C54BD]"
+                  : "bg-white/10 text-[#F6C647] group-hover:bg-[#F6C647]/80 group-hover:text-[#7C54BD]"
+              }`}
             >
-              <div className="flex items-center space-x-3">
-                {Icon && (
-                  <div
-                    className={`p-1.5 rounded-md ${
-                      isActive
-                        ? "bg-white/20 text-[#F6C647]"
-                        : hasActiveChild
-                        ? "bg-white/15 text-[#F6C647]"
-                        : "text-[#F6C647]"
-                    }`}
-                  >
-                    <Icon size={18} />
-                  </div>
-                )}
-                <span
-                  className={`text-sm ${
-                    isActive
-                      ? "font-semibold"
-                      : hasActiveChild
-                      ? "font-medium"
-                      : "font-normal"
-                  }`}
-                >
-                  {item.label}
-                </span>
-              </div>
+              <Icon size={18} strokeWidth={2.5} />
             </div>
-          </Link>
-        ) : (
-          <div
-            className={`flex items-center justify-between px-4 py-3 cursor-pointer transition-all duration-200 ${
+          )}
+          <span
+            className={`text-sm transition-all duration-200 ${
               isActive
-                ? "bg-white/15 text-white font-medium"
+                ? "font-semibold"
                 : hasActiveChild
-                ? "bg-white/10 text-white/90"
-                : "text-white/80 hover:text-white hover:bg-white/10"
-            } ${
-              level > 0 ? "ml-2 border-l border-white/10" : ""
-            } rounded-lg mx-2 my-0.5`}
-            onClick={() => {
-              if (hasSubmenu) {
-                toggleSubmenu(item.key);
-              } else {
-                setActiveMenu(item.key);
-              }
-            }}
-            style={{ paddingLeft: `${1.25 + level * 1}rem` }}
+                ? "font-medium"
+                : "font-normal"
+            }`}
           >
-            <div className="flex items-center space-x-3">
-              {Icon && (
-                <div
-                  className={`p-1.5 rounded-md ${
-                    isActive
-                      ? "bg-white/20 text-[#F6C647]"
-                      : hasActiveChild
-                      ? "bg-white/15 text-[#F6C647]"
-                      : "text-[#F6C647]"
-                  }`}
-                >
-                  <Icon size={18} />
-                </div>
-              )}
-              <span
-                className={`text-sm ${
-                  isActive
-                    ? "font-semibold"
-                    : hasActiveChild
-                    ? "font-medium"
-                    : "font-normal"
-                }`}
-              >
-                {item.label}
-              </span>
-            </div>
-            {hasSubmenu && (
-              <div className="p-1 rounded-md hover:bg-white/10 transition-colors">
-                {isExpanded ? (
-                  <ChevronDown size={14} className="text-[#F6C647]" />
-                ) : (
-                  <ChevronRight size={14} className="text-[#F6C647]" />
-                )}
-              </div>
+            {item.label}
+          </span>
+        </div>
+        {hasSubmenu && (
+          <div
+            className={`p-1.5 rounded-lg transition-all duration-200 ${
+              isExpanded
+                ? "bg-[#F6C647]/20 rotate-0"
+                : "bg-white/5 group-hover:bg-white/10"
+            }`}
+          >
+            {isExpanded ? (
+              <ChevronDown
+                size={16}
+                className="text-[#F6C647]"
+                strokeWidth={2.5}
+              />
+            ) : (
+              <ChevronRight
+                size={16}
+                className="text-[#F6C647]"
+                strokeWidth={2.5}
+              />
             )}
           </div>
         )}
+      </div>
+    );
 
-        {/* Submenu expandido - Removido max-height para mostrar todos os itens */}
+    return (
+      <div key={item.key} className="relative">
+        {(isActive || hasActiveChild) && (
+          <div
+            className={`absolute left-0 top-1 bottom-1 w-1 ${
+              isActive
+                ? "bg-gradient-to-b from-[#F6C647] to-[#F6C647]/70"
+                : "bg-[#F6C647]/50"
+            } rounded-r-full shadow-glow`}
+          />
+        )}
+
+        {!hasSubmenu && item.path ? (
+          <Link href={item.path} className="block w-full">
+            {menuContent}
+          </Link>
+        ) : (
+          menuContent
+        )}
+
         {hasSubmenu && isExpanded && (
           <div
-            className={`transition-all duration-300 ease-in-out ${
+            className={`transition-all duration-300 ease-in-out overflow-hidden ${
               level > 0
-                ? "bg-[#6A4399] rounded-b-lg mx-1 border border-white/5"
-                : "bg-[#6A4399]/30 rounded-lg mx-1 mt-1 border border-white/5"
-            } overflow-hidden`}
+                ? "bg-[#6A4399]/80 rounded-b-xl mx-3 border border-white/5 backdrop-blur-sm"
+                : "bg-[#6A4399]/40 rounded-xl mx-2 mt-1 border border-white/5 backdrop-blur-sm"
+            }`}
             style={{
-              // Animação suave de altura
               maxHeight: isExpanded
-                ? `${(item.submenu?.length || 0) * 60}px`
+                ? `${(item.submenu?.length || 0) * 70}px`
                 : "0px",
             }}
           >
-            <div className="py-1">
+            <div className="py-2">
               {item.submenu?.map((subItem) =>
                 renderMenuItem(subItem, level + 1)
               )}
@@ -400,11 +363,11 @@ export default function Sidebar({ isOpen }: SidebarProps) {
       <style jsx global>{`
         .modern-scrollbar {
           scrollbar-width: thin;
-          scrollbar-color: rgba(246, 198, 71, 0.4) transparent;
+          scrollbar-color: rgba(246, 198, 71, 0.5) transparent;
         }
 
         .modern-scrollbar::-webkit-scrollbar {
-          width: 4px;
+          width: 6px;
         }
 
         .modern-scrollbar::-webkit-scrollbar-track {
@@ -415,110 +378,171 @@ export default function Sidebar({ isOpen }: SidebarProps) {
         .modern-scrollbar::-webkit-scrollbar-thumb {
           background: linear-gradient(
             180deg,
-            rgba(246, 198, 71, 0.6) 0%,
-            rgba(246, 198, 71, 0.3) 100%
+            rgba(246, 198, 71, 0.7) 0%,
+            rgba(246, 198, 71, 0.4) 100%
           );
           border-radius: 10px;
-          border: none;
         }
 
         .modern-scrollbar::-webkit-scrollbar-thumb:hover {
           background: linear-gradient(
             180deg,
-            rgba(246, 198, 71, 0.8) 0%,
-            rgba(246, 198, 71, 0.5) 100%
+            rgba(246, 198, 71, 0.9) 0%,
+            rgba(246, 198, 71, 0.6) 100%
           );
         }
 
-        .modern-scrollbar::-webkit-scrollbar-corner {
-          background: transparent;
+        .shadow-glow {
+          box-shadow: 0 0 8px rgba(246, 198, 71, 0.4);
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        .animate-slide-in {
+          animation: slideIn 0.3s ease-out;
         }
       `}</style>
 
       <div
         className={`${
           isOpen ? "w-72" : "w-0 md:w-20"
-        } transition-all duration-300 bg-[#7C54BD] shadow-xl h-screen flex flex-col overflow-hidden`}
+        } transition-all duration-300 bg-gradient-to-b from-[#7C54BD] to-[#6A4399] shadow-2xl h-screen flex flex-col overflow-hidden`}
       >
-        <div className="flex items-center justify-between h-20 border-b border-white/10 bg-[#7C54BD]">
-          <div className="flex items-center space-x-3 px-6 h-full">
-            <div className="w-10 h-10 bg-[#F6C647] rounded-lg flex items-center justify-center shadow-lg ring-2 ring-white/20 flex-shrink-0">
-              <Wrench className="text-[#7C54BD]" size={22} />
+        {/* Header com Logo */}
+        <div className="flex items-center justify-center h-20 border-b border-white/10 bg-[#7C54BD]/50 backdrop-blur-sm px-4">
+          {isOpen ? (
+            <div className="relative w-full h-full flex items-center justify-center animate-slide-in">
+              <Image
+                src="/images/logoMenuEscrito.png"
+                alt="OnJob Logo"
+                width={160}
+                height={50}
+                className="object-contain"
+                priority
+              />
             </div>
-            <div
-              className={`${
-                !isOpen && "hidden md:hidden"
-              } transition-opacity duration-300 ${
-                isOpen ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              <h2 className="text-xl font-bold text-[#F6C647]">OnJob</h2>
-              <p className="text-sm text-[#F6C647]">Assistência Técnica</p>
+          ) : (
+            <div className="relative w-12 h-12 flex items-center justify-center">
+              <Image
+                src="/images/logoMenu.png"
+                alt="OnJob"
+                width={40}
+                height={40}
+                className="object-contain"
+                priority
+              />
             </div>
-          </div>
+          )}
         </div>
 
-        <nav className="flex-1 overflow-y-auto modern-scrollbar py-4 pr-1">
+        {/* Menu de Navegação */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden modern-scrollbar py-4 pr-1">
           {isOpen && menuItems.map((item) => renderMenuItem(item))}
           {!isOpen &&
             menuItems.map((item) =>
               item.isSection ? (
                 <div key={item.key} className="py-2 flex justify-center">
-                  <div className="h-px w-6 bg-white/30"></div>
+                  <div className="h-px w-8 bg-white/30"></div>
                 </div>
               ) : (
-                <div key={item.key} className="relative my-3 group">
+                <div key={item.key} className="relative my-2 group">
                   {item.icon && (
-                    <Link
-                      href={item.path || "#"}
-                      onClick={(e) => !item.path && e.preventDefault()}
-                      className="mx-auto w-12 h-12 flex items-center justify-center"
-                    >
-                      <div
-                        className={`p-2 rounded-lg hover:bg-white/15 transition-colors ${
-                          item.path && pathname.startsWith(item.path)
-                            ? "bg-white/20 text-[#F6C647]"
-                            : "text-[#F6C647]"
-                        }`}
+                    <div className="mx-auto w-14 h-14 flex items-center justify-center">
+                      <Link
+                        href={item.path || "#"}
+                        onClick={(e) => !item.path && e.preventDefault()}
+                        className="block"
+                        title={item.label}
                       >
-                        {item.icon && <item.icon size={18} />}
-                      </div>
-                    </Link>
+                        <div
+                          className={`p-2.5 rounded-xl transition-all duration-200 ${
+                            item.path && pathname.startsWith(item.path)
+                              ? "bg-[#F6C647] text-[#7C54BD] shadow-lg scale-110"
+                              : "bg-white/10 text-[#F6C647] hover:bg-[#F6C647]/80 hover:text-[#7C54BD] hover:scale-105"
+                          }`}
+                        >
+                          {item.icon && (
+                            <item.icon size={20} strokeWidth={2.5} />
+                          )}
+                        </div>
+                      </Link>
+                    </div>
                   )}
-                  {/* Tooltip */}
-                  <div className="absolute left-full ml-2 rounded-md bg-[#7C54BD] border border-white/10 text-white px-2 py-1 text-xs font-medium invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg">
+                  {/* Tooltip aprimorado */}
+                  <div className="absolute left-full ml-3 px-3 py-2 bg-[#7C54BD] border border-[#F6C647]/30 rounded-lg text-white text-xs font-medium invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 whitespace-nowrap z-50 shadow-xl backdrop-blur-sm pointer-events-none">
                     {item.label}
+                    <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-[#7C54BD]"></div>
                   </div>
+
+                  {/* Submenu Popup para menu fechado */}
+                  {item.submenu && (
+                    <div className="absolute left-full ml-3 top-0 bg-[#7C54BD] border border-[#F6C647]/30 rounded-xl text-white invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 shadow-2xl backdrop-blur-sm min-w-[200px]">
+                      <div className="p-2">
+                        <div className="px-3 py-2 border-b border-white/10 mb-1">
+                          <p className="text-sm font-semibold text-[#F6C647]">
+                            {item.label}
+                          </p>
+                        </div>
+                        {item.submenu.map((subItem) => (
+                          <Link
+                            key={subItem.key}
+                            href={subItem.path || "#"}
+                            className="flex items-center space-x-2 px-3 py-2.5 hover:bg-white/10 rounded-lg transition-colors"
+                          >
+                            {subItem.icon && (
+                              <div className="p-1.5 rounded-md bg-white/10 text-[#F6C647]">
+                                <subItem.icon size={16} strokeWidth={2.5} />
+                              </div>
+                            )}
+                            <span className="text-xs font-medium">
+                              {subItem.label}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                      <div className="absolute right-full top-4 border-4 border-transparent border-r-[#7C54BD]"></div>
+                    </div>
+                  )}
                 </div>
               )
             )}
         </nav>
 
-        <div className="border-t border-white/10 p-4 mt-auto">
-          {isOpen ? (
-            <div className="flex flex-col space-y-1 bg-[#7C54BD] p-3 rounded-lg border border-white/20">
+        {/* Footer com informações de versão */}
+        {isOpen && (
+          <div className="border-t border-white/10 p-4 mt-auto bg-[#7C54BD]/50 backdrop-blur-sm">
+            <div className="flex flex-col space-y-1 bg-white/5 p-3 rounded-xl border border-white/10 backdrop-blur-sm">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                  <Cog size={18} className="text-[#F6C647]" />
+                <div className="w-10 h-10 bg-gradient-to-br from-[#F6C647] to-[#F6C647]/80 rounded-xl flex items-center justify-center shadow-md">
+                  <Cog size={20} className="text-[#7C54BD]" strokeWidth={2.5} />
                 </div>
                 <div className="flex flex-col">
-                  <p className="text-xs font-medium text-white">
-                    Versão APP: {packageInfo.version}
+                  <p className="text-xs font-semibold text-white/90">
+                    APP:{" "}
+                    <span className="text-[#F6C647]">
+                      {packageInfo.version}
+                    </span>
                   </p>
-                  <p className="text-xs font-medium text-white">
-                    Versão API: {isMounted ? apiVersion : "carregando..."}
+                  <p className="text-xs font-semibold text-white/90">
+                    API:{" "}
+                    <span className="text-[#F6C647]">
+                      {isMounted ? apiVersion : "..."}
+                    </span>
                   </p>
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="flex items-center justify-center">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <Cog size={18} className="text-[#F6C647]" />
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </>
   );

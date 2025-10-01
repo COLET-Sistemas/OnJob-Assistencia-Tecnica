@@ -24,8 +24,6 @@ import {
   Car,
   Wrench,
   PauseCircle,
-  UserPlus,
-  UserCog,
 } from "lucide-react";
 import { formatarDataHora, isDataAgendadaPassada } from "@/utils/formatters";
 
@@ -61,7 +59,6 @@ const OSCard: React.FC<OSCardProps> = ({
   formatGoogleMapsUrl,
   onLiberarFinanceiramente,
   onAlterarPendencia,
-  onAdicionarTecnico,
   onAlterarTecnico,
 }) => {
   // Função para determinar a cor baseada no código da situação
@@ -250,6 +247,23 @@ const OSCard: React.FC<OSCardProps> = ({
                               : "Terceiro"}
                           </span>
                         )}
+                        {onAlterarTecnico && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAlterarTecnico(
+                                os.id_os,
+                                os.tecnico.id,
+                                os.tecnico.nome
+                              );
+                            }}
+                            className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 
+                                      rounded transition-colors cursor-pointer"
+                            title="Alterar técnico"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -283,47 +297,6 @@ const OSCard: React.FC<OSCardProps> = ({
 
           {/* Right side - Technician button and expand indicator */}
           <div className="flex flex-col items-center justify-center gap-2 ml-3">
-            {/* Botão de gerenciamento do técnico */}
-            <div className="flex-shrink-0">
-              {isTecnicoIndefinido
-                ? // Botão para adicionar técnico
-                  onAdicionarTecnico && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAdicionarTecnico(os.id_os);
-                      }}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 
-                            hover:bg-blue-100 rounded-md text-xs font-medium transition-colors 
-                            border border-blue-200 transform hover:scale-105 active:scale-95 cursor-pointer"
-                      title="Adicionar técnico"
-                    >
-                      <UserPlus className="w-3 h-3" />
-                      Adicionar
-                    </button>
-                  )
-                : // Botão para alterar técnico
-                  onAlterarTecnico && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAlterarTecnico(
-                          os.id_os,
-                          os.tecnico.id,
-                          os.tecnico.nome
-                        );
-                      }}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-600 
-                            hover:bg-gray-100 rounded-md text-xs font-medium transition-colors 
-                            border border-gray-200 transform hover:scale-105 active:scale-95 cursor-pointer"
-                      title="Alterar técnico"
-                    >
-                      <UserCog className="w-3 h-3" />
-                      Alterar
-                    </button>
-                  )}
-            </div>
-
             {/* Expand indicator */}
             <div className="flex items-center justify-center">
               {isExpanded ? (
