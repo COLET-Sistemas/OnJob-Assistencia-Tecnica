@@ -314,7 +314,7 @@ const OSActionModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, os }) => {
     const isDisabled = loadingAction !== null && loadingAction !== actionKey;
 
     let baseStyles =
-      "group relative flex items-center gap-3 p-4 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.98] bg-gray-50 border border-[#7c54bd] text-[#7c54bd] shadow-sm";
+      "group relative flex items-center gap-3 p-4 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.98] bg-gray-50 border border-[#7B54BE] text-[#7B54BE] shadow-sm";
 
     if (isDisabled) {
       baseStyles += " opacity-50 cursor-not-allowed";
@@ -388,7 +388,7 @@ const OSActionModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, os }) => {
                     ? "Digite uma descrição (obrigatória)..."
                     : "Digite uma descrição (opcional)..."
                 }
-                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#7c54bd] focus:border-transparent resize-none transition-colors placeholder:text-slate-500 ${
+                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#7B54BE] focus:border-transparent resize-none transition-colors placeholder:text-slate-500 ${
                   isDescricaoObrigatoria && !descricao.trim()
                     ? "border-red-300 bg-red-50"
                     : "border-gray-300"
@@ -414,7 +414,7 @@ const OSActionModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, os }) => {
               <button
                 onClick={handleConfirmWithDescription}
                 disabled={hasAnyLoading || !canConfirm()}
-                className="flex-1 px-4 py-3 bg-[#7c54bd] text-white rounded-xl text-sm font-medium hover:bg-[#6a4ba0] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3 bg-[#7B54BE] text-white rounded-xl text-sm font-medium hover:bg-[#6a4ba0] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingAction === selectedAction ? (
                   <>

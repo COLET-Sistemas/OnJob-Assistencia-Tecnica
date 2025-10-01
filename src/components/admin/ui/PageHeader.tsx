@@ -57,7 +57,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
                   <span className="font-medium">Filtros</span>
                   {(config.activeFiltersCount ?? 0) > 0 && (
                     <div className="absolute -top-1 -right-1 flex items-center justify-center">
-                      <span className="w-5 h-5 bg-[#F6C647] text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg">
+                      <span className="w-5 h-5 bg-[#FDAD15] text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg">
                         {config.activeFiltersCount}
                       </span>
                     </div>

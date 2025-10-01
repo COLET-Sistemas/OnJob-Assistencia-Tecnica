@@ -173,10 +173,10 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
           <div className="relative">
             <button className="p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer">
               <Bell
-                className="text-gray-700 hover:text-[#7C54BD] transition-colors cursor-pointer"
+                className="text-gray-700 hover:text-[#7B54BE] transition-colors cursor-pointer"
                 size={20}
               />
-              <span className="absolute -top-1 -right-1 bg-[#7C54BD] text-white font-bold text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+              <span className="absolute -top-1 -right-1 bg-[#7B54BE] text-white font-bold text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
                 3
               </span>
             </button>
@@ -185,7 +185,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
             href="/dashboard-panel"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-700 hover:text-[#7C54BD] transition-colors p-1.5 hover:bg-gray-200 rounded-full cursor-pointer"
+            className="text-gray-700 hover:text-[#7B54BE] transition-colors p-1.5 hover:bg-gray-200 rounded-full cursor-pointer"
             aria-label="Painel Dashboard"
             title="Painel Dashboard"
           >
@@ -193,7 +193,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
           </Link>
           <button
             onClick={toggleFullScreen}
-            className="text-gray-700 hover:text-[#7C54BD] transition-colors p-1.5 hover:bg-gray-200 rounded-full cursor-pointer"
+            className="text-gray-700 hover:text-[#7B54BE] transition-colors p-1.5 hover:bg-gray-200 rounded-full cursor-pointer"
             aria-label={isFullScreen ? "Sair da tela cheia" : "Tela cheia"}
             title={isFullScreen ? "Sair da tela cheia" : "Tela cheia"}
           >
@@ -207,7 +207,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
           {/* Seção do Usuário Melhorada */}
           <div className="flex items-center space-x-3 pl-4 border-l border-gray-300 relative">
             {/* Avatar do Usuário */}
-            <div className="w-10 h-10 bg-gradient-to-br from-[#7C54BD] to-[#9333ea] rounded-full flex items-center justify-center shadow-lg ring-1 ring-gray-200/50 transition-all duration-300 hover:shadow-xl">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#7B54BE] to-[#9333ea] rounded-full flex items-center justify-center shadow-lg ring-1 ring-gray-200/50 transition-all duration-300 hover:shadow-xl">
               <span className="text-white font-semibold text-base select-none flex items-center justify-center w-full h-full">
                 {nomeUsuario.charAt(0).toUpperCase()}
               </span>
@@ -220,13 +220,13 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
               }`}
               onClick={() => setDropdownOpen(!dropdownOpen)}
             >
-              <p className="text-md font-bold text-gray-800 mr-2 group-hover:text-[#7C54BD] transition-colors duration-200">
+              <p className="text-md font-bold text-gray-800 mr-2 group-hover:text-[#7B54BE] transition-colors duration-200">
                 {nomeUsuario}
               </p>
               <ChevronDown
                 size={16}
-                className={`text-gray-500 transition-all duration-300 ease-out group-hover:text-[#7C54BD] ${
-                  dropdownOpen ? "transform rotate-180 text-[#7C54BD]" : ""
+                className={`text-gray-500 transition-all duration-300 ease-out group-hover:text-[#7B54BE] ${
+                  dropdownOpen ? "transform rotate-180 text-[#7B54BE]" : ""
                 }`}
               />
             </div>
@@ -241,7 +241,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
             >
               <div className="py-1">
                 <button
-                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7C54BD] transition-all duration-150 cursor-pointer group"
+                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
                   onClick={() => {
                     setDropdownOpen(false);
                     window.location.href = "/admin/perfil";
@@ -249,13 +249,13 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
                 >
                   <UserCircle
                     size={18}
-                    className="mr-3 text-gray-500 group-hover:text-[#7C54BD] transition-colors duration-150"
+                    className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
                   />
                   <span className="font-medium">Perfil</span>
                 </button>
 
                 <button
-                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7C54BD] transition-all duration-150 cursor-pointer group"
+                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
                   onClick={() => {
                     setDropdownOpen(false);
                     window.location.href = "/admin/administracao/empresa";
@@ -263,13 +263,13 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
                 >
                   <ScrollText
                     size={18}
-                    className="mr-3 text-gray-500 group-hover:text-[#7C54BD] transition-colors duration-150"
+                    className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
                   />
                   <span className="font-medium">Licença de Uso</span>
                 </button>
 
                 <button
-                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7C54BD] transition-all duration-150 cursor-pointer group"
+                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
                   onClick={() => {
                     setDropdownOpen(false);
                     window.location.href = "/admin/administracao/usuarios";
@@ -277,7 +277,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
                 >
                   <UsersRound
                     size={18}
-                    className="mr-3 text-gray-500 group-hover:text-[#7C54BD] transition-colors duration-150"
+                    className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
                   />
                   <span className="font-medium">Gestão de Usuários</span>
                 </button>

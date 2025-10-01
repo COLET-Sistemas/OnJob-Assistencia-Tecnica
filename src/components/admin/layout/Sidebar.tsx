@@ -267,10 +267,10 @@ export default function Sidebar({ isOpen }: SidebarProps) {
             <div
               className={`p-2 rounded-lg transition-all duration-200 ${
                 isActive
-                  ? "bg-[#F6C647] text-[#7C54BD] shadow-md scale-105"
+                  ? "bg-[#FDAD15] text-[#7B54BE] shadow-md scale-105"
                   : hasActiveChild
-                  ? "bg-[#F6C647]/90 text-[#7C54BD]"
-                  : "bg-white/10 text-[#F6C647] group-hover:bg-[#F6C647]/80 group-hover:text-[#7C54BD]"
+                  ? "bg-[#FDAD15]/90 text-[#7B54BE]"
+                  : "bg-white/10 text-[#FDAD15] group-hover:bg-[#FDAD15]/80 group-hover:text-[#7B54BE]"
               }`}
             >
               <Icon size={18} strokeWidth={2.5} />
@@ -292,20 +292,20 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           <div
             className={`p-1.5 rounded-lg transition-all duration-200 ${
               isExpanded
-                ? "bg-[#F6C647]/20 rotate-0"
+                ? "bg-[#FDAD15]/20 rotate-0"
                 : "bg-white/5 group-hover:bg-white/10"
             }`}
           >
             {isExpanded ? (
               <ChevronDown
                 size={16}
-                className="text-[#F6C647]"
+                className="text-[#FDAD15]"
                 strokeWidth={2.5}
               />
             ) : (
               <ChevronRight
                 size={16}
-                className="text-[#F6C647]"
+                className="text-[#FDAD15]"
                 strokeWidth={2.5}
               />
             )}
@@ -320,8 +320,8 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           <div
             className={`absolute left-0 top-1 bottom-1 w-1 ${
               isActive
-                ? "bg-gradient-to-b from-[#F6C647] to-[#F6C647]/70"
-                : "bg-[#F6C647]/50"
+                ? "bg-gradient-to-b from-[#FDAD15] to-[#FDAD15]/70"
+                : "bg-[#FDAD15]/50"
             } rounded-r-full shadow-glow`}
           />
         )}
@@ -415,10 +415,10 @@ export default function Sidebar({ isOpen }: SidebarProps) {
       <div
         className={`${
           isOpen ? "w-72" : "w-0 md:w-20"
-        } transition-all duration-300 bg-gradient-to-b from-[#7C54BD] to-[#6A4399] shadow-2xl h-screen flex flex-col overflow-hidden`}
+        } transition-all duration-300 bg-gradient-to-b from-[#7B54BE] to-[#6A4399] shadow-2xl h-screen flex flex-col overflow-hidden`}
       >
         {/* Header com Logo */}
-        <div className="flex items-center justify-center h-20 border-b border-white/10 bg-[#7C54BD]/50 backdrop-blur-sm px-4">
+        <div className="flex items-center justify-center h-20 border-b border-white/10 bg-[#7B54BE]/50 backdrop-blur-sm px-4">
           {isOpen ? (
             <div className="relative w-full h-full flex items-center justify-center animate-slide-in">
               <Image
@@ -466,8 +466,8 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                         <div
                           className={`p-2.5 rounded-xl transition-all duration-200 ${
                             item.path && pathname.startsWith(item.path)
-                              ? "bg-[#F6C647] text-[#7C54BD] shadow-lg scale-110"
-                              : "bg-white/10 text-[#F6C647] hover:bg-[#F6C647]/80 hover:text-[#7C54BD] hover:scale-105"
+                              ? "bg-[#FDAD15] text-[#7B54BE] shadow-lg scale-110"
+                              : "bg-white/10 text-[#FDAD15] hover:bg-[#FDAD15]/80 hover:text-[#7B54BE] hover:scale-105"
                           }`}
                         >
                           {item.icon && (
@@ -478,17 +478,17 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                     </div>
                   )}
                   {/* Tooltip aprimorado */}
-                  <div className="absolute left-full ml-3 px-3 py-2 bg-[#7C54BD] border border-[#F6C647]/30 rounded-lg text-white text-xs font-medium invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 whitespace-nowrap z-50 shadow-xl backdrop-blur-sm pointer-events-none">
+                  <div className="absolute left-full ml-3 px-3 py-2 bg-[#7B54BE] border border-[#FDAD15]/30 rounded-lg text-white text-xs font-medium invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 whitespace-nowrap z-50 shadow-xl backdrop-blur-sm pointer-events-none">
                     {item.label}
-                    <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-[#7C54BD]"></div>
+                    <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-[#7B54BE]"></div>
                   </div>
 
                   {/* Submenu Popup para menu fechado */}
                   {item.submenu && (
-                    <div className="absolute left-full ml-3 top-0 bg-[#7C54BD] border border-[#F6C647]/30 rounded-xl text-white invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 shadow-2xl backdrop-blur-sm min-w-[200px]">
+                    <div className="absolute left-full ml-3 top-0 bg-[#7B54BE] border border-[#FDAD15]/30 rounded-xl text-white invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 shadow-2xl backdrop-blur-sm min-w-[200px]">
                       <div className="p-2">
                         <div className="px-3 py-2 border-b border-white/10 mb-1">
-                          <p className="text-sm font-semibold text-[#F6C647]">
+                          <p className="text-sm font-semibold text-[#FDAD15]">
                             {item.label}
                           </p>
                         </div>
@@ -499,7 +499,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                             className="flex items-center space-x-2 px-3 py-2.5 hover:bg-white/10 rounded-lg transition-colors"
                           >
                             {subItem.icon && (
-                              <div className="p-1.5 rounded-md bg-white/10 text-[#F6C647]">
+                              <div className="p-1.5 rounded-md bg-white/10 text-[#FDAD15]">
                                 <subItem.icon size={16} strokeWidth={2.5} />
                               </div>
                             )}
@@ -509,7 +509,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                           </Link>
                         ))}
                       </div>
-                      <div className="absolute right-full top-4 border-4 border-transparent border-r-[#7C54BD]"></div>
+                      <div className="absolute right-full top-4 border-4 border-transparent border-r-[#7B54BE]"></div>
                     </div>
                   )}
                 </div>
@@ -519,22 +519,22 @@ export default function Sidebar({ isOpen }: SidebarProps) {
 
         {/* Footer com informações de versão */}
         {isOpen && (
-          <div className="border-t border-white/10 p-4 mt-auto bg-[#7C54BD]/50 backdrop-blur-sm">
+          <div className="border-t border-white/10 p-4 mt-auto bg-[#7B54BE]/50 backdrop-blur-sm">
             <div className="flex flex-col space-y-1 bg-white/5 p-3 rounded-xl border border-white/10 backdrop-blur-sm">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#F6C647] to-[#F6C647]/80 rounded-xl flex items-center justify-center shadow-md">
-                  <Cog size={20} className="text-[#7C54BD]" strokeWidth={2.5} />
+                <div className="w-10 h-10 bg-gradient-to-br from-[#FDAD15] to-[#FDAD15]/80 rounded-xl flex items-center justify-center shadow-md">
+                  <Cog size={20} className="text-[#7B54BE]" strokeWidth={2.5} />
                 </div>
                 <div className="flex flex-col">
                   <p className="text-xs font-semibold text-white/90">
                     APP:{" "}
-                    <span className="text-[#F6C647]">
+                    <span className="text-[#FDAD15]">
                       {packageInfo.version}
                     </span>
                   </p>
                   <p className="text-xs font-semibold text-white/90">
                     API:{" "}
-                    <span className="text-[#F6C647]">
+                    <span className="text-[#FDAD15]">
                       {isMounted ? apiVersion : "..."}
                     </span>
                   </p>

@@ -79,7 +79,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   };
 
   const baseBtn =
-    "group relative flex items-center gap-3 p-4 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.98] bg-gray-50 border border-[#7c54bd] text-[#7c54bd] shadow-sm flex-1 justify-center";
+    "group relative flex items-center gap-3 p-4 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.98] bg-gray-50 border border-[#7B54BE] text-[#7B54BE] shadow-sm flex-1 justify-center";
   const disabledBtn = "opacity-50 cursor-not-allowed";
   const hoverBtn = "hover:bg-gray-100";
 

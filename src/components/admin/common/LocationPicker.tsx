@@ -298,14 +298,14 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col border-t-4 border-[#7C54BD]">
-        <div className="p-5 flex justify-between items-center bg-gradient-to-r from-[#7C54BD]/10 to-white">
-          <h2 className="text-xl font-semibold text-[#7C54BD]">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col border-t-4 border-[#7B54BE]">
+        <div className="p-5 flex justify-between items-center bg-gradient-to-r from-[#7B54BE]/10 to-white">
+          <h2 className="text-xl font-semibold text-[#7B54BE]">
             Ajustar Localização
           </h2>
           <button
             onClick={onClose}
-            className="text-[#7C54BD] hover:text-[#6743a1] bg-white rounded-full p-1 shadow-sm transition-all hover:shadow cursor-pointer"
+            className="text-[#7B54BE] hover:text-[#6743a1] bg-white rounded-full p-1 shadow-sm transition-all hover:shadow cursor-pointer"
             aria-label="Fechar"
           >
             <svg
@@ -327,7 +327,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
         <div className="p-6 flex-1 flex flex-col min-h-[550px]">
           {/* Instruction Banner - Now outside of the map container */}
-          <div className="bg-[#7C54BD] p-3 rounded-lg shadow-lg mb-4 flex items-center justify-center">
+          <div className="bg-[#7B54BE] p-3 rounded-lg shadow-lg mb-4 flex items-center justify-center">
             <span className="text-sm text-white font-medium flex items-center gap-2">
               <svg
                 className="w-4 h-4"
@@ -369,7 +369,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
           {/* Coordinates Display - Now outside of the map container */}
           <div className="mt-4 bg-white p-4 rounded-lg shadow-lg flex flex-col md:flex-row gap-6 border-l-4 border-[#F6C647]">
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-[#7C54BD]">
+              <label className="block text-sm font-semibold text-[#7B54BE]">
                 Latitude
               </label>
               <div className="mt-1 font-mono bg-gray-50 p-3 rounded border border-gray-100 text-gray-800 shadow-inner">
@@ -377,7 +377,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
               </div>
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-[#7C54BD]">
+              <label className="block text-sm font-semibold text-[#7B54BE]">
                 Longitude
               </label>
               <div className="mt-1 font-mono bg-gray-50 p-3 rounded border border-gray-100 text-gray-800 shadow-inner">
@@ -390,13 +390,13 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         <div className="p-6 border-t border-gray-100 flex justify-between bg-gradient-to-b from-white to-gray-50">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 bg-white text-[#7C54BD] border border-[#7C54BD] rounded-md hover:bg-[#7C54BD]/5 transition-colors font-medium shadow-sm cursor-pointer"
+            className="px-6 py-2.5 bg-white text-[#7B54BE] border border-[#7B54BE] rounded-md hover:bg-[#7B54BE]/5 transition-colors font-medium shadow-sm cursor-pointer"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
-            className="px-6 py-2.5 bg-gradient-to-r from-[#7C54BD] to-[#6743a1] text-white rounded-md hover:shadow-lg transition-all flex items-center gap-2 font-medium shadow-sm disabled:opacity-70 disabled:hover:shadow-none cursor-pointer"
+            className="px-6 py-2.5 bg-gradient-to-r from-[#7B54BE] to-[#6743a1] text-white rounded-md hover:shadow-lg transition-all flex items-center gap-2 font-medium shadow-sm disabled:opacity-70 disabled:hover:shadow-none cursor-pointer"
             disabled={!currentLat || !currentLng}
           >
             <svg

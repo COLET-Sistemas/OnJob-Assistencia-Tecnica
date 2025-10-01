@@ -27,10 +27,10 @@ const colorMap: Record<
     { outer: string; inner: string; dot: string; text: string }
 > = {
     primary: {
-        outer: "border-t-[#75FABD]",
-        inner: "border-t-[#7C54BD]",
-        dot: "bg-[#75FABD]",
-        text: "text-[#7C54BD]",
+        outer: "border-t-[#75F9BD]",
+        inner: "border-t-[#7B54BE]",
+        dot: "bg-[#75F9BD]",
+        text: "text-[#7B54BE]",
     },
 };
 

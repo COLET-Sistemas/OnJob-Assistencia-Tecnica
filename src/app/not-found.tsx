@@ -31,7 +31,7 @@ const NotFound = () => {
           width: "100px",
           height: "100px",
           borderRadius: "50%",
-          background: "linear-gradient(45deg, #7C54BD20, #F6C64720)",
+          background: "linear-gradient(45deg, #7B54BE20, #F6C64720)",
           filter: "blur(20px)",
           animation: "float 6s ease-in-out infinite",
         }}
@@ -44,7 +44,7 @@ const NotFound = () => {
           width: "150px",
           height: "150px",
           borderRadius: "30%",
-          background: "linear-gradient(45deg, #75FABD20, #7C54BD20)",
+          background: "linear-gradient(45deg, #75FABD20, #7B54BE20)",
           filter: "blur(25px)",
           animation: "float 8s ease-in-out infinite reverse",
         }}
@@ -73,7 +73,7 @@ const NotFound = () => {
             left: 0,
             right: 0,
             height: "2px",
-            background: "linear-gradient(90deg, #7C54BD, #F6C647, #75FABD)",
+            background: "linear-gradient(90deg, #7B54BE, #F6C647, #75FABD)",
           }}
         />
 
@@ -84,7 +84,7 @@ const NotFound = () => {
               fontSize: "6rem",
               fontWeight: 800,
               margin: 0,
-              background: "linear-gradient(135deg, #7C54BD 0%, #5a3d99 100%)",
+              background: "linear-gradient(135deg, #7B54BE 0%, #5a3d99 100%)",
               backgroundClip: "text",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -152,7 +152,7 @@ const NotFound = () => {
               display: "inline-flex",
               alignItems: "center",
               gap: "0.5rem",
-              background: "linear-gradient(135deg, #7C54BD 0%, #5a3d99 100%)",
+              background: "linear-gradient(135deg, #7B54BE 0%, #5a3d99 100%)",
               color: "#fff",
               fontWeight: 600,
               padding: "0.875rem 2rem",
@@ -187,24 +187,24 @@ const NotFound = () => {
               alignItems: "center",
               gap: "0.5rem",
               background: "transparent",
-              color: "#7C54BD",
+              color: "#7B54BE",
               fontWeight: 600,
               padding: "0.875rem 2rem",
               borderRadius: "12px",
               fontSize: "1rem",
-              border: "2px solid #7C54BD",
+              border: "2px solid #7B54BE",
               cursor: "pointer",
               transition: "all 0.3s ease",
             }}
             onMouseOver={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "#7C54BD";
+              (e.currentTarget as HTMLElement).style.background = "#7B54BE";
               (e.currentTarget as HTMLElement).style.color = "#fff";
               (e.currentTarget as HTMLElement).style.transform =
                 "translateY(-2px)";
             }}
             onMouseOut={(e) => {
               (e.currentTarget as HTMLElement).style.background = "transparent";
-              (e.currentTarget as HTMLElement).style.color = "#7C54BD";
+              (e.currentTarget as HTMLElement).style.color = "#7B54BE";
               (e.currentTarget as HTMLElement).style.transform =
                 "translateY(0)";
             }}
@@ -231,7 +231,7 @@ const NotFound = () => {
             width: "8px",
             height: "8px",
             borderRadius: "50%",
-            background: "linear-gradient(45deg, #7C54BD, #F6C647)",
+            background: "linear-gradient(45deg, #7B54BE, #F6C647)",
           }}
         />
         OnJob Assistência Técnica

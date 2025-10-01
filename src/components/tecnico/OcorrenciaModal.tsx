@@ -48,7 +48,7 @@ const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
         <input
           type="text"
           className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-4 
-             focus:outline-none focus:ring-2 text-slate-600 focus:ring-[#7c54bd] 
+             focus:outline-none focus:ring-2 text-slate-600 focus:ring-[#7B54BE] 
              placeholder-slate-400"
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
@@ -66,7 +66,7 @@ const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
             Cancelar
           </button>
           <button
-            className="flex-1 px-4 py-2 rounded-lg bg-[#7c54bd] text-white font-medium hover:bg-[#6841b1] transition-colors"
+            className="flex-1 px-4 py-2 rounded-lg bg-[#7B54BE] text-white font-medium hover:bg-[#6841b1] transition-colors"
             onClick={handleSave}
             disabled={loading}
           >
