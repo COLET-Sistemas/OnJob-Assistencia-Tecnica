@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { LoadingSpinner as Loading } from "@/components/LoadingPersonalizado";
@@ -23,14 +23,20 @@ import { MotivoPendencia } from "@/types/admin/cadastro/motivos_pendencia";
 import { Maquina } from "@/types/admin/cadastro/maquinas";
 import { Usuario } from "@/types/admin/cadastro/usuarios";
 import { OptionType } from "@/components/admin/form/CustomSelect";
+import useDebouncedCallback from "@/hooks/useDebouncedCallback";
 
 // Componentes locais
 import CustomContatoForm from "./components/CustomContatoForm";
 import FormActions from "./components/FormActions";
 import FormContainer from "./components/FormContainer";
+// Importando componentes personalizados
+import { contatoSelectComponents } from "./components/ContatoItem";
+import { clienteSelectComponents } from "./components/ClienteItem";
 
 interface ClienteOption extends OptionType {
   value: number;
+  cidade?: string;
+  uf?: string;
 }
 
 interface MaquinaOption extends MachineOptionType {
@@ -45,10 +51,11 @@ interface TecnicoOption extends OptionType {
   value: number;
 }
 
-interface ContatoOption extends OptionType {
+// Defining our option type for this component
+interface ContatoOption {
   value: number;
+  label: string;
   contato: ClienteContato;
-  isCustom?: boolean;
 }
 
 interface FormaAberturaOption extends OptionType {
@@ -101,10 +108,16 @@ const NovaOrdemServico = () => {
   );
   const [loadingContatos, setLoadingContatos] = useState(false);
   const [customContatoNome, setCustomContatoNome] = useState("");
+  const [customContatoNomeCompleto, setCustomContatoNomeCompleto] =
+    useState("");
+  const [customContatoCargo, setCustomContatoCargo] = useState("");
   const [customContatoEmail, setCustomContatoEmail] = useState("");
   const [customContatoTelefone, setCustomContatoTelefone] = useState("");
   const [customContatoWhatsapp, setCustomContatoWhatsapp] = useState("");
+  const [recebeAvisoOS, setRecebeAvisoOS] = useState(false);
   const [useCustomContato, setUseCustomContato] = useState(false);
+  const [saveToClient, setSaveToClient] = useState(false);
+  const [savedContact, setSavedContact] = useState<ClienteContato | null>(null);
   const [tecnicosOptions, setTecnicosOptions] = useState<TecnicoOption[]>([]);
   const [selectedTecnico, setSelectedTecnico] = useState<TecnicoOption | null>(
     null
@@ -127,9 +140,6 @@ const NovaOrdemServico = () => {
   // Refs para controlar chamadas à API
   const motivosPendenciaLoaded = useRef(false);
   const tecnicosLoaded = useRef(false);
-  // Refs para controlar timeouts de debounce
-  const clienteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const maquinaTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Efeito para focar no campo de cliente quando a página carregar
   useEffect(() => {
@@ -145,18 +155,104 @@ const NovaOrdemServico = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Adaptadores de tipo para os handlers de mudança de select
-  const handleClienteSelectChange = (option: OptionType | null) => {
-    handleClienteChange(option as ClienteOption | null);
-  };
+  // Define handleClienteChange before it's referenced
+  const handleClienteChange = useCallback(
+    async (selectedOption: ClienteOption | null) => {
+      setSelectedCliente(selectedOption);
+      setSelectedContato(null);
+      setSelectedMaquina(null);
+      setMaquinaInput("");
 
-  const handleContatoSelectChange = (option: OptionType | null) => {
+      if (selectedOption) {
+        setLoadingMaquinas(true);
+        try {
+          const maquinasResponse = await maquinasService.getByClienteId(
+            selectedOption.value,
+            15
+          );
+
+          const machineOptions = maquinasResponse.dados.map(
+            (maquina: Maquina) => {
+              const isInWarranty =
+                maquina.data_final_garantia &&
+                new Date(maquina.data_final_garantia) > new Date();
+
+              return {
+                value: maquina.id || 0,
+                label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
+                isInWarranty,
+                data_final_garantia: maquina.data_final_garantia || "",
+              } as MaquinaOption;
+            }
+          );
+
+          machineOptions.push({
+            value: -1,
+            label: "Buscar outra máquina...",
+            isInWarranty: false,
+            data_final_garantia: "",
+          } as MaquinaOption);
+
+          setMaquinaOptions(machineOptions as MaquinaOption[]);
+        } catch (error) {
+          console.error("Erro ao carregar máquinas:", error);
+        } finally {
+          setLoadingMaquinas(false);
+        }
+
+        // Carregar contatos do cliente
+        setLoadingContatos(true);
+        try {
+          const response = await clientesService.getContacts(
+            selectedOption.value
+          );
+          // Agora estamos utilizando response.contatos que é um array de contatos
+          const options = response.contatos.map((contato: ClienteContato) => ({
+            value: contato.id,
+            label: `${contato.nome || contato.nome_completo || "Sem nome"}${
+              contato.cargo ? ` - ${contato.cargo}` : ""
+            }`,
+            contato: contato,
+          }));
+
+          // Adiciona a opção para inserir um contato personalizado
+          const customOption = {
+            value: -1, // This is explicitly a number
+            label: "Inserir contato não cadastrado",
+            contato: { id: -1, telefone: "", email: "", situacao: "A" },
+            // isCustom removed since it's not in our interface
+          };
+          options.push(customOption);
+
+          setContatoOptions(options);
+        } catch (error) {
+          console.error("Erro ao carregar contatos:", error);
+        } finally {
+          setLoadingContatos(false);
+        }
+      } else {
+        setMaquinaOptions([]);
+        setContatoOptions([]);
+      }
+    },
+    []
+  );
+
+  // Adaptadores de tipo para os handlers de mudança de select (memoizados)
+  const handleClienteSelectChange = useCallback(
+    (option: OptionType | null) => {
+      handleClienteChange(option as ClienteOption | null);
+    },
+    [handleClienteChange]
+  );
+
+  const handleContatoSelectChange = useCallback((option: OptionType | null) => {
     const contatoOption = option as ContatoOption | null;
     setSelectedContato(contatoOption);
-    setUseCustomContato(contatoOption?.isCustom || false);
-  };
+    setUseCustomContato(contatoOption?.contato.id === -1 || false);
+  }, []);
 
-  const handleMaquinaSelectChange = (option: OptionType | null) => {
+  const handleMaquinaSelectChange = useCallback((option: OptionType | null) => {
     const maquinaOption = option as MaquinaOption | null;
     if (maquinaOption && maquinaOption.value === -1) {
       // Usuário selecionou "Buscar outra máquina..."
@@ -165,15 +261,26 @@ const NovaOrdemServico = () => {
     } else {
       setSelectedMaquina(maquinaOption);
     }
-  };
+  }, []);
 
-  const handleMotivoPendenciaSelectChange = (option: OptionType | null) => {
-    setSelectedMotivoPendencia(option as MotivoPendenciaOption | null);
-  };
+  const handleMotivoPendenciaSelectChange = useCallback(
+    (option: OptionType | null) => {
+      setSelectedMotivoPendencia(option as MotivoPendenciaOption | null);
+    },
+    []
+  );
 
-  const handleTecnicoSelectChange = (option: OptionType | null) => {
+  // Handler para motivo de atendimento
+  const handleMotivoAtendimentoSelectChange = useCallback(
+    (option: OptionType | null) => {
+      setSelectedMotivoAtendimento(option as MotivoPendenciaOption | null);
+    },
+    []
+  );
+
+  const handleTecnicoSelectChange = useCallback((option: OptionType | null) => {
     setSelectedTecnico(option as TecnicoOption | null);
-  };
+  }, []);
 
   // Carregar dados iniciais (motivos de pendência, técnicos e regiões)
   useEffect(() => {
@@ -244,16 +351,10 @@ const NovaOrdemServico = () => {
     };
 
     fetchInitialData();
-
-    // Cleanup function para limpar os timeouts quando o componente é desmontado
-    return () => {
-      if (clienteTimeoutRef.current) clearTimeout(clienteTimeoutRef.current);
-      if (maquinaTimeoutRef.current) clearTimeout(maquinaTimeoutRef.current);
-    };
   }, []);
 
-  // Função assíncrona para buscar clientes
-  const searchClientes = async (term: string) => {
+  // Função assíncrona para buscar clientes (memoizada)
+  const searchClientes = useCallback(async (term: string) => {
     if (term.length < 3) return;
 
     try {
@@ -264,6 +365,8 @@ const NovaOrdemServico = () => {
       const options = response.dados.map((cliente: Cliente) => ({
         value: cliente.id_cliente || cliente.id || 0,
         label: `${cliente.razao_social} (${cliente.codigo_erp || "-"})`,
+        cidade: cliente.cidade,
+        uf: cliente.uf,
       }));
       setClienteOptions(options);
     } catch (error) {
@@ -271,30 +374,34 @@ const NovaOrdemServico = () => {
     } finally {
       setIsSearchingClientes(false);
     }
-  };
+  }, []);
 
-  // Handler para o input de cliente com debounce
-  const handleClienteInputChange = (inputValue: string) => {
-    setClienteInput(inputValue);
-
-    // Limpa o timeout anterior se estiver pendente
-    if (clienteTimeoutRef.current) {
-      clearTimeout(clienteTimeoutRef.current);
-      clienteTimeoutRef.current = null;
-    }
-
-    if (inputValue.length >= 3) {
-      setIsSearchingClientes(true);
-      clienteTimeoutRef.current = setTimeout(() => {
-        searchClientes(inputValue);
-      }, 700);
+  // Handler para o input de cliente com debounce usando hook customizado
+  const debouncedSearchClientes = useDebouncedCallback((term: string) => {
+    if (term.length >= 3) {
+      searchClientes(term);
     } else {
       setClienteOptions([]);
       setIsSearchingClientes(false);
     }
-  };
+  }, 500);
 
-  const searchMaquinas = async (term: string) => {
+  const handleClienteInputChange = useCallback(
+    (inputValue: string) => {
+      setClienteInput(inputValue);
+
+      if (inputValue.length >= 3) {
+        setIsSearchingClientes(true);
+        debouncedSearchClientes(inputValue);
+      } else {
+        setClienteOptions([]);
+        setIsSearchingClientes(false);
+      }
+    },
+    [debouncedSearchClientes]
+  );
+
+  const searchMaquinas = useCallback(async (term: string) => {
     if (term.length < 3) return;
 
     try {
@@ -327,107 +434,31 @@ const NovaOrdemServico = () => {
     } finally {
       setIsSearchingMaquinas(false);
     }
-  };
+  }, []);
 
-  // Handler para o input de máquina com debounce
-  const handleMaquinaInputChange = (inputValue: string) => {
-    setMaquinaInput(inputValue);
-
-    // Limpa o timeout anterior se estiver pendente
-    if (maquinaTimeoutRef.current) {
-      clearTimeout(maquinaTimeoutRef.current);
-      maquinaTimeoutRef.current = null;
+  // Usando o hook de debounce para otimizar a busca de máquinas
+  const debouncedSearchMaquinas = useDebouncedCallback((term: string) => {
+    if (term.length >= 3) {
+      searchMaquinas(term);
     }
+  }, 500);
 
-    if (inputValue.length >= 3) {
-      setIsSearchingMaquinas(true);
+  // Handler para o input de máquina com debounce otimizado
+  const handleMaquinaInputChange = useCallback(
+    (inputValue: string) => {
+      setMaquinaInput(inputValue);
 
-      maquinaTimeoutRef.current = setTimeout(() => {
-        searchMaquinas(inputValue);
-      }, 700);
-    } else if (inputValue.length < 3) {
-      setIsSearchingMaquinas(false);
-    }
-  };
-
-  const handleClienteChange = async (selectedOption: ClienteOption | null) => {
-    setSelectedCliente(selectedOption);
-    setSelectedContato(null);
-    setSelectedMaquina(null);
-    setMaquinaInput("");
-
-    if (selectedOption) {
-      setLoadingMaquinas(true);
-      try {
-        const maquinasResponse = await maquinasService.getByClienteId(
-          selectedOption.value,
-          15
-        );
-
-        const machineOptions = maquinasResponse.dados.map(
-          (maquina: Maquina) => {
-            const isInWarranty =
-              maquina.data_final_garantia &&
-              new Date(maquina.data_final_garantia) > new Date();
-
-            return {
-              value: maquina.id || 0,
-              label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
-              isInWarranty,
-              data_final_garantia: maquina.data_final_garantia || "",
-            } as MaquinaOption;
-          }
-        );
-
-        machineOptions.push({
-          value: -1,
-          label: "Buscar outra máquina...",
-          isInWarranty: false,
-          data_final_garantia: "",
-        } as MaquinaOption);
-
-        setMaquinaOptions(machineOptions as MaquinaOption[]);
-      } catch (error) {
-        console.error("Erro ao carregar máquinas:", error);
-      } finally {
-        setLoadingMaquinas(false);
+      if (inputValue.length >= 3) {
+        setIsSearchingMaquinas(true);
+        debouncedSearchMaquinas(inputValue);
+      } else {
+        setIsSearchingMaquinas(false);
       }
+    },
+    [debouncedSearchMaquinas]
+  );
 
-      // Carregar contatos do cliente
-      setLoadingContatos(true);
-      try {
-        const response = await clientesService.getContacts(
-          selectedOption.value
-        );
-        // Agora estamos utilizando response.contatos que é um array de contatos
-        const options = response.contatos.map((contato: ClienteContato) => ({
-          value: contato.id,
-          label: `${contato.nome || contato.nome_completo || "Sem nome"}${
-            contato.cargo ? ` - ${contato.cargo}` : ""
-          }`,
-          contato: contato,
-        }));
-
-        // Adiciona a opção para inserir um contato personalizado
-        const customOption: ContatoOption = {
-          value: -1,
-          label: "Inserir contato não cadastrado",
-          contato: { id: -1, telefone: "", email: "", situacao: "A" },
-          isCustom: true,
-        };
-        options.push(customOption);
-
-        setContatoOptions(options);
-      } catch (error) {
-        console.error("Erro ao carregar contatos:", error);
-      } finally {
-        setLoadingContatos(false);
-      }
-    } else {
-      setMaquinaOptions([]);
-      setContatoOptions([]);
-    }
-  };
+  // This function has been moved above to line ~155
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -467,7 +498,7 @@ const NovaOrdemServico = () => {
     // Validar contato
     if (!selectedContato) {
       validationErrors.contato = true;
-    } else if (selectedContato.isCustom && !customContatoNome.trim()) {
+    } else if (selectedContato.contato.id === -1 && !customContatoNome.trim()) {
       validationErrors.customContatoNome = true;
       setShowNameError(true);
     }
@@ -533,21 +564,34 @@ const NovaOrdemServico = () => {
 
       // Adicionar informações de contato com os novos campos
       if (selectedContato) {
-        if (selectedContato.isCustom) {
+        if (selectedContato.contato.id === -1) {
           if (customContatoNome.trim()) {
-            osData.nome_contato_abertura = customContatoNome.trim();
+            // Se já temos um contato salvo, usar ele
+            if (savedContact) {
+              osData.id_contato = savedContact.id;
+              osData.id_contato_abertura = savedContact.id;
+              osData.nome_contato_abertura =
+                savedContact.nome || savedContact.nome_completo || "";
+              osData.telefone_contato_abertura = savedContact.telefone || "";
+              osData.whatsapp_contato_abertura =
+                savedContact.whatsapp || savedContact.telefone || "";
+              osData.email_contato_abertura = savedContact.email || "";
+            } else {
+              // Comportamento original - apenas para essa OS
+              osData.nome_contato_abertura = customContatoNome.trim();
 
-            // Adicionar os novos campos personalizados
-            if (customContatoEmail.trim()) {
-              osData.email_contato_abertura = customContatoEmail.trim();
-            }
+              // Adicionar os novos campos personalizados
+              if (customContatoEmail.trim()) {
+                osData.email_contato_abertura = customContatoEmail.trim();
+              }
 
-            if (customContatoTelefone.trim()) {
-              osData.telefone_contato_abertura = customContatoTelefone.trim();
-            }
+              if (customContatoTelefone.trim()) {
+                osData.telefone_contato_abertura = customContatoTelefone.trim();
+              }
 
-            if (customContatoWhatsapp.trim()) {
-              osData.whatsapp_contato_abertura = customContatoWhatsapp.trim();
+              if (customContatoWhatsapp.trim()) {
+                osData.whatsapp_contato_abertura = customContatoWhatsapp.trim();
+              }
             }
           }
         } else {
@@ -619,7 +663,7 @@ const NovaOrdemServico = () => {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.3, type: "spring", stiffness: 100 }}
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
           {/* Cliente */}
@@ -645,6 +689,8 @@ const NovaOrdemServico = () => {
                   ? "Digite pelo menos 3 caracteres para buscar..."
                   : "Nenhum cliente encontrado"
               }
+              // @ts-expect-error - Type incompatibility between ClienteOptionType and OptionType components
+              components={clienteSelectComponents}
             />
           </motion.div>
 
@@ -674,6 +720,8 @@ const NovaOrdemServico = () => {
               noOptionsMessageFn={() =>
                 "Nenhum contato encontrado para este cliente"
               }
+              // @ts-expect-error - Type incompatibility between ContatoOption and OptionType components
+              components={contatoSelectComponents}
               isDisabled={!selectedCliente}
             />
           </motion.div>
@@ -687,13 +735,86 @@ const NovaOrdemServico = () => {
               setCustomContatoNome(value);
               if (value.trim()) setShowNameError(false);
             }}
+            customContatoNomeCompleto={customContatoNomeCompleto}
+            setCustomContatoNomeCompleto={setCustomContatoNomeCompleto}
+            customContatoCargo={customContatoCargo}
+            setCustomContatoCargo={setCustomContatoCargo}
             customContatoEmail={customContatoEmail}
             setCustomContatoEmail={setCustomContatoEmail}
             customContatoTelefone={customContatoTelefone}
             setCustomContatoTelefone={setCustomContatoTelefone}
             customContatoWhatsapp={customContatoWhatsapp}
             setCustomContatoWhatsapp={setCustomContatoWhatsapp}
+            recebeAvisoOS={recebeAvisoOS}
+            setRecebeAvisoOS={setRecebeAvisoOS}
             showNameError={showNameError}
+            saveToClient={saveToClient}
+            setSaveToClient={setSaveToClient}
+            clienteId={selectedCliente?.value}
+            onContactSaved={(contact) => {
+              setSavedContact(contact);
+              // Atualiza a lista de contatos após salvar um novo
+              if (selectedCliente) {
+                setLoadingContatos(true);
+                clientesService
+                  .getContacts(selectedCliente.value)
+                  .then((response) => {
+                    const options = response.contatos.map(
+                      (contato: ClienteContato) => ({
+                        value: contato.id,
+                        label: `${
+                          contato.nome || contato.nome_completo || "Sem nome"
+                        }${contato.cargo ? ` - ${contato.cargo}` : ""}`,
+                        contato: contato,
+                      })
+                    );
+
+                    // Adiciona a opção para inserir um contato personalizado
+                    options.push({
+                      value: -1, // This is explicitly a number
+                      label: "Inserir contato não cadastrado",
+                      contato: {
+                        id: -1,
+                        telefone: "",
+                        email: "",
+                        situacao: "A",
+                      },
+                      // isCustom removed since it's not in our interface
+                    });
+
+                    setContatoOptions(options);
+
+                    // Seleciona automaticamente o contato recém-criado
+                    const novoContatoOption = options.find(
+                      (option) => option.value === contact.id
+                    );
+                    if (novoContatoOption) {
+                      setSelectedContato(novoContatoOption);
+                      setUseCustomContato(false);
+
+                      // Limpa os campos de formulário após salvar com sucesso
+                      setCustomContatoNome("");
+                      setCustomContatoNomeCompleto("");
+                      setCustomContatoCargo("");
+                      setCustomContatoEmail("");
+                      setCustomContatoTelefone("");
+                      setCustomContatoWhatsapp("");
+                      setRecebeAvisoOS(false);
+
+                      // Desativar a opção de salvar contato, já que o contato foi salvo
+                      if (setSaveToClient) {
+                        setSaveToClient(false);
+                      }
+                    }
+                  })
+                  .catch((error) => {
+                    console.error("Erro ao atualizar contatos:", error);
+                  })
+                  .finally(() => {
+                    setLoadingContatos(false);
+                  });
+              }
+            }}
           />
         )}
 
@@ -701,7 +822,12 @@ const NovaOrdemServico = () => {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.05 }}
+          transition={{
+            duration: 0.3,
+            delay: 0.05,
+            type: "spring",
+            stiffness: 100,
+          }}
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
           {/* Máquina */}
@@ -747,9 +873,7 @@ const NovaOrdemServico = () => {
               options={motivosAtendimentoOptions}
               value={selectedMotivoAtendimento}
               onChange={(option) => {
-                setSelectedMotivoAtendimento(
-                  option as MotivoPendenciaOption | null
-                );
+                handleMotivoAtendimentoSelectChange(option);
                 if (option)
                   setErrors((prev) => ({ ...prev, motivoAtendimento: false }));
               }}
@@ -767,7 +891,12 @@ const NovaOrdemServico = () => {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
+          transition={{
+            duration: 0.3,
+            delay: 0.1,
+            type: "spring",
+            stiffness: 100,
+          }}
           className="grid grid-cols-1 md:grid-cols-4 gap-6"
         >
           {/* Técnico */}
@@ -840,7 +969,12 @@ const NovaOrdemServico = () => {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.15 }}
+          transition={{
+            duration: 0.3,
+            delay: 0.15,
+            type: "spring",
+            stiffness: 100,
+          }}
         >
           <div className="relative">
             <TextAreaField

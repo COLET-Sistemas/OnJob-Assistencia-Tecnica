@@ -190,10 +190,28 @@ const apiRequest = async <T>(
       }
     }
 
+    // No content (204) ou outros status de sucesso que podem não ter corpo
     if (response.status === 204) {
       return {} as T;
     }
 
+    // Para status 201 (Created), tente obter o corpo da resposta ou retorne um objeto de sucesso padrão
+    if (response.status === 201) {
+      try {
+        // Tenta obter o corpo como JSON
+        const jsonData = await response.json();
+        return jsonData as T;
+      } catch {
+        // Se não conseguir fazer parse do JSON (talvez não tenha corpo),
+        // retorna um objeto com mensagem de sucesso genérica
+        return {
+          sucesso: true,
+          mensagem: "Operação realizada com sucesso.",
+        } as unknown as T;
+      }
+    }
+
+    // Outros status de sucesso com corpo JSON
     return response.json() as Promise<T>;
   } catch (error) {
     console.error("Erro na API:", error);
