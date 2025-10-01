@@ -154,7 +154,7 @@ const CadastroMotivosPendencia = () => {
   return (
     <>
       <PageHeader
-        title="Lista de Motivos de Pendências"
+        title="Lista de Motivos de Pendência"
         config={{
           type: "list",
           itemCount: itemCount,

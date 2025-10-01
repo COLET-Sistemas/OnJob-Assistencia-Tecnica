@@ -478,16 +478,14 @@ export default function LoginPage() {
 
           {/* Desktop Header */}
           <div className="hidden lg:block text-center mb-10">
-            <div className="w-28 h-28 rounded-3xl flex items-center justify-center mx-auto mb-6 bg-gradient-to-br from-[#7B54BE] to-[#553499] shadow-2xl">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#abc7e0] to-[#89b3d4] flex items-center justify-center shadow-inner">
-                <Image
-                  src="/images/logo.png"
-                  alt="OnJob Logo"
-                  width={56}
-                  height={56}
-                  className="h-14 w-14 object-contain"
-                />
-              </div>
+            <div className="w-30 h-30 rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <Image
+                src="/images/logo.png"
+                alt="OnJob Logo"
+                width={56}
+                height={56}
+                className="h-26 w-26 object-contain"
+              />
             </div>
             <h2 className="text-3xl font-bold mb-3 text-gray-800">
               Bem-vindo de volta

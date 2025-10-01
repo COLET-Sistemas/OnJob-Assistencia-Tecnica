@@ -112,13 +112,13 @@ const menuItems: MenuItem[] = [
       },
       {
         key: "motivos_atendimentos",
-        label: "Motivos de Atendimentos",
+        label: "Motivos de Atendimento",
         icon: ClipboardList,
         path: "/admin/cadastro/motivos_atendimentos",
       },
       {
         key: "motivos_pendencias",
-        label: "Motivos de Pendências",
+        label: "Motivos de Pendência",
         icon: AlertTriangle,
         path: "/admin/cadastro/motivos_pendencias",
       },

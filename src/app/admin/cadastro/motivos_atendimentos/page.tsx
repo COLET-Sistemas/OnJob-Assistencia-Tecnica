@@ -163,7 +163,7 @@ const CadastroMotivosAtendimento = () => {
   return (
     <>
       <PageHeader
-        title="Lista de Motivos de Atendimentos"
+        title="Lista de Motivos de Atendimento"
         config={{
           type: "list",
           itemCount: itemCount,
