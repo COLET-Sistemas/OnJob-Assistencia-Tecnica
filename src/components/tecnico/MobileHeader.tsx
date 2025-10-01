@@ -6,6 +6,7 @@ type MenuOption = {
 };
 import React, { useState, useRef, useEffect } from "react";
 import { Menu, Plus, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface MobileHeaderProps {
   title: string;
@@ -20,6 +21,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // Fecha o menu ao clicar fora
   useEffect(() => {
@@ -39,24 +41,19 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   }, [menuOpen]);
 
   // Funções de ação do menu
-  const handlePerfil = () => {
-    setMenuOpen(false);
-    window.location.href = "/tecnico/perfil";
-  };
   const handleSobre = () => {
     setMenuOpen(false);
-    window.location.href = "/tecnico/sobre";
+    router.push("/tecnico/sobre");
   };
   const handleSair = () => {
     setMenuOpen(false);
     if (typeof window !== "undefined") {
       localStorage.clear();
-      window.location.href = "/";
+      router.push("/");
     }
   };
 
   const menuOptions: MenuOption[] = [
-    { label: "Perfil", onClick: handlePerfil },
     { label: "Sobre", onClick: handleSobre },
     { label: "Sair", onClick: handleSair },
   ];
@@ -75,10 +72,15 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
           </button>
         ) : (
           <button
-            onClick={onMenuClick}
+            onClick={() => {
+              if (onMenuClick) {
+                onMenuClick();
+              } else {
+                router.back();
+              }
+            }}
             className="p-2 hover:bg-[#7B54BE] rounded-lg transition-colors"
             aria-label="Voltar"
-            style={{ visibility: onMenuClick ? "visible" : "hidden" }}
           >
             <ArrowLeft className="w-6 h-6" />
           </button>

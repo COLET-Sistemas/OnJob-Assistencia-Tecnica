@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import packageInfo from "../../../../package.json";
 
@@ -24,8 +25,14 @@ export default function SobrePage() {
         <div className="bg-white rounded-3xl p-8 w-full border border-gray-100">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-              <span className="text-white font-bold text-xl">OJ</span>
+            <div className="w-18 h-18 bg-white rounded-2xl mx-auto mb-4 flex items-center justify-center p-1">
+              <Image
+                src="/images/logo.png"
+                alt="OnJob Logo"
+                width={56}
+                height={56}
+                className="object-contain"
+              />
             </div>
             <h1 className="text-2xl font-light text-gray-900 mb-2">OnJob</h1>
             <p className="text-gray-600">
