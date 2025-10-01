@@ -222,7 +222,9 @@ export default function FATAtendimentoPage() {
         ...(form.numero_ciclos !== "" && form.numero_ciclos !== "0"
           ? { numero_ciclos: Number(form.numero_ciclos) }
           : {}),
-        ...(motivoSelecionado ? { id_motivo: motivoSelecionado } : {}),
+        ...(motivoSelecionado
+          ? { id_motivo_atendimento: motivoSelecionado }
+          : {}),
       };
 
       const response = await fatService.update(fat.id_fat, payload);

@@ -82,13 +82,15 @@ export const clienteSelectComponents = {
   Option: (
     props: OptionProps<ClienteOptionType, false, GroupBase<ClienteOptionType>>
   ) => {
-    const { data, isFocused, isSelected } = props;
+    const { data, isFocused, isSelected, innerProps } = props;
     return (
-      <ClienteItem
-        option={data}
-        isFocused={isFocused}
-        isSelected={isSelected}
-      />
+      <div {...innerProps}>
+        <ClienteItem
+          option={data}
+          isFocused={isFocused}
+          isSelected={isSelected}
+        />
+      </div>
     );
   },
 };

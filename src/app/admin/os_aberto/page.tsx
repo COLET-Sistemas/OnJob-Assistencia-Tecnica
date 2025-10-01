@@ -124,6 +124,34 @@ const TelaOSAbertas: React.FC = () => {
 
   const didFetch = useRef(false);
 
+  // Check for update or create message from OS screens
+  useEffect(() => {
+    // Check for update message from OS edit screen
+    const updateMessage = localStorage.getItem("osUpdateMessage");
+    if (updateMessage) {
+      // Show the success message from the edit page
+      feedback.toast(updateMessage, "success");
+      // Remove the message from localStorage to prevent showing it again
+      localStorage.removeItem("osUpdateMessage");
+    }
+
+    // Check for create message from OS creation screen
+    const createMessage = localStorage.getItem("osCreateMessage");
+    const createId = localStorage.getItem("osCreateId");
+    if (createMessage) {
+      // Show the success message with the OS ID if available
+      const message = createId
+        ? `${createMessage} ID: ${createId}`
+        : createMessage;
+
+      feedback.toast(message, "success");
+
+      // Remove the messages from localStorage to prevent showing them again
+      localStorage.removeItem("osCreateMessage");
+      localStorage.removeItem("osCreateId");
+    }
+  }, []);
+
   useEffect(() => {
     if (!didFetch.current) {
       fetchData();
@@ -383,6 +411,11 @@ const TelaOSAbertas: React.FC = () => {
     [handleOpenAlterarTecnicoModal, getNomeRegiao]
   );
 
+  // Função para navegar para a tela de edição da OS
+  const handleEditarOS = useCallback((osId: number) => {
+    window.location.href = `/admin/os_aberto/editar/${osId}`;
+  }, []);
+
   const handleConfirmTecnico = useCallback(
     async (osId: number, tecnicoId: number, tecnicoNome: string) => {
       try {
@@ -547,6 +580,7 @@ const TelaOSAbertas: React.FC = () => {
                 onAlterarPendencia={handleOpenPendenciaModal}
                 onAdicionarTecnico={createAdicionarTecnicoHandler(os)}
                 onAlterarTecnico={createAlterarTecnicoHandler(os)}
+                onEditarOS={handleEditarOS}
               />
             ))}
           </div>

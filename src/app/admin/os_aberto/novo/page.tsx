@@ -407,18 +407,24 @@ const NovaOrdemServico = () => {
     try {
       const response = await maquinasService.searchByNumeroSerie(term);
 
-      const machineOptions = response.dados.map((maquina: Maquina) => {
-        const isInWarranty =
-          maquina.data_final_garantia &&
-          new Date(maquina.data_final_garantia) > new Date();
+      // Verificar se a resposta tem dados antes de mapear
+      const machineOptions =
+        response.dados &&
+        Array.isArray(response.dados) &&
+        response.dados.length > 0
+          ? response.dados.map((maquina: Maquina) => {
+              const isInWarranty =
+                maquina.data_final_garantia &&
+                new Date(maquina.data_final_garantia) > new Date();
 
-        return {
-          value: maquina.id || 0,
-          label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
-          isInWarranty,
-          data_final_garantia: maquina.data_final_garantia || "",
-        } as MaquinaOption;
-      });
+              return {
+                value: maquina.id || 0,
+                label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
+                isInWarranty,
+                data_final_garantia: maquina.data_final_garantia || "",
+              } as MaquinaOption;
+            })
+          : [];
 
       // Adicionar a opção de buscar outra máquina
       machineOptions.push({
@@ -430,7 +436,25 @@ const NovaOrdemServico = () => {
 
       setMaquinaOptions(machineOptions as MaquinaOption[]);
     } catch (error) {
-      console.error("Erro ao buscar máquinas:", error);
+      // Evitar logar erro no console para mensagens de "Nenhuma máquina encontrada"
+      if (
+        error &&
+        typeof error === "object" &&
+        "erro" in error &&
+        error.erro === "'Nenhuma máquina encontrada'"
+      ) {
+        // Apenas configurar opções vazias com a opção de busca
+        setMaquinaOptions([
+          {
+            value: -1,
+            label: "Buscar outra máquina...",
+            isInWarranty: false,
+            data_final_garantia: "",
+          } as MaquinaOption,
+        ]);
+      } else {
+        console.error("Erro ao buscar máquinas:", error);
+      }
     } finally {
       setIsSearchingMaquinas(false);
     }
@@ -629,9 +653,22 @@ const NovaOrdemServico = () => {
       };
       // Garantindo que selectedCliente e selectedMaquina não são nulos
       if (selectedCliente && selectedMaquina) {
-        await ordensServicoService.create({
+        const response = await ordensServicoService.create({
           ...osData,
         } as OSFormCustom);
+
+        const apiResponse = response as unknown as {
+          mensagem: string;
+          id_os: number;
+        };
+        if (apiResponse && apiResponse.mensagem) {
+          localStorage.setItem("osCreateMessage", apiResponse.mensagem);
+          localStorage.setItem(
+            "osCreateId",
+            apiResponse.id_os?.toString() || ""
+          );
+        }
+
         router.push("/admin/os_aberto");
       }
     } catch (error) {

@@ -420,12 +420,12 @@ export default function Sidebar({ isOpen }: SidebarProps) {
         {/* Header com Logo */}
         <div className="flex items-center justify-center h-20 border-b border-white/10 bg-[#7B54BE]/50 backdrop-blur-sm px-4">
           {isOpen ? (
-            <div className="relative w-full h-full flex items-center justify-center animate-slide-in">
+            <div className="relative w-48 h-20 flex items-center justify-center animate-slide-in">
               <Image
                 src="/images/logoMenuEscrito.png"
                 alt="OnJob Logo"
-                width={160}
-                height={50}
+                fill
+                sizes="192px"
                 className="object-contain"
                 priority
               />
@@ -435,8 +435,8 @@ export default function Sidebar({ isOpen }: SidebarProps) {
               <Image
                 src="/images/logoMenu.png"
                 alt="OnJob"
-                width={40}
-                height={40}
+                fill
+                sizes="48px"
                 className="object-contain"
                 priority
               />

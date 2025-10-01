@@ -34,7 +34,8 @@ class UsuariosService {
   ): Promise<ApiResponse<Usuario[]>> {
     const tecnicoParams = {
       ...params,
-      tipo: "T", // Assumindo que tipo=T filtra por técnicos
+      apenas_tecnicos: "S",
+      situacao: "A",
     };
     return await api.get<ApiResponse<Usuario[]>>(this.baseUrl, {
       params: tecnicoParams,

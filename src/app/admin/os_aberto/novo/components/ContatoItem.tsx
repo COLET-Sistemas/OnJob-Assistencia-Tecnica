@@ -120,13 +120,15 @@ export const contatoSelectComponents = {
   Option: (
     props: OptionProps<ContatoOptionType, false, GroupBase<ContatoOptionType>>
   ) => {
-    const { data, isFocused, isSelected } = props;
+    const { data, isFocused, isSelected, innerProps } = props;
     return (
-      <ContatoItem
-        option={data}
-        isFocused={isFocused}
-        isSelected={isSelected}
-      />
+      <div {...innerProps}>
+        <ContatoItem
+          option={data}
+          isFocused={isFocused}
+          isSelected={isSelected}
+        />
+      </div>
     );
   },
 };

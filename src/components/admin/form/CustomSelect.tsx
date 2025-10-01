@@ -72,17 +72,20 @@ interface CustomSelectProps {
   label: string;
   required?: boolean;
   placeholder: string;
-  inputValue: string;
-  onInputChange: (newValue: string) => void;
+  inputValue?: string;
+  onInputChange?: (newValue: string) => void;
   onChange: (selectedOption: OptionType | null) => void;
   options: OptionType[];
   value: OptionType | null;
-  isLoading: boolean;
+  isLoading?: boolean;
   error?: string;
   minCharsToSearch?: number;
   noOptionsMessageFn?: (obj: { inputValue: string }) => string;
-  components?: SelectProps<OptionType>["components"]; 
+  components?: SelectProps<OptionType, false>["components"];
   isDisabled?: boolean;
+  isSearchable?: boolean;
+  isClearable?: boolean;
+  className?: string;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -90,17 +93,20 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   label,
   required = false,
   placeholder,
-  inputValue,
-  onInputChange,
+  inputValue = "",
+  onInputChange = () => {},
   onChange,
   options,
   value,
-  isLoading,
+  isLoading = false,
   error,
   minCharsToSearch = 3,
   noOptionsMessageFn,
   components,
   isDisabled = false,
+  isSearchable = true,
+  isClearable = true,
+  className = "",
 }) => {
   // Using a properly typed ref for react-select that handles the methods we need
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -142,11 +148,13 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         options={options}
         value={value}
         isLoading={isLoading}
-        isSearchable={true}
-        isClearable={true}
+        isSearchable={isSearchable}
+        isClearable={isClearable}
         noOptionsMessage={noOptionsMessageFn || defaultNoOptionsMessage}
         styles={getCustomSelectStyles()}
-        className={`react-select-container ${error ? "is-invalid" : ""}`}
+        className={`react-select-container ${
+          error ? "is-invalid" : ""
+        } ${className}`}
         classNamePrefix="react-select"
         menuPortalTarget={
           typeof document !== "undefined" ? document.body : undefined
@@ -155,6 +163,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         components={components}
         ref={selectRef}
         isDisabled={isDisabled}
+        instanceId={id}
       />
       {error && <div className="text-red-500 text-sm mt-1">{error}</div>}
     </div>

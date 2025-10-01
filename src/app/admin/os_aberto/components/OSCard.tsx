@@ -47,6 +47,7 @@ interface OSCardProps {
     currentTecnicoId?: number,
     currentTecnicoNome?: string
   ) => void;
+  onEditarOS?: (osId: number) => void;
 }
 
 const OSCard: React.FC<OSCardProps> = ({
@@ -60,6 +61,7 @@ const OSCard: React.FC<OSCardProps> = ({
   onLiberarFinanceiramente,
   onAlterarPendencia,
   onAlterarTecnico,
+  onEditarOS,
 }) => {
   // Função para determinar a cor baseada no código da situação
   const getSituacaoColor = (codigo: number) => {
@@ -314,6 +316,25 @@ const OSCard: React.FC<OSCardProps> = ({
         <div className="border-t border-gray-100 bg-gray-50 animate-expandY origin-top">
           <div className="p-4">
             {/* Problema e informações adicionais */}
+            {/* Botão Editar OS */}
+            <div className="flex justify-end mb-3">
+              {onEditarOS && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditarOS(os.id_os);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 
+                          hover:bg-indigo-100 rounded-md text-sm font-medium transition-colors 
+                          border border-indigo-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                  title="Editar Ordem de Serviço"
+                >
+                  <Edit className="w-4 h-4" />
+                  Editar OS
+                </button>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Descrição do Problema e Abertura */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 transform transition-transform animate-fadeIn">

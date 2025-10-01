@@ -124,12 +124,26 @@ export const maquinaSelectComponents = {
     data,
     isFocused,
     isSelected,
+    innerProps,
   }: {
     data: MachineOptionType & { value: number };
     isFocused: boolean;
     isSelected: boolean;
+    innerProps: React.HTMLAttributes<HTMLDivElement>;
   }) => (
-    <MaquinaItem option={data} isFocused={isFocused} isSelected={isSelected} />
+    <div {...innerProps}>
+      <MaquinaItem
+        option={data}
+        isFocused={isFocused}
+        isSelected={isSelected}
+      />
+    </div>
+  ),
+  // Add a custom NoOptionsMessage component to prevent the error message
+  NoOptionsMessage: ({ children }: { children: React.ReactNode }) => (
+    <div style={{ padding: "8px 12px", textAlign: "center", color: "#6b7280" }}>
+      {children}
+    </div>
   ),
 };
 
