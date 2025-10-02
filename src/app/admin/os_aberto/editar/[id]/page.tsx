@@ -1058,7 +1058,7 @@ const EditarOrdemServico = () => {
   return (
     <>
       <PageHeader
-        title="Editar Ordem de Serviço"
+        title={`Editar Ordem de Serviço #${osId}`}
         config={{
           type: "form",
           backLink: "/admin/os_aberto",

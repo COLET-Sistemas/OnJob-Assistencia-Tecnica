@@ -99,9 +99,6 @@ const TelaOSAbertas: React.FC = () => {
 
         setOrdensServico(filteredOrdens);
 
-        if (didFetch.current) {
-          feedback.toast("Lista de ordens de serviço atualizada", "success");
-        }
       } else {
         console.warn("Resposta inesperada da API:", response);
         setAllOrdensServico([]);

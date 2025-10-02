@@ -118,7 +118,7 @@ export class LoginService {
   }
 
   /**
-   * Salva os dados do usuário no localStorage
+   * Salva os dados do usuário no localStorage e cookie
    */
   static saveUserData(authData: LoginResponse): void {
     if (typeof window === "undefined") return;
@@ -131,6 +131,13 @@ export class LoginService {
       localStorage.setItem("token", authData.token);
       localStorage.setItem("perfil", JSON.stringify(authData.perfil));
       localStorage.setItem("versao_api", String(authData.versao_api || ""));
+
+      // Definir cookie para o middleware
+      const expirationDate = new Date();
+      expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000); // 24 horas
+      document.cookie = `token=${
+        authData.token
+      }; expires=${expirationDate.toUTCString()}; path=/;`;
 
       // Dados da empresa (se disponível)
       if (authData.empresa) {

@@ -18,8 +18,9 @@ import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Image from "next/image";
 import packageInfo from "../../package.json";
 
-// Import do serviço de login
+// Import dos serviços de login e autenticação
 import { LoginService } from "@/api/services/login";
+import { authService } from "@/api/services/authService";
 
 // Tipos
 interface LoginInputProps {
@@ -225,11 +226,22 @@ export default function LoginPage() {
     setIsMounted(true);
 
     if (typeof window !== "undefined") {
+      // Verificar se há uma mensagem de erro no sessionStorage
       const reason = sessionStorage.getItem("loginRedirectReason");
       if (reason) {
         setRedirectReason(reason);
         setError(reason);
         sessionStorage.removeItem("loginRedirectReason");
+      }
+
+      // Verificar se há uma mensagem de erro nos parâmetros de URL (usado pelo middleware)
+      const urlParams = new URLSearchParams(window.location.search);
+      const authError = urlParams.get("authError");
+      if (authError) {
+        setError(authError);
+
+        // Limpar parâmetros da URL sem recarregar a página
+        window.history.replaceState({}, "", window.location.pathname);
       }
     }
   }, []);
@@ -263,7 +275,24 @@ export default function LoginPage() {
       const authData = await LoginService.authenticate(login, senha);
 
       if (LoginService.hasAdminAccess(authData.perfil)) {
+        // Salvar dados usando ambos os serviços para garantir compatibilidade
         LoginService.saveUserData(authData);
+
+        // Salvar dados também no authService para garantir que o cookie seja definido
+        authService.saveAuthData({
+          token: authData.token,
+          user: {
+            id: authData.id_usuario,
+            nome: authData.nome_usuario,
+            login: login,
+            email: authData.email,
+            perfil_interno: authData.perfil.interno,
+            perfil_gestor_assistencia: authData.perfil.gestor,
+            perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
+            perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
+            administrador: authData.perfil.admin,
+          },
+        });
 
         if (authData.senha_provisoria) {
           router.push("/alterar-senha");
@@ -315,7 +344,24 @@ export default function LoginPage() {
         return;
       }
 
+      // Salvar dados usando ambos os serviços para garantir compatibilidade
       LoginService.saveUserData(authData);
+
+      // Salvar dados também no authService para garantir que o cookie seja definido
+      authService.saveAuthData({
+        token: authData.token,
+        user: {
+          id: authData.id_usuario,
+          nome: authData.nome_usuario,
+          login: login,
+          email: authData.email,
+          perfil_interno: authData.perfil.interno,
+          perfil_gestor_assistencia: authData.perfil.gestor,
+          perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
+          perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
+          administrador: authData.perfil.admin,
+        },
+      });
 
       if (authData.senha_provisoria) {
         router.push("/alterar-senha");

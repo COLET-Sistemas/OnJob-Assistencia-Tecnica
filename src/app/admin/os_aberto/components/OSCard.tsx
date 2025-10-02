@@ -316,33 +316,32 @@ const OSCard: React.FC<OSCardProps> = ({
         <div className="border-t border-gray-100 bg-gray-50 animate-expandY origin-top">
           <div className="p-4">
             {/* Problema e informações adicionais */}
-            {/* Botão Editar OS */}
-            <div className="flex justify-end mb-3">
-              {onEditarOS && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditarOS(os.id_os);
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 
-                          hover:bg-indigo-100 rounded-md text-sm font-medium transition-colors 
-                          border border-indigo-200 transform hover:scale-105 active:scale-95 cursor-pointer"
-                  title="Editar Ordem de Serviço"
-                >
-                  <Edit className="w-4 h-4" />
-                  Editar OS
-                </button>
-              )}
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Descrição do Problema e Abertura */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 transform transition-transform animate-fadeIn">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertCircle className="w-4 h-4 text-indigo-500" />
-                  <h4 className="font-medium text-gray-700">
-                    Descrição do Problema: {os.abertura.motivo_atendimento}
-                  </h4>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-indigo-500" />
+                    <h4 className="font-bold text-gray-700">
+                      {os.abertura.motivo_atendimento}
+                    </h4>
+                  </div>
+                  {onEditarOS && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditarOS(os.id_os);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 
+                              hover:bg-indigo-100 rounded-md text-xs font-medium transition-colors 
+                              border border-indigo-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                      title="Editar Ordem de Serviço"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      Editar OS
+                    </button>
+                  )}
                 </div>
                 <div className="text-gray-800 text-sm mb-3 break-words whitespace-pre-wrap max-h-[250px] overflow-y-auto custom-scrollbar">
                   {os.descricao_problema || "Sem descrição fornecida"}
@@ -525,23 +524,34 @@ const OSCard: React.FC<OSCardProps> = ({
 
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <div className="flex items-center gap-2 mb-2">
-                    <Phone className="w-4 h-4 text-indigo-500" />
+                    <User className="w-4 h-4 text-indigo-500" />
                     <h4 className="font-medium text-gray-700">Contato</h4>
                   </div>
 
                   <div className="text-sm space-y-2">
-                    <div className="flex items-center justify-between">
-                      {os.contato.telefone && (
+                    {os.contato.nome && (
+                      <div className="flex items-center gap-1.5 text-gray-600 mb-1">
+                        <span className="">{os.contato.nome}</span>
+                      </div>
+                    )}
+
+                    {/* Telefone */}
+                    {os.contato.telefone && (
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-gray-600">
                           <Phone className="w-3 h-3 text-gray-600" />
                           <span>{os.contato.telefone}</span>
-                          {os.contato.whatsapp && (
-                            <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
-                          )}
                         </div>
-                      )}
-                      {/* WhatsApp Button */}
-                      {os.contato.whatsapp && (
+                      </div>
+                    )}
+
+                    {/* WhatsApp Button */}
+                    {os.contato.whatsapp && (
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                          <MessageCircle className="w-3 h-3 text-gray-600" />
+                          <span>{os.contato.whatsapp}</span>
+                        </div>
                         <a
                           href={formatWhatsAppUrl(os.contato.telefone)}
                           target="_blank"
@@ -555,11 +565,12 @@ const OSCard: React.FC<OSCardProps> = ({
                           WhatsApp
                           <ExternalLink className="w-2.5 h-2.5" />
                         </a>
-                      )}
-                    </div>
+                      </div>
+                    )}
 
+                    {/* Email */}
                     {os.contato.email && (
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-1.5 text-gray-600">
                           <Mail className="w-3 h-3 text-gray-600" />
                           <span>{os.contato.email}</span>

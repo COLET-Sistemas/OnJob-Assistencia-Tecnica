@@ -1,6 +1,6 @@
 "use client";
 import { Loading } from "@/components/LoadingPersonalizado";
-import { User } from "lucide-react";
+import { User, Plus, MapPin, Filter } from "lucide-react";
 import {
   TableList,
   TableStatusColumn,
@@ -13,13 +13,12 @@ import type { Cliente } from "@/types/admin/cadastro/clientes";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
-import PageHeader from "@/components/admin/ui/PageHeader";
 import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
 import { services } from "@/api";
-import { MapPin } from "lucide-react";
 import LocationButton from "@/components/admin/ui/LocationButton";
 import api from "@/api/api";
+import Link from "next/link";
 
 const { clientesService } = services;
 
@@ -93,12 +92,12 @@ const CadastroClientes = () => {
 
   const handleApplyFilters = () => {
     setLocalShowFilters(false);
-    isReloadingRef.current = true; 
-    aplicarFiltros(); 
+    isReloadingRef.current = true;
+    aplicarFiltros();
   };
 
   const handleClearFilters = () => {
-    setLocalShowFilters(false); 
+    setLocalShowFilters(false);
     isReloadingRef.current = true;
     limparFiltros();
   };
@@ -107,7 +106,7 @@ const CadastroClientes = () => {
     if (!isReloadingRef.current) {
       setLocalShowFilters(!localShowFilters);
     }
-    toggleFilters(); 
+    toggleFilters();
   };
 
   const fetchClientes = useCallback(async (): Promise<Cliente[]> => {
@@ -189,7 +188,7 @@ const CadastroClientes = () => {
       // Verifica se o cliente já tem contatos carregados
       const clienteAtual = clientes.find((c) => getClienteId(c) === clientId);
       if (clienteAtual?.contatos?.length) {
-        return; 
+        return;
       }
 
       try {
@@ -230,11 +229,8 @@ const CadastroClientes = () => {
         });
 
         setShowLocationModal(false);
-        await refetch(); 
-        showSuccess(
-          "Sucesso",
-          "Localização atualizada com sucesso" 
-        );
+        await refetch();
+        showSuccess("Sucesso", "Localização atualizada com sucesso");
       } catch (error) {
         console.error("Error updating location:", error);
         showError(
@@ -512,20 +508,61 @@ const CadastroClientes = () => {
 
   return (
     <>
-      <PageHeader
-        title="Lista de Clientes"
-        config={{
-          type: "list",
-          itemCount: paginacao.totalRegistros,
-          onFilterToggle: handleToggleFilters,
-          showFilters: localShowFilters,
-          activeFiltersCount: activeFiltersCount,
-          newButton: {
-            label: "Novo Cliente",
-            link: "/admin/cadastro/clientes/novo",
-          },
-        }}
-      />
+      <header className="mb-5">
+        <div className="p-5 rounded-xl shadow-sm border border-slate-200 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/20 min-h-[88px]">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center">
+              <span className="bg-[var(--primary)] h-6 w-1 rounded-full mr-3"></span>
+              Lista de Clientes
+              <span className="ml-2 bg-[var(--primary)]/10 text-[var(--primary)] text-sm px-3 py-0.5 rounded-full font-medium">
+                {paginacao.totalRegistros}
+              </span>
+            </h2>
+
+            <div className="flex items-center gap-3">
+              {/* Botão de filtro */}
+              <div className="relative">
+                <button
+                  onClick={handleToggleFilters}
+                  className={`relative px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border cursor-pointer ${
+                    localShowFilters
+                      ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/25"
+                      : "bg-white hover:bg-gray-50 text-[var(--neutral-graphite)] border-gray-200 hover:border-gray-300 hover:shadow-md"
+                  }`}
+                >
+                  <Filter size={18} />
+                  <span className="font-medium">Filtros</span>
+                  {(activeFiltersCount ?? 0) > 0 && (
+                    <div className="absolute -top-1 -right-1 flex items-center justify-center">
+                      <span className="w-5 h-5 bg-[#FDAD15] text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg">
+                        {activeFiltersCount}
+                      </span>
+                    </div>
+                  )}
+                </button>
+              </div>
+
+              {/* Botão de novo contato */}
+              <Link
+                href="/admin/cadastro/clientes/contato/novo"
+                className="bg-[var(--secondary-yellow)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--secondary-yellow)] hover:bg-[var(--secondary-yellow)]/90 hover:border-[var(--secondary-yellow)]/90"
+              >
+                <Plus size={18} />
+                Novo Contato
+              </Link>
+
+              {/* Botão de novo cliente */}
+              <Link
+                href="/admin/cadastro/clientes/novo"
+                className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
+              >
+                <Plus size={18} />
+                Novo Cliente
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
       <TableList
         title="Lista de Clientes"
         items={clientes || []}
@@ -599,6 +636,7 @@ const CadastroClientes = () => {
                     <div className="flex justify-between">
                       <div className="font-medium text-[var(--primary)] text-lg">
                         {contato.nome || contato.nome_completo}
+                        {contato.cargo && ` (${contato.cargo})`}
                       </div>
                       <span
                         className={`px-2 py-0.5 h-fit rounded-full text-xs ${
@@ -617,12 +655,6 @@ const CadastroClientes = () => {
                           {contato.nome_completo}
                         </div>
                       )}
-
-                    {contato.cargo && (
-                      <div className="text-sm font-medium text-gray-700 mt-2">
-                        {contato.cargo}
-                      </div>
-                    )}
 
                     <div className="mt-3 pt-3 border-t border-gray-100">
                       <div className="grid gap-2">
