@@ -150,6 +150,9 @@ export default function FATDetalheMobile() {
   const [fat, setFat] = useState<FATDetalhada | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Log de inicialização da página para debug
+
   const [toast, setToast] = useState<{
     visible: boolean;
     message: string;
@@ -164,7 +167,6 @@ export default function FATDetalheMobile() {
   const showToast = useCallback(
     (message: string, type: "success" | "error" = "success") => {
       // Define o toast como visível com a mensagem e tipo
-      console.log(`Showing toast: ${message} (${type})`); // Para debug
       setToast({
         visible: true,
         message,
@@ -227,7 +229,6 @@ export default function FATDetalheMobile() {
       }
 
       if (isLoadingRef.current && !force) {
-        console.log("Já está carregando, pulando chamada duplicada");
         return;
       }
 
@@ -327,7 +328,6 @@ export default function FATDetalheMobile() {
 
   // Handlers para os botões de ação
   const handleIniciarAtendimento = useCallback(async () => {
-    console.log("Iniciar atendimento");
     try {
       setLoading(true);
       // TODO: implementar API call para iniciar atendimento
@@ -417,7 +417,7 @@ export default function FATDetalheMobile() {
   }, [fetchFAT, extractErrorMessage, showToast]);
 
   const handleInterromperAtendimento = useCallback(async () => {
-    console.log("Interromper atendimento");
+  
     try {
       setLoading(true);
       // TODO: implementar API call para interromper atendimento
@@ -447,7 +447,7 @@ export default function FATDetalheMobile() {
   }, [fetchFAT, extractErrorMessage, showToast]);
 
   const handleCancelarAtendimento = useCallback(async () => {
-    console.log("Cancelar atendimento");
+  
     try {
       setLoading(true);
       // TODO: implementar API call para cancelar atendimento
@@ -481,7 +481,6 @@ export default function FATDetalheMobile() {
   }, [router, extractErrorMessage, showToast]);
 
   const handleConcluirAtendimento = useCallback(async () => {
-    console.log("Concluir atendimento");
     try {
       setLoading(true);
       // TODO: implementar API call para concluir atendimento

@@ -8,6 +8,7 @@ interface OcorrenciaModalProps {
   title?: string;
   label?: string;
   id_os?: number;
+  required?: boolean; // Nova prop para indicar se o campo é obrigatório
 }
 
 const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
@@ -18,6 +19,7 @@ const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
   title = "Registrar Ocorrência",
   label = "Descrição da ocorrência (opcional)",
   id_os,
+  required = false, // Por padrão, o campo não é obrigatório
 }) => {
   const [descricao, setDescricao] = useState("");
 
@@ -38,13 +40,18 @@ const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
     onSave(descricao);
   };
 
+  // Verifica se o botão deve estar desabilitado
+  const isButtonDisabled = loading || (required && descricao.trim() === "");
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
       <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm">
         <h2 className="text-lg font-semibold mb-4 text-slate-900">{title}</h2>
-        <label className="block text-sm text-slate-700 mb-2">{label}</label>
+        <label className="block text-sm text-slate-700 mb-2">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
         <input
           type="text"
           className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-4 
@@ -52,7 +59,11 @@ const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
              placeholder-slate-400"
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
-          placeholder="Digite uma descrição"
+          placeholder={
+            required
+              ? "Digite uma descrição (obrigatório)"
+              : "Digite uma descrição"
+          }
           disabled={loading}
           autoFocus
         />
@@ -66,11 +77,15 @@ const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
             Cancelar
           </button>
           <button
-            className="flex-1 px-4 py-2 rounded-lg bg-[#7B54BE] text-white font-medium hover:bg-[#6841b1] transition-colors"
+            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+              isButtonDisabled
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-[#7B54BE] text-white hover:bg-[#6841b1]"
+            }`}
             onClick={handleSave}
-            disabled={loading}
+            disabled={isButtonDisabled}
           >
-            {loading ? "Salvando..." : "Salvar"}
+            {loading ? "Salvando..." : "Prosseguir"}
           </button>
         </div>
       </div>

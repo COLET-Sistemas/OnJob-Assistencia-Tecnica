@@ -370,14 +370,6 @@ export default function FATAtendimentoPage() {
           locked={!isDescricaoEditable}
         >
           <div className="space-y-3">
-            <TextAreaField
-              name="descricao_problema"
-              value={form.descricao_problema}
-              onChange={handleChange}
-              placeholder="Descreva o problema apresentado pelo cliente..."
-              rows={3}
-              disabled={!isDescricaoEditable}
-            />
             {/* Motivo de Atendimento */}
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -409,6 +401,15 @@ export default function FATAtendimentoPage() {
                 </div>
               )}
             </div>
+            <TextAreaField
+              name="descricao_problema"
+              value={form.descricao_problema}
+              onChange={handleChange}
+              placeholder="Descreva o problema apresentado pelo cliente..."
+              rows={3}
+              disabled={!isDescricaoEditable}
+            />
+
             {!isDescricaoEditable && (
               <button
                 type="button"

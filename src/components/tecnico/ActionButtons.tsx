@@ -36,7 +36,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     setMessage(null);
     setMessageType(null);
     try {
-      await ocorrenciasOSService.registrarOcorrencia({
+      const response = await ocorrenciasOSService.registrarOcorrencia({
         id_os,
         ocorrencia:
           modalOpen === "deslocamento"
@@ -44,35 +44,80 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
             : "iniciar atendimento",
         descricao_ocorrencia: descricao,
       });
+
       setModalOpen(null);
-      setMessage("Ação realizada com sucesso!");
+      // Usar a mensagem de retorno da API
+      setMessage(response.mensagem || "Ação realizada com sucesso!");
       setMessageType("success");
-      if (onActionSuccess) onActionSuccess();
+
+      console.log("🎯 Ocorrência registrada com sucesso, iniciando reload...");
+
+      // Aguardar um pequeno delay para garantir que o servidor processou a ocorrência
+      // antes de recarregar os dados da OS
+      setTimeout(() => {
+        if (onActionSuccess) {
+          console.log(
+            "🔄 Chamando callback onActionSuccess para atualizar a OS"
+          );
+          try {
+            onActionSuccess();
+            console.log("✅ Callback onActionSuccess executado com sucesso");
+          } catch (error) {
+            console.error(
+              "❌ Erro ao executar callback onActionSuccess:",
+              error
+            );
+          }
+        } else {
+          console.warn("⚠️ onActionSuccess não foi fornecido");
+        }
+      }, 1000);
     } catch (error: unknown) {
-      let errorMsg = "Erro ao realizar ação.";
+      console.error("Erro ao registrar ocorrência:", error);
 
-      interface ErrorResponse {
-        response?: {
-          data?: {
-            erro?: string;
-          };
-        };
-        message?: string;
-      }
+      // A função apiRequest já processa os erros e retorna a mensagem da API
+      // Vamos extrair a mensagem do Error que foi criado
+      let errorMessage = "Erro ao registrar ocorrência";
 
-      const err = error as ErrorResponse;
-      if (
-        err.response &&
-        err.response.data &&
-        typeof err.response.data.erro === "string"
+      if (error instanceof Error) {
+        // A função apiRequest já extraiu a mensagem da API e colocou no Error.message
+        const rawMessage = error.message;
+    
+
+        // Verificar se a mensagem contém o padrão {"erro":"..."}
+        const erroMatch = rawMessage.match(/\{"erro":"([^"]+)"\}/);
+        if (erroMatch && erroMatch[1]) {
+          errorMessage = erroMatch[1];
+      
+        } else {
+          // Se não encontrar o padrão, usar a mensagem completa
+          errorMessage = rawMessage;
+ 
+        }
+      } else if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        typeof error.message === "string"
       ) {
-        errorMsg = err.response.data.erro;
-      } else if (typeof err.message === "string") {
-        errorMsg = err.message;
+        const rawMessage = error.message;
+       
+
+        // Verificar se a mensagem contém o padrão {"erro":"..."}
+        const erroMatch = rawMessage.match(/\{"erro":"([^"]+)"\}/);
+        if (erroMatch && erroMatch[1]) {
+          errorMessage = erroMatch[1];
+         
+        } else {
+          errorMessage = rawMessage;
+
+        }
+      } else {
+   
       }
-      setMessage(errorMsg);
+
+      setMessage(errorMessage);
       setMessageType("error");
-      setModalOpen(null);
     } finally {
       setModalLoading(false);
     }
@@ -108,7 +153,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
             )}
           </span>
           <span className="flex-1 text-left font-medium">
-            Iniciar Deslocam.
+            Iniciar Deslocamento
           </span>
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </button>

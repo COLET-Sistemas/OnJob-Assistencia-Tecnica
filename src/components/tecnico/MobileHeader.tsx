@@ -1,11 +1,10 @@
 "use client";
-
 type MenuOption = {
   label: string;
   onClick: () => void;
 };
 import React, { useState, useRef, useEffect } from "react";
-import { Menu, Plus, ArrowLeft } from "lucide-react";
+import { Menu, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface MobileHeaderProps {
@@ -71,19 +70,22 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             <Plus className="w-6 h-6" />
           </button>
         ) : (
-          <button
-            onClick={() => {
-              if (onMenuClick) {
-                onMenuClick();
-              } else {
-                router.back();
-              }
-            }}
-            className="p-2 hover:bg-[#7B54BE] rounded-lg transition-colors"
-            aria-label="Voltar"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
+          // {/*
+          // <button
+          //   onClick={() => {
+          //     if (onMenuClick) {
+          //       onMenuClick();
+          //     } else {
+          //       router.back();
+          //     }
+          //   }}
+          //   className="p-2 hover:bg-[#7B54BE] rounded-lg transition-colors"
+          //   aria-label="Voltar"
+          // >
+          //   <ArrowLeft className="w-6 h-6" />
+          // </button>
+          // */}
+          <></>
         )}
 
         <h1 className="text-lg font-medium text-center flex-1 px-4">{title}</h1>

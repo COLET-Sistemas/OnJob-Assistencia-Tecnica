@@ -118,6 +118,7 @@ export default function OSDetalheMobile() {
   const [os, setOs] = useState<OSDetalhadaV2 | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [refreshCount, setRefreshCount] = useState(0); // Para forçar re-renders
   // const [showActions, setShowActions] = useState(false);
 
   // Ref para controlar se já está carregando e evitar chamadas duplas
@@ -129,7 +130,6 @@ export default function OSDetalheMobile() {
     return dateStr;
   }, []);
 
-  // Função otimizada para recarregar dados da OS
   const fetchOS = useCallback(
     async (force = false) => {
       if (!params?.id) {
@@ -138,9 +138,11 @@ export default function OSDetalheMobile() {
         return;
       }
 
-      // Evitar múltiplas chamadas simultâneas, exceto quando force=true
-      if (isLoadingRef.current && !force) {
-        console.log("Já está carregando, pulando chamada duplicada");
+      // Evitar múltiplas chamadas simultâneas
+      if (isLoadingRef.current) {
+        console.log(
+          `⏸️ Já está carregando OS ${params.id}, pulando chamada duplicada (force: ${force})`
+        );
         return;
       }
 
@@ -153,11 +155,27 @@ export default function OSDetalheMobile() {
       abortControllerRef.current = new AbortController();
 
       isLoadingRef.current = true;
+      console.log(`📞 Iniciando fetchOS - Force: ${force} - ID: ${params.id}`);
+
+      // Sempre mostrar loading para feedback visual
       setLoading(true);
       setError("");
 
       try {
-        const response = await ordensServicoService.getById(Number(params.id));
+        console.log(
+          `🔄 Chamando ordensServicoService.getById(${params.id}, forceRefresh: ${force})`
+        );
+
+        // Se for force=true, invalidar cache antes da requisição
+        if (force) {
+          console.log("🧹 Invalidando cache da OS antes da requisição");
+          ordensServicoService.invalidateOSCache(Number(params.id));
+        }
+
+        const response = await ordensServicoService.getById(
+          Number(params.id),
+          force
+        );
 
         // Verificar se a requisição foi cancelada
         if (abortControllerRef.current?.signal.aborted) {
@@ -169,36 +187,67 @@ export default function OSDetalheMobile() {
 
         if (!osData) {
           setError("OS não encontrada");
+          console.log("❌ OS não encontrada na resposta");
           return;
         }
 
-        console.log("OS carregada com sucesso:", osData.id_os);
-        setOs(osData);
-      } catch {
+        console.log("✅ OS carregada com sucesso:", {
+          id: osData.id_os,
+          status: osData.situacao_os?.codigo,
+          statusDescricao: osData.situacao_os?.descricao,
+          timestamp: new Date().toLocaleTimeString(),
+          force: force,
+        });
+
+        // Força a re-renderização criando um novo objeto com timestamp único
+        setOs({
+          ...osData,
+          _lastUpdated: Date.now(), // Campo interno para forçar re-render
+        } as OSDetalhadaV2);
+
+        // Limpar erro se houver
+        setError("");
+      } catch (error) {
+        console.error("❌ Erro ao carregar dados da OS:", error);
+        setError("Falha ao carregar dados da OS. Tente novamente.");
       } finally {
         isLoadingRef.current = false;
         setLoading(false);
+        console.log(`✅ fetchOS finalizado - Force: ${force}`);
       }
     },
     [params?.id]
   );
 
   // Callback otimizado para quando uma ação for executada com sucesso
-  // const handleActionSuccess = useCallback(() => {
-  //   fetchOS(true);
-  // }, [fetchOS]);
+  const handleActionSuccess = useCallback(() => {
+    console.log("🚀 Action success! Reloading OS data...");
+    console.log("📍 Current OS ID:", params?.id);
+    console.log("🔄 Forçando reload dos dados da OS...");
+
+    // Incrementar contador para forçar re-render
+    setRefreshCount((prev) => {
+      const newCount = prev + 1;
+      console.log(`📊 Refresh count atualizado para: ${newCount}`);
+      return newCount;
+    });
+
+    // Chamar fetchOS com force=true - apenas uma vez
+    fetchOS(true);
+  }, [fetchOS, params?.id]);
 
   // Effect otimizado com cleanup
   useEffect(() => {
     let mounted = true;
 
-    const loadOS = async () => {
-      if (mounted) {
-        await fetchOS();
+    const loadInitialOS = async () => {
+      if (mounted && params?.id) {
+        console.log("🎬 Carregamento inicial da OS");
+        await fetchOS(false); // Carregamento inicial não forçado
       }
     };
 
-    loadOS();
+    loadInitialOS();
 
     // Cleanup function
     return () => {
@@ -210,7 +259,7 @@ export default function OSDetalheMobile() {
         abortControllerRef.current = null;
       }
     };
-  }, [fetchOS]);
+  }, [fetchOS, params?.id]);
 
   // Cleanup no unmount
   useEffect(() => {
@@ -298,7 +347,10 @@ export default function OSDetalheMobile() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-30">
+    <main
+      className="min-h-screen bg-slate-50 pb-30"
+      key={`os-${os.id_os}-${refreshCount}`}
+    >
       <MobileHeader
         title={os.id_os ? `OS #${os.id_os}` : "Detalhes da OS"}
         onMenuClick={() => router.back()}
@@ -477,7 +529,7 @@ export default function OSDetalheMobile() {
 
       {/* ActionButtons (Deslocamento e Novo Atendimento) - Não fixos */}
       <div className="p-4">
-        <ActionButtons id_os={os.id_os} onActionSuccess={() => fetchOS(true)} />
+        <ActionButtons id_os={os.id_os} onActionSuccess={handleActionSuccess} />
       </div>
 
       {/* Quick Actions - Fixo na parte inferior */}

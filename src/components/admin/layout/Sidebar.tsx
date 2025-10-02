@@ -418,11 +418,11 @@ export default function Sidebar({ isOpen }: SidebarProps) {
         } transition-all duration-300 bg-gradient-to-b from-[#7B54BE] to-[#6A4399] shadow-2xl h-screen flex flex-col overflow-hidden`}
       >
         {/* Header com Logo */}
-        <div className="flex items-center justify-center h-20 border-b border-white/10 bg-[#7B54BE]/50 backdrop-blur-sm px-4">
+        <div className="flex items-center justify-center h-20 border-10 border-[#7B54BE] bg-[#F5F3F3] backdrop-blur-sm px-2">
           {isOpen ? (
             <div className="relative w-48 h-20 flex items-center justify-center animate-slide-in">
               <Image
-                src="/images/logoMenuEscrito.png"
+                src="/images/logoEscrito.png"
                 alt="OnJob Logo"
                 fill
                 sizes="192px"
@@ -431,12 +431,12 @@ export default function Sidebar({ isOpen }: SidebarProps) {
               />
             </div>
           ) : (
-            <div className="relative w-12 h-12 flex items-center justify-center">
+            <div className="relative w-22 h-22 flex items-center justify-center">
               <Image
-                src="/images/logoMenu.png"
+                src="/images/logo.png"
                 alt="OnJob"
                 fill
-                sizes="48px"
+                sizes="62px"
                 className="object-contain"
                 priority
               />
