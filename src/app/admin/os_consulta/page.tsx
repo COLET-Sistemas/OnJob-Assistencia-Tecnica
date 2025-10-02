@@ -438,6 +438,10 @@ const ConsultaOSPage: React.FC = () => {
           else if (key === "id_tecnico") {
             params["id_tecnico"] = value.trim();
           }
+          // Adicionar tipo_tecnico (interno ou terceiro)
+          else if (key === "tipo_tecnico") {
+            params["tipo_tecnico"] = value.trim();
+          }
           // Tratar o status selecionado
           else if (key === "status") {
             params["situacao"] = value.trim();
@@ -857,21 +861,38 @@ const ConsultaOSPage: React.FC = () => {
                 <div className="relative">
                   <select
                     className="w-full px-3 py-3 appearance-none border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 bg-white transition-all duration-200"
-                    value={filterValues.id_tecnico || ""}
-                    onChange={(e) =>
-                      handleFilterChange("id_tecnico", e.target.value)
+                    value={
+                      filterValues.tipo_tecnico || filterValues.id_tecnico || ""
                     }
+                    onChange={(e) => {
+                      if (
+                        e.target.value === "interno" ||
+                        e.target.value === "terceiro"
+                      ) {
+                        // Se for seleção por tipo, limpa id_tecnico e configura tipo_tecnico
+                        handleFilterChange("id_tecnico", "");
+                        handleFilterChange("tipo_tecnico", e.target.value);
+                      } else {
+                        // Se for seleção por ID, limpa tipo_tecnico
+                        handleFilterChange("tipo_tecnico", "");
+                        handleFilterChange("id_tecnico", e.target.value);
+                      }
+                    }}
                   >
-                    <option value="">Todos os técnicos</option>
-                    {tecnicos &&
-                      tecnicos.map((tecnico) => (
-                        <option
-                          key={tecnico?.id || "unknown"}
-                          value={tecnico?.id?.toString() || ""}
-                        >
-                          {tecnico?.nome || "Técnico sem nome"}
-                        </option>
-                      ))}
+                    <option value="">Todos os Técnicos</option>
+                    <option value="interno">Apenas Internos</option>
+                    <option value="terceiro">Apenas Terceiros</option>
+                    <optgroup label="Técnicos específicos">
+                      {tecnicos &&
+                        tecnicos.map((tecnico) => (
+                          <option
+                            key={tecnico?.id || "unknown"}
+                            value={tecnico?.id?.toString() || ""}
+                          >
+                            {tecnico?.nome || "Técnico sem nome"}
+                          </option>
+                        ))}
+                    </optgroup>
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                     <span className="text-gray-400">

@@ -531,7 +531,10 @@ const OSCard: React.FC<OSCardProps> = ({
                   <div className="text-sm space-y-2">
                     {os.contato.nome && (
                       <div className="flex items-center gap-1.5 text-gray-600 mb-1">
-                        <span className="">{os.contato.nome}</span>
+                        <span className="">
+                          {os.contato.nome}{" "}
+                          {os.contato.cargo && ` - ${os.contato.cargo}`}
+                        </span>
                       </div>
                     )}
 

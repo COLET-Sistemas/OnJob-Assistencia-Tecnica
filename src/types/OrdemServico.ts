@@ -33,6 +33,7 @@ export interface OrdemServico {
     telefone: string;
     whatsapp: string;
     email: string;
+    cargo?: string;
   };
   maquina: {
     id: number;
