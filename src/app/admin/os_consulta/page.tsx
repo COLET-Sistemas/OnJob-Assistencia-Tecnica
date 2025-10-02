@@ -142,6 +142,21 @@ const ConsultaOSPage: React.FC = () => {
 
   // Filtros
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [disableDateFields, setDisableDateFields] = useState<boolean>(false);
+  const [fixedDateType, setFixedDateType] = useState<string | null>(null);
+
+  // Função para obter a data de hoje no formato YYYY-MM-DD
+  const getToday = () => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  };
+
+  // Função para obter a data de 30 dias atrás no formato YYYY-MM-DD
+  const get30DaysAgo = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date.toISOString().split("T")[0];
+  };
 
   // Buscar técnicos ao carregar o componente
   useEffect(() => {
@@ -320,17 +335,66 @@ const ConsultaOSPage: React.FC = () => {
   );
 
   // Manipulação dos filtros
-  const handleFilterChange = useCallback((key: string, value: string) => {
-    setFilterValues((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  const handleFilterChange = useCallback(
+    (key: string, value: string) => {
+      if (key === "status") {
+        // Limpar campos de data quando o status é alterado
+        const updatedValues = { ...filterValues, [key]: value };
+
+        // Configurar os campos de data baseados no status selecionado
+        const pendingStatuses = ["1", "1,2,3,4,5", "6"];
+        const finishedStatuses = ["6,7", "8,9"];
+
+        if (pendingStatuses.includes(value)) {
+          // Para Pendente, Em aberto e Aguardando Revisão
+          setDisableDateFields(true);
+          setFixedDateType(null);
+          setFilterValues({
+            ...updatedValues,
+            campo_data: "",
+            data_ini: "",
+            data_fim: "",
+          });
+        } else if (finishedStatuses.includes(value)) {
+          // Para Concluídas e Canceladas
+          setDisableDateFields(false);
+          setFixedDateType("fechamento");
+          setFilterValues({
+            ...updatedValues,
+            campo_data: "fechamento",
+            data_ini: get30DaysAgo(),
+            data_fim: getToday(),
+          });
+        } else {
+          // Para Todas (1,2,3,4,5,6,7,8,9)
+          setDisableDateFields(false);
+          setFixedDateType(null);
+          setFilterValues({
+            ...updatedValues,
+            campo_data: "abertura", // Por padrão, usar data de abertura
+            data_ini: get30DaysAgo(),
+            data_fim: getToday(),
+          });
+        }
+      } else {
+        setFilterValues((prev) => ({ ...prev, [key]: value }));
+      }
+    },
+    [filterValues]
+  );
 
   const handleClearFilters = useCallback(() => {
+    // Reset state
     setFilterValues({});
+    setDisableDateFields(false);
+    setFixedDateType(null);
+
     // Reset any form controls if needed (like date inputs)
     const dateInputs = document.querySelectorAll('input[type="date"]');
     dateInputs.forEach((input) => {
       (input as HTMLInputElement).value = "";
     });
+
     // Foco no primeiro campo após limpar
     const firstInput = document.querySelector(
       ".filter-section input, .filter-section select"
@@ -462,6 +526,27 @@ const ConsultaOSPage: React.FC = () => {
       setLoading(false);
     }
   }, [filterValues]);
+
+  // Configurar campos de data com base no status ao iniciar ou quando o status muda
+  useEffect(() => {
+    // Configurar estado inicial com base no status
+    const currentStatus = filterValues.status;
+    if (currentStatus) {
+      const pendingStatuses = ["1", "1,2,3,4,5", "6"];
+      const finishedStatuses = ["6,7", "8,9"];
+
+      if (pendingStatuses.includes(currentStatus)) {
+        setDisableDateFields(true);
+        setFixedDateType(null);
+      } else if (finishedStatuses.includes(currentStatus)) {
+        setDisableDateFields(false);
+        setFixedDateType("fechamento");
+      } else {
+        setDisableDateFields(false);
+        setFixedDateType(null);
+      }
+    }
+  }, [filterValues.status]);
 
   // Função para lidar com o clique em uma linha da tabela
   const handleRowClick = (id: number | string) => {
@@ -800,74 +885,84 @@ const ConsultaOSPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Tipo de Data */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Tipo de Data
-                </label>
-                <div className="relative">
-                  <select
-                    className="w-full px-3 py-3 appearance-none border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 bg-white transition-all duration-200"
-                    value={filterValues.campo_data || ""}
-                    onChange={(e) =>
-                      handleFilterChange("campo_data", e.target.value)
-                    }
-                  >
-                    <option value="">Selecione o tipo</option>
-                    <option value="abertura">Data de Abertura</option>
-                    <option value="agendada">Data Agendada</option>
-                    <option value="fechamento">Data de Fechamento</option>
-                    <option value="revisao">Data de Revisão</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span className="text-gray-400">
-                      <ChevronDown className="h-5 w-5" />
-                    </span>
+              {/* Tipo de Data, Data Inicial e Data Final em uma linha */}
+              <div className="col-span-1 lg:col-span-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Tipo de Data */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Tipo de Data
+                    </label>
+                    <div className="relative">
+                      <select
+                        className={`w-full px-3 py-3 appearance-none border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 transition-all duration-200 ${
+                          disableDateFields || fixedDateType
+                            ? "bg-gray-100 cursor-not-allowed"
+                            : "bg-white"
+                        }`}
+                        value={filterValues.campo_data || ""}
+                        onChange={(e) =>
+                          handleFilterChange("campo_data", e.target.value)
+                        }
+                        disabled={disableDateFields || fixedDateType !== null}
+                      >
+                        <option value="">Selecione o tipo</option>
+                        <option value="abertura">Data de Abertura</option>
+                        <option value="agendada">Data Agendada</option>
+                        <option value="fechamento">Data de Fechamento</option>
+                        <option value="revisao">Data de Revisão</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span className="text-gray-400">
+                          <ChevronDown className="h-5 w-5" />
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Data Inicial */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Data Inicial
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    className={`w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 transition-all duration-200 ${
-                      !filterValues.campo_data
-                        ? "bg-gray-100 cursor-not-allowed"
-                        : ""
-                    }`}
-                    value={filterValues.data_ini || ""}
-                    onChange={(e) =>
-                      handleFilterChange("data_ini", e.target.value)
-                    }
-                    disabled={!filterValues.campo_data}
-                  />
-                </div>
-              </div>
+                  {/* Data Inicial */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Data Inicial
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        className={`w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 transition-all duration-200 ${
+                          disableDateFields || !filterValues.campo_data
+                            ? "bg-gray-100 cursor-not-allowed"
+                            : ""
+                        }`}
+                        value={filterValues.data_ini || ""}
+                        onChange={(e) =>
+                          handleFilterChange("data_ini", e.target.value)
+                        }
+                        disabled={disableDateFields || !filterValues.campo_data}
+                      />
+                    </div>
+                  </div>
 
-              {/* Data Final */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Data Final
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    className={`w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 transition-all duration-200 ${
-                      !filterValues.campo_data
-                        ? "bg-gray-100 cursor-not-allowed"
-                        : ""
-                    }`}
-                    value={filterValues.data_fim || ""}
-                    onChange={(e) =>
-                      handleFilterChange("data_fim", e.target.value)
-                    }
-                    disabled={!filterValues.campo_data}
-                  />
+                  {/* Data Final */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Data Final
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        className={`w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 transition-all duration-200 ${
+                          disableDateFields || !filterValues.campo_data
+                            ? "bg-gray-100 cursor-not-allowed"
+                            : ""
+                        }`}
+                        value={filterValues.data_fim || ""}
+                        onChange={(e) =>
+                          handleFilterChange("data_fim", e.target.value)
+                        }
+                        disabled={disableDateFields || !filterValues.campo_data}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

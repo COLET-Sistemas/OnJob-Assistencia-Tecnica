@@ -141,7 +141,6 @@ const EditarOrdemServico = () => {
   const osId = params.id as string;
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  // clienteInput state removed as it was unused
   const [clienteOptions, setClienteOptions] = useState<ClienteOption[]>([]);
   const [selectedCliente, setSelectedCliente] = useState<ClienteOption | null>(
     null
@@ -150,7 +149,6 @@ const EditarOrdemServico = () => {
   const [selectedMaquina, setSelectedMaquina] = useState<MaquinaOption | null>(
     null
   );
-  // maquinaInput state removed as it was unused
   const [isSearchingMaquinas, setIsSearchingMaquinas] = useState(false);
   const [motivosPendenciaOptions, setMotivosPendenciaOptions] = useState<
     MotivoPendenciaOption[]
@@ -194,7 +192,6 @@ const EditarOrdemServico = () => {
   const [recebeAvisoOS, setRecebeAvisoOS] = useState(false);
   const [useCustomContato, setUseCustomContato] = useState(false);
   const [saveToClient, setSaveToClient] = useState(false);
-  // savedContact state removed as it was unused
   const [tecnicosOptions, setTecnicosOptions] = useState<TecnicoOption[]>([]);
   const [selectedTecnico, setSelectedTecnico] = useState<TecnicoOption | null>(
     null
@@ -658,7 +655,6 @@ const EditarOrdemServico = () => {
     if (maquinaOption && maquinaOption.value === -1) {
       // Usuário selecionou "Buscar outra máquina..."
       setSelectedMaquina(null);
-      // No longer need to reset input as we're not tracking it
     } else {
       setSelectedMaquina(maquinaOption);
     }
@@ -837,8 +833,6 @@ const EditarOrdemServico = () => {
   // Handler para o input de máquina com debounce otimizado
   const handleMaquinaInputChange = useCallback(
     (inputValue: string) => {
-      // We no longer track the input value in state
-
       if (inputValue.length >= 3) {
         setIsSearchingMaquinas(true);
         debouncedSearchMaquinas(inputValue);
@@ -960,8 +954,7 @@ const EditarOrdemServico = () => {
           // É um contato personalizado
           osData.nome_contato_abertura = customContatoNome;
           osData.telefone_contato_abertura = customContatoTelefone;
-          osData.whatsapp_contato_abertura =
-            customContatoWhatsapp === "on" ? "S" : "N";
+          osData.whatsapp_contato_abertura = customContatoWhatsapp || "";
           osData.email_contato_abertura = customContatoEmail;
 
           // Se escolheu salvar como contato do cliente
@@ -972,7 +965,7 @@ const EditarOrdemServico = () => {
               nome_completo: customContatoNomeCompleto,
               cargo: customContatoCargo,
               telefone: customContatoTelefone,
-              whatsapp: customContatoWhatsapp === "on" ? "S" : "N",
+              whatsapp: customContatoWhatsapp,
               email: customContatoEmail,
               situacao: "A",
               recebe_aviso_os: recebeAvisoOS,
@@ -986,10 +979,43 @@ const EditarOrdemServico = () => {
               if (response && response.contato && response.contato.id) {
                 osData.id_contato = response.contato.id;
                 osData.id_contato_abertura = response.contato.id;
-                // We don't store this contact as we're not using it later
               }
             } catch (error) {
               console.error("Erro ao salvar contato:", error);
+              // Verificar se a mensagem de erro contém informação sobre um contato cadastrado com sucesso
+              const errorMessage =
+                error instanceof Error
+                  ? error.message
+                  : "Ocorreu um erro ao salvar o contato.";
+
+              if (
+                errorMessage.includes("cadastrado com sucesso") ||
+                errorMessage.includes("sucesso") ||
+                errorMessage.toLowerCase().includes("contato criado")
+              ) {
+                // É uma mensagem de sucesso que foi tratada como erro
+                // Tenta obter os dados do contato salvo
+                if (selectedCliente) {
+                  try {
+                    const contactsResponse = await clientesService.getContacts(
+                      selectedCliente.value
+                    );
+                    const lastContact =
+                      contactsResponse.contatos[
+                        contactsResponse.contatos.length - 1
+                      ];
+                    if (lastContact) {
+                      osData.id_contato = lastContact.id;
+                      osData.id_contato_abertura = lastContact.id;
+                    }
+                  } catch (fetchError) {
+                    console.error(
+                      "Erro ao buscar contato recém-criado:",
+                      fetchError
+                    );
+                  }
+                }
+              }
             }
           }
         } else {
@@ -1069,7 +1095,7 @@ const EditarOrdemServico = () => {
       <FormContainer onSubmit={handleSubmit}>
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            Informações do Cliente e Máquina
+            Informações do Cliente e Contato
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Cliente */}
@@ -1112,7 +1138,119 @@ const EditarOrdemServico = () => {
                 )}
               </div>
             </div>
+            {/* Contato */}
+            <div className="col-span-2 md:col-span-1">
+              <div className="mb-6">
+                <CustomSelect
+                  id="contato"
+                  label="Contato"
+                  placeholder={
+                    selectedCliente
+                      ? "Selecione um contato..."
+                      : "Selecione um cliente primeiro..."
+                  }
+                  value={selectedContato}
+                  onChange={handleContatoSelectChange}
+                  options={contatoOptions}
+                  isSearchable
+                  isLoading={loadingContatos}
+                  isDisabled={!selectedCliente}
+                  className={errors.contato ? "campo-erro" : ""}
+                  components={
+                    contatoSelectComponents as unknown as React.ComponentProps<
+                      typeof CustomSelect
+                    >["components"]
+                  }
+                />
+                {errors.contato && (
+                  <div className="text-red-500 text-sm mt-1">
+                    Selecione um contato
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          {useCustomContato && (
+            <div className="mb-6 w-full">
+              <CustomContatoForm
+                customContatoNome={customContatoNome}
+                setCustomContatoNome={setCustomContatoNome}
+                customContatoNomeCompleto={customContatoNomeCompleto}
+                setCustomContatoNomeCompleto={setCustomContatoNomeCompleto}
+                customContatoCargo={customContatoCargo}
+                setCustomContatoCargo={setCustomContatoCargo}
+                customContatoEmail={customContatoEmail}
+                setCustomContatoEmail={setCustomContatoEmail}
+                customContatoTelefone={customContatoTelefone}
+                setCustomContatoTelefone={setCustomContatoTelefone}
+                customContatoWhatsapp={customContatoWhatsapp}
+                setCustomContatoWhatsapp={setCustomContatoWhatsapp}
+                recebeAvisoOS={recebeAvisoOS}
+                setRecebeAvisoOS={setRecebeAvisoOS}
+                saveToClient={saveToClient}
+                setSaveToClient={setSaveToClient}
+                showNameError={showNameError}
+                clienteId={selectedCliente?.value}
+                onContactSaved={(contact) => {
+                  // Adicionar o novo contato às opções
+                  const newContactOption = {
+                    value: contact.id,
+                    label: contact.nome || contact.nome_completo || "Contato",
+                    contato: contact,
+                  };
 
+                  // Adicionar às opções de contato excluindo o item "Adicionar novo contato"
+                  const filteredOptions = contatoOptions.filter(
+                    (option) => option.value !== -1
+                  );
+
+                  // Adicionar o novo contato e depois a opção de "Adicionar novo contato"
+                  const newOptions = [
+                    ...filteredOptions,
+                    newContactOption,
+                    {
+                      value: -1,
+                      label: "Adicionar novo contato...",
+                      contato: {
+                        id: -1,
+                        nome: "",
+                        email: "",
+                        telefone: "",
+                        whatsapp: "",
+                        situacao: "A",
+                        recebe_aviso_os: false,
+                      } as ClienteContato,
+                    },
+                  ];
+
+                  setContatoOptions(newOptions);
+
+                  // Selecionar automaticamente o contato criado
+                  setSelectedContato(newContactOption);
+
+                  // Limpar a flag de uso de contato customizado
+                  setUseCustomContato(false);
+
+                  // Limpar os campos do formulário de contato
+                  setCustomContatoNome("");
+                  setCustomContatoNomeCompleto("");
+                  setCustomContatoCargo("");
+                  setCustomContatoEmail("");
+                  setCustomContatoTelefone("");
+                  setCustomContatoWhatsapp("");
+                  setRecebeAvisoOS(false);
+                  setSaveToClient(false);
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            Informações da Ordem de Serviço
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Máquina */}
             <div className="col-span-2 md:col-span-1">
               <div className="mb-6">
@@ -1147,46 +1285,6 @@ const EditarOrdemServico = () => {
                 )}
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            Informações da Ordem de Serviço
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Contato */}
-            <div className="col-span-2 md:col-span-1">
-              <div className="mb-6">
-                <CustomSelect
-                  id="contato"
-                  label="Contato"
-                  placeholder={
-                    selectedCliente
-                      ? "Selecione um contato..."
-                      : "Selecione um cliente primeiro..."
-                  }
-                  value={selectedContato}
-                  onChange={handleContatoSelectChange}
-                  options={contatoOptions}
-                  isSearchable
-                  isLoading={loadingContatos}
-                  isDisabled={!selectedCliente}
-                  className={errors.contato ? "campo-erro" : ""}
-                  components={
-                    contatoSelectComponents as unknown as React.ComponentProps<
-                      typeof CustomSelect
-                    >["components"]
-                  }
-                />
-                {errors.contato && (
-                  <div className="text-red-500 text-sm mt-1">
-                    Selecione um contato
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* Motivo de Pendência */}
             <div className="col-span-2 md:col-span-1">
               <div className="mb-6">
@@ -1294,29 +1392,6 @@ const EditarOrdemServico = () => {
             )}
           </div>
         </div>
-
-        {/* Formulário de Contato Personalizado */}
-        {useCustomContato && (
-          <CustomContatoForm
-            customContatoNome={customContatoNome}
-            setCustomContatoNome={setCustomContatoNome}
-            customContatoNomeCompleto={customContatoNomeCompleto}
-            setCustomContatoNomeCompleto={setCustomContatoNomeCompleto}
-            customContatoCargo={customContatoCargo}
-            setCustomContatoCargo={setCustomContatoCargo}
-            customContatoEmail={customContatoEmail}
-            setCustomContatoEmail={setCustomContatoEmail}
-            customContatoTelefone={customContatoTelefone}
-            setCustomContatoTelefone={setCustomContatoTelefone}
-            customContatoWhatsapp={customContatoWhatsapp}
-            setCustomContatoWhatsapp={setCustomContatoWhatsapp}
-            recebeAvisoOS={recebeAvisoOS}
-            setRecebeAvisoOS={setRecebeAvisoOS}
-            saveToClient={saveToClient}
-            setSaveToClient={setSaveToClient}
-            showNameError={showNameError}
-          />
-        )}
 
         <FormActions isSaving={isSaving} />
       </FormContainer>
