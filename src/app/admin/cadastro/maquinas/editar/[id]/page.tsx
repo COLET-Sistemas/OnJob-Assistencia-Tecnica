@@ -24,7 +24,8 @@ interface FormData {
   numero_serie: string;
   descricao: string;
   modelo: string;
-  id_cliente: number | null;
+  id_cliente_atual: number | null;
+  situacao: string;
   data_1a_venda: string;
   nota_fiscal_venda: string;
   data_final_garantia: string;
@@ -49,7 +50,8 @@ const EditarMaquina = () => {
     numero_serie: "",
     descricao: "",
     modelo: "",
-    id_cliente: null,
+    id_cliente_atual: null,
+    situacao: "A",
     data_1a_venda: "",
     nota_fiscal_venda: "",
     data_final_garantia: "",
@@ -96,10 +98,11 @@ const EditarMaquina = () => {
         numero_serie: maquinaData.numero_serie || "",
         descricao: maquinaData.descricao || "",
         modelo: maquinaData.modelo || "",
-        id_cliente:
+        id_cliente_atual:
           maquinaData.id_cliente_atual ||
           maquinaData.cliente_atual?.id_cliente ||
           null,
+        situacao: maquinaData.situacao || "A",
         data_1a_venda: maquinaData.data_1a_venda
           ? new Date(maquinaData.data_1a_venda).toISOString().split("T")[0]
           : "",
@@ -136,7 +139,7 @@ const EditarMaquina = () => {
         // Garantir que o ID do cliente esteja no formData
         setFormData((prev) => ({
           ...prev,
-          id_cliente: clienteId,
+          id_cliente_atual: clienteId,
         }));
       } else if (maquinaData.id_cliente_atual) {
         console.log("Buscando cliente pelo ID:", maquinaData.id_cliente_atual);
@@ -173,7 +176,7 @@ const EditarMaquina = () => {
             // Garantir que o ID do cliente esteja no formData
             setFormData((prev) => ({
               ...prev,
-              id_cliente: cliente.id_cliente ?? null,
+              id_cliente_atual: cliente.id_cliente ?? null,
             }));
           } else {
             console.log("Cliente não encontrado pela API");
@@ -292,7 +295,7 @@ const EditarMaquina = () => {
     if (clienteOption) {
       setFormData((prev) => ({
         ...prev,
-        id_cliente: clienteOption.value,
+        id_cliente_atual: clienteOption.value,
       }));
 
       // Limpar erro se existir
@@ -300,7 +303,7 @@ const EditarMaquina = () => {
         setFormErrors((prev) => ({ ...prev, id_cliente_atual: "" }));
       }
     } else {
-      setFormData((prev) => ({ ...prev, id_cliente: null }));
+      setFormData((prev) => ({ ...prev, id_cliente_atual: null }));
     }
   };
 
@@ -330,7 +333,8 @@ const EditarMaquina = () => {
         numero_serie: formData.numero_serie,
         descricao: formData.descricao,
         modelo: formData.modelo,
-        id_cliente: formData.id_cliente ?? undefined,
+        id_cliente_atual: formData.id_cliente_atual ?? undefined,
+        situacao: formData.situacao,
         data_1a_venda: formData.data_1a_venda,
         nota_fiscal_venda: formData.nota_fiscal_venda,
         data_final_garantia: formData.data_final_garantia,
@@ -425,33 +429,66 @@ const EditarMaquina = () => {
                   />
                 </div>
 
-                {/* Cliente Atual */}
-                <div>
-                  <CustomSelect
-                    id="cliente_atual"
-                    label="Cliente Atual"
-                    placeholder="Digite pelo menos 3 caracteres para buscar o cliente..."
-                    inputValue={clienteInput}
-                    onInputChange={handleClienteInputChange}
-                    onChange={handleClienteChange}
-                    options={
-                      selectedCliente &&
-                      !clienteOptions.find(
-                        (option) => option.value === selectedCliente.value
-                      )
-                        ? [selectedCliente, ...clienteOptions]
-                        : clienteOptions
-                    }
-                    value={selectedCliente}
-                    isLoading={isSearchingCliente}
-                    error={formErrors.id_cliente_atual}
-                    minCharsToSearch={3}
-                    noOptionsMessageFn={({ inputValue }) =>
-                      inputValue.length < 3
-                        ? "Digite pelo menos 3 caracteres para buscar..."
-                        : "Nenhum cliente encontrado"
-                    }
-                  />
+                {/* Cliente Atual e Situação na mesma linha */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  {/* Cliente Atual (ocupa 3 colunas) */}
+                  <div className="md:col-span-3">
+                    <CustomSelect
+                      id="cliente_atual"
+                      label="Cliente Atual"
+                      placeholder="Digite pelo menos 3 caracteres para buscar o cliente..."
+                      inputValue={clienteInput}
+                      onInputChange={handleClienteInputChange}
+                      onChange={handleClienteChange}
+                      options={
+                        selectedCliente &&
+                        !clienteOptions.find(
+                          (option) => option.value === selectedCliente.value
+                        )
+                          ? [selectedCliente, ...clienteOptions]
+                          : clienteOptions
+                      }
+                      value={selectedCliente}
+                      isLoading={isSearchingCliente}
+                      error={formErrors.id_cliente_atual}
+                      minCharsToSearch={3}
+                      noOptionsMessageFn={({ inputValue }) =>
+                        inputValue.length < 3
+                          ? "Digite pelo menos 3 caracteres para buscar..."
+                          : "Nenhum cliente encontrado"
+                      }
+                    />
+                  </div>
+
+                  {/* Situação (ocupa 1 coluna) */}
+                  <div>
+                    <CustomSelect
+                      id="situacao"
+                      label="Situação"
+                      placeholder="Selecione a situação"
+                      options={[
+                        { label: "Ativo", value: "A" },
+                        { label: "Inativo", value: "I" },
+                      ]}
+                      value={
+                        formData.situacao
+                          ? {
+                              label:
+                                formData.situacao === "A" ? "Ativo" : "Inativo",
+                              value: formData.situacao,
+                            }
+                          : null
+                      }
+                      onChange={(option) => {
+                        if (option) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            situacao: option.value.toString(),
+                          }));
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -40,10 +40,16 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   }, [menuOpen]);
 
   // Funções de ação do menu
+  const handleInicial = () => {
+    setMenuOpen(false);
+    router.push("/tecnico/dashboard");
+  };
+
   const handleSobre = () => {
     setMenuOpen(false);
     router.push("/tecnico/sobre");
   };
+
   const handleSair = () => {
     setMenuOpen(false);
     if (typeof window !== "undefined") {
@@ -53,6 +59,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   };
 
   const menuOptions: MenuOption[] = [
+    { label: "Lista de OS's", onClick: handleInicial },
     { label: "Sobre", onClick: handleSobre },
     { label: "Sair", onClick: handleSair },
   ];
@@ -70,27 +77,12 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             <Plus className="w-6 h-6" />
           </button>
         ) : (
-          // {/*
-          // <button
-          //   onClick={() => {
-          //     if (onMenuClick) {
-          //       onMenuClick();
-          //     } else {
-          //       router.back();
-          //     }
-          //   }}
-          //   className="p-2 hover:bg-[#7B54BE] rounded-lg transition-colors"
-          //   aria-label="Voltar"
-          // >
-          //   <ArrowLeft className="w-6 h-6" />
-          // </button>
-          // */}
           <></>
         )}
 
         <h1 className="text-lg font-medium text-center flex-1 px-4">{title}</h1>
 
-        {/* Direita: botão de menu (apenas se onMenuClick for passado) */}
+        {/* Direita: botão de menu */}
         {onMenuClick ? (
           <div className="relative" ref={menuRef}>
             <button

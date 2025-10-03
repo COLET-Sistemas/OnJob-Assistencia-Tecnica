@@ -1,0 +1,38 @@
+/* Estilos para esconder scrollbar em todos os navegadores */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+  -webkit-overflow-scrolling: touch; /* Rolagem suave em dispositivos iOS */
+  scroll-behavior: smooth; /* Rolagem suave em geral */
+  user-select: none; /* Impedir seleção de texto durante o arraste */
+}
+
+/* Estilização para o estado de arraste */
+.cursor-grabbing {
+  cursor: grabbing !important;
+}
+
+/* Animações para os botões quando aparecem */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hide-scrollbar > div > div {
+  animation: fadeSlideIn 0.3s ease forwards;
+}
+
+/* Adicionar um pequeno espaço no final para garantir que o último item seja visível */
+.hide-scrollbar > div {
+  padding-right: 16px;
+}

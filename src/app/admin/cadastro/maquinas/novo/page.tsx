@@ -24,6 +24,7 @@ interface FormData {
   descricao: string;
   modelo: string;
   id_cliente_atual: number | null;
+  situacao: string;
   data_1a_venda: string;
   nota_fiscal_venda: string;
   data_final_garantia: string;
@@ -52,6 +53,7 @@ const CadastrarMaquina = () => {
     descricao: "",
     modelo: "",
     id_cliente_atual: null,
+    situacao: "A",
     data_1a_venda: "",
     nota_fiscal_venda: "",
     data_final_garantia: "",
@@ -200,11 +202,11 @@ const CadastrarMaquina = () => {
         numero_serie: formData.numero_serie,
         descricao: formData.descricao,
         modelo: formData.modelo,
-        id_cliente: formData.id_cliente_atual!,
+        id_cliente_atual: formData.id_cliente_atual!,
         data_1a_venda: formData.data_1a_venda,
         nota_fiscal_venda: formData.nota_fiscal_venda,
         data_final_garantia: formData.data_final_garantia,
-        situacao: "A",
+        situacao: formData.situacao,
       };
 
       const response = await maquinasService.create(maquinaData);

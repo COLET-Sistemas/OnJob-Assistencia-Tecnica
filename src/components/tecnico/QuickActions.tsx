@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState, memo } from "react";
 import { Navigation, Phone, MessageSquare, Mail } from "lucide-react";
 import type { OSDetalhadaV2 } from "@/api/services/ordensServicoService";
+import "./quickActions.css";
 
 interface QuickAction {
   icon: React.ReactNode;
@@ -15,36 +16,62 @@ interface QuickAction {
 const ActionButton = memo<{
   action: QuickAction;
   index: number;
-}>(({ action, index }) => (
-  <button
-    onClick={action.action}
-    disabled={action.disabled}
-    className={`
-      group relative flex flex-col items-center gap-2 p-4 
-      rounded-xl border transition-all duration-200 ease-out
-      min-w-[80px] bg-white hover:bg-gray-50
-      ${action.color}
-      ${
-        action.disabled
-          ? "opacity-50 cursor-not-allowed border-gray-200"
-          : "hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 border-gray-200 hover:border-gray-300"
-      }
-    `}
-    style={{
-      animationDelay: `${index * 100}ms`,
-    }}
-  >
-    {/* Ícone simples */}
-    <div className="flex items-center justify-center w-8 h-8">
-      {action.icon}
-    </div>
+  isDragging: boolean;
+}>(({ action, index, isDragging }) => {
+  const wasClickedWhileDraggingRef = React.useRef(false);
 
-    {/* Label */}
-    <span className="text-xs font-medium text-gray-700 text-center">
-      {action.label}
-    </span>
-  </button>
-));
+  // Monitorar quando o botão for clicado durante o arrasto
+  React.useEffect(() => {
+    if (isDragging) {
+      wasClickedWhileDraggingRef.current = true;
+    } else {
+      // Resetar depois de um pequeno intervalo
+      const timeout = setTimeout(() => {
+        wasClickedWhileDraggingRef.current = false;
+      }, 50);
+      return () => clearTimeout(timeout);
+    }
+  }, [isDragging]);
+
+  return (
+    <button
+      onClick={() => {
+        // Verificar se está arrastando ou se foi clicado durante o arraste
+        if (isDragging || wasClickedWhileDraggingRef.current) {
+          return;
+        }
+        // Chamar a ação apenas quando não estiver arrastando
+        action.action();
+        console.log("Button clicked:", action.label);
+      }}
+      disabled={action.disabled}
+      className={`
+        group relative flex flex-col items-center justify-center gap-2 p-4
+        rounded-xl border transition-all duration-200 ease-out
+        w-[90px] h-[90px] bg-white hover:bg-gray-50
+        ${action.color}
+        ${
+          action.disabled
+            ? "opacity-50 cursor-not-allowed border-gray-200"
+            : "hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 border-gray-200 hover:border-gray-300"
+        }
+      `}
+      style={{
+        animationDelay: `${index * 100}ms`,
+      }}
+    >
+      {/* Ícone simples */}
+      <div className="flex items-center justify-center w-8 h-8">
+        {action.icon}
+      </div>
+
+      {/* Label */}
+      <span className="text-xs font-medium text-gray-700 text-center">
+        {action.label}
+      </span>
+    </button>
+  );
+});
 
 ActionButton.displayName = "ActionButton";
 
@@ -311,15 +338,121 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
     return actionList;
   }, [os, showNavigationModal, isLocationLoading]);
 
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const [isScrollable, setIsScrollable] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  // Verificar se o conteúdo precisa de rolagem
+  useEffect(() => {
+    const checkScrollable = () => {
+      if (scrollRef.current) {
+        const { scrollWidth, clientWidth } = scrollRef.current;
+        setIsScrollable(scrollWidth > clientWidth);
+      }
+    };
+
+    checkScrollable();
+    window.addEventListener("resize", checkScrollable);
+    return () => window.removeEventListener("resize", checkScrollable);
+  }, [actions.length]);
+
+  // Manipuladores de eventos de arraste
+  // Referência para armazenar o temporizador
+  const dragTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+
+    // Armazenar posição inicial, mas não ativar o arrastar imediatamente
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+
+    // Usar um pequeno atraso para distinguir entre clique e arrasto
+    dragTimeoutRef.current = setTimeout(() => {
+      setIsDragging(true);
+    }, 100); // 100ms de atraso
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!scrollRef.current) return;
+
+    // Armazenar posição inicial, mas não ativar o arrastar imediatamente
+    setStartX(e.touches[0].pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+
+    // Usar um pequeno atraso para distinguir entre clique e arrasto
+    dragTimeoutRef.current = setTimeout(() => {
+      setIsDragging(true);
+    }, 100); // 100ms de atraso
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollRef.current) return;
+
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5; // Velocidade de rolagem
+    scrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !scrollRef.current) return;
+
+    const x = e.touches[0].pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    scrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    // Limpar o timeout para evitar que o arrasto seja ativado após soltar o botão
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+      dragTimeoutRef.current = null;
+    }
+    setIsDragging(false);
+  };
+
   if (actions.length === 0) return null;
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-      {actions.map((action, index) => (
-        <div key={index} className="flex-shrink-0">
-          <ActionButton action={action} index={index} />
-        </div>
-      ))}
+    <div
+      className={`overflow-x-auto pb-2 hide-scrollbar relative ${
+        isDragging ? "cursor-grabbing" : "cursor-grab"
+      }`}
+      style={{
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+        WebkitOverflowScrolling: "touch",
+      }}
+      ref={scrollRef}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUpOrLeave}
+      onMouseLeave={handleMouseUpOrLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleMouseUpOrLeave}
+    >
+      <div className="flex gap-3 pb-1 px-1">
+        {actions.map((action, index) => (
+          <div key={index} className="flex-shrink-0">
+            <ActionButton
+              action={action}
+              index={index}
+              isDragging={isDragging}
+            />
+          </div>
+        ))}
+      </div>
+
+      {isScrollable && (
+        <>
+          <div className="absolute right-0 top-0 bottom-0 w-12 pointer-events-none bg-gradient-to-l from-white to-transparent opacity-70"></div>
+          <div className="absolute left-0 top-0 bottom-0 w-12 pointer-events-none bg-gradient-to-r from-white to-transparent opacity-70"></div>
+        </>
+      )}
     </div>
   );
 }

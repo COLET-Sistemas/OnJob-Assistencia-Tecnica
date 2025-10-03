@@ -246,6 +246,36 @@ export default function LoginPage() {
     }
   }, []);
 
+  // Limpar mensagem de erro após 15 segundos
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    if (error) {
+      timer = setTimeout(() => {
+        setError("");
+      }, 15000); // 15 segundos
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [error]);
+
+  // Limpar mensagem de erro após 15 segundos
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    if (error) {
+      timer = setTimeout(() => {
+        setError("");
+      }, 15000); // 15 segundos
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [error]);
+
   useEffect(() => {
     const timer = setTimeout(checkDevice, 100);
     window.addEventListener("resize", checkDevice);
@@ -329,18 +359,26 @@ export default function LoginPage() {
       const authData = await LoginService.authenticate(login, senha);
 
       if (!LoginService.hasTechAccess(authData.perfil)) {
-        setError(
-          "Usuário não possui perfil técnico. Acesso negado ao Módulo Técnico."
-        );
+        const errorMsg =
+          "Usuário não possui perfil técnico. Acesso negado ao Módulo Técnico.";
+        setError(errorMsg);
+        // Mostrar error em mobile diretamente
+        if (isMobile) {
+          console.error("Erro de acesso técnico:", errorMsg);
+        }
         return;
       }
 
       const { tecnico_proprio, tecnico_terceirizado } = authData.perfil;
 
       if (!tecnico_proprio && !tecnico_terceirizado) {
-        setError(
-          "Usuário não é técnico próprio nem terceirizado. Acesso negado."
-        );
+        const errorMsg =
+          "Usuário não é técnico próprio nem terceirizado. Acesso negado.";
+        setError(errorMsg);
+        // Mostrar error em mobile diretamente
+        if (isMobile) {
+          console.error("Erro de acesso técnico:", errorMsg);
+        }
         return;
       }
 
@@ -378,7 +416,7 @@ export default function LoginPage() {
     } finally {
       setLoadingTech(false);
     }
-  }, [login, senha, router]);
+  }, [login, senha, router, isMobile]);
 
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent) => {
@@ -548,20 +586,29 @@ export default function LoginPage() {
                 redirectReason
                   ? "bg-amber-50 border-amber-200"
                   : "bg-red-50 border-red-200"
-              } border-2 rounded-2xl flex items-start space-x-3 animate-shake shadow-sm`}
+              } border-2 rounded-2xl flex items-start space-x-3 animate-shake shadow-sm ${
+                isMobile ? "shadow-md border-l-4 border-l-red-500" : ""
+              }`}
             >
               <AlertTriangle
                 className={`w-5 h-5 ${
                   redirectReason ? "text-amber-500" : "text-red-500"
                 } mt-0.5 flex-shrink-0`}
               />
-              <p
-                className={`${
-                  redirectReason ? "text-amber-700" : "text-red-700"
-                } text-sm font-medium`}
-              >
-                {error}
-              </p>
+              <div className="flex-1">
+                <p
+                  className={`${
+                    redirectReason ? "text-amber-700" : "text-red-700"
+                  } text-sm font-medium`}
+                >
+                  {error}
+                </p>
+                {isMobile && (
+                  <p className="text-gray-500 text-xs mt-1">
+                    Esta mensagem desaparecerá em 15 segundos
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -623,15 +670,17 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-            <div className="mb-4">
-              <a
-                href="/dashboard-panel"
-                className="inline-flex items-center text-sm text-[#7B54BE] hover:text-[#553499] font-medium transition-colors focus:outline-none focus:underline"
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Acessar Painel de Monitoramento
-              </a>
-            </div>
+            {!isMobile && (
+              <div className="mb-4">
+                <a
+                  href="/dashboard-panel"
+                  className="inline-flex items-center text-sm text-[#7B54BE] hover:text-[#553499] font-medium transition-colors focus:outline-none focus:underline"
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Acessar Painel de Monitoramento
+                </a>
+              </div>
+            )}
             <p className="text-gray-500 text-xs">
               © 2025 OnJob Sistemas. Todos os direitos reservados - Versão{" "}
               {packageInfo.version}
