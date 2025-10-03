@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { verifyToken } from "@/utils/jwtUtils";
 import { useToast } from "@/components/admin/ui/ToastContainer";
@@ -14,6 +14,15 @@ interface AuthGuardProps {
  * Complementa o middleware verificando a autenticação local e exibindo mensagens de feedback
  */
 const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthGuardInner>{children}</AuthGuardInner>
+    </Suspense>
+  );
+};
+
+// Componente interno que utiliza os hooks que precisam de Suspense
+const AuthGuardInner: React.FC<AuthGuardProps> = ({ children }) => {
   const router = useRouter();
   const { showError } = useToast();
   const searchParams = useSearchParams();
@@ -65,7 +74,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     return () => clearInterval(intervalId);
   }, [router]);
 
-  return <>{children}</>;
+  return children;
 };
 
 export default AuthGuard;
