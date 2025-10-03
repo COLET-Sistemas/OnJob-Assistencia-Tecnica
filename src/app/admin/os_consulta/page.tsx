@@ -639,9 +639,7 @@ const ConsultaOSPage: React.FC = () => {
       {
         header: "Data Abertura",
         accessor: (item: OSItemExtended) =>
-          formatarData(
-            item.abertura?.data_abertura ?? item.data_abertura ?? ""
-          ) || "-",
+          item.abertura?.data_abertura ?? item.data_abertura ?? "-",
         className: "whitespace-nowrap hidden md:table-cell",
       },
       {
@@ -993,7 +991,7 @@ const ConsultaOSPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleClearFilters}
-                className="px-5 py-2.5 border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] transition-all duration-200 shadow-sm hover:shadow flex items-center gap-2 group"
+                className="px-5 py-2.5 border-2 border-gray-300 cursor-pointer text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] transition-all duration-200 shadow-sm hover:shadow flex items-center gap-2 group"
                 aria-label="Limpar todos os filtros"
               >
                 <X className="h-4 w-4 group-hover:scale-110 transition-transform" />
@@ -1002,7 +1000,7 @@ const ConsultaOSPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleSearch}
-                className="px-6 py-2.5 bg-[var(--primary)] text-white font-medium rounded-lg hover:bg-[var(--primary-dark)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] transition-all duration-200 shadow hover:shadow-md flex items-center gap-2 group"
+                className="px-6 py-2.5 bg-[var(--primary)] text-white font-medium rounded-lg hover:bg-[#7B54BE]/40 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] transition-all duration-200 shadow hover:shadow-md flex items-center gap-2 group"
                 aria-label="Realizar pesquisa com filtros selecionados"
               >
                 <Search className="h-4 w-4 group-hover:scale-110 transition-transform" />

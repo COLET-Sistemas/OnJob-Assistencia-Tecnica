@@ -496,6 +496,51 @@ const EditarOrdemServico = () => {
     };
 
     fetchOSData();
+
+    // Garantir que os técnicos sejam carregados imediatamente
+    if (!tecnicosLoaded.current) {
+      const loadTecnicos = async () => {
+        setLoadingTecnicos(true);
+        try {
+          console.log("Carregando técnicos na inicialização");
+          const tecnicosResponse = await usuariosService.getAllTecnicos();
+          console.log("Resposta técnicos na inicialização:", tecnicosResponse);
+
+          const tecnicos: TecnicoOption[] = [];
+
+          if (
+            tecnicosResponse &&
+            tecnicosResponse.dados &&
+            Array.isArray(tecnicosResponse.dados)
+          ) {
+            tecnicosResponse.dados.forEach((tecnico: Usuario) => {
+              tecnicos.push({
+                value: tecnico.id,
+                label: tecnico.nome,
+              });
+            });
+          } else if (Array.isArray(tecnicosResponse)) {
+            tecnicosResponse.forEach((tecnico: Usuario) => {
+              tecnicos.push({
+                value: tecnico.id,
+                label: tecnico.nome,
+              });
+            });
+          }
+
+          if (tecnicos.length > 0) {
+            setTecnicosOptions(tecnicos);
+          }
+        } catch (error) {
+          console.error("Erro ao carregar técnicos na inicialização:", error);
+        } finally {
+          tecnicosLoaded.current = true;
+          setLoadingTecnicos(false);
+        }
+      };
+
+      loadTecnicos();
+    }
   }, [osId]);
 
   // Define handleClienteChange before it's referenced
@@ -708,17 +753,59 @@ const EditarOrdemServico = () => {
         // Carregar técnicos
         if (!tecnicosLoaded.current) {
           setLoadingTecnicos(true);
-          const tecnicosResponse = await usuariosService.getAllTecnicos();
-          const tecnicos =
-            tecnicosResponse && tecnicosResponse.dados
-              ? tecnicosResponse.dados.map((tecnico: Usuario) => ({
+          try {
+            console.log("Iniciando busca de técnicos");
+            const tecnicosResponse = await usuariosService.getAllTecnicos();
+            console.log("Resposta de técnicos:", tecnicosResponse);
+
+            // Verificar a estrutura da resposta para garantir o mapeamento correto
+            const tecnicos: TecnicoOption[] = [];
+
+            if (
+              tecnicosResponse &&
+              tecnicosResponse.dados &&
+              Array.isArray(tecnicosResponse.dados)
+            ) {
+              console.log(
+                `Encontrados ${tecnicosResponse.dados.length} técnicos`
+              );
+              tecnicosResponse.dados.forEach((tecnico: Usuario) => {
+                tecnicos.push({
                   value: tecnico.id,
                   label: tecnico.nome,
-                }))
-              : [];
-          setTecnicosOptions(tecnicos);
-          tecnicosLoaded.current = true;
-          setLoadingTecnicos(false);
+                });
+              });
+            } else if (Array.isArray(tecnicosResponse)) {
+              // Caso a resposta seja diretamente um array
+              console.log(
+                `Encontrados ${tecnicosResponse.length} técnicos (formato array direto)`
+              );
+              tecnicosResponse.forEach((tecnico: Usuario) => {
+                tecnicos.push({
+                  value: tecnico.id,
+                  label: tecnico.nome,
+                });
+              });
+            } else {
+              console.error(
+                "Formato de resposta não reconhecido:",
+                tecnicosResponse
+              );
+            }
+
+            console.log("Lista de técnicos processada:", tecnicos);
+            // Garantir que há sempre opções disponíveis, mesmo que vazia
+            setTecnicosOptions(
+              tecnicos.length > 0
+                ? tecnicos
+                : [{ value: 0, label: "Nenhum técnico disponível" }]
+            );
+          } catch (tecnicoError) {
+            console.error("Erro específico ao buscar técnicos:", tecnicoError);
+          } finally {
+            tecnicosLoaded.current = true;
+            setLoadingTecnicos(false);
+          }
         }
       } catch (error) {
         console.error("Erro ao carregar dados iniciais:", error);
@@ -775,6 +862,15 @@ const EditarOrdemServico = () => {
       setIsSearchingClientes(false);
     }
   }, 500);
+
+  // Verificar se há técnicos disponíveis quando necessário
+  useEffect(() => {
+    console.log("Estado atual dos técnicos:", {
+      opcoes: tecnicosOptions.length,
+      carregando: loadingTecnicos,
+      carregado: tecnicosLoaded.current,
+    });
+  }, [tecnicosOptions, loadingTecnicos]);
 
   const handleClienteInputChange = useCallback(
     (inputValue: string) => {
@@ -919,7 +1015,7 @@ const EditarOrdemServico = () => {
         forma_abertura: string;
         em_garantia: boolean;
         data_agendada?: string;
-        id_tecnico?: number;
+        // Removido id_tecnico, apenas usando id_usuario_tecnico conforme esperado pela API
         id_usuario_tecnico?: number;
         id_contato?: number;
         id_contato_abertura?: number;
@@ -1032,31 +1128,87 @@ const EditarOrdemServico = () => {
 
       // Adicionar técnico, se selecionado
       if (selectedTecnico) {
-        osData.id_tecnico = selectedTecnico.value;
+        // A API espera o ID do técnico apenas como id_usuario_tecnico
         osData.id_usuario_tecnico = selectedTecnico.value;
+        console.log(
+          `Técnico selecionado: ID ${selectedTecnico.value}, Nome: ${selectedTecnico.label}`
+        );
+      } else {
+        console.log("Nenhum técnico selecionado");
       }
 
       // Atualizar a OS existente
-      console.log("Enviando dados para API:", osData);
       try {
+        // Log dos dados sendo enviados para a API para depuração
+        console.log(
+          "Enviando dados para API:",
+          JSON.stringify(osData, null, 2)
+        );
+
+        // Enviando requisição para a API
         const response = await api.put(
           `/ordens_servico?id=${parseInt(osId)}`,
           osData
         );
 
         console.log("Resposta da API completa:", response);
+        // Adicionar log específico para entender melhor o formato da resposta
+        console.log("Tipo da resposta:", typeof response);
+        if (response && typeof response === "object") {
+          console.log("Chaves na resposta:", Object.keys(response));
+        }
 
-        // Uma vez que o status 200 indica sucesso na API, podemos simplesmente
-        // considerar a resposta como bem-sucedida se não ocorrer exceção
+        // Extrair a mensagem de sucesso da resposta da API
+        // Verificar os diferentes formatos possíveis da resposta
+        let apiMessage = "Ordem de serviço atualizada com sucesso!"; // Mensagem padrão
 
-        // Mensagem padrão de sucesso
-        const successMessage = "Ordem de serviço atualizada com sucesso!";
+        // Definir tipos para evitar erros de compilação
+        type ApiResponseType = {
+          message?: string;
+          mensagem?: string;
+          msg?: string;
+          data?: {
+            message?: string;
+            mensagem?: string;
+            msg?: string;
+          };
+        };
+
+        if (response) {
+          if (typeof response === "object") {
+            // Converter para o tipo definido
+            const responseObj = response as ApiResponseType;
+
+            // Tentar encontrar a mensagem em diferentes propriedades comuns
+            if (responseObj.message) {
+              apiMessage = responseObj.message;
+            } else if (responseObj.mensagem) {
+              apiMessage = responseObj.mensagem;
+            } else if (responseObj.msg) {
+              apiMessage = responseObj.msg;
+            } else if (responseObj.data) {
+              // Verificar dentro do objeto data também
+              const dataObj = responseObj.data;
+
+              if (dataObj.message) {
+                apiMessage = dataObj.message;
+              } else if (dataObj.mensagem) {
+                apiMessage = dataObj.mensagem;
+              } else if (dataObj.msg) {
+                apiMessage = dataObj.msg;
+              }
+            }
+          } else if (typeof response === "string") {
+            // Se a resposta for uma string direta
+            apiMessage = response;
+          }
+        }
 
         // Armazenar mensagem no localStorage para recuperá-la após a navegação
-        localStorage.setItem("osUpdateMessage", successMessage);
+        localStorage.setItem("osUpdateMessage", apiMessage);
 
-        // Exibir feedback antes de redirecionar
-        feedback.toast(successMessage, "success");
+        // Exibir feedback antes de redirecionar usando o componente Toast
+        feedback.toast(apiMessage, "success");
 
         // Redirecionar para a página de listagem de OS usando window.location para navegação direta
         setTimeout(() => {
@@ -1064,14 +1216,65 @@ const EditarOrdemServico = () => {
         }, 500);
       } catch (apiError) {
         console.error("Erro específico da API:", apiError);
-        throw apiError; // Repropagar o erro para ser capturado pelo bloco catch externo
+
+        // Tentar extrair mensagem de erro da API para exibir ao usuário
+        let errorMessage = "Ocorreu um erro ao atualizar a ordem de serviço";
+
+        if (apiError && typeof apiError === "object") {
+          // Definir um tipo específico para o objeto de erro
+          type ErrorResponseType = {
+            message?: string;
+            mensagem?: string;
+            error?: string | Record<string, unknown>;
+            response?: {
+              data?:
+                | string
+                | {
+                    message?: string;
+                    mensagem?: string;
+                    error?: string;
+                  };
+            };
+          };
+
+          const errorObj = apiError as ErrorResponseType;
+          if (errorObj.message) {
+            errorMessage = errorObj.message;
+          } else if (errorObj.mensagem) {
+            errorMessage = errorObj.mensagem;
+          } else if (errorObj.error) {
+            errorMessage =
+              typeof errorObj.error === "string"
+                ? errorObj.error
+                : "Erro na atualização";
+          } else if (errorObj.response && errorObj.response.data) {
+            // Axios error format
+            const responseData = errorObj.response.data;
+            if (typeof responseData === "string") {
+              errorMessage = responseData;
+            } else if (typeof responseData === "object") {
+              if (responseData.message) {
+                errorMessage = responseData.message;
+              } else if (responseData.mensagem) {
+                errorMessage = responseData.mensagem;
+              } else if (responseData.error) {
+                errorMessage = responseData.error;
+              }
+            }
+          }
+        }
+
+        // Exibir mensagem de erro usando o Toast
+        feedback.toast(errorMessage, "error");
+        return; // Não propagar o erro, já tratamos ele aqui
       }
     } catch (error) {
       console.error("Erro ao atualizar ordem de serviço:", error);
-      feedback.toast(
-        "Ocorreu um erro ao atualizar a ordem de serviço. Por favor, tente novamente.",
-        "error"
-      );
+
+      // Mensagem de erro genérica para erros não relacionados à API
+      const errorMessage =
+        "Ocorreu um erro ao atualizar a ordem de serviço. Por favor, tente novamente.";
+      feedback.toast(errorMessage, "error");
     } finally {
       setIsSaving(false);
     }
@@ -1366,10 +1569,21 @@ const EditarOrdemServico = () => {
                   value={selectedTecnico}
                   onChange={handleTecnicoSelectChange}
                   options={tecnicosOptions}
-                  isSearchable
+                  isSearchable // Manter busca habilitada mas mostrar todas as opções
                   isLoading={loadingTecnicos}
                   isClearable
+                  noOptionsMessageFn={() =>
+                    tecnicosOptions.length > 0
+                      ? "Digite para filtrar técnicos"
+                      : "Nenhum técnico disponível"
+                  }
                 />
+                {/* Debug info - remover após testes */}
+                {tecnicosOptions.length === 0 && !loadingTecnicos && (
+                  <div className="text-xs text-amber-600">
+                    Nenhum técnico carregado. Recarregue a página.
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -178,8 +178,7 @@ const CadastrarMaquina = () => {
     if (!formData.numero_serie) errors.numero_serie = "Campo obrigatório";
     if (!formData.descricao) errors.descricao = "Campo obrigatório";
     if (!formData.modelo) errors.modelo = "Campo obrigatório";
-    if (!formData.id_cliente_atual)
-      errors.id_cliente_atual = "Selecione um cliente";
+    // Cliente não é mais obrigatório
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -270,13 +269,24 @@ const CadastrarMaquina = () => {
                     />
                   </div>
                 </div>
+                {/* Descrição */}
+                <div>
+                  <InputField
+                    label="Descrição"
+                    name="descricao"
+                    value={formData.descricao}
+                    error={formErrors.descricao}
+                    placeholder="Descrição da máquina"
+                    required
+                    onChange={handleInputChange}
+                  />
+                </div>
 
                 {/* Cliente Atual */}
                 <div>
                   <CustomSelect
                     id="cliente_atual"
                     label="Cliente Atual"
-                    required
                     placeholder="Digite pelo menos 3 caracteres para buscar o cliente..."
                     inputValue={clienteInput}
                     onInputChange={handleClienteInputChange}
@@ -291,19 +301,6 @@ const CadastrarMaquina = () => {
                         ? "Digite pelo menos 3 caracteres para buscar..."
                         : "Nenhum cliente encontrado"
                     }
-                  />
-                </div>
-
-                {/* Descrição */}
-                <div>
-                  <InputField
-                    label="Descrição"
-                    name="descricao"
-                    value={formData.descricao}
-                    error={formErrors.descricao}
-                    placeholder="Descrição da máquina"
-                    required
-                    onChange={handleInputChange}
                   />
                 </div>
 
@@ -359,9 +356,7 @@ const CadastrarMaquina = () => {
                 isLoading={savingData}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-   
-                  <span>Salvar</span>
-             
+                <span>Salvar</span>
               </LoadingButton>
             </div>
           </footer>

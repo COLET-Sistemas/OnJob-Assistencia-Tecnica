@@ -9,7 +9,6 @@ import {
 } from "@/api/services/ordensServicoService";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { StatusBadge } from "@/components/admin/common";
-import { formatarData } from "@/utils/formatters";
 import { LoadingSpinner } from "@/components/LoadingPersonalizado";
 import {
   Clock,
@@ -709,7 +708,7 @@ const OSDetalhesPage: React.FC = () => {
                           <span className="text-xs text-gray-500">
                             Abertura:
                           </span>{" "}
-                          {formatarData(osData.abertura.data_abertura)}
+                          {osData.abertura.data_abertura}
                         </span>
                       </div>
 
@@ -721,7 +720,7 @@ const OSDetalhesPage: React.FC = () => {
                             <span className="text-xs text-gray-500">
                               Agendada:
                             </span>{" "}
-                            {formatarData(osData.data_agendada)}
+                            {osData.data_agendada}
                           </span>
                         </div>
                       )}
@@ -734,7 +733,7 @@ const OSDetalhesPage: React.FC = () => {
                             <span className="text-xs text-gray-500">
                               Fechamento:
                             </span>{" "}
-                            {formatarData(osData.data_fechamento)}
+                            {osData.data_fechamento}
                           </span>
                         </div>
                       )}
@@ -819,10 +818,7 @@ const OSDetalhesPage: React.FC = () => {
                       {osData.liberacao_financeira.liberada &&
                         osData.liberacao_financeira.data_liberacao && (
                           <p className="text-xs text-gray-600">
-                            Em:{" "}
-                            {formatarData(
-                              osData.liberacao_financeira.data_liberacao
-                            )}
+                            Em: {osData.liberacao_financeira.data_liberacao}
                           </p>
                         )}
                     </div>
