@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
+import { LocationButtonIcon } from "@/components/admin/ui/LocationButton";
 import {
   ordensServicoService,
   OSDetalhadaV2,
@@ -9,6 +10,7 @@ import {
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { StatusBadge } from "@/components/admin/common";
 import { formatarData } from "@/utils/formatters";
+import { LoadingSpinner } from "@/components/LoadingPersonalizado";
 import {
   Clock,
   Bell,
@@ -25,12 +27,12 @@ import {
   Phone,
   Mail,
   CalendarClock,
+  MessageCircle,
   FileText,
-  Tag,
   AlertCircle,
-  MapPin,
+  MapPinned,
   ArrowLeft,
-  Printer,
+  ArrowUp,
   CalendarRange,
 } from "lucide-react";
 
@@ -40,8 +42,59 @@ const fadeInAnimation = `
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+@keyframes pulseScale {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-in-out;
+}
+.animate-pulseScale {
+  animation: pulseScale 0.4s ease-in-out;
+}
+.animate-slideIn {
+  animation: slideIn 0.3s ease-in-out;
+}
+.action-button {
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+.tooltip {
+  position: relative;
+}
+.tooltip:before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 10px;
+  border-radius: 4px;
+  background: #333;
+  color: white;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+.tooltip:hover:before {
+  opacity: 1;
+  visibility: visible;
 }
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
@@ -64,6 +117,10 @@ const OSDetalhesPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [osData, setOsData] = useState<OSDetalhadaV2 | null>(null);
+  const [showScrollToTop, setShowScrollToTop] = useState<boolean>(false);
+
+  // Memoizado para evitar re-renderizações desnecessárias ao navegar pela página
+  const memoizedOsId = useMemo(() => osId, [osId]);
 
   // Definir status mapping para as ordens de serviço
   const statusMapping: Record<
@@ -156,36 +213,35 @@ const OSDetalhesPage: React.FC = () => {
     []
   );
 
-  // Carregar dados da OS
+  // Carregar dados da OS - Otimizado com cache
   useEffect(() => {
     const fetchOSData = async () => {
-      if (!osId) return;
+      if (!memoizedOsId) return;
+
+      // Evitar re-fetch desnecessário se já tivermos os dados para este ID
+      if (osData && osData.id_os === parseInt(memoizedOsId, 10)) return;
 
       try {
         setLoading(true);
         setError(null);
-        const data = await ordensServicoService.getById(parseInt(osId, 10));
-        console.log("Dados retornados da API:", data);
+        const data = await ordensServicoService.getById(
+          parseInt(memoizedOsId, 10)
+        );
 
         // Verificar se os dados existem e têm a estrutura esperada
         if (data) {
           if (Array.isArray(data) && data.length > 0) {
-            console.log("Dados encontrados no array:", data[0]);
             if (data[0] && typeof data[0] === "object" && "id_os" in data[0]) {
               setOsData(data[0]);
             } else {
-              console.log("Dados do array não contêm id_os");
               setError("Estrutura de dados inválida");
             }
           } else if (typeof data === "object" && "id_os" in data) {
-            console.log("Dados encontrados como objeto único:", data);
             setOsData(data);
           } else {
-            console.log("Dados retornados com estrutura não reconhecida");
             setError("Estrutura de dados não reconhecida");
           }
         } else {
-          console.log("Nenhum dado retornado da API");
           setError("Nenhum dado encontrado para esta OS");
         }
       } catch (err) {
@@ -199,21 +255,38 @@ const OSDetalhesPage: React.FC = () => {
     };
 
     fetchOSData();
-  }, [osId]);
+  }, [memoizedOsId, osData]);
 
   const handleVoltar = () => {
     window.history.back();
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleScrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Detectar rolagem da página para mostrar/esconder botão de voltar ao topo
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollToTop(true);
+      } else {
+        setShowScrollToTop(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <LoadingSpinner
+        text="Carregando detalhes da OS..."
+        fullScreen={true}
+        preventScroll={false}
+        size="large"
+      />
     );
   }
 
@@ -286,109 +359,146 @@ const OSDetalhesPage: React.FC = () => {
           }}
         />
 
-        {/* Status Badge - separado já que o PageHeader não suporta isto diretamente */}
-        <div className="flex justify-between mb-4">
-          <div>
-            {osData.situacao_os && osData.situacao_os.codigo && (
-              <StatusBadge
-                status={String(osData.situacao_os.codigo)}
-                mapping={statusMapping}
-              />
-            )}
-          </div>
-          <button
-            onClick={handlePrint}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-          >
-            <Printer className="h-4 w-4" />
-            Imprimir OS
-          </button>
-        </div>
-
-        {/* Status Summary Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 py-4 px-6 hover:shadow-md transition-shadow duration-300 animate-fadeIn">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-3 mb-2">
-                {osData.situacao_os && osData.situacao_os.codigo && (
-                  <StatusBadge
-                    status={String(osData.situacao_os.codigo)}
-                    mapping={statusMapping}
-                  />
-                )}
-                <span className="text-gray-500 text-sm">
-                  Última atualização:{" "}
-                  {formatarData(
-                    (osData.situacao_os && osData.situacao_os.data_alteracao) ||
-                      (osData.abertura && osData.abertura.data_abertura) ||
-                      new Date().toISOString()
-                  )}
+            <div className="flex flex-col w-full lg:w-auto">
+              <h2 className="text-lg md:text-xl text-gray-800">
+                <span className="font-semibold">
+                  {osData.abertura.motivo_atendimento}
                 </span>
-              </div>
-              <h2 className="text-lg font-semibold text-gray-800">
-                {osData.descricao_problema}
+                : {osData.descricao_problema}
               </h2>
-            </div>
-
-            <div className="flex flex-wrap gap-4">
-              <div className="bg-[var(--primary)]/5 px-4 py-2 rounded-lg">
-                <p className="text-xs text-gray-500">Data de Abertura</p>
-                <p className="font-medium">
-                  {formatarData(osData.abertura.data_abertura)}
-                </p>
-              </div>
-
-              {osData.data_agendada && (
-                <div className="bg-blue-50 px-4 py-2 rounded-lg">
-                  <p className="text-xs text-gray-500">Data Agendada</p>
-                  <p className="font-medium">
-                    {formatarData(osData.data_agendada)}
-                  </p>
-                </div>
-              )}
-
-              {osData.data_fechamento && (
-                <div className="bg-green-50 px-4 py-2 rounded-lg">
-                  <p className="text-xs text-gray-500">Data de Fechamento</p>
-                  <p className="font-medium">
-                    {formatarData(osData.data_fechamento)}
-                  </p>
-                </div>
-              )}
-
-              <div
-                className={`px-4 py-2 rounded-lg ${
-                  osData.em_garantia ? "bg-green-50" : "bg-gray-50"
-                }`}
-              >
-                <p className="text-xs text-gray-500">Garantia</p>
-                <p className="font-medium flex items-center">
-                  {osData.em_garantia ? (
-                    <span className="text-green-600 flex items-center gap-1">
-                      <CheckCircle className="h-3.5 w-3.5" /> Sim
-                    </span>
-                  ) : (
-                    <span className="text-gray-500 flex items-center gap-1">
-                      <XCircle className="h-3.5 w-3.5" /> Não
-                    </span>
-                  )}
-                </p>
-              </div>
             </div>
           </div>
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Left Column - Cliente e Máquina */}
           <div className="lg:col-span-1">
             {/* Client Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
-              <div className="p-6 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <Building className="text-[var(--primary)] h-5 w-5" />
-                  Cliente
-                </h3>
+            <div
+              className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
+              style={{ animationDelay: "0.1s" }}
+            >
+              <div className="py-3 px-6 border-b border-gray-100">
+                {/* Cabeçalho do Card Cliente com Botões de Ação */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building className="text-[var(--primary)] h-4 w-4 animate-pulseScale" />
+                    <h3 className="text-base font-semibold text-gray-800">
+                      Cliente
+                    </h3>
+                  </div>
+
+                  {/* Botões de Ação - Padronizados com animações e tooltips */}
+                  <div className="flex items-center gap-2">
+                    {/* Botão Email */}
+                    {osData.contato?.email && (
+                      <a
+                        href={`mailto:${osData.contato.email}`}
+                        data-tooltip="Enviar E-mail"
+                        className="action-button tooltip text-blue-600 hover:bg-blue-50 bg-blue-50/30"
+                        onClick={(e) => {
+                          e.currentTarget.classList.add("animate-pulseScale");
+                          setTimeout(() => {
+                            e.currentTarget.classList.remove(
+                              "animate-pulseScale"
+                            );
+                          }, 400);
+                        }}
+                      >
+                        <Mail className="h-5 w-5" />
+                      </a>
+                    )}
+
+                    {/* Botão WhatsApp */}
+                    {osData.contato?.telefone && osData.contato?.whatsapp && (
+                      <a
+                        href={`https://wa.me/${osData.contato.telefone.replace(
+                          /\D/g,
+                          ""
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-tooltip="Abrir WhatsApp"
+                        className="action-button tooltip text-green-600 hover:bg-green-50 bg-green-50/30"
+                        onClick={(e) => {
+                          e.currentTarget.classList.add("animate-pulseScale");
+                          setTimeout(() => {
+                            e.currentTarget.classList.remove(
+                              "animate-pulseScale"
+                            );
+                          }, 400);
+                        }}
+                      >
+                        <MessageCircle className="h-5 w-5" />
+                      </a>
+                    )}
+
+                    {/* Botão Endereço no Maps */}
+                    {osData.cliente?.endereco && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                          `${osData.cliente.endereco}${
+                            osData.cliente.numero
+                              ? ", " + osData.cliente.numero
+                              : ""
+                          }, ${osData.cliente.bairro || ""}, ${
+                            osData.cliente.cidade || ""
+                          }, ${osData.cliente.uf || ""}`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-tooltip="Ver no Google Maps"
+                        className="action-button tooltip text-orange-600 hover:bg-orange-50 bg-orange-50/30"
+                        onClick={(e) => {
+                          e.currentTarget.classList.add("animate-pulseScale");
+                          setTimeout(() => {
+                            e.currentTarget.classList.remove(
+                              "animate-pulseScale"
+                            );
+                          }, 400);
+                        }}
+                      >
+                        <MapPinned className="h-5 w-5" />
+                      </a>
+                    )}
+
+                    {/* Botão Traçar Rota usando LocationButton */}
+                    {osData.cliente && (
+                      <div className="tooltip" data-tooltip="Traçar Rota">
+                        <LocationButtonIcon
+                          cliente={{
+                            id: osData.cliente.id,
+                            nome_fantasia: osData.cliente.nome || "",
+                            razao_social: osData.cliente.nome || "",
+                            cnpj: osData.cliente.cnpj_cpf || "",
+                            endereco: osData.cliente.endereco || "",
+                            numero: osData.cliente.numero || "",
+                            bairro: osData.cliente.bairro || "",
+                            cidade: osData.cliente.cidade || "",
+                            uf: osData.cliente.uf || "",
+                            cep: osData.cliente.cep || "",
+                            complemento: osData.cliente.complemento,
+                            latitude: parseFloat(osData.cliente.latitude) || 0,
+                            longitude:
+                              parseFloat(osData.cliente.longitude) || 0,
+                            situacao: "A",
+                          }}
+                          enderecoEmpresa={`${osData.cliente.endereco || ""}${
+                            osData.cliente.numero
+                              ? ", " + osData.cliente.numero
+                              : ""
+                          }, ${osData.cliente.bairro || ""}, ${
+                            osData.cliente.cidade || ""
+                          }, ${osData.cliente.uf || ""}`}
+                          className="action-button text-purple-600 hover:bg-purple-50 bg-purple-50/30"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="p-6">
                 <div className="space-y-4">
@@ -396,8 +506,9 @@ const OSDetalhesPage: React.FC = () => {
                   {osData.cliente?.nome && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">Nome</p>
-                      <p className="font-semibold text-gray-800">
-                        {osData.cliente.nome}
+                      <p className="text-gray-800">
+                        <span className="font-bold">{osData.cliente.nome}</span>{" "}
+                        ({osData.cliente.id})
                       </p>
                     </div>
                   )}
@@ -429,6 +540,17 @@ const OSDetalhesPage: React.FC = () => {
                       </p>
                     </div>
                   )}
+                  {/* Região */}
+                  {osData.cliente?.nome_regiao && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">
+                        Região
+                      </p>
+                      <p className="text-gray-800">
+                        {osData.cliente.nome_regiao}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Contato */}
                   {(osData.contato?.nome ||
@@ -443,6 +565,8 @@ const OSDetalhesPage: React.FC = () => {
                           <User className="h-4 w-4 text-gray-400" />
                           <span className="text-gray-800">
                             {osData.contato.nome}
+                            {osData.contato.cargo &&
+                              ` (${osData.contato.cargo})`}
                           </span>
                         </div>
                       )}
@@ -469,43 +593,21 @@ const OSDetalhesPage: React.FC = () => {
                       )}
                     </div>
                   )}
-
-                  {/* Localização */}
-                  {osData.cliente?.latitude && osData.cliente?.longitude && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 mb-2">
-                        Localização
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">
-                          Lat: {osData.cliente.latitude}, Long:{" "}
-                          {osData.cliente.longitude}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Região */}
-                  {osData.cliente?.nome_regiao && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Região
-                      </p>
-                      <p className="text-gray-800">
-                        {osData.cliente.nome_regiao}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
 
             {/* Máquina Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-              <div className="p-6 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <Laptop className="text-[var(--primary)] h-5 w-5" />
+            <div
+              className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
+              style={{ animationDelay: "0.2s" }}
+            >
+              <div className="py-3 px-6 border-b border-gray-100">
+                <h3 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                  <Laptop
+                    className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
+                    style={{ animationDelay: "0.3s" }}
+                  />
                   Máquina
                 </h3>
               </div>
@@ -573,29 +675,83 @@ const OSDetalhesPage: React.FC = () => {
           {/* Right Column - Informações da OS */}
           <div className="lg:col-span-2">
             {/* Card de Detalhes da OS */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
-              <div className="p-6 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <FileText className="text-[var(--primary)] h-5 w-5" />
-                  Detalhes da Ordem de Serviço
-                </h3>
+            <div
+              className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
+              style={{ animationDelay: "0.3s" }}
+            >
+              <div className="py-3 px-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                    <FileText
+                      className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
+                      style={{ animationDelay: "0.4s" }}
+                    />
+                    Detalhes da Ordem de Serviço
+                  </h3>
+                  {osData.situacao_os && osData.situacao_os.codigo && (
+                    <StatusBadge
+                      status={String(osData.situacao_os.codigo)}
+                      mapping={statusMapping}
+                    />
+                  )}
+                </div>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                  {/* Datas importantes */}
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Datas</p>
+                    <div className="flex flex-col gap-2 mt-2">
+                      {/* Data de Abertura */}
+                      <div className="flex items-center gap-2">
+                        <CalendarClock className="h-4 w-4 text-blue-500" />
+                        <span className="text-gray-700">
+                          <span className="text-xs text-gray-500">
+                            Abertura:
+                          </span>{" "}
+                          {formatarData(osData.abertura.data_abertura)}
+                        </span>
+                      </div>
+
+                      {/* Data Agendada */}
+                      {osData.data_agendada && (
+                        <div className="flex items-center gap-2">
+                          <CalendarRange className="h-4 w-4 text-purple-500" />
+                          <span className="text-gray-700">
+                            <span className="text-xs text-gray-500">
+                              Agendada:
+                            </span>{" "}
+                            {formatarData(osData.data_agendada)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Data de Fechamento */}
+                      {osData.data_fechamento && (
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <span className="text-gray-700">
+                            <span className="text-xs text-gray-500">
+                              Fechamento:
+                            </span>{" "}
+                            {formatarData(osData.data_fechamento)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div>
                     <p className="text-sm font-medium text-gray-500">
                       Abertura
                     </p>
                     <div className="flex items-center gap-2">
-                      <CalendarClock className="h-4 w-4 text-gray-400" />
+                      <User className="h-4 w-4 text-gray-400" />
                       <span className="text-gray-800">
-                        {formatarData(osData.abertura.data_abertura)}
+                        {osData.abertura.nome_usuario}
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 mt-1">
-                      Por: {osData.abertura.nome_usuario}
-                    </p>
-                    <p className="text-sm text-gray-600">
                       Forma: {osData.abertura.forma_abertura}
                       {osData.abertura.origem_abertura === "T" && (
                         <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
@@ -604,52 +760,6 @@ const OSDetalhesPage: React.FC = () => {
                       )}
                     </p>
                   </div>
-
-                  {osData.abertura.motivo_atendimento && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Motivo do Atendimento
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Tag className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-800">
-                          {osData.abertura.motivo_atendimento}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {osData.data_agendada && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Data Agendada
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <CalendarRange className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-800">
-                          {formatarData(osData.data_agendada)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {osData.situacao_os && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Status
-                      </p>
-                      <StatusBadge
-                        status={String(osData.situacao_os.codigo)}
-                        mapping={statusMapping}
-                      />
-                      {osData.situacao_os.data_alteracao && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Atualizado em:{" "}
-                          {formatarData(osData.situacao_os.data_alteracao)}
-                        </p>
-                      )}
-                    </div>
-                  )}
 
                   {osData.tecnico && osData.tecnico.id > 0 && (
                     <div>
@@ -661,32 +771,20 @@ const OSDetalhesPage: React.FC = () => {
                         <span className="text-gray-800">
                           {osData.tecnico.nome}
                         </span>
+                        {osData.tecnico.tipo && (
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full ${
+                              osData.tecnico.tipo === "interno"
+                                ? "bg-blue-50 text-blue-600"
+                                : "bg-amber-50 text-amber-600"
+                            }`}
+                          >
+                            {osData.tecnico.tipo === "interno"
+                              ? "Interno"
+                              : "Terceiro"}
+                          </span>
+                        )}
                       </div>
-                      {osData.tecnico.tipo && (
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-full inline-block mt-1"
-                          style={{
-                            backgroundColor:
-                              osData.tecnico.tipo === "interno"
-                                ? "rgba(var(--color-primary-rgb), 0.1)"
-                                : osData.tecnico.tipo === "terceiro"
-                                ? "rgba(var(--color-warning-rgb), 0.1)"
-                                : "rgba(var(--color-gray-rgb), 0.1)",
-                            color:
-                              osData.tecnico.tipo === "interno"
-                                ? "var(--primary)"
-                                : osData.tecnico.tipo === "terceiro"
-                                ? "var(--color-warning)"
-                                : "var(--color-gray)",
-                          }}
-                        >
-                          {osData.tecnico.tipo === "interno"
-                            ? "Interno"
-                            : osData.tecnico.tipo === "terceiro"
-                            ? "Terceirizado"
-                            : "Indefinido"}
-                        </span>
-                      )}
                       {osData.tecnico.observacoes && (
                         <p className="text-xs text-gray-600 mt-1">
                           Obs: {osData.tecnico.observacoes}
@@ -694,19 +792,6 @@ const OSDetalhesPage: React.FC = () => {
                       )}
                     </div>
                   )}
-
-                  {osData.situacao_os.codigo === 1 &&
-                    osData.situacao_os.motivo_pendencia &&
-                    osData.situacao_os.motivo_pendencia !== "" && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">
-                          Motivo da Pendência
-                        </p>
-                        <p className="text-gray-800">
-                          {osData.situacao_os.motivo_pendencia}
-                        </p>
-                      </div>
-                    )}
 
                   {osData.liberacao_financeira && (
                     <div>
@@ -742,66 +827,31 @@ const OSDetalhesPage: React.FC = () => {
                         )}
                     </div>
                   )}
-
-                  {osData.revisao_os && osData.revisao_os.id_usuario > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Revisão
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <FileSearch className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-800">
-                          {osData.revisao_os.nome}
-                        </span>
-                      </div>
-                      {osData.revisao_os.data && (
-                        <p className="text-xs text-gray-600 mt-1">
-                          Em: {formatarData(osData.revisao_os.data)}
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
 
-                {/* Observações da revisão */}
-                {osData.revisao_os && osData.revisao_os.observacoes && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-500 mb-2">
-                      Observações da Revisão
-                    </p>
-                    <div className="bg-indigo-50 p-4 rounded-lg text-gray-800 whitespace-pre-wrap">
-                      {osData.revisao_os.observacoes}
-                    </div>
-                  </div>
-                )}
-
-                {/* Observações do técnico */}
-                {osData.tecnico && osData.tecnico.observacoes && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-500 mb-2">
-                      Observações do Técnico
-                    </p>
-                    <div className="bg-amber-50 p-4 rounded-lg text-gray-800 whitespace-pre-wrap">
-                      {osData.tecnico.observacoes}
-                    </div>
-                  </div>
-                )}
+                {/* Observações do técnico já são mostradas junto ao técnico responsável */}
               </div>
             </div>
 
             {/* Tabela de FATs - se tiver FATs */}
             {osData.fats && osData.fats.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-                <div className="p-6 border-b border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <Wrench className="text-[var(--primary)] h-5 w-5" />
+              <div
+                className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
+                style={{ animationDelay: "0.4s" }}
+              >
+                <div className="py-3 px-6 border-b border-gray-100">
+                  <h3 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                    <Wrench
+                      className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
+                      style={{ animationDelay: "0.5s" }}
+                    />
                     Fichas de Atendimento Técnico ({osData.fats.length})
                   </h3>
                 </div>
                 <div className="p-6">
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead>
+                    <table className="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden">
+                      <thead className="bg-gray-50">
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             FAT #
@@ -818,54 +868,61 @@ const OSDetalhesPage: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {osData.fats.map((fat) => (
+                        {osData.fats.map((fat, index) => (
                           <tr
                             key={fat.id_fat}
-                            className="hover:bg-gray-50 cursor-pointer"
+                            className="hover:bg-gray-50 cursor-pointer transition-colors duration-150 animate-fadeIn"
+                            style={{ animationDelay: `${0.05 * index}s` }}
                             onClick={() =>
                               (window.location.href = `/admin/fat/${fat.id_fat}`)
                             }
+                            onMouseEnter={(e) => {
+                              e.currentTarget.classList.add("shadow-sm");
+                              e.currentTarget.style.transform =
+                                "translateY(-1px)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.classList.remove("shadow-sm");
+                              e.currentTarget.style.transform =
+                                "translateY(0px)";
+                            }}
                           >
                             <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {fat.id_fat}
+                              <div className="flex items-center">
+                                #{fat.id_fat}
+                              </div>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                              {formatarData(fat.data_atendimento)}
+                              <div className="flex items-center">
+                                <CalendarClock className="h-4 w-4 text-gray-400 mr-1" />
+                                {fat.data_atendimento}
+                              </div>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                              {fat.tecnico.nome}
-                              {fat.tecnico.tipo && (
-                                <span
-                                  className="ml-2 text-xs px-1.5 py-0.5 rounded-full inline-block"
-                                  style={{
-                                    backgroundColor:
+                              <div className="flex items-center">
+                                <User className="h-4 w-4 text-gray-400 mr-1" />
+                                {fat.tecnico.nome}
+                                {fat.tecnico.tipo && (
+                                  <span
+                                    className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
                                       fat.tecnico.tipo === "interno"
-                                        ? "rgba(var(--color-primary-rgb), 0.1)"
-                                        : fat.tecnico.tipo === "terceiro"
-                                        ? "rgba(var(--color-warning-rgb), 0.1)"
-                                        : "rgba(var(--color-gray-rgb), 0.1)",
-                                    color:
-                                      fat.tecnico.tipo === "interno"
-                                        ? "var(--primary)"
-                                        : fat.tecnico.tipo === "terceiro"
-                                        ? "var(--color-warning)"
-                                        : "var(--color-gray)",
-                                  }}
-                                >
-                                  {fat.tecnico.tipo === "interno"
-                                    ? "Interno"
-                                    : fat.tecnico.tipo === "terceiro"
-                                    ? "Terceirizado"
-                                    : "Indefinido"}
-                                </span>
-                              )}
+                                        ? "bg-blue-50 text-blue-600"
+                                        : "bg-amber-50 text-amber-600"
+                                    }`}
+                                  >
+                                    {fat.tecnico.tipo === "interno"
+                                      ? "Interno"
+                                      : "Terceiro"}
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-all duration-200 ${
                                   fat.aprovado
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-amber-100 text-amber-800"
+                                    ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                    : "bg-amber-100 text-amber-800 hover:bg-amber-200"
                                 }`}
                               >
                                 {fat.aprovado ? (
@@ -887,6 +944,17 @@ const OSDetalhesPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Botão Voltar ao Topo */}
+      {showScrollToTop && (
+        <button
+          onClick={handleScrollToTop}
+          className="fixed bottom-6 right-6 bg-[var(--primary)] text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-[var(--primary-dark)] animate-fadeIn z-50"
+          aria-label="Voltar ao topo"
+        >
+          <ArrowUp className="h-5 w-5" />
+        </button>
+      )}
     </>
   );
 };

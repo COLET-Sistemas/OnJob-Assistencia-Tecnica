@@ -13,14 +13,14 @@ interface FilterOption {
 
 interface FilterPanelProps {
   title: string;
-  pageName?: string; // Nome opcional da página para exibir no título do filtro
+  pageName?: string; 
   filterOptions: FilterOption[];
   filterValues: Record<string, string>;
   onFilterChange: (key: string, value: string) => void;
   onClearFilters: () => void;
   onClose: () => void;
   onApplyFilters?: () => void;
-  isOpen?: boolean; // Para controlar a animação
+  isOpen?: boolean; 
 }
 
 const FilterPanel: React.FC<FilterPanelProps> = ({
@@ -78,14 +78,14 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     e: KeyboardEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     if (e.key === "Enter" && onApplyFilters) {
-      // For text inputs, check if they meet minimum length requirement
+    
       if (
         e.currentTarget.tagName === "INPUT" &&
         e.currentTarget.type === "text"
       ) {
         const value = e.currentTarget.value;
         if (value && value.length < 3) {
-          // Don't apply filter if text has less than 3 characters
+         
           return;
         }
       }
