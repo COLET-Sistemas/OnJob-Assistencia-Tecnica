@@ -636,17 +636,18 @@ class OrdensServicoService {
       // Caso sem dados adicionais (não deve acontecer mais)
       throw new Error("Dados de cancelamento são obrigatórios");
     }
-    
+
     // Formatar a ocorrência baseada no tipo de cancelamento
-    const ocorrencia = data.tipo_cancelamento === "cliente" 
-      ? "cancelar os (cliente)" 
-      : "cancelar os";
-    
+    const ocorrencia =
+      data.tipo_cancelamento === "cliente"
+        ? "cancelar os (cliente)"
+        : "cancelar os";
+
     // Registrar a ocorrência de cancelamento
     await ocorrenciasOSService.registrarOcorrencia({
       id_os: id,
       ocorrencia: ocorrencia,
-      descricao_ocorrencia: data.descricao
+      descricao_ocorrencia: data.descricao,
     });
 
     // Invalidar cache específico da OS
