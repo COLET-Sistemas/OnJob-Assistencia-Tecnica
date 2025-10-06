@@ -57,7 +57,7 @@ const Pagination: React.FC<PaginationProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-lg shadow-sm">
+    <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg shadow-sm">
       {/* Mobile pagination */}
       <div className="flex flex-1 justify-between sm:hidden">
         <button
@@ -88,8 +88,7 @@ const Pagination: React.FC<PaginationProps> = ({
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div className="flex items-center">
           <p className="text-sm text-gray-700 mr-6">
-            Mostrando{" "}
-            <span className="font-medium">{startRecord}</span> a{" "}
+            Mostrando <span className="font-medium">{startRecord}</span> a{" "}
             <span className="font-medium">{endRecord}</span> de{" "}
             <span className="font-medium">{totalRecords}</span> resultados
           </p>
@@ -100,7 +99,9 @@ const Pagination: React.FC<PaginationProps> = ({
               <select
                 className="rounded-md border border-gray-300 py-1.5 px-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
                 value={recordsPerPage}
-                onChange={(e) => onRecordsPerPageChange(parseInt(e.target.value))}
+                onChange={(e) =>
+                  onRecordsPerPageChange(parseInt(e.target.value))
+                }
               >
                 {recordsPerPageOptions.map((value) => (
                   <option key={value} value={value}>

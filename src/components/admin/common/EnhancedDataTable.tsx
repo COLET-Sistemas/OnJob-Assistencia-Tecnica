@@ -38,14 +38,14 @@ function EnhancedDataTable<T extends object>({
   renderExpandedRow,
 }: EnhancedDataTableProps<T>): React.ReactElement {
   return (
-    <div className="overflow-x-auto overflow-y-auto max-h-[70vh] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+    <div className="overflow-x-auto overflow-y-auto max-h-[67vh] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
       <table className="w-full table-auto border-separate border-spacing-0">
         <thead className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 sticky top-0 z-10">
           <tr>
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider ${
+                className={`px-6 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider ${
                   column.className || ""
                 }`}
               >
@@ -78,7 +78,7 @@ function EnhancedDataTable<T extends object>({
                     {columns.map((column, colIndex) => (
                       <td
                         key={colIndex}
-                        className={`px-6 py-4 text-sm text-gray-800 ${
+                        className={`px-6 py-3 text-sm text-gray-800 ${
                           column.className || ""
                         }`}
                       >

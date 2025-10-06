@@ -259,5 +259,6 @@ export const useFilters = <T extends FiltrosPainel>(
     toggleFilters,
     closeFilters,
     forceMenuClosedOnNextLoad,
+    setShowFilters, // Expor setShowFilters para controle direto
   };
 };

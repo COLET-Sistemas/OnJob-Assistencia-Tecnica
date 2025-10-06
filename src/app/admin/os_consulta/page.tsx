@@ -7,6 +7,9 @@ import { ordensServicoService } from "@/api/services/ordensServicoService";
 import { usuariosService } from "@/api/services/usuariosService";
 import { formatarData } from "@/utils/formatters";
 import { LoadingSpinner } from "@/components/LoadingPersonalizado";
+import Pagination from "@/components/admin/ui/Pagination";
+import TecnicoBadge from "@/components/admin/ui/TecnicoBadge";
+import { useFilters } from "@/hooks/useFilters";
 import {
   Search,
   ChevronDown,
@@ -91,6 +94,8 @@ interface OSItemExtended {
   };
 }
 
+// We're using the imported TecnicoBadge component instead of this local one
+
 // CSS para animações personalizadas (adicionado ao componente)
 const fadeInAnimation = `
 @keyframes fadeIn {
@@ -119,7 +124,7 @@ const fadeInAnimation = `
 `;
 
 const ConsultaOSPage: React.FC = () => {
-  const [showFilter, setShowFilter] = useState<boolean>(true); // Começar com filtros visíveis
+  // showFilters is now provided by useFilters hook
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -127,6 +132,19 @@ const ConsultaOSPage: React.FC = () => {
     dados: OSItemExtended[];
     total_registros: number;
   }>({ dados: [], total_registros: 0 });
+
+  // Pagination state
+  const [paginacao, setPaginacao] = useState<{
+    paginaAtual: number;
+    totalPaginas: number;
+    totalRegistros: number;
+    registrosPorPagina: number;
+  }>({
+    paginaAtual: 1,
+    totalPaginas: 1,
+    totalRegistros: 0,
+    registrosPorPagina: 25,
+  });
   // Define a more flexible type for technicians
   type TecnicoType = {
     id: number;
@@ -140,8 +158,43 @@ const ConsultaOSPage: React.FC = () => {
   const [tecnicos, setTecnicos] = useState<TecnicoType[]>([]);
   const [loadingTecnicos, setLoadingTecnicos] = useState<boolean>(false);
 
-  // Filtros
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  // Define initial filters
+  const INITIAL_OS_FILTERS: Record<string, string> = {
+    status: "",
+    campo_data: "",
+    data_ini: "",
+    data_fim: "",
+    numero_os: "",
+    nome_cliente: "",
+    numero_serie: "",
+    id_tecnico: "",
+    tipo_tecnico: "",
+  };
+
+  // Setup filters with localStorage persistence
+  const {
+    filtrosPainel,
+    filtrosAplicados,
+    showFilters,
+    activeFiltersCount,
+    handleFiltroChange,
+    limparFiltros,
+    aplicarFiltros,
+    toggleFilters,
+    setShowFilters,
+  } = useFilters(INITIAL_OS_FILTERS, "os_consulta_filters");
+
+  // Abre os filtros por padrão ao carregar a página
+  useEffect(() => {
+    // Pequeno delay para garantir que o componente já esteja renderizado
+    const timer = setTimeout(() => {
+      setShowFilters(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [setShowFilters]);
+
+  // Additional filter state
   const [disableDateFields, setDisableDateFields] = useState<boolean>(false);
   const [fixedDateType, setFixedDateType] = useState<string | null>(null);
 
@@ -338,9 +391,6 @@ const ConsultaOSPage: React.FC = () => {
   const handleFilterChange = useCallback(
     (key: string, value: string) => {
       if (key === "status") {
-        // Limpar campos de data quando o status é alterado
-        const updatedValues = { ...filterValues, [key]: value };
-
         // Configurar os campos de data baseados no status selecionado
         const pendingStatuses = ["1", "1,2,3,4,5", "6"];
         const finishedStatuses = ["6,7", "8,9"];
@@ -349,43 +399,39 @@ const ConsultaOSPage: React.FC = () => {
           // Para Pendente, Em aberto e Aguardando Revisão
           setDisableDateFields(true);
           setFixedDateType(null);
-          setFilterValues({
-            ...updatedValues,
-            campo_data: "",
-            data_ini: "",
-            data_fim: "",
-          });
+          handleFiltroChange("status", value);
+          handleFiltroChange("campo_data", "");
+          handleFiltroChange("data_ini", "");
+          handleFiltroChange("data_fim", "");
         } else if (finishedStatuses.includes(value)) {
           // Para Concluídas e Canceladas
           setDisableDateFields(false);
           setFixedDateType("fechamento");
-          setFilterValues({
-            ...updatedValues,
-            campo_data: "fechamento",
-            data_ini: get30DaysAgo(),
-            data_fim: getToday(),
-          });
+          handleFiltroChange("status", value);
+          handleFiltroChange("campo_data", "fechamento");
+          handleFiltroChange("data_ini", get30DaysAgo());
+          handleFiltroChange("data_fim", getToday());
         } else {
           // Para Todas (1,2,3,4,5,6,7,8,9)
           setDisableDateFields(false);
           setFixedDateType(null);
-          setFilterValues({
-            ...updatedValues,
-            campo_data: "abertura", // Por padrão, usar data de abertura
-            data_ini: get30DaysAgo(),
-            data_fim: getToday(),
-          });
+          handleFiltroChange("status", value);
+          handleFiltroChange("campo_data", "abertura"); // Por padrão, usar data de abertura
+          handleFiltroChange("data_ini", get30DaysAgo());
+          handleFiltroChange("data_fim", getToday());
         }
       } else {
-        setFilterValues((prev) => ({ ...prev, [key]: value }));
+        handleFiltroChange(key, value);
       }
     },
-    [filterValues]
+    [handleFiltroChange]
   );
 
-  const handleClearFilters = useCallback(() => {
-    // Reset state
-    setFilterValues({});
+  const handleClearFiltersCustom = useCallback(() => {
+    // Use the limparFiltros from useFilters hook
+    limparFiltros();
+
+    // Reset additional state
     setDisableDateFields(false);
     setFixedDateType(null);
 
@@ -402,13 +448,21 @@ const ConsultaOSPage: React.FC = () => {
     if (firstInput) {
       (firstInput as HTMLElement).focus();
     }
-  }, []);
+
+    // Reset pagination to first page
+    setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
+  }, [limparFiltros]);
 
   // Função para buscar dados com filtros
   const handleSearch = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setShowFilter(false);
+
+    // Get current panel filters (not yet applied)
+    const currentFilters = { ...filtrosPainel };
+
+    // Apply filters and close filter panel
+    aplicarFiltros();
 
     // Scroll para os resultados suavemente
     window.scrollTo({
@@ -419,10 +473,12 @@ const ConsultaOSPage: React.FC = () => {
     try {
       const params: Record<string, string | number | boolean> = {
         resumido: "s",
+        nro_pagina: paginacao.paginaAtual,
+        qtde_registros: paginacao.registrosPorPagina,
       };
 
-      // Adicionar filtros válidos
-      Object.entries(filterValues).forEach(([key, value]) => {
+      // Adicionar filtros válidos usando os valores atuais do filtrosPainel
+      Object.entries(currentFilters).forEach(([key, value]) => {
         // Pula campo_data pois esse é apenas para controle do frontend
         if (key === "campo_data") return;
 
@@ -430,15 +486,15 @@ const ConsultaOSPage: React.FC = () => {
           // Verifica se são os parâmetros de data e apenas os adiciona se o campo_data estiver preenchido
           if (
             (key === "data_ini" || key === "data_fim") &&
-            filterValues.campo_data
+            filtrosAplicados.campo_data
           ) {
             params[key] = value.trim();
           }
-          // Adicionar id_tecnico com o formato correto para o endpoint
+
           else if (key === "id_tecnico") {
             params["id_tecnico"] = value.trim();
           }
-          // Adicionar tipo_tecnico (interno ou terceiro)
+
           else if (key === "tipo_tecnico") {
             params["tipo_tecnico"] = value.trim();
           }
@@ -452,8 +508,11 @@ const ConsultaOSPage: React.FC = () => {
       });
 
       // Adiciona o campo_data selecionado aos parâmetros se existir
-      if (filterValues.campo_data && filterValues.campo_data.trim() !== "") {
-        params["campo_data"] = filterValues.campo_data.trim();
+      if (
+        currentFilters.campo_data &&
+        currentFilters.campo_data.trim() !== ""
+      ) {
+        params["campo_data"] = currentFilters.campo_data.trim();
       }
 
       const result = await ordensServicoService.getAll(params);
@@ -461,16 +520,21 @@ const ConsultaOSPage: React.FC = () => {
       // Handle both formats: array response or object with dados property
       let responseData;
       let total = 0;
+      let totalPages = 1;
 
       if (Array.isArray(result)) {
         // Direct array response as shown in your example
         console.log("API returned array response", result);
         responseData = result;
         total = result.length;
+        totalPages = Math.ceil(total / paginacao.registrosPorPagina);
       } else if (result && result.dados && Array.isArray(result.dados)) {
         // Object with dados array property
         responseData = result.dados;
         total = result.total_registros || responseData.length;
+        totalPages =
+          result.total_paginas ||
+          Math.ceil(total / paginacao.registrosPorPagina);
       } else {
         console.error("Dados inválidos recebidos da API:", result);
         setError("Formato de dados inválido recebido da API. Tente novamente.");
@@ -522,6 +586,13 @@ const ConsultaOSPage: React.FC = () => {
         }),
       };
 
+      // Update pagination information
+      setPaginacao((prev) => ({
+        ...prev,
+        totalPaginas: totalPages,
+        totalRegistros: total,
+      }));
+
       setData(mappedData);
     } catch (err) {
       setError("Refaça o filtro e tente novamente.");
@@ -529,12 +600,17 @@ const ConsultaOSPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [filterValues]);
+  }, [
+    filtrosPainel,
+    aplicarFiltros,
+    paginacao.paginaAtual,
+    paginacao.registrosPorPagina,
+  ]);
 
   // Configurar campos de data com base no status ao iniciar ou quando o status muda
   useEffect(() => {
     // Configurar estado inicial com base no status
-    const currentStatus = filterValues.status;
+    const currentStatus = filtrosPainel.status;
     if (currentStatus) {
       const pendingStatuses = ["1", "1,2,3,4,5", "6"];
       const finishedStatuses = ["6,7", "8,9"];
@@ -550,7 +626,7 @@ const ConsultaOSPage: React.FC = () => {
         setFixedDateType(null);
       }
     }
-  }, [filterValues.status]);
+  }, [filtrosPainel.status]);
 
   // Função para lidar com o clique em uma linha da tabela
   const handleRowClick = (id: number | string) => {
@@ -561,16 +637,16 @@ const ConsultaOSPage: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Fechar o filtro com ESC
-      if (e.key === "Escape" && showFilter) {
-        setShowFilter(false);
+      if (e.key === "Escape" && showFilters) {
+        toggleFilters();
       }
       // Abrir o filtro com F3
-      if (e.key === "F3" && !showFilter) {
+      if (e.key === "F3" && !showFilters) {
         e.preventDefault();
-        setShowFilter(true);
+        toggleFilters();
       }
       // Pesquisar com Ctrl+Enter quando o filtro estiver aberto
-      if (e.key === "Enter" && e.ctrlKey && showFilter) {
+      if (e.key === "Enter" && e.ctrlKey && showFilters) {
         e.preventDefault();
         handleSearch();
       }
@@ -578,13 +654,393 @@ const ConsultaOSPage: React.FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showFilter, handleSearch]);
+  }, [showFilters, toggleFilters, handleSearch]);
+
+  // Pagination handlers
+  const handlePageChange = useCallback(
+    (novaPagina: number) => {
+      // First update state with the new page number
+      setPaginacao((prev) => ({ ...prev, paginaAtual: novaPagina }));
+
+      // Create a function to manually trigger search with the new page number
+      const searchWithCorrectPage = async () => {
+        // Get current filters from filtrosPainel to ensure we're using the latest values
+        const currentFilters = { ...filtrosPainel };
+
+        // Execute search with the new page number explicitly set
+        setLoading(true);
+        setError(null);
+
+        try {
+          // Create params for the API call
+          const params: Record<string, string | number | boolean> = {
+            resumido: "s",
+            nro_pagina: novaPagina, // Use the new page number directly
+            qtde_registros: paginacao.registrosPorPagina,
+          };
+
+          // Add valid filters
+          Object.entries(currentFilters).forEach(([key, value]) => {
+            if (key === "campo_data") return;
+
+            if (value && value.trim() !== "") {
+              if (
+                (key === "data_ini" || key === "data_fim") &&
+                currentFilters.campo_data
+              ) {
+                params[key] = value.trim();
+              } else if (key === "id_tecnico") {
+                params["id_tecnico"] = value.trim();
+              } else if (key === "tipo_tecnico") {
+                params["tipo_tecnico"] = value.trim();
+              } else if (key === "status") {
+                params["situacao"] = value.trim();
+              } else {
+                params[key] = value.trim();
+              }
+            }
+          });
+
+          // Add campo_data if it exists
+          if (
+            currentFilters.campo_data &&
+            currentFilters.campo_data.trim() !== ""
+          ) {
+            params["campo_data"] = currentFilters.campo_data.trim();
+          }
+
+          // Make the API call
+          const result = await ordensServicoService.getAll(params);
+
+          // Process the result
+          if (result) {
+            // Handle both formats: array response or object with dados property
+            let responseData;
+            let total = 0;
+            let totalPages = 1;
+
+            if (Array.isArray(result)) {
+              // Direct array response
+              responseData = result;
+              total = result.length;
+              totalPages = Math.ceil(total / paginacao.registrosPorPagina);
+            } else if (result && result.dados && Array.isArray(result.dados)) {
+              // Object with dados array property
+              responseData = result.dados;
+              total = result.total_registros || responseData.length;
+              totalPages =
+                result.total_paginas ||
+                Math.ceil(total / paginacao.registrosPorPagina);
+            } else {
+              console.error("Dados inválidos recebidos da API:", result);
+              setError(
+                "Formato de dados inválido recebido da API. Tente novamente."
+              );
+              return;
+            }
+
+            // Filter out invalid items
+            const validItems = responseData.filter((item) => !!item);
+
+            // Transform data to match expected format
+            const mappedData = {
+              total_registros: total,
+              dados: validItems.map((item) => {
+                const id_os =
+                  typeof item.id_os === "number"
+                    ? item.id_os
+                    : typeof item.id === "number"
+                    ? item.id
+                    : 0;
+                return {
+                  ...item,
+                  id_os,
+                  id: typeof item.id === "number" ? item.id : id_os,
+                  cliente: {
+                    id: item.cliente?.id ?? 0,
+                    nome_fantasia: item.cliente?.nome_fantasia ?? "",
+                    nome: item.cliente?.nome,
+                    endereco: item.cliente?.endereco,
+                    numero: item.cliente?.numero,
+                    complemento: item.cliente?.complemento,
+                    bairro: item.cliente?.bairro,
+                    cidade: item.cliente?.cidade,
+                    uf: item.cliente?.uf,
+                    cep: item.cliente?.cep,
+                    latitude: item.cliente?.latitude,
+                    longitude: item.cliente?.longitude,
+                  },
+                  maquina: {
+                    id: item.maquina?.id ?? 0,
+                    numero_serie: item.maquina?.numero_serie ?? "",
+                    descricao: item.maquina?.descricao,
+                    modelo: item.maquina?.modelo,
+                  },
+                };
+              }),
+            };
+
+            // Set processed data
+            setData(mappedData);
+
+            // Update pagination state with the correct page number
+            setPaginacao((prev) => ({
+              ...prev,
+              paginaAtual: novaPagina,
+              totalRegistros: total,
+              totalPaginas: totalPages,
+            }));
+          }
+        } catch (error) {
+          console.error("Erro ao buscar ordens de serviço:", error);
+          setError("Erro ao buscar ordens de serviço. Tente novamente.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // Execute the search immediately with the correct page number
+      searchWithCorrectPage();
+    },
+    [filtrosPainel, paginacao.registrosPorPagina]
+  );
+
+  const handleRecordsPerPageChange = useCallback(
+    (novoValor: number) => {
+      setPaginacao((prev) => ({
+        ...prev,
+        registrosPorPagina: novoValor,
+        paginaAtual: 1,
+      }));
+
+      // Create a custom search function that will use the new value directly
+      const searchWithNewRecordsPerPage = async () => {
+        setLoading(true);
+        setError(null);
+
+        // Get current filters before applying them
+        const currentFilters = { ...filtrosPainel };
+
+        // Apply filters and close filter panel
+        aplicarFiltros();
+
+        try {
+          const params: Record<string, string | number | boolean> = {
+            resumido: "s",
+            nro_pagina: 1, // Reset to page 1
+            qtde_registros: novoValor, // Use the new value directly
+          };
+
+          // Add other filters as in handleSearch - use currentFilters instead
+          Object.entries(currentFilters).forEach(([key, value]) => {
+            if (key === "campo_data") return;
+
+            if (value && value.trim() !== "") {
+              if (
+                (key === "data_ini" || key === "data_fim") &&
+                currentFilters.campo_data
+              ) {
+                params[key] = value.trim();
+              } else if (key === "id_tecnico") {
+                params["id_tecnico"] = value.trim();
+              } else if (key === "tipo_tecnico") {
+                params["tipo_tecnico"] = value.trim();
+              } else if (key === "status") {
+                params["situacao"] = value.trim();
+              } else {
+                params[key] = value.trim();
+              }
+            }
+          });
+
+          if (
+            currentFilters.campo_data &&
+            currentFilters.campo_data.trim() !== ""
+          ) {
+            params["campo_data"] = currentFilters.campo_data.trim();
+          }
+
+          const result = await ordensServicoService.getAll(params);
+
+          // Process the result
+          let responseData;
+          let total = 0;
+          let totalPages = 1;
+
+          if (Array.isArray(result)) {
+            responseData = result;
+            total = result.length;
+            totalPages = Math.ceil(total / novoValor);
+          } else if (result && result.dados && Array.isArray(result.dados)) {
+            responseData = result.dados;
+            total = result.total_registros || responseData.length;
+            totalPages = result.total_paginas || Math.ceil(total / novoValor);
+          } else {
+            console.error("Dados inválidos recebidos da API:", result);
+            setError(
+              "Formato de dados inválido recebido da API. Tente novamente."
+            );
+            return;
+          }
+
+          // Filter out invalid items
+          const validItems = responseData.filter((item) => !!item);
+
+          // Transform data to match expected format
+          const mappedData = {
+            total_registros: total,
+            dados: validItems.map((item) => {
+              const id_os =
+                typeof item.id_os === "number"
+                  ? item.id_os
+                  : typeof item.id === "number"
+                  ? item.id
+                  : 0;
+              return {
+                ...item,
+                id_os,
+                id: typeof item.id === "number" ? item.id : id_os,
+                cliente: {
+                  id: item.cliente?.id ?? 0,
+                  nome_fantasia: item.cliente?.nome_fantasia ?? "",
+                  nome: item.cliente?.nome,
+                  endereco: item.cliente?.endereco,
+                  numero: item.cliente?.numero,
+                  complemento: item.cliente?.complemento,
+                  bairro: item.cliente?.bairro,
+                  cidade: item.cliente?.cidade,
+                  uf: item.cliente?.uf,
+                  cep: item.cliente?.cep,
+                  latitude: item.cliente?.latitude,
+                  longitude: item.cliente?.longitude,
+                },
+                maquina: {
+                  id: item.maquina?.id ?? 0,
+                  numero_serie: item.maquina?.numero_serie ?? "",
+                  descricao: item.maquina?.descricao,
+                  modelo: item.maquina?.modelo,
+                },
+              };
+            }),
+          };
+
+          setData(mappedData);
+
+          setPaginacao((prev) => ({
+            ...prev,
+            totalRegistros: total,
+            totalPaginas: totalPages,
+          }));
+
+          setExpandedRowId(null);
+        } catch (error) {
+          console.error("Erro ao buscar ordens de serviço:", error);
+          setError("Erro ao buscar ordens de serviço. Tente novamente.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // Execute the search immediately with the new value
+      searchWithNewRecordsPerPage();
+    },
+    [aplicarFiltros, filtrosPainel]
+  );
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
+  }, [filtrosPainel]);
+
+  // Check for saved state on component mount and restore if needed
+  useEffect(() => {
+    // Função para checar se o estado salvo é válido (menos de 30 minutos)
+    const isSavedStateValid = () => {
+      const timestamp = localStorage.getItem("os_consulta_state_timestamp");
+      if (!timestamp) return false;
+
+      const savedTime = parseInt(timestamp);
+      const currentTime = Date.now();
+      const MAX_AGE = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+      return currentTime - savedTime < MAX_AGE;
+    };
+
+    // Se tiver um estado salvo válido, restaura ele
+    if (isSavedStateValid()) {
+      try {
+        const savedFilters = localStorage.getItem("os_consulta_saved_filters");
+        const savedPagination = localStorage.getItem(
+          "os_consulta_saved_pagination"
+        );
+        const hasSearch = localStorage.getItem("os_consulta_has_search");
+
+        if (savedFilters) {
+          const parsedFilters = JSON.parse(savedFilters);
+          // Atualizar filtrosAplicados diretamente via limparFiltros e aplicarFiltros
+          Object.entries(parsedFilters).forEach(([key, value]) => {
+            handleFiltroChange(key, value as string);
+          });
+        }
+
+        if (savedPagination) {
+          const parsedPagination = JSON.parse(savedPagination);
+          setPaginacao(parsedPagination);
+        }
+
+        // Se tinha uma busca anterior, executa a busca novamente
+        if (hasSearch && JSON.parse(hasSearch)) {
+          // Pequeno timeout para garantir que os estados foram atualizados
+          setTimeout(() => {
+            handleSearch();
+          }, 100);
+        }
+      } catch (error) {
+        console.error("Erro ao restaurar estado dos filtros:", error);
+      }
+    }
+
+    // Limpar o estado salvo após utilizá-lo
+    const cleanSavedState = () => {
+      localStorage.removeItem("os_consulta_saved_filters");
+      localStorage.removeItem("os_consulta_saved_pagination");
+      localStorage.removeItem("os_consulta_has_search");
+      localStorage.removeItem("os_consulta_state_timestamp");
+    };
+
+    // Remover o estado salvo ao desmontar o componente
+    return () => cleanSavedState();
+  }, [handleFiltroChange, handleSearch]);
+
+  // Função para salvar o estado atual dos filtros e paginação
+  const saveCurrentState = useCallback(() => {
+    // Salva filtros e estado de paginação no localStorage
+    localStorage.setItem(
+      "os_consulta_saved_filters",
+      JSON.stringify(filtrosAplicados)
+    );
+    localStorage.setItem(
+      "os_consulta_saved_pagination",
+      JSON.stringify(paginacao)
+    );
+    localStorage.setItem(
+      "os_consulta_has_search",
+      JSON.stringify(data.dados.length > 0)
+    );
+    // Timestamp para controlar a validade do estado salvo
+    localStorage.setItem("os_consulta_state_timestamp", Date.now().toString());
+  }, [filtrosAplicados, paginacao, data.dados.length]);
 
   // Função para navegar para a página de detalhes da OS
-  const handleRowNavigate = useCallback((item: OSItemExtended) => {
-    const osId = item.id_os;
-    window.location.href = `/admin/os_detalhes/${osId}`;
-  }, []);
+  const handleRowNavigate = useCallback(
+    (item: OSItemExtended) => {
+      // Salva o estado atual antes de navegar
+      saveCurrentState();
+      const osId = item.id_os;
+      window.location.href = `/admin/os_detalhes/${osId}`;
+    },
+    [saveCurrentState]
+  );
 
   // Nota: A função de renderização das linhas expandidas é definida diretamente no componente EnhancedDataTable
 
@@ -648,34 +1104,12 @@ const ConsultaOSPage: React.FC = () => {
         className: "hidden lg:table-cell",
         render: (item: OSItemExtended) => (
           <div className="flex flex-col">
-            <span className="font-medium text-gray-800 truncate max-w-[150px]">
-              {item.tecnico?.nome || "-"}
-            </span>
-            {item.tecnico?.tipo && (
-              <span
-                className="text-xs px-1.5 py-0.5 rounded-full inline-flex items-center w-fit mt-1"
-                style={{
-                  backgroundColor:
-                    item.tecnico.tipo === "interno"
-                      ? "rgba(var(--color-primary-rgb), 0.1)"
-                      : item.tecnico.tipo === "terceiro"
-                      ? "rgba(var(--color-warning-rgb), 0.1)"
-                      : "rgba(var(--color-gray-rgb), 0.1)",
-                  color:
-                    item.tecnico.tipo === "interno"
-                      ? "var(--primary)"
-                      : item.tecnico.tipo === "terceiro"
-                      ? "var(--color-warning)"
-                      : "var(--color-gray)",
-                }}
-              >
-                {item.tecnico.tipo === "interno"
-                  ? "Interno"
-                  : item.tecnico.tipo === "terceiro"
-                  ? "Terceirizado"
-                  : "Indefinido"}
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-gray-800 truncate max-w-[120px]">
+                {item.tecnico?.nome || "-"}
               </span>
-            )}
+              {item.tecnico?.tipo && <TecnicoBadge tipo={item.tecnico.tipo} />}
+            </div>
           </div>
         ),
       },
@@ -705,12 +1139,10 @@ const ConsultaOSPage: React.FC = () => {
           config={{
             type: "list",
             itemCount: data?.total_registros ?? 0,
-            showFilters: showFilter,
+            showFilters: showFilters,
             onFilterToggle: () => {
-              // Toggle com animação suave e melhor performance
-              setShowFilter((prev) => !prev);
-              // Se estiver abrindo os filtros, adicione um pequeno delay para focar no primeiro campo
-              if (!showFilter) {
+              toggleFilters();
+              if (!showFilters) {
                 setTimeout(() => {
                   const firstInput = document.querySelector(
                     ".filter-section input, .filter-section select"
@@ -721,9 +1153,7 @@ const ConsultaOSPage: React.FC = () => {
                 }, 300);
               }
             },
-            activeFiltersCount: Object.values(filterValues || {}).filter(
-              (v) => v && v !== ""
-            ).length,
+            activeFiltersCount: activeFiltersCount,
             newButton: {
               label: "Nova OS",
               link: "/admin/os_aberto/novo",
@@ -734,15 +1164,15 @@ const ConsultaOSPage: React.FC = () => {
 
       {/* Seção de Filtros */}
       <div
-        className={`bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden transition-all duration-300 ease-in-out ${
-          showFilter
+        className={`bg-white rounded-xl shadow-sm border border-gray-100 mb-3 overflow-hidden transition-all duration-300 ease-in-out ${
+          showFilters
             ? "opacity-100 max-h-[2000px]"
             : "opacity-0 max-h-0 mt-0 mb-0 border-0"
         }`}
         role="region"
         aria-label="Filtros de pesquisa"
       >
-        <div aria-hidden={!showFilter}>
+        <div aria-hidden={!showFilters}>
           <div className="bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 px-6 py-4 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-3">
               <div className="bg-[var(--primary)]/10 p-2 rounded-lg">
@@ -763,7 +1193,7 @@ const ConsultaOSPage: React.FC = () => {
                     type="text"
                     placeholder="Digite o número da OS"
                     className="w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 placeholder:text-gray-400 transition-all duration-200"
-                    value={filterValues.id || ""}
+                    value={filtrosPainel.id || ""}
                     onChange={(e) => handleFilterChange("id", e.target.value)}
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -784,7 +1214,7 @@ const ConsultaOSPage: React.FC = () => {
                     type="text"
                     placeholder="Digite o nome do cliente"
                     className="w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 placeholder:text-gray-400 transition-all duration-200"
-                    value={filterValues.cliente || ""}
+                    value={filtrosPainel.cliente || ""}
                     onChange={(e) =>
                       handleFilterChange("cliente", e.target.value)
                     }
@@ -807,7 +1237,7 @@ const ConsultaOSPage: React.FC = () => {
                     type="text"
                     placeholder="Digite o número de série"
                     className="w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 placeholder:text-gray-400 transition-all duration-200"
-                    value={filterValues.maquina || ""}
+                    value={filtrosPainel.maquina || ""}
                     onChange={(e) =>
                       handleFilterChange("maquina", e.target.value)
                     }
@@ -831,7 +1261,7 @@ const ConsultaOSPage: React.FC = () => {
                 <div className="relative">
                   <select
                     className="w-full px-3 py-3 appearance-none border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 bg-white transition-all duration-200"
-                    value={filterValues.status || ""}
+                    value={filtrosPainel.status || ""}
                     onChange={(e) =>
                       handleFilterChange("status", e.target.value)
                     }
@@ -860,7 +1290,9 @@ const ConsultaOSPage: React.FC = () => {
                   <select
                     className="w-full px-3 py-3 appearance-none border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 bg-white transition-all duration-200"
                     value={
-                      filterValues.tipo_tecnico || filterValues.id_tecnico || ""
+                      filtrosPainel.tipo_tecnico ||
+                      filtrosPainel.id_tecnico ||
+                      ""
                     }
                     onChange={(e) => {
                       if (
@@ -919,7 +1351,7 @@ const ConsultaOSPage: React.FC = () => {
                             ? "bg-gray-100 cursor-not-allowed"
                             : "bg-white"
                         }`}
-                        value={filterValues.campo_data || ""}
+                        value={filtrosPainel.campo_data || ""}
                         onChange={(e) =>
                           handleFilterChange("campo_data", e.target.value)
                         }
@@ -948,15 +1380,17 @@ const ConsultaOSPage: React.FC = () => {
                       <input
                         type="date"
                         className={`w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 transition-all duration-200 ${
-                          disableDateFields || !filterValues.campo_data
+                          disableDateFields || !filtrosPainel.campo_data
                             ? "bg-gray-100 cursor-not-allowed"
                             : ""
                         }`}
-                        value={filterValues.data_ini || ""}
+                        value={filtrosPainel.data_ini || ""}
                         onChange={(e) =>
                           handleFilterChange("data_ini", e.target.value)
                         }
-                        disabled={disableDateFields || !filterValues.campo_data}
+                        disabled={
+                          disableDateFields || !filtrosPainel.campo_data
+                        }
                       />
                     </div>
                   </div>
@@ -970,15 +1404,17 @@ const ConsultaOSPage: React.FC = () => {
                       <input
                         type="date"
                         className={`w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 transition-all duration-200 ${
-                          disableDateFields || !filterValues.campo_data
+                          disableDateFields || !filtrosPainel.campo_data
                             ? "bg-gray-100 cursor-not-allowed"
                             : ""
                         }`}
-                        value={filterValues.data_fim || ""}
+                        value={filtrosPainel.data_fim || ""}
                         onChange={(e) =>
                           handleFilterChange("data_fim", e.target.value)
                         }
-                        disabled={disableDateFields || !filterValues.campo_data}
+                        disabled={
+                          disableDateFields || !filtrosPainel.campo_data
+                        }
                       />
                     </div>
                   </div>
@@ -990,7 +1426,7 @@ const ConsultaOSPage: React.FC = () => {
             <div className="flex flex-wrap gap-3 mt-8 sm:justify-end justify-center">
               <button
                 type="button"
-                onClick={handleClearFilters}
+                onClick={handleClearFiltersCustom}
                 className="px-5 py-2.5 border-2 border-gray-300 cursor-pointer text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] transition-all duration-200 shadow-sm hover:shadow flex items-center gap-2 group"
                 aria-label="Limpar todos os filtros"
               >
@@ -1029,7 +1465,7 @@ const ConsultaOSPage: React.FC = () => {
           </p>
           <div className="flex gap-3 justify-center">
             <button
-              onClick={() => setShowFilter(true)}
+              onClick={toggleFilters}
               className="px-5 py-2.5 border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] transition-all duration-200 shadow-sm hover:shadow flex items-center gap-2"
             >
               <Search className="h-4 w-4" />
@@ -1046,13 +1482,13 @@ const ConsultaOSPage: React.FC = () => {
         </div>
       ) : data.dados && data.dados.length > 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+          <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-2 border-b border-gray-100">
+            <h2 className="text-base font-semibold text-gray-800 flex items-center gap-1.5">
               <span className="text-[var(--primary)]">
-                <ClipboardList className="h-5 w-5" />
+                <ClipboardList className="h-4 w-4" />
               </span>
               Resultados da Pesquisa
-              <span className="ml-2 text-sm font-medium bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-1 rounded-full">
+              <span className="ml-2 text-xs font-medium bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded-full">
                 {data.total_registros} encontrados
               </span>
             </h2>
@@ -1115,34 +1551,14 @@ const ConsultaOSPage: React.FC = () => {
                       <span className="text-xs text-gray-500 block">
                         Técnico
                       </span>
-                      <span className="font-medium">
-                        {item.tecnico?.nome || "Não atribuído"}
-                      </span>
-                      {item.tecnico?.tipo && (
-                        <span
-                          className="text-xs px-1.5 py-0.5 rounded-full inline-block mt-1"
-                          style={{
-                            backgroundColor:
-                              item.tecnico.tipo === "interno"
-                                ? "rgba(var(--color-primary-rgb), 0.1)"
-                                : item.tecnico.tipo === "terceiro"
-                                ? "rgba(var(--color-warning-rgb), 0.1)"
-                                : "rgba(var(--color-gray-rgb), 0.1)",
-                            color:
-                              item.tecnico.tipo === "interno"
-                                ? "var(--primary)"
-                                : item.tecnico.tipo === "terceiro"
-                                ? "var(--color-warning)"
-                                : "var(--color-gray)",
-                          }}
-                        >
-                          {item.tecnico.tipo === "interno"
-                            ? "Interno"
-                            : item.tecnico.tipo === "terceiro"
-                            ? "Terceirizado"
-                            : "Indefinido"}
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">
+                          {item.tecnico?.nome || "Não atribuído"}
                         </span>
-                      )}
+                        {item.tecnico?.tipo && (
+                          <TecnicoBadge tipo={item.tecnico.tipo} />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1364,29 +1780,7 @@ const ConsultaOSPage: React.FC = () => {
                             <span className="text-gray-800 flex items-center gap-1 flex-wrap">
                               {item.tecnico.nome}
                               {item.tecnico?.tipo && (
-                                <span
-                                  className="ml-2 text-xs px-2 py-0.5 rounded-full"
-                                  style={{
-                                    backgroundColor:
-                                      item.tecnico.tipo === "interno"
-                                        ? "rgba(var(--color-primary-rgb), 0.1)"
-                                        : item.tecnico.tipo === "terceiro"
-                                        ? "rgba(var(--color-warning-rgb), 0.1)"
-                                        : "rgba(var(--color-gray-rgb), 0.1)",
-                                    color:
-                                      item.tecnico.tipo === "interno"
-                                        ? "var(--primary)"
-                                        : item.tecnico.tipo === "terceiro"
-                                        ? "var(--color-warning)"
-                                        : "var(--color-gray)",
-                                  }}
-                                >
-                                  {item.tecnico.tipo === "interno"
-                                    ? "Interno"
-                                    : item.tecnico.tipo === "terceiro"
-                                    ? "Terceirizado"
-                                    : "Indefinido"}
-                                </span>
+                                <TecnicoBadge tipo={item.tecnico.tipo} />
                               )}
                             </span>
                           </p>
@@ -1442,6 +1836,7 @@ const ConsultaOSPage: React.FC = () => {
                 <div className="mt-5 flex justify-end gap-3">
                   <a
                     href={`/admin/os_aberto/${item.id_os || item.id}`}
+                    onClick={saveCurrentState}
                     className="px-4 py-2.5 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-dark)] transition-colors shadow hover:shadow-md flex items-center gap-2"
                   >
                     <Eye className="h-4 w-4" />
@@ -1471,12 +1866,27 @@ const ConsultaOSPage: React.FC = () => {
           </p>
           <button
             type="button"
-            onClick={() => setShowFilter(true)}
+            onClick={toggleFilters}
             className="px-5 py-2.5 border-2 border-[var(--primary)] text-[var(--primary)] font-medium rounded-lg hover:bg-[var(--primary)]/5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] transition-all duration-200 shadow-sm hover:shadow flex items-center gap-2 mx-auto"
           >
             <Search className="h-4 w-4" />
             Exibir filtros
           </button>
+        </div>
+      )}
+
+      {data.dados && data.dados.length > 0 && (
+        <div className="mt-4 mb-6">
+          <Pagination
+            currentPage={paginacao.paginaAtual}
+            totalPages={paginacao.totalPaginas}
+            totalRecords={paginacao.totalRegistros}
+            recordsPerPage={paginacao.registrosPorPagina}
+            onPageChange={handlePageChange}
+            onRecordsPerPageChange={handleRecordsPerPageChange}
+            recordsPerPageOptions={[10, 25, 50, 100]}
+            showRecordsPerPage={true}
+          />
         </div>
       )}
     </>
