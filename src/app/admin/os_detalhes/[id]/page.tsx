@@ -509,6 +509,15 @@ const OSDetalhesPage: React.FC = () => {
                         <span className="font-bold">{osData.cliente.nome}</span>{" "}
                         ({osData.cliente.id})
                       </p>
+                      {/* Utilizando a propriedade razao_social do objeto cliente */}
+                      {osData.cliente && "razao_social" in osData.cliente && (
+                        <p className="text-gray-800">
+                          {String(
+                            (osData.cliente as { razao_social: string })
+                              .razao_social
+                          )}
+                        </p>
+                      )}
                     </div>
                   )}
 

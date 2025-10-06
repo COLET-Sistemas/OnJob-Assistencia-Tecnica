@@ -486,16 +486,12 @@ const ConsultaOSPage: React.FC = () => {
           // Verifica se são os parâmetros de data e apenas os adiciona se o campo_data estiver preenchido
           if (
             (key === "data_ini" || key === "data_fim") &&
-            filtrosAplicados.campo_data
+            currentFilters.campo_data
           ) {
             params[key] = value.trim();
-          }
-
-          else if (key === "id_tecnico") {
+          } else if (key === "id_tecnico") {
             params["id_tecnico"] = value.trim();
-          }
-
-          else if (key === "tipo_tecnico") {
+          } else if (key === "tipo_tecnico") {
             params["tipo_tecnico"] = value.trim();
           }
           // Tratar o status selecionado
@@ -609,7 +605,6 @@ const ConsultaOSPage: React.FC = () => {
 
   // Configurar campos de data com base no status ao iniciar ou quando o status muda
   useEffect(() => {
-    // Configurar estado inicial com base no status
     const currentStatus = filtrosPainel.status;
     if (currentStatus) {
       const pendingStatuses = ["1", "1,2,3,4,5", "6"];
