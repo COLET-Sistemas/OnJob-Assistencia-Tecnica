@@ -21,24 +21,18 @@ export const ForbiddenErrorHandler: React.FC = () => {
       let processedMessage = originalMessage;
       if (originalMessage.includes(":")) {
         const parts = originalMessage.split(":");
-        // Get everything after the first colon and trim any whitespace
         processedMessage = parts.slice(1).join(":").trim();
       }
 
-      // Display the error message using the Toast system
       showError("Acesso Negado (403)", processedMessage);
     };
-
-    // Add event listener for the forbidden error event
     window.addEventListener("api:forbidden", handleForbiddenError);
 
-    // Clean up event listener on component unmount
     return () => {
       window.removeEventListener("api:forbidden", handleForbiddenError);
     };
   }, [showError]);
 
-  // This component doesn't render anything visible
   return null;
 };
 

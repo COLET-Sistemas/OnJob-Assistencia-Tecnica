@@ -8,10 +8,10 @@ import PageHeader from "@/components/admin/ui/PageHeader";
 import {
   CustomSelect,
   TextAreaField,
-  MachineOption,
   DateTimeField,
   type MachineOptionType,
 } from "@/components/admin/form";
+import { maquinaSelectComponents } from "./MaquinaItem";
 import { clientesService } from "@/api/services/clientesService";
 import { maquinasService } from "@/api/services/maquinasService";
 import { motivosPendenciaService } from "@/api/services/motivosPendenciaService";
@@ -413,15 +413,21 @@ const NovaOrdemServico = () => {
         Array.isArray(response.dados) &&
         response.dados.length > 0
           ? response.dados.map((maquina: Maquina) => {
+              // Usar diretamente o campo garantia da API se disponível
+              const dataFinalGarantia = maquina.data_final_garantia || "";
+              // Se o campo garantia estiver presente na resposta, usá-lo diretamente
               const isInWarranty =
-                maquina.data_final_garantia &&
-                new Date(maquina.data_final_garantia) > new Date();
+                maquina.garantia !== undefined
+                  ? maquina.garantia
+                  : dataFinalGarantia
+                  ? new Date(dataFinalGarantia) > new Date()
+                  : maquina.situacao === "G";
 
               return {
                 value: maquina.id || 0,
                 label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
                 isInWarranty,
-                data_final_garantia: maquina.data_final_garantia || "",
+                data_final_garantia: dataFinalGarantia,
               } as MaquinaOption;
             })
           : [];
@@ -896,7 +902,11 @@ const NovaOrdemServico = () => {
                   ? "Digite pelo menos 3 caracteres para buscar uma máquina..."
                   : "Nenhuma máquina encontrada"
               }
-              components={{ Option: MachineOption }}
+              components={
+                maquinaSelectComponents as unknown as React.ComponentProps<
+                  typeof CustomSelect
+                >["components"]
+              }
               isDisabled={!selectedCliente}
             />
           </motion.div>

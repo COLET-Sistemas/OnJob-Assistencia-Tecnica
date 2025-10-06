@@ -7,10 +7,10 @@ import PageHeader from "@/components/admin/ui/PageHeader";
 import {
   CustomSelect,
   TextAreaField,
-  MachineOption,
   DateTimeField,
   type MachineOptionType,
 } from "@/components/admin/form";
+import { maquinaSelectComponents } from "./MaquinaItem";
 import { clientesService } from "@/api/services/clientesService";
 import { maquinasService } from "@/api/services/maquinasService";
 import { motivosPendenciaService } from "@/api/services/motivosPendenciaService";
@@ -177,6 +177,7 @@ const EditarOrdemServico = () => {
   const [isSearchingClientes, setIsSearchingClientes] = useState(false);
   const [clienteInput, setClienteInput] = useState("");
   const [loadingMaquinas, setLoadingMaquinas] = useState(false);
+  const [maquinaInput, setMaquinaInput] = useState("");
   const [contatoOptions, setContatoOptions] = useState<ContatoOption[]>([]);
   const [selectedContato, setSelectedContato] = useState<ContatoOption | null>(
     null
@@ -652,6 +653,7 @@ const EditarOrdemServico = () => {
         }
       } else {
         setMaquinaOptions([]);
+        setMaquinaInput("");
         setContatoOptions([]);
       }
     },
@@ -702,6 +704,8 @@ const EditarOrdemServico = () => {
       setSelectedMaquina(null);
     } else {
       setSelectedMaquina(maquinaOption);
+      // Limpar o input quando uma máquina for selecionada
+      setMaquinaInput("");
     }
   }, []);
 
@@ -894,14 +898,26 @@ const EditarOrdemServico = () => {
     try {
       const response = await maquinasService.searchByNumeroSerie(term);
 
-      const machineOptions = response.dados.map((maquina: Maquina) => ({
-        value: maquina.id,
-        label: `${maquina.modelo || maquina.descricao} (${
-          maquina.numero_serie
-        })`,
-        isInWarranty: maquina.situacao === "G",
-        data_final_garantia: maquina.data_final_garantia || "",
-      }));
+      const machineOptions = response.dados.map((maquina: Maquina) => {
+        // Usar diretamente o campo garantia da API se disponível
+        const dataFinalGarantia = maquina.data_final_garantia || "";
+        // Se o campo garantia estiver presente na resposta, usá-lo diretamente
+        const isInWarranty =
+          maquina.garantia !== undefined
+            ? maquina.garantia
+            : dataFinalGarantia
+            ? new Date(dataFinalGarantia) > new Date()
+            : maquina.situacao === "G";
+
+        return {
+          value: maquina.id,
+          label: `${maquina.modelo || maquina.descricao} (${
+            maquina.numero_serie
+          })`,
+          isInWarranty,
+          data_final_garantia: dataFinalGarantia,
+        };
+      });
 
       // Adicionar a opção de buscar outra máquina
       machineOptions.push({
@@ -929,6 +945,7 @@ const EditarOrdemServico = () => {
   // Handler para o input de máquina com debounce otimizado
   const handleMaquinaInputChange = useCallback(
     (inputValue: string) => {
+      setMaquinaInput(inputValue);
       if (inputValue.length >= 3) {
         setIsSearchingMaquinas(true);
         debouncedSearchMaquinas(inputValue);
@@ -1469,14 +1486,13 @@ const EditarOrdemServico = () => {
                   onChange={handleMaquinaSelectChange}
                   onInputChange={handleMaquinaInputChange}
                   options={maquinaOptions}
-                  isSearchable
+                  isSearchable={true}
+                  inputValue={maquinaInput}
                   isLoading={loadingMaquinas || isSearchingMaquinas}
                   isDisabled={!selectedCliente}
                   className={errors.maquina ? "campo-erro" : ""}
                   components={
-                    {
-                      Option: MachineOption,
-                    } as unknown as React.ComponentProps<
+                    maquinaSelectComponents as unknown as React.ComponentProps<
                       typeof CustomSelect
                     >["components"]
                   }

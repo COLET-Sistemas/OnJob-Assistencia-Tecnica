@@ -24,6 +24,7 @@ import {
   Car,
   Wrench,
   PauseCircle,
+  FileX,
 } from "lucide-react";
 import { formatarDataHora, isDataAgendadaPassada } from "@/utils/formatters";
 
@@ -48,6 +49,7 @@ interface OSCardProps {
     currentTecnicoNome?: string
   ) => void;
   onEditarOS?: (osId: number) => void;
+  onCancelarOS?: (osId: number) => void;
 }
 
 const OSCard: React.FC<OSCardProps> = ({
@@ -62,6 +64,7 @@ const OSCard: React.FC<OSCardProps> = ({
   onAlterarPendencia,
   onAlterarTecnico,
   onEditarOS,
+  onCancelarOS,
 }) => {
   // Função para determinar a cor baseada no código da situação
   const getSituacaoColor = (codigo: number) => {
@@ -226,9 +229,28 @@ const OSCard: React.FC<OSCardProps> = ({
                   <div className="flex items-center gap-1.5 text-sm text-gray-600">
                     <User className="w-3.5 h-3.5 flex-shrink-0 text-gray-500 my-auto" />
                     {isTecnicoIndefinido ? (
-                      <span className="text-red-600 font-medium my-auto">
-                        Técnico indefinido
-                      </span>
+                      <div className="flex items-center gap-1.5 my-auto">
+                        <span className="text-red-600 font-medium">
+                          Técnico indefinido
+                        </span>
+                        {onAlterarTecnico && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAlterarTecnico(
+                                os.id_os,
+                                os.tecnico.id,
+                                os.tecnico.nome
+                              );
+                            }}
+                            className="flex-shrink-0 p-1 text-red-400 hover:text-red-600 hover:bg-red-50 
+                                      rounded transition-colors cursor-pointer"
+                            title="Definir técnico"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
                     ) : (
                       <div className="flex items-center gap-1.5 truncate my-auto flex-1 min-w-0">
                         <span className="font-bold text-md truncate">
@@ -327,21 +349,38 @@ const OSCard: React.FC<OSCardProps> = ({
                       {os.abertura.motivo_atendimento}
                     </h4>
                   </div>
-                  {onEditarOS && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditarOS(os.id_os);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 
-                              hover:bg-indigo-100 rounded-md text-xs font-medium transition-colors 
-                              border border-indigo-200 transform hover:scale-105 active:scale-95 cursor-pointer"
-                      title="Editar Ordem de Serviço"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                      Editar OS
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {onEditarOS && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditarOS(os.id_os);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 
+                                hover:bg-indigo-100 rounded-md text-xs font-medium transition-colors 
+                                border border-indigo-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                        title="Editar Ordem de Serviço"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        Editar OS
+                      </button>
+                    )}
+                    {onCancelarOS && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCancelarOS(os.id_os);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 
+                                hover:bg-red-100 rounded-md text-xs font-medium transition-colors 
+                                border border-red-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                        title="Cancelar Ordem de Serviço"
+                      >
+                        <FileX className="w-3.5 h-3.5" />
+                        Cancelar OS
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="text-gray-800 text-sm mb-3 break-words whitespace-pre-wrap max-h-[250px] overflow-y-auto custom-scrollbar">
                   {os.descricao_problema || "Sem descrição fornecida"}

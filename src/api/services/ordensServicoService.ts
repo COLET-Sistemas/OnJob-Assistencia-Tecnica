@@ -1,4 +1,5 @@
 import api from "../api";
+import { ocorrenciasOSService } from "./ocorrenciaOSService";
 
 export interface OSStatusCount {
   em_execucao: number;
@@ -627,8 +628,27 @@ class OrdensServicoService {
     return result;
   }
 
-  async cancel(id: number): Promise<void> {
-    await api.delete<void>(`${this.baseUrl}/${id}`);
+  async cancel(
+    id: number,
+    data?: { tipo_cancelamento: "cliente" | "empresa"; descricao: string }
+  ): Promise<void> {
+    if (!data) {
+      // Caso sem dados adicionais (não deve acontecer mais)
+      throw new Error("Dados de cancelamento são obrigatórios");
+    }
+    
+    // Formatar a ocorrência baseada no tipo de cancelamento
+    const ocorrencia = data.tipo_cancelamento === "cliente" 
+      ? "cancelar os (cliente)" 
+      : "cancelar os";
+    
+    // Registrar a ocorrência de cancelamento
+    await ocorrenciasOSService.registrarOcorrencia({
+      id_os: id,
+      ocorrencia: ocorrencia,
+      descricao_ocorrencia: data.descricao
+    });
+
     // Invalidar cache específico da OS
     this.cache.delete(`os_detail_${id}`);
     this.cache.delete("count_status");

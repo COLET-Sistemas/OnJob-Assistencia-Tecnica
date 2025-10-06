@@ -46,7 +46,7 @@ const menuItems: MenuItem[] = [
   },
   {
     key: "os_aberto",
-    label: "Ordens de Serviço",
+    label: "Gerenciamento de OSs",
     icon: FileCog,
     path: "/admin/os_aberto",
   },

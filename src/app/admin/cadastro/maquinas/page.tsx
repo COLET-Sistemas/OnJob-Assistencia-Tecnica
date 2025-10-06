@@ -12,6 +12,7 @@ import PageHeader from "@/components/admin/ui/PageHeader";
 import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
 import { maquinasService } from "@/api/services/maquinasService";
+import { CheckCircle, XCircle } from "lucide-react";
 
 interface MaquinasFilters {
   numero_serie: string;
@@ -42,6 +43,27 @@ const formatDate = (dateString: string): string => {
     .padStart(2, "0")}/${date.getFullYear()}`;
 };
 
+const WarrantyBadge = ({ inWarranty }: { inWarranty: boolean }) => {
+  return (
+    <div
+      className={`flex items-center gap-1 px-2 py-1 rounded-md ${
+        inWarranty
+          ? "bg-green-100 text-green-700"
+          : "bg-orange-100 text-orange-700"
+      }`}
+    >
+      {inWarranty ? (
+        <CheckCircle className="w-4 h-4" />
+      ) : (
+        <XCircle className="w-4 h-4" />
+      )}
+      <span className="text-xs font-medium">
+        {inWarranty ? "Na Garantia" : "Fora da Garantia"}
+      </span>
+    </div>
+  );
+};
+
 const CadastroMaquinas = () => {
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
@@ -69,24 +91,23 @@ const CadastroMaquinas = () => {
     registrosPorPagina: 25,
   });
 
-  
   const handleApplyFilters = () => {
     setLocalShowFilters(false);
-    isReloadingRef.current = true; 
+    isReloadingRef.current = true;
     aplicarFiltros();
   };
 
   const handleClearFilters = () => {
-    setLocalShowFilters(false); 
-    isReloadingRef.current = true; 
-    limparFiltros(); 
+    setLocalShowFilters(false);
+    isReloadingRef.current = true;
+    limparFiltros();
   };
 
   const handleToggleFilters = () => {
     if (!isReloadingRef.current) {
       setLocalShowFilters(!localShowFilters);
     }
-    toggleFilters(); 
+    toggleFilters();
   };
 
   const fetchMaquinas = useCallback(async (): Promise<Maquina[]> => {
@@ -212,6 +233,13 @@ const CadastroMaquinas = () => {
         <span className="text-sm text-gray-600">
           {formatDate(maquina.data_final_garantia)}
         </span>
+      ),
+    },
+    {
+      header: "Garantia",
+      accessor: "garantia" as keyof Maquina,
+      render: (maquina: Maquina) => (
+        <WarrantyBadge inWarranty={maquina.garantia} />
       ),
     },
     {

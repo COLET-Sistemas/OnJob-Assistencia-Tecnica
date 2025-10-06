@@ -16,6 +16,7 @@ import SkeletonCard from "@/app/admin/os_aberto/components/SkeletonCard";
 import LiberacaoFinanceiraModal from "@/app/admin/os_aberto/components/LiberacaoFinanceiraModal";
 import AlterarPendenciaModal from "@/app/admin/os_aberto/components/AlterarPendenciaModal";
 import TecnicoModal from "@/app/admin/os_aberto/components/TecnicoModal";
+import CancelarOSModal from "@/app/admin/os_aberto/components/CancelarOSModal";
 import { OrdemServico } from "@/types/OrdemServico";
 
 const CODIGO_SITUACAO = {
@@ -47,6 +48,11 @@ const TelaOSAbertas: React.FC = () => {
     osId: 0,
     currentMotivoId: 0,
     currentMotivoText: "",
+  });
+
+  const [modalCancelamento, setModalCancelamento] = useState({
+    isOpen: false,
+    osId: 0,
   });
 
   const [modalTecnico, setModalTecnico] = useState({
@@ -98,7 +104,6 @@ const TelaOSAbertas: React.FC = () => {
         });
 
         setOrdensServico(filteredOrdens);
-
       } else {
         console.warn("Resposta inesperada da API:", response);
         setAllOrdensServico([]);
@@ -413,6 +418,48 @@ const TelaOSAbertas: React.FC = () => {
     window.location.href = `/admin/os_aberto/editar/${osId}`;
   }, []);
 
+  // Funções para lidar com o cancelamento de OS
+  const handleOpenCancelamentoModal = useCallback((osId: number) => {
+    setModalCancelamento({
+      isOpen: true,
+      osId,
+    });
+  }, []);
+
+  const handleCloseCancelamentoModal = useCallback(() => {
+    setModalCancelamento({
+      isOpen: false,
+      osId: 0,
+    });
+  }, []);
+
+  const handleConfirmCancelamento = useCallback(
+    async (
+      osId: number,
+      descricao: string,
+      tipoCancelamento: "cliente" | "empresa"
+    ) => {
+      try {
+        // Enviar dados de cancelamento através do serviço
+        await ordensServicoService.cancel(osId, {
+          tipo_cancelamento: tipoCancelamento,
+          descricao: descricao,
+        });
+
+        // Atualiza os dados após o cancelamento
+        await fetchData();
+        feedback.toast("OS cancelada com sucesso", "success");
+        handleCloseCancelamentoModal();
+        return Promise.resolve();
+      } catch (error) {
+        console.error("Erro ao cancelar OS:", error);
+        feedback.toast("Erro ao cancelar OS", "error");
+        return Promise.reject(error);
+      }
+    },
+    [fetchData, handleCloseCancelamentoModal]
+  );
+
   const handleConfirmTecnico = useCallback(
     async (osId: number, tecnicoId: number, tecnicoNome: string) => {
       try {
@@ -578,6 +625,7 @@ const TelaOSAbertas: React.FC = () => {
                 onAdicionarTecnico={createAdicionarTecnicoHandler(os)}
                 onAlterarTecnico={createAlterarTecnicoHandler(os)}
                 onEditarOS={handleEditarOS}
+                onCancelarOS={handleOpenCancelamentoModal}
               />
             ))}
           </div>
@@ -617,6 +665,14 @@ const TelaOSAbertas: React.FC = () => {
         currentTecnicoNome={modalTecnico.currentTecnicoNome}
         onClose={handleCloseTecnicoModal}
         onConfirm={handleConfirmTecnico}
+      />
+
+      {/* Modal de Cancelamento de OS */}
+      <CancelarOSModal
+        isOpen={modalCancelamento.isOpen}
+        osId={modalCancelamento.osId}
+        onClose={handleCloseCancelamentoModal}
+        onConfirm={handleConfirmCancelamento}
       />
     </div>
   );

@@ -7,6 +7,7 @@ export interface Maquina {
   nota_fiscal_venda: string;
   data_final_garantia: string;
   situacao: string;
+  garantia: boolean;
   cliente_atual: {
     id_cliente: number;
     nome_fantasia: string;
