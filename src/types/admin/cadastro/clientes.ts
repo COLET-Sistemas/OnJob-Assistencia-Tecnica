@@ -1,7 +1,8 @@
 import { Regiao } from "./regioes";
 
 export type ClienteContato = {
-  id: number;
+  id?: number;
+  id_contato?: number;
   nome_completo?: string;
   nome?: string;
   cargo?: string;

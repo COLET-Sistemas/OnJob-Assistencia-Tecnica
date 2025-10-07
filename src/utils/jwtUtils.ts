@@ -11,8 +11,8 @@ export interface JwtPayload {
   perfil_tecnico_proprio: boolean;
   perfil_tecnico_terceirizado: boolean;
   administrador: boolean;
-  exp?: number; // Tempo de expiração do token
-  iat?: number; // Tempo de emissão do token
+  exp?: number; 
+  iat?: number; 
 }
 
 /**

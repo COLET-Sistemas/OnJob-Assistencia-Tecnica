@@ -116,6 +116,12 @@ const apiRequest = async <T>(
     },
   };
 
+  console.log(`API Request: ${options.method || "GET"} ${url}`, {
+    headers: config.headers,
+    method: config.method,
+    body: config.body ? JSON.parse(config.body as string) : undefined,
+  });
+
   try {
     const response = await fetch(url, config);
 
@@ -252,10 +258,47 @@ const api = {
 
   // DELETE
   delete: <T>(endpoint: string, options: RequestOptions = {}) => {
-    return apiRequest<T>(endpoint, {
+    const { params, ...restOptions } = options;
+
+    // Validar parâmetros
+    if (params && params.id !== undefined) {
+      console.log(
+        "API DELETE: validando ID:",
+        params.id,
+        "tipo:",
+        typeof params.id
+      );
+      if (params.id === null || params.id === "") {
+        console.error("API DELETE: ID inválido:", params.id);
+      }
+    } else {
+      console.warn("API DELETE: chamada sem ID nos parâmetros");
+    }
+
+    const queryString = buildQueryString(params);
+    const fullEndpoint = `${endpoint}${queryString}`;
+
+    console.log(
+      "API DELETE chamada para endpoint:",
+      fullEndpoint,
+      "com parâmetros:",
+      params,
+      "e opções:",
+      restOptions
+    );
+
+    return apiRequest<T>(fullEndpoint, {
       method: "DELETE",
-      ...options,
-    });
+      ...restOptions,
+    })
+      .then((result) => {
+        console.log("API DELETE resultado:", result);
+        return result;
+      })
+      .catch((error) => {
+        console.error("API DELETE erro:", error);
+        throw error;
+      });
   },
 
   // PATCH

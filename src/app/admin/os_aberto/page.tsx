@@ -525,7 +525,7 @@ const TelaOSAbertas: React.FC = () => {
         {/* Fixed Header */}
         <div className="flex-shrink-0">
           <PageHeaderSimple
-            title="Ordens de Serviços em Aberto"
+            title="Gerenciamento de OSs"
             config={{
               type: "list",
               itemCount: 0,
@@ -579,7 +579,7 @@ const TelaOSAbertas: React.FC = () => {
       {/* Fixed Header */}
       <div className="flex-shrink-0">
         <PageHeaderSimple
-          title="Ordens de Serviços em Aberto"
+          title="Gerenciamento de OSs"
           config={{
             type: "list",
             itemCount: filteredOrdens.length,

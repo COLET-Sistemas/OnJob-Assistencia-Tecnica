@@ -15,4 +15,3 @@ export * from "./regioesService";
 export * from "./tiposPecasService";
 export * from "./usuariosService";
 
-// Adicione novos exports conforme for criando mais serviços

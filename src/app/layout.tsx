@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ClientToastProvider from "@/components/admin/ui/ClientToastProvider";
 import { FeedbackProvider } from "@/context/FeedbackContext";
+import AuthStorageCleaner from "@/components/AuthStorageCleaner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,7 +51,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
         suppressHydrationWarning={true}
       >
         <FeedbackProvider>
-          <ClientToastProvider>{children}</ClientToastProvider>
+          <ClientToastProvider>
+            <AuthStorageCleaner />
+            {children}
+          </ClientToastProvider>
         </FeedbackProvider>
       </body>
     </html>

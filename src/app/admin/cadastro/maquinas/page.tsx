@@ -34,15 +34,6 @@ interface PaginacaoInfo {
   registrosPorPagina: number;
 }
 
-const formatDate = (dateString: string): string => {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "-";
-  return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
-    .toString()
-    .padStart(2, "0")}/${date.getFullYear()}`;
-};
-
 const WarrantyBadge = ({ inWarranty }: { inWarranty: boolean }) => {
   return (
     <div
@@ -122,7 +113,6 @@ const CadastroMaquinas = () => {
         filtrosAplicados.descricao?.trim() || undefined
       );
 
-      // Atualizar a paginação com os dados da resposta
       setPaginacao((prev) => ({
         ...prev,
         totalPaginas: response.total_paginas || 1,
@@ -212,9 +202,7 @@ const CadastroMaquinas = () => {
       header: "Data 1ª Venda",
       accessor: "data_1a_venda" as keyof Maquina,
       render: (maquina: Maquina) => (
-        <span className="text-sm text-gray-600">
-          {formatDate(maquina.data_1a_venda)}
-        </span>
+        <span className="text-sm text-gray-600">{maquina.data_1a_venda}</span>
       ),
     },
     {
@@ -231,7 +219,7 @@ const CadastroMaquinas = () => {
       accessor: "data_final_garantia" as keyof Maquina,
       render: (maquina: Maquina) => (
         <span className="text-sm text-gray-600">
-          {formatDate(maquina.data_final_garantia)}
+          {maquina.data_final_garantia}
         </span>
       ),
     },

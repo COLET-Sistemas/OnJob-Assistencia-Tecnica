@@ -1034,7 +1034,6 @@ const EditarOrdemServico = () => {
         data_agendada?: string;
         // Removido id_tecnico, apenas usando id_usuario_tecnico conforme esperado pela API
         id_usuario_tecnico?: number;
-        id_contato?: number;
         id_contato_abertura?: number;
         nome_contato_abertura?: string;
         telefone_contato_abertura?: string;
@@ -1089,13 +1088,27 @@ const EditarOrdemServico = () => {
                 selectedCliente.value.toString(),
                 novoContato
               );
-              if (response && response.contato && response.contato.id) {
-                osData.id_contato = response.contato.id;
+              if (response && response.id) {
+                // Use the ID directly from the response
+                osData.id_contato_abertura = response.id;
+              } else if (response && response.contato && response.contato.id) {
+                // Fallback to previous structure if available
                 osData.id_contato_abertura = response.contato.id;
               }
             } catch (error) {
               console.error("Erro ao salvar contato:", error);
               // Verificar se a mensagem de erro contém informação sobre um contato cadastrado com sucesso
+              // Verificar se o erro contém um objeto com um ID
+              if (error && typeof error === "object" && "id" in error) {
+                // Se o erro contém um ID, usar esse ID diretamente
+                const errorWithId = error as { id?: number };
+                if (errorWithId.id) {
+                  osData.id_contato_abertura = errorWithId.id;
+                  console.log(`Usando ID ${errorWithId.id} do erro da API`);
+                  return; // Continue com a submissão usando o ID obtido
+                }
+              }
+
               const errorMessage =
                 error instanceof Error
                   ? error.message
@@ -1118,7 +1131,6 @@ const EditarOrdemServico = () => {
                         contactsResponse.contatos.length - 1
                       ];
                     if (lastContact) {
-                      osData.id_contato = lastContact.id;
                       osData.id_contato_abertura = lastContact.id;
                     }
                   } catch (fetchError) {
@@ -1133,7 +1145,6 @@ const EditarOrdemServico = () => {
           }
         } else {
           // É um contato existente
-          osData.id_contato = selectedContato.contato.id;
           osData.id_contato_abertura = selectedContato.contato.id;
         }
       }
@@ -1414,7 +1425,7 @@ const EditarOrdemServico = () => {
                 onContactSaved={(contact) => {
                   // Adicionar o novo contato às opções
                   const newContactOption = {
-                    value: contact.id,
+                    value: contact.id || 0, // Garantir que o value seja um número, usando 0 como fallback
                     label: contact.nome || contact.nome_completo || "Contato",
                     contato: contact,
                   };
@@ -1429,10 +1440,10 @@ const EditarOrdemServico = () => {
                     ...filteredOptions,
                     newContactOption,
                     {
-                      value: -1,
+                      value: -1, // Usando -1 como valor específico para "adicionar novo"
                       label: "Adicionar novo contato...",
                       contato: {
-                        id: -1,
+                        id: -1, // Garantir que o ID seja um número
                         nome: "",
                         email: "",
                         telefone: "",

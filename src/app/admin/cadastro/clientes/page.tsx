@@ -19,6 +19,9 @@ import { services } from "@/api";
 import LocationButton from "@/components/admin/ui/LocationButton";
 import api from "@/api/api";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Ban, Pencil } from "lucide-react";
+import ConfirmModal from "@/components/admin/ui/ConfirmModal";
 
 const { clientesService } = services;
 
@@ -52,12 +55,21 @@ interface ClientesResponse {
 const CadastroClientes = () => {
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
+  const router = useRouter();
   const [expandedClienteId, setExpandedClienteId] = useState<number | null>(
     null
   );
   // Estados para o modal de localização
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
+
+  // Estados para o modal de confirmação de inativação de contato
+  const [showInactivateModal, setShowInactivateModal] = useState(false);
+  const [selectedContactId, setSelectedContactId] = useState<number | null>(
+    null
+  );
+  const [isInactivating, setIsInactivating] = useState(false);
+  const [selectedContactName, setSelectedContactName] = useState("");
 
   // Controle de visibilidade do menu de filtros
   const [localShowFilters, setLocalShowFilters] = useState(false);
@@ -144,6 +156,7 @@ const CadastroClientes = () => {
     data: clientes,
     loading,
     refetch,
+    updateData,
   } = useDataFetch<Cliente[]>(fetchClientes, [fetchClientes]);
 
   const handlePageChange = useCallback((novaPagina: number) => {
@@ -194,8 +207,23 @@ const CadastroClientes = () => {
       try {
         const response = await clientesService.getContacts(clientId);
 
+        // Vamos atualizar o estado diretamente em vez de fazer refetch
         if (response && response.contatos) {
-          await refetch();
+          // Atualizar os clientes localmente em vez de fazer refetch completo
+          const updatedClientes = clientes.map((c) => {
+            if (getClienteId(c) === clientId) {
+              return {
+                ...c,
+                contatos: response.contatos,
+              };
+            }
+            return c;
+          });
+
+          // Usando a função updateData em vez de refetch
+          if (updateData) {
+            updateData(updatedClientes);
+          }
         }
       } catch (error) {
         console.error("Erro ao carregar contatos:", error);
@@ -209,7 +237,8 @@ const CadastroClientes = () => {
     if (expandedClienteId) {
       fetchContacts(expandedClienteId);
     }
-  }, [expandedClienteId, clientes, refetch, showError, getClienteId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expandedClienteId, clientes, showError, getClienteId, updateData]);
 
   const openLocationModal = useCallback((cliente: Cliente) => {
     setSelectedCliente(cliente);
@@ -423,6 +452,87 @@ const CadastroClientes = () => {
     }
   };
 
+  // Função para mostrar o modal de confirmação de inativação
+  const openInactivateModal = (id: number, name: string) => {
+    console.log(
+      "Abrindo modal de inativação para contato ID:",
+      id,
+      "Nome:",
+      name
+    );
+
+    // Garantir que o ID seja um número válido
+    if (!id || isNaN(Number(id))) {
+      console.error("ID do contato inválido:", id);
+      showError("Erro", "ID do contato inválido ou não encontrado.");
+      return;
+    }
+
+    setSelectedContactId(Number(id));
+    setSelectedContactName(name);
+    setShowInactivateModal(true);
+  };
+
+  // Função para inativar contato
+  const handleInativarContato = async () => {
+    if (!selectedContactId) {
+      console.error("ID do contato não definido");
+      showError("Erro", "ID do contato não definido ou inválido.");
+      return;
+    }
+
+    console.log("Iniciando inativação de contato:", selectedContactId);
+
+    try {
+      setIsInactivating(true);
+
+      // Garantir que o ID seja um número válido
+      const contactId = Number(selectedContactId);
+      if (isNaN(contactId)) {
+        throw new Error("ID do contato inválido");
+      }
+
+      console.log("Chamando clientesService.deleteContact com ID:", contactId);
+
+      const resultado = await clientesService.deleteContact(contactId);
+      console.log("Resposta da API de inativação:", resultado);
+
+      showSuccess("Sucesso", "Contato inativado com sucesso");
+
+      // Atualizar os dados localmente em vez de fazer refetch completo
+      if (expandedClienteId && clientes) {
+        console.log(
+          "Atualizando dados do cliente localmente ID:",
+          expandedClienteId
+        );
+
+        const updatedClientes = clientes.map((cliente) => {
+          if (getClienteId(cliente) === expandedClienteId && cliente.contatos) {
+            // Atualizar o status do contato inativado ou remover da lista
+            return {
+              ...cliente,
+              contatos: cliente.contatos.filter(
+                (contato) => (contato.id_contato || contato.id) !== contactId
+              ),
+            };
+          }
+          return cliente;
+        });
+
+        // Atualizar os dados sem fazer nova requisição
+        updateData(updatedClientes);
+      }
+
+      // Fechar o modal
+      setShowInactivateModal(false);
+    } catch (error) {
+      console.error("Erro ao inativar contato:", error);
+      showError("Erro ao inativar", error as Record<string, unknown>);
+    } finally {
+      setIsInactivating(false);
+    }
+  };
+
   const renderActions = (cliente: Cliente) => {
     const clientId = getClienteId(cliente);
 
@@ -601,12 +711,14 @@ const CadastroClientes = () => {
                 {cliente.qtd_contatos && cliente.qtd_contatos > 0 ? (
                   <div className="flex flex-col items-center">
                     <svg
+                      key="spinner-icon"
                       className="animate-spin h-6 w-6 text-[var(--primary)] mb-2"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
                     >
                       <circle
+                        key="spinner-circle"
                         className="opacity-25"
                         cx="12"
                         cy="12"
@@ -615,6 +727,7 @@ const CadastroClientes = () => {
                         strokeWidth="4"
                       ></circle>
                       <path
+                        key="spinner-path"
                         className="opacity-75"
                         fill="currentColor"
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
@@ -630,7 +743,7 @@ const CadastroClientes = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {cliente.contatos.map((contato) => (
                   <div
-                    key={contato.id}
+                    key={contato.id_contato || contato.id}
                     className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
                   >
                     <div className="flex justify-between">
@@ -638,15 +751,53 @@ const CadastroClientes = () => {
                         {contato.nome || contato.nome_completo}
                         {contato.cargo && ` (${contato.cargo})`}
                       </div>
-                      <span
-                        className={`px-2 py-0.5 h-fit rounded-full text-xs ${
-                          contato.situacao === "A"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {contato.situacao === "A" ? "Ativo" : "Inativo"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-0.5 h-fit rounded-full text-xs ${
+                            contato.situacao === "A"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {contato.situacao === "A" ? "Ativo" : "Inativo"}
+                        </span>
+
+                        {contato.situacao === "A" && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                router.push(
+                                  `/admin/cadastro/clientes/contato/editar/${
+                                    contato.id_contato || contato.id
+                                  }`
+                                );
+                              }}
+                              className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                              title="Editar contato"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                openInactivateModal(
+                                  Number(contato.id_contato || contato.id || 0),
+                                  contato.nome ||
+                                    contato.nome_completo ||
+                                    "este contato"
+                                );
+                              }}
+                              className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                              title="Inativar contato"
+                            >
+                              <Ban size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {contato.nome_completo &&
@@ -662,6 +813,7 @@ const CadastroClientes = () => {
                           <div className="flex items-center gap-2 text-sm">
                             <div className="bg-gray-100 p-1.5 rounded-md">
                               <svg
+                                key="phone-icon"
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="16"
                                 height="16"
@@ -688,6 +840,7 @@ const CadastroClientes = () => {
                           <div className="flex items-center gap-2 text-sm">
                             <div className="bg-green-50 p-1.5 rounded-md">
                               <svg
+                                key="whatsapp-icon"
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="16"
                                 height="16"
@@ -716,6 +869,7 @@ const CadastroClientes = () => {
                           <div className="flex items-center gap-2 text-sm">
                             <div className="bg-blue-50 p-1.5 rounded-md">
                               <svg
+                                key="email-icon"
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="16"
                                 height="16"
@@ -740,6 +894,7 @@ const CadastroClientes = () => {
                         <div className="mt-3 flex items-center">
                           <span className="bg-blue-100 text-blue-700 px-2 py-1 text-xs rounded-full flex items-center gap-1">
                             <svg
+                              key="notification-icon"
                               xmlns="http://www.w3.org/2000/svg"
                               width="12"
                               height="12"
@@ -784,6 +939,18 @@ const CadastroClientes = () => {
           onLocationSelected={saveClienteLocation}
         />
       )}
+
+      {/* Modal de confirmação de inativação de contato */}
+      <ConfirmModal
+        isOpen={showInactivateModal}
+        onClose={() => setShowInactivateModal(false)}
+        onConfirm={handleInativarContato}
+        title="Inativação de Contato"
+        message="Tem certeza que deseja inativar este contato?"
+        confirmLabel="Inativar Contato"
+        isLoading={isInactivating}
+        itemName={selectedContactName}
+      />
     </>
   );
 };

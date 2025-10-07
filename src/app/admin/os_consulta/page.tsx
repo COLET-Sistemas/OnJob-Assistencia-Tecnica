@@ -427,31 +427,61 @@ const ConsultaOSPage: React.FC = () => {
     [handleFiltroChange]
   );
 
+  // Função para limpar um campo individual
+  const handleClearField = useCallback(
+    (key: string) => {
+      // Verificar se o campo é dependente de outro
+      if (key === "data_ini" || key === "data_fim") {
+        // Limpar apenas o campo específico
+        handleFiltroChange(key, "");
+      } else if (key === "campo_data") {
+        // Limpar campo de data e campos dependentes
+        handleFiltroChange("campo_data", "");
+        handleFiltroChange("data_ini", "");
+        handleFiltroChange("data_fim", "");
+        setDisableDateFields(false);
+      } else if (key === "id_tecnico" || key === "tipo_tecnico") {
+        // Limpar ambos os campos relacionados a técnicos
+        handleFiltroChange("id_tecnico", "");
+        handleFiltroChange("tipo_tecnico", "");
+      } else {
+        // Limpar o campo normalmente
+        handleFiltroChange(key, "");
+      }
+    },
+    [handleFiltroChange]
+  );
+
   const handleClearFiltersCustom = useCallback(() => {
-    // Use the limparFiltros from useFilters hook
+    // First, use limparFiltros to reset all filter values
     limparFiltros();
 
-    // Reset additional state
-    setDisableDateFields(false);
-    setFixedDateType(null);
+    // Then immediately ensure the panel stays open
+    setTimeout(() => {
+      setShowFilters(true);
 
-    // Reset any form controls if needed (like date inputs)
-    const dateInputs = document.querySelectorAll('input[type="date"]');
-    dateInputs.forEach((input) => {
-      (input as HTMLInputElement).value = "";
-    });
+      // Reset additional state
+      setDisableDateFields(false);
+      setFixedDateType(null);
 
-    // Foco no primeiro campo após limpar
-    const firstInput = document.querySelector(
-      ".filter-section input, .filter-section select"
-    );
-    if (firstInput) {
-      (firstInput as HTMLElement).focus();
-    }
+      // Reset any form controls if needed (like date inputs)
+      const dateInputs = document.querySelectorAll('input[type="date"]');
+      dateInputs.forEach((input) => {
+        (input as HTMLInputElement).value = "";
+      });
+
+      // Foco no primeiro campo após limpar
+      const firstInput = document.querySelector(
+        ".filter-section input, .filter-section select"
+      );
+      if (firstInput) {
+        (firstInput as HTMLElement).focus();
+      }
+    }, 0);
 
     // Reset pagination to first page
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
-  }, [limparFiltros]);
+  }, [limparFiltros, setShowFilters]);
 
   // Função para buscar dados com filtros
   const handleSearch = useCallback(async () => {
@@ -1191,10 +1221,21 @@ const ConsultaOSPage: React.FC = () => {
                     value={filtrosPainel.id || ""}
                     onChange={(e) => handleFilterChange("id", e.target.value)}
                   />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span className="text-gray-400">
-                      <Search size={16} />
-                    </span>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    {filtrosPainel.id ? (
+                      <button
+                        type="button"
+                        onClick={() => handleClearField("id")}
+                        className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                        aria-label="Limpar número da OS"
+                      >
+                        <X size={16} />
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 pointer-events-none">
+                        <Search size={16} />
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1214,10 +1255,21 @@ const ConsultaOSPage: React.FC = () => {
                       handleFilterChange("cliente", e.target.value)
                     }
                   />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span className="text-gray-400">
-                      <Search size={16} />
-                    </span>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    {filtrosPainel.cliente ? (
+                      <button
+                        type="button"
+                        onClick={() => handleClearField("cliente")}
+                        className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                        aria-label="Limpar nome do cliente"
+                      >
+                        <X size={16} />
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 pointer-events-none">
+                        <Search size={16} />
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1237,10 +1289,21 @@ const ConsultaOSPage: React.FC = () => {
                       handleFilterChange("maquina", e.target.value)
                     }
                   />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span className="text-gray-400">
-                      <Search size={16} />
-                    </span>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    {filtrosPainel.maquina ? (
+                      <button
+                        type="button"
+                        onClick={() => handleClearField("maquina")}
+                        className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                        aria-label="Limpar número de série"
+                      >
+                        <X size={16} />
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 pointer-events-none">
+                        <Search size={16} />
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1319,14 +1382,24 @@ const ConsultaOSPage: React.FC = () => {
                         ))}
                     </optgroup>
                   </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span className="text-gray-400">
-                      {loadingTecnicos ? (
-                        <div className="h-4 w-4 border-2 border-t-[var(--primary)] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin" />
-                      ) : (
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    {loadingTecnicos ? (
+                      <div className="h-4 w-4 border-2 border-t-[var(--primary)] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin pointer-events-none" />
+                    ) : filtrosPainel.tipo_tecnico ||
+                      filtrosPainel.id_tecnico ? (
+                      <button
+                        type="button"
+                        onClick={() => handleClearField("id_tecnico")}
+                        className="text-gray-400 hover:text-gray-600 focus:outline-none mr-5"
+                        aria-label="Limpar seleção de técnico"
+                      >
+                        <X size={16} />
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 pointer-events-none">
                         <ChevronDown className="h-5 w-5" />
-                      )}
-                    </span>
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1358,10 +1431,23 @@ const ConsultaOSPage: React.FC = () => {
                         <option value="fechamento">Data de Fechamento</option>
                         <option value="revisao">Data de Revisão</option>
                       </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <span className="text-gray-400">
-                          <ChevronDown className="h-5 w-5" />
-                        </span>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                        {!disableDateFields &&
+                        !fixedDateType &&
+                        filtrosPainel.campo_data ? (
+                          <button
+                            type="button"
+                            onClick={() => handleClearField("campo_data")}
+                            className="text-gray-400 hover:text-gray-600 focus:outline-none mr-5"
+                            aria-label="Limpar tipo de data"
+                          >
+                            <X size={16} />
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 pointer-events-none">
+                            <ChevronDown className="h-5 w-5" />
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1387,6 +1473,20 @@ const ConsultaOSPage: React.FC = () => {
                           disableDateFields || !filtrosPainel.campo_data
                         }
                       />
+                      {!disableDateFields &&
+                        filtrosPainel.campo_data &&
+                        filtrosPainel.data_ini && (
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                            <button
+                              type="button"
+                              onClick={() => handleClearField("data_ini")}
+                              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                              aria-label="Limpar data inicial"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        )}
                     </div>
                   </div>
 
@@ -1411,6 +1511,20 @@ const ConsultaOSPage: React.FC = () => {
                           disableDateFields || !filtrosPainel.campo_data
                         }
                       />
+                      {!disableDateFields &&
+                        filtrosPainel.campo_data &&
+                        filtrosPainel.data_fim && (
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                            <button
+                              type="button"
+                              onClick={() => handleClearField("data_fim")}
+                              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                              aria-label="Limpar data final"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        )}
                     </div>
                   </div>
                 </div>

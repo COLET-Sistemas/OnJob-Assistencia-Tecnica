@@ -75,7 +75,7 @@ class ClientesService {
   async createContact(
     clienteId: number | string,
     data: Omit<ClienteContato, "id">
-  ): Promise<{ contato: ClienteContato; mensagem?: string }> {
+  ): Promise<{ contato: ClienteContato; mensagem?: string; id?: number }> {
     try {
       const response = await api.post<{
         dados?: ClienteContato;
@@ -115,6 +115,7 @@ class ClientesService {
 
         return {
           contato: createdContact,
+          id: response.id, // Passando o ID diretamente para facilitar o acesso
           mensagem: response.mensagem || "Contato cadastrado com sucesso.",
         };
       }
@@ -175,6 +176,122 @@ class ClientesService {
 
       // Se for realmente um erro, repassar
       throw error;
+    }
+  }
+
+  async updateContact(
+    id: number | string,
+    data: Partial<ClienteContato>
+  ): Promise<{ mensagem?: string }> {
+    if (!id) {
+      console.error("ID do contato não fornecido para updateContact");
+      throw new Error("ID do contato não fornecido");
+    }
+
+    try {
+      const response = await api.put<{
+        dados?: ClienteContato;
+        mensagem?: string;
+        sucesso?: boolean;
+      }>("/clientes_contatos", data, {
+        params: {
+          id: id,
+        },
+      });
+
+      return {
+        mensagem: response?.mensagem || "Contato atualizado com sucesso",
+      };
+    } catch (error) {
+      // Se o erro contiver uma mensagem de sucesso, tratar como sucesso
+      if (
+        error instanceof Error &&
+        (error.message.includes("sucesso") ||
+          error.message.includes("atualizado"))
+      ) {
+        return {
+          mensagem: error.message,
+        };
+      }
+
+      // Se for realmente um erro, repassar
+      throw error;
+    }
+  }
+
+  async deleteContact(id: number | string): Promise<{ mensagem?: string }> {
+    if (!id) {
+      console.error("ID do contato não fornecido para deleteContact");
+      throw new Error("ID do contato não fornecido");
+    }
+
+    console.log("ClientesService.deleteContact chamado com ID:", id);
+    try {
+      // Garantir que o ID seja um valor válido
+      const contactId = Number(id);
+      if (isNaN(contactId)) {
+        console.error("ID do contato inválido:", id);
+        throw new Error("ID do contato inválido");
+      }
+
+      // Vamos usar a forma de parâmetros query para garantir que esteja formatando corretamente
+      console.log("Enviando requisição DELETE com ID:", contactId);
+      const response = await api.delete<{
+        mensagem?: string;
+        sucesso?: boolean;
+      }>("/clientes_contatos", { params: { id: contactId } });
+
+      console.log("Resposta da API de exclusão:", response);
+
+      return {
+        mensagem: response?.mensagem || "Contato inativado com sucesso",
+      };
+    } catch (error) {
+      console.error("Erro na requisição de deleteContact:", error);
+
+      // Se o erro contiver uma mensagem de sucesso, tratar como sucesso
+      if (
+        error instanceof Error &&
+        (error.message.includes("sucesso") ||
+          error.message.includes("inativado") ||
+          error.message.includes("excluído"))
+      ) {
+        console.log("Erro tratado como sucesso:", error.message);
+        return {
+          mensagem: error.message,
+        };
+      }
+
+      // Se for realmente um erro, repassar
+      console.error("Erro não tratado em deleteContact:", error);
+      throw error;
+    }
+  }
+
+  async getContactById(id: number | string): Promise<ClienteContato | null> {
+    if (!id) {
+      console.error("ID do contato não fornecido para getContactById");
+      return null;
+    }
+
+    try {
+      // Usando params para evitar problemas de query string
+      const response = await api.get<{
+        dados?: ClienteContato;
+      }>("/clientes_contatos", {
+        params: {
+          id: id, // Usando id como parâmetro para a API
+        },
+      });
+
+      if (response && response.dados) {
+        return response.dados;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Erro ao buscar contato:", error);
+      return null;
     }
   }
 }
