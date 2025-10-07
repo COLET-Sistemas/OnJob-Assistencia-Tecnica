@@ -53,7 +53,7 @@ interface TecnicoOption extends OptionType {
 
 // Defining our option type for this component
 interface ContatoOption {
-  value: number;
+  value: number; 
   label: string;
   contato: ClienteContato;
 }
@@ -208,7 +208,7 @@ const NovaOrdemServico = () => {
           );
           // Agora estamos utilizando response.contatos que é um array de contatos
           const options = response.contatos.map((contato: ClienteContato) => ({
-            value: contato.id || 0, // Ensure value is always a number (0 if id is undefined)
+            value: Number(contato.id ?? 0), // Explicitly convert to number to ensure type safety
             label: `${contato.nome || contato.nome_completo || "Sem nome"}${
               contato.cargo ? ` - ${contato.cargo}` : ""
             }`,
@@ -217,7 +217,7 @@ const NovaOrdemServico = () => {
 
           // Adiciona a opção para inserir um contato personalizado
           const customOption = {
-            value: -1, 
+            value: -1,
             label: "Inserir contato não cadastrado",
             contato: { id: -1, telefone: "", email: "", situacao: "A" },
           };
@@ -803,7 +803,7 @@ const NovaOrdemServico = () => {
                   .then((response) => {
                     const options = response.contatos.map(
                       (contato: ClienteContato) => ({
-                        value: contato.id || 0, // Ensure value is always a number (0 if id is undefined)
+                        value: Number(contato.id ?? 0), // Explicitly convert to number to ensure type safety
                         label: `${
                           contato.nome || contato.nome_completo || "Sem nome"
                         }${contato.cargo ? ` - ${contato.cargo}` : ""}`,
