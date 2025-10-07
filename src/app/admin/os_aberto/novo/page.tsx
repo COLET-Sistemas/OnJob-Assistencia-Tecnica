@@ -208,7 +208,7 @@ const NovaOrdemServico = () => {
           );
           // Agora estamos utilizando response.contatos que é um array de contatos
           const options = response.contatos.map((contato: ClienteContato) => ({
-            value: contato.id,
+            value: contato.id || 0, // Ensure value is always a number (0 if id is undefined)
             label: `${contato.nome || contato.nome_completo || "Sem nome"}${
               contato.cargo ? ` - ${contato.cargo}` : ""
             }`,
@@ -217,14 +217,13 @@ const NovaOrdemServico = () => {
 
           // Adiciona a opção para inserir um contato personalizado
           const customOption = {
-            value: -1, // This is explicitly a number
+            value: -1, 
             label: "Inserir contato não cadastrado",
             contato: { id: -1, telefone: "", email: "", situacao: "A" },
-            // isCustom removed since it's not in our interface
           };
           options.push(customOption);
 
-          setContatoOptions(options);
+          setContatoOptions(options as ContatoOption[]);
         } catch (error) {
           console.error("Erro ao carregar contatos:", error);
         } finally {
@@ -804,7 +803,7 @@ const NovaOrdemServico = () => {
                   .then((response) => {
                     const options = response.contatos.map(
                       (contato: ClienteContato) => ({
-                        value: contato.id,
+                        value: contato.id || 0, // Ensure value is always a number (0 if id is undefined)
                         label: `${
                           contato.nome || contato.nome_completo || "Sem nome"
                         }${contato.cargo ? ` - ${contato.cargo}` : ""}`,
@@ -825,7 +824,7 @@ const NovaOrdemServico = () => {
                       // isCustom removed since it's not in our interface
                     });
 
-                    setContatoOptions(options);
+                    setContatoOptions(options as ContatoOption[]);
 
                     // Seleciona automaticamente o contato recém-criado
                     const novoContatoOption = options.find(

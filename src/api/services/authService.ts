@@ -38,16 +38,29 @@ class AuthService {
 
   async logout(): Promise<void> {
     if (typeof window !== "undefined") {
-      // Limpar localStorage
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      try {
+        // Tenta fazer uma requisição de logout para o servidor antes de limpar os dados
+        // Se falhar, continua com o logout local de qualquer forma
+        try {
+          await api.post<void>("/auth/logout", {});
+        } catch (error) {
+          console.warn("Falha ao notificar servidor sobre logout:", error);
+        }
 
-      // Limpar cookie
-      document.cookie =
-        "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        // Limpar localStorage
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
 
-      // Limpar dados da empresa
-      empresaService.clearEmpresaData();
+        // Limpar cookie com as mesmas configurações usadas para criá-lo
+        const secure = window.location.protocol === "https:" ? "; secure" : "";
+        const sameSite = "; samesite=lax";
+        document.cookie = `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${secure}${sameSite}`;
+
+        // Limpar dados da empresa
+        empresaService.clearEmpresaData();
+      } catch (error) {
+        console.error("Erro durante logout:", error);
+      }
     }
   }
 
@@ -62,10 +75,18 @@ class AuthService {
       const expirationDate = new Date();
       expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000); // 24 horas
 
-      // Garantir que o cookie seja definido corretamente, com menos restrições para funcionar em ambiente de desenvolvimento
+      // Configura cookies seguros
+      const secure = window.location.protocol === "https:" ? "; secure" : "";
+      const sameSite = "; samesite=lax"; // Proteção CSRF mais equilibrada
+
+      // Garante que o cookie seja definido corretamente
       document.cookie = `token=${
         authData.token
-      }; expires=${expirationDate.toUTCString()}; path=/;`;
+      }; expires=${expirationDate.toUTCString()}; path=/${secure}${sameSite}`;
+
+      // Limpar qualquer sinalização de limpeza de localStorage
+      document.cookie =
+        "clearLocalStorage=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     }
   }
 

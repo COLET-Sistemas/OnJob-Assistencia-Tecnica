@@ -304,43 +304,74 @@ export default function LoginPage() {
     try {
       const authData = await LoginService.authenticate(login, senha);
 
+
       if (LoginService.hasAdminAccess(authData.perfil)) {
-        // Salvar dados usando ambos os serviços para garantir compatibilidade
-        LoginService.saveUserData(authData);
+        try {
+          LoginService.saveUserData(authData);
+        } catch (storageError) {
+          console.error("Erro ao salvar dados no LoginService:", storageError);
+        }
 
         // Salvar dados também no authService para garantir que o cookie seja definido
-        authService.saveAuthData({
-          token: authData.token,
-          user: {
-            id: authData.id_usuario,
-            nome: authData.nome_usuario,
-            login: login,
-            email: authData.email,
-            perfil_interno: authData.perfil.interno,
-            perfil_gestor_assistencia: authData.perfil.gestor,
-            perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
-            perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
-            administrador: authData.perfil.admin,
-          },
-        });
+        try {
+          authService.saveAuthData({
+            token: authData.token,
+            user: {
+              id: authData.id_usuario,
+              nome: authData.nome_usuario,
+              login: login,
+              email: authData.email,
+              perfil_interno: authData.perfil.interno,
+              perfil_gestor_assistencia: authData.perfil.gestor,
+              perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
+              perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
+              administrador: authData.perfil.admin,
+            },
+          });
+        } catch (authStoreError) {
+          console.error("Erro ao salvar dados no authService:", authStoreError);
+        }
+
+        // Verificar token depois de salvar
+        const savedToken = localStorage.getItem("token");
+
+
+        // Não precisamos decodificar o token, apenas verificar sua presença
+        if (savedToken) {
+          
+        }
 
         if (authData.senha_provisoria) {
-          router.push("/alterar-senha");
+          console.log("Redirecionando para alterar senha");
+          setTimeout(() => {
+            router.push("/alterar-senha");
+          }, 300);
         } else {
-          router.push("/admin/dashboard");
+
+          setTimeout(() => {
+            router.push("/admin/dashboard");
+          }, 300);
         }
       } else {
+        console.warn("Acesso administrativo negado");
         setError(
           "Usuário não tem permissão para acessar o Módulo Administrativo."
         );
       }
     } catch (error) {
       console.error("Erro no handleAdminAccess:", error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Erro interno. Tente novamente."
-      );
+      // Informação mais detalhada do erro
+      if (error instanceof Error) {
+        setError(error.message);
+        console.error("Detalhes do erro:", {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        });
+      } else {
+        setError("Erro interno. Tente novamente.");
+        console.error("Erro não identificado:", error);
+      }
     } finally {
       setLoadingAdmin(false);
     }
@@ -358,9 +389,11 @@ export default function LoginPage() {
     try {
       const authData = await LoginService.authenticate(login, senha);
 
+
       if (!LoginService.hasTechAccess(authData.perfil)) {
         const errorMsg =
           "Usuário não possui perfil técnico. Acesso negado ao Módulo Técnico.";
+        console.warn("Acesso técnico negado:", errorMsg);
         setError(errorMsg);
         // Mostrar error em mobile diretamente
         if (isMobile) {
@@ -374,6 +407,7 @@ export default function LoginPage() {
       if (!tecnico_proprio && !tecnico_terceirizado) {
         const errorMsg =
           "Usuário não é técnico próprio nem terceirizado. Acesso negado.";
+        console.warn("Perfil técnico inválido:", errorMsg);
         setError(errorMsg);
         // Mostrar error em mobile diretamente
         if (isMobile) {
@@ -383,36 +417,56 @@ export default function LoginPage() {
       }
 
       // Salvar dados usando ambos os serviços para garantir compatibilidade
-      LoginService.saveUserData(authData);
+      try {
+        LoginService.saveUserData(authData);
+      } catch (storageError) {
+        console.error("Erro ao salvar dados no LoginService:", storageError);
+      }
 
       // Salvar dados também no authService para garantir que o cookie seja definido
-      authService.saveAuthData({
-        token: authData.token,
-        user: {
-          id: authData.id_usuario,
-          nome: authData.nome_usuario,
-          login: login,
-          email: authData.email,
-          perfil_interno: authData.perfil.interno,
-          perfil_gestor_assistencia: authData.perfil.gestor,
-          perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
-          perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
-          administrador: authData.perfil.admin,
-        },
+      try {
+        authService.saveAuthData({
+          token: authData.token,
+          user: {
+            id: authData.id_usuario,
+            nome: authData.nome_usuario,
+            login: login,
+            email: authData.email,
+            perfil_interno: authData.perfil.interno,
+            perfil_gestor_assistencia: authData.perfil.gestor,
+            perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
+            perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
+            administrador: authData.perfil.admin,
+          },
+        });
+      } catch (authStoreError) {
+        console.error("Erro ao salvar dados no authService:", authStoreError);
+      }
+
+      // Verificar token depois de salvar
+      const savedToken = localStorage.getItem("token");
+      console.log("Token salvo com sucesso:", !!savedToken, {
+        length: savedToken?.length || 0,
       });
 
       if (authData.senha_provisoria) {
         router.push("/alterar-senha");
-      } else {
+      } else {  
         router.push("/tecnico/dashboard");
       }
     } catch (error) {
       console.error("Erro no handleTechAccess:", error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Erro interno. Tente novamente."
-      );
+      if (error instanceof Error) {
+        setError(error.message);
+        console.error("Detalhes do erro:", {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        });
+      } else {
+        setError("Erro interno. Tente novamente.");
+        console.error("Erro não identificado:", error);
+      }
     } finally {
       setLoadingTech(false);
     }

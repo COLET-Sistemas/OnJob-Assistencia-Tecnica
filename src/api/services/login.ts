@@ -67,12 +67,21 @@ export class LoginService {
     };
 
     try {
-      const response = await fetch(`${this.API_URL}/login`, {
+      // Usando o proxy interno para evitar problemas de CORS
+      const loginUrl =
+        typeof window !== "undefined" &&
+        window.location.hostname === "localhost"
+          ? `/api-proxy/login`
+          : `${this.API_URL}/login`; 
+
+
+      const response = await fetch(loginUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(loginData),
+        credentials: "same-origin", // usar same-origin para o proxy interno
       });
 
       if (!response.ok) {
@@ -135,9 +144,14 @@ export class LoginService {
       // Definir cookie para o middleware
       const expirationDate = new Date();
       expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000); // 24 horas
+
+      // Configurar o cookie com valores seguros para o ambiente
+      const secure = window.location.protocol === "https:" ? "; Secure" : "";
+
+      // Configurar o cookie com SameSite=Lax para melhor compatibilidade
       document.cookie = `token=${
         authData.token
-      }; expires=${expirationDate.toUTCString()}; path=/;`;
+      }; expires=${expirationDate.toUTCString()}; path=/; SameSite=Lax${secure}`;
 
       // Dados da empresa (se disponível)
       if (authData.empresa) {

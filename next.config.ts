@@ -13,6 +13,16 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // Proxy para evitar problemas de CORS
+  async rewrites() {
+    return [
+      {
+        source: "/api-proxy/:path*",
+        destination: "http://10.0.0.154:8080/:path*", // A URL da API alvo
+      },
+    ];
+  },
+
   allowedDevOrigins: [
     "10.0.0.151",
     "10.0.1.14",
