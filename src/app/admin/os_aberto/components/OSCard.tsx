@@ -513,11 +513,25 @@ const OSCard: React.FC<OSCardProps> = ({
 
               {/* Endereço e Contato */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 transform transition-transform animate-fadeIn delay-100">
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin className="w-4 h-4 text-indigo-500" />
-                  <h4 className="font-medium text-gray-700">
-                    Endereço Completo
-                  </h4>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-indigo-500" />
+                    <h4 className="font-medium text-gray-700">
+                      Endereço Completo
+                    </h4>
+                  </div>
+                  <a
+                    href={`/admin/cadastro/clientes/editar/${os.cliente.id}`}
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 
+                             hover:bg-indigo-100 rounded-md text-xs font-medium transition-colors 
+                             border border-indigo-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                    title="Editar dados do cliente"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    Editar Cliente
+                  </a>
                 </div>
 
                 <div className="text-sm text-gray-600 mb-4">

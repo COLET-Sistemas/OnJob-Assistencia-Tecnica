@@ -1,10 +1,14 @@
 "use client";
 
-import { useRouter, useParams } from "next/navigation";
-import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useParams } from "next/navigation";
+
 // Serviços
 import { clientesService } from "@/api/services/clientesService";
+import api from "@/api/api";
+import { ClienteContato } from "@/types/admin/cadastro/clientes";
 
 // Componentes
 import FormActions from "@/app/admin/os_aberto/novo/components/FormActions";
@@ -12,22 +16,8 @@ import FormContainer from "@/app/admin/os_aberto/novo/components/FormContainer";
 import FormField from "../../novo/components/FormField";
 import { Loading } from "@/components/LoadingPersonalizado";
 import PageHeader from "@/components/admin/ui/PageHeader";
-import CustomSelect, { OptionType } from "@/components/admin/form/CustomSelect";
+import { OptionType } from "@/components/admin/form/CustomSelect";
 import { useToast } from "@/components/admin/ui/ToastContainer";
-
-// Tipos e utilitários
-import useDebouncedCallback from "@/hooks/useDebouncedCallback";
-// Import ClienteContato type directly in updateContact call if needed
-
-// Interfaces
-interface Cliente {
-  id_cliente?: number;
-  id?: number;
-  razao_social: string;
-  codigo_erp?: string;
-  cidade?: string;
-  uf?: string;
-}
 
 interface ClienteOption extends OptionType {
   value: number;
@@ -48,18 +38,17 @@ const isValidPhone = (phone: string) => {
 };
 
 const EditarContato = () => {
-  const router = useRouter();
   const params = useParams();
   const contatoId = params.id as string;
+
+  const router = useRouter();
   const { showSuccess, showError } = useToast();
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [clienteInput, setClienteInput] = useState("");
-  const [clienteOptions, setClienteOptions] = useState<ClienteOption[]>([]);
   const [selectedCliente, setSelectedCliente] = useState<ClienteOption | null>(
     null
   );
-  const [isSearchingClientes, setIsSearchingClientes] = useState(false);
 
   // Campos do formulário
   const [nome, setNome] = useState("");
@@ -78,13 +67,58 @@ const EditarContato = () => {
     telefone?: boolean;
   }>({});
 
-  // Buscar os dados do contato ao carregar a página
+  // Efeito para carregar os dados do contato
   useEffect(() => {
     const fetchContatoData = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        // Buscar os detalhes do contato usando o novo método
-        const contato = await clientesService.getContactById(contatoId);
+        console.log("Buscando contato com ID:", contatoId);
+
+        // Fazemos uma requisição direta à API para obter os dados do contato
+        // Isso permite pegar os dados independente do formato de resposta
+        const response = await api.get<Record<string, unknown>>(
+          "/clientes_contatos",
+          {
+            params: { id: Number(contatoId) },
+          }
+        );
+
+        console.log("Resposta da API para contato:", response);
+
+        // Variável para armazenar os dados do contato encontrado
+        // Variável para armazenar os dados do contato encontrado
+        let contato: ClienteContato | null = null;
+        let contatoClienteId: number | null = null;
+
+        // Analisamos a estrutura da resposta para extrair os dados do contato
+        if (response) {
+          // Caso 1: Temos um objeto dados direto
+          if (response.dados) {
+            contato = response.dados as unknown as ClienteContato;
+            contatoClienteId = (response.dados as Record<string, unknown>)[
+              "id_cliente"
+            ] as number;
+          }
+          // Caso 2: Temos um array de contatos
+          else if (response.contatos && Array.isArray(response.contatos)) {
+            const foundContact = response.contatos.find(
+              (c: Record<string, unknown>) =>
+                ((c.id_contato || c.id) as number) === Number(contatoId)
+            );
+
+            if (foundContact) {
+              contato = foundContact as unknown as ClienteContato;
+              contatoClienteId = response.id_cliente as number;
+            }
+          }
+          // Caso 3: A própria resposta é o contato
+          else if ((response.id || response.id_contato) && response.nome) {
+            contato = response as unknown as ClienteContato;
+            contatoClienteId = (response as Record<string, unknown>)[
+              "id_cliente"
+            ] as number;
+          }
+        }
 
         if (!contato) {
           showError("Erro", "Contato não encontrado");
@@ -92,7 +126,14 @@ const EditarContato = () => {
           return;
         }
 
-        // Preencher os campos do formulário com os dados do contato
+        console.log(
+          "Dados do contato carregados:",
+          contato,
+          "Cliente ID:",
+          contatoClienteId
+        );
+
+        // Preencher os campos com os dados do contato
         setNome(contato.nome || "");
         setNomeCompleto(contato.nome_completo || "");
         setCargo(contato.cargo || "");
@@ -101,93 +142,55 @@ const EditarContato = () => {
         setEmail(contato.email || "");
         setRecebeAvisoOS(contato.recebe_aviso_os || false);
 
-        // Se temos o id_cliente no contato
-        if ("id_cliente" in contato) {
-          // Buscar dados do cliente associado
-          const clienteData = await clientesService.getById(
-            contato.id_cliente as number
-          );
-          if (clienteData && clienteData.dados && clienteData.dados[0]) {
-            const cliente = clienteData.dados[0];
-            const clienteOption: ClienteOption = {
-              value: cliente.id_cliente || cliente.id || 0,
-              label: `${cliente.razao_social} (${cliente.codigo_erp || "-"})`,
-              cidade: cliente.cidade,
-              uf: cliente.uf,
-            };
-            setSelectedCliente(clienteOption);
-            setClienteInput(clienteOption.label);
+        // Se temos o ID do cliente, buscamos informações adicionais
+        if (contatoClienteId) {
+          try {
+            const clienteResponse = await clientesService.getById(
+              contatoClienteId
+            );
+            if (
+              clienteResponse &&
+              clienteResponse.dados &&
+              clienteResponse.dados.length > 0
+            ) {
+              const cliente = clienteResponse.dados[0];
+              setSelectedCliente({
+                value: cliente.id_cliente || Number(cliente.id) || 0,
+                label: cliente.razao_social,
+                cidade: cliente.cidade,
+                uf: cliente.uf,
+              });
+            } else {
+              // Se não conseguirmos obter os dados do cliente, usamos apenas o ID
+              setSelectedCliente({
+                value: contatoClienteId,
+                label: `Cliente ID: ${contatoClienteId}`,
+              });
+            }
+          } catch (clienteError) {
+            console.error("Erro ao carregar dados do cliente:", clienteError);
+            // Mesmo que não consiga carregar o cliente, continuamos com o ID
+            setSelectedCliente({
+              value: contatoClienteId,
+              label: `Cliente ID: ${contatoClienteId}`,
+            });
           }
         }
       } catch (error) {
         console.error("Erro ao carregar dados do contato:", error);
-        showError(
-          "Erro ao carregar dados",
-          "Não foi possível carregar os dados do contato"
-        );
+        showError("Erro ao carregar dados", error as Record<string, unknown>);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchContatoData();
+    if (contatoId) {
+      fetchContatoData();
+    }
   }, [contatoId, router, showError]);
 
-  // Handler para o select de cliente
-  const handleClienteChange = useCallback(
-    (selectedOption: OptionType | null) => {
-      setSelectedCliente(selectedOption as ClienteOption | null);
-    },
-    []
-  );
-
-  // Função assíncrona para buscar clientes
-  const searchClientes = useCallback(async (term: string) => {
-    if (term.length < 3) return;
-
-    try {
-      setIsSearchingClientes(true);
-      const response = await clientesService.search(term);
-
-      // Acessa os dados dos clientes no array 'dados'
-      const options = response.dados.map((cliente: Cliente) => ({
-        value: cliente.id_cliente || cliente.id || 0,
-        label: `${cliente.razao_social} (${cliente.codigo_erp || "-"})`,
-        cidade: cliente.cidade,
-        uf: cliente.uf,
-      }));
-      setClienteOptions(options);
-    } catch (error) {
-      console.error("Erro ao buscar clientes:", error);
-    } finally {
-      setIsSearchingClientes(false);
-    }
-  }, []);
-
-  // Handler para o input de cliente com debounce usando hook customizado
-  const debouncedSearchClientes = useDebouncedCallback((term: string) => {
-    if (term.length >= 3) {
-      searchClientes(term);
-    } else {
-      setClienteOptions([]);
-      setIsSearchingClientes(false);
-    }
-  }, 500);
-
-  const handleClienteInputChange = useCallback(
-    (inputValue: string) => {
-      setClienteInput(inputValue);
-
-      if (inputValue.length >= 3) {
-        setIsSearchingClientes(true);
-        debouncedSearchClientes(inputValue);
-      } else {
-        setClienteOptions([]);
-        setIsSearchingClientes(false);
-      }
-    },
-    [debouncedSearchClientes]
-  );
+  // Cliente não pode ser alterado na edição do contato
+  // As funções de busca e seleção de cliente foram removidas
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -200,10 +203,8 @@ const EditarContato = () => {
       telefone?: boolean;
     } = {};
 
-    // Validar cliente (obrigatório)
-    if (!selectedCliente) {
-      validationErrors.cliente = true;
-    }
+    // O cliente não pode ser alterado na edição, então não é necessário validar
+    // Ele já deve estar preenchido desde o carregamento do contato
 
     // Validar nome (obrigatório)
     if (!nome.trim()) {
@@ -240,10 +241,9 @@ const EditarContato = () => {
         return;
       }
 
-      // Atualizar dados do contato existente usando o método do serviço
-      // Formatamos o objeto separadamente para evitar problemas de tipagem
+      // Crie um objeto para a API com os dados do contato
+      // Precisamos usar as propriedades esperadas pela API
       const contatoData = {
-        id_cliente: selectedCliente.value,
         nome: nome,
         nome_completo: nomeCompleto,
         cargo: cargo,
@@ -254,13 +254,25 @@ const EditarContato = () => {
         situacao: "A",
       };
 
-      // TypeScript ignora a verificação de tipo ao usar spread em chamada de função
-      await clientesService.updateContact(contatoId, contatoData);
+      // Adicionar propriedades extras que a API pode precisar
+      const apiData = {
+        ...contatoData,
+        id_cliente: selectedCliente.value,
+      } as unknown as Partial<ClienteContato> & { id_cliente: number }; // Typing para contornar a verificação de tipo
 
-      // Exibe toast de sucesso
-      showSuccess("Sucesso", "Contato atualizado com sucesso");
+      // Usando a resposta para validar o sucesso da atualização do contato
+      const response = await clientesService.updateContact(
+        Number(contatoId),
+        apiData
+      );
 
-      // Redireciona para a lista de clientes após edição
+      // Exibe toast de sucesso com a mensagem retornada pela API
+      showSuccess(
+        "Sucesso",
+        response.mensagem || "Contato atualizado com sucesso"
+      );
+
+      // Redireciona para a lista de clientes após atualização
       setTimeout(() => {
         router.push("/admin/cadastro/clientes");
       }, 1000);
@@ -300,23 +312,16 @@ const EditarContato = () => {
             error={errors.cliente ? "Selecione um cliente" : undefined}
             className={errors.cliente ? "campo-erro" : ""}
           >
-            <CustomSelect
-              id="cliente"
-              label=""
-              placeholder="Selecione ou pesquise um cliente..."
-              options={clienteOptions}
-              value={selectedCliente}
-              onChange={handleClienteChange}
-              inputValue={clienteInput}
-              onInputChange={handleClienteInputChange}
-              isLoading={isSearchingClientes}
-              noOptionsMessageFn={() =>
-                clienteInput.length < 3
-                  ? "Digite pelo menos 3 caracteres para pesquisar..."
-                  : "Nenhum cliente encontrado"
-              }
-              isClearable
-            />
+            {selectedCliente ? (
+              <div className="w-full rounded-md border border-gray-300 px-3 py-2 bg-gray-100 text-gray-800">
+                {selectedCliente.label} - {selectedCliente.cidade}/
+                {selectedCliente.uf}
+              </div>
+            ) : (
+              <div className="w-full rounded-md border border-gray-300 px-3 py-2 bg-gray-100 text-gray-500">
+                Cliente não encontrado
+              </div>
+            )}
           </FormField>
 
           <FormField

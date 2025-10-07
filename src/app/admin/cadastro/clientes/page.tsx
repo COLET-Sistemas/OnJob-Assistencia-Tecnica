@@ -20,7 +20,7 @@ import LocationButton from "@/components/admin/ui/LocationButton";
 import api from "@/api/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Ban, Pencil } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import ConfirmModal from "@/components/admin/ui/ConfirmModal";
 
 const { clientesService } = services;
@@ -183,10 +183,8 @@ const CadastroClientes = () => {
   }, [clientes]);
 
   const toggleExpand = useCallback((id: number | string) => {
-    console.log("Toggling expansion for client ID:", id);
     setExpandedClienteId((prevId) => {
       const result = prevId === Number(id) ? null : Number(id);
-      console.log("Previous expanded ID:", prevId, "New expanded ID:", result);
       return result;
     });
   }, []);
@@ -237,7 +235,6 @@ const CadastroClientes = () => {
     if (expandedClienteId) {
       fetchContacts(expandedClienteId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expandedClienteId, clientes, showError, getClienteId, updateData]);
 
   const openLocationModal = useCallback((cliente: Cliente) => {
@@ -388,7 +385,7 @@ const CadastroClientes = () => {
               e.stopPropagation();
               e.preventDefault();
               if (hasContatos) {
-                console.log("Contact button clicked for client ID:", clientId);
+          
                 toggleExpand(clientId);
               }
             }}
@@ -454,12 +451,6 @@ const CadastroClientes = () => {
 
   // Função para mostrar o modal de confirmação de inativação
   const openInactivateModal = (id: number, name: string) => {
-    console.log(
-      "Abrindo modal de inativação para contato ID:",
-      id,
-      "Nome:",
-      name
-    );
 
     // Garantir que o ID seja um número válido
     if (!id || isNaN(Number(id))) {
@@ -481,8 +472,6 @@ const CadastroClientes = () => {
       return;
     }
 
-    console.log("Iniciando inativação de contato:", selectedContactId);
-
     try {
       setIsInactivating(true);
 
@@ -492,19 +481,13 @@ const CadastroClientes = () => {
         throw new Error("ID do contato inválido");
       }
 
-      console.log("Chamando clientesService.deleteContact com ID:", contactId);
-
       const resultado = await clientesService.deleteContact(contactId);
       console.log("Resposta da API de inativação:", resultado);
 
-      showSuccess("Sucesso", "Contato inativado com sucesso");
+      showSuccess("Sucesso", "Contato excluído com sucesso.");
 
       // Atualizar os dados localmente em vez de fazer refetch completo
       if (expandedClienteId && clientes) {
-        console.log(
-          "Atualizando dados do cliente localmente ID:",
-          expandedClienteId
-        );
 
         const updatedClientes = clientes.map((cliente) => {
           if (getClienteId(cliente) === expandedClienteId && cliente.contatos) {
@@ -752,16 +735,6 @@ const CadastroClientes = () => {
                         {contato.cargo && ` (${contato.cargo})`}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span
-                          className={`px-2 py-0.5 h-fit rounded-full text-xs ${
-                            contato.situacao === "A"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {contato.situacao === "A" ? "Ativo" : "Inativo"}
-                        </span>
-
                         {contato.situacao === "A" && (
                           <div className="flex items-center gap-1">
                             <button
@@ -793,7 +766,7 @@ const CadastroClientes = () => {
                               className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
                               title="Inativar contato"
                             >
-                              <Ban size={16} />
+                              <Trash2 size={16} />
                             </button>
                           </div>
                         )}
@@ -945,9 +918,9 @@ const CadastroClientes = () => {
         isOpen={showInactivateModal}
         onClose={() => setShowInactivateModal(false)}
         onConfirm={handleInativarContato}
-        title="Inativação de Contato"
-        message="Tem certeza que deseja inativar este contato?"
-        confirmLabel="Inativar Contato"
+        title="Exclusão do Contato"
+        message="Tem certeza que deseja excluir este contato?"
+        confirmLabel="Excluir Contato"
         isLoading={isInactivating}
         itemName={selectedContactName}
       />
