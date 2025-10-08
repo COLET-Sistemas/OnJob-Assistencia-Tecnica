@@ -304,7 +304,6 @@ export default function LoginPage() {
     try {
       const authData = await LoginService.authenticate(login, senha);
 
-
       if (LoginService.hasAdminAccess(authData.perfil)) {
         try {
           LoginService.saveUserData(authData);
@@ -335,10 +334,8 @@ export default function LoginPage() {
         // Verificar token depois de salvar
         const savedToken = localStorage.getItem("token");
 
-
         // Não precisamos decodificar o token, apenas verificar sua presença
         if (savedToken) {
-          
         }
 
         if (authData.senha_provisoria) {
@@ -347,7 +344,6 @@ export default function LoginPage() {
             router.push("/alterar-senha");
           }, 300);
         } else {
-
           setTimeout(() => {
             router.push("/admin/dashboard");
           }, 300);
@@ -388,7 +384,6 @@ export default function LoginPage() {
 
     try {
       const authData = await LoginService.authenticate(login, senha);
-
 
       if (!LoginService.hasTechAccess(authData.perfil)) {
         const errorMsg =
@@ -451,7 +446,7 @@ export default function LoginPage() {
 
       if (authData.senha_provisoria) {
         router.push("/alterar-senha");
-      } else {  
+      } else {
         router.push("/tecnico/dashboard");
       }
     } catch (error) {
@@ -657,11 +652,6 @@ export default function LoginPage() {
                 >
                   {error}
                 </p>
-                {isMobile && (
-                  <p className="text-gray-500 text-xs mt-1">
-                    Esta mensagem desaparecerá em 15 segundos
-                  </p>
-                )}
               </div>
             </div>
           )}

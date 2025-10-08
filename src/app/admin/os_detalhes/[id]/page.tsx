@@ -865,7 +865,7 @@ const OSDetalhesPage: React.FC = () => {
                             className="hover:bg-gray-50 cursor-pointer transition-colors duration-150 animate-fadeIn"
                             style={{ animationDelay: `${0.05 * index}s` }}
                             onClick={() =>
-                              (window.location.href = `/admin/fat/${fat.id_fat}`)
+                              (window.location.href = `/admin/fat_detalhes/${fat.id_fat}`)
                             }
                             onMouseEnter={(e) => {
                               e.currentTarget.classList.add("shadow-sm");

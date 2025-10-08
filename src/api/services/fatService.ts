@@ -24,6 +24,7 @@ export interface FATMaquina {
 export interface FATSituacao {
   codigo: number;
   descricao: string;
+  data_situacao?: string;
 }
 
 // Interface para usuário
