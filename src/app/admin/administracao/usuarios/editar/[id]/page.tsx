@@ -8,6 +8,7 @@ import { Loading } from "@/components/LoadingPersonalizado";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { InputField, LoadingButton } from "@/components/admin/form";
 import PageHeader from "@/components/admin/ui/PageHeader";
+import AdminAuthGuard from "@/components/admin/common/AdminAuthGuard";
 
 interface PageProps {
   params: Promise<{
@@ -120,7 +121,6 @@ const EditarUsuario = (props: PageProps) => {
             };
 
             userCache.set(id, userData);
-
 
             return userData;
           })
@@ -252,7 +252,7 @@ const EditarUsuario = (props: PageProps) => {
   }
 
   return (
-    <>
+    <AdminAuthGuard>
       <PageHeader
         title="Editar Usuário"
         config={{
@@ -390,7 +390,7 @@ const EditarUsuario = (props: PageProps) => {
           </footer>
         </form>
       </main>
-    </>
+    </AdminAuthGuard>
   );
 };
 

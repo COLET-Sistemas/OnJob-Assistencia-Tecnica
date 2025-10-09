@@ -56,9 +56,22 @@ interface NavbarProps {
 
 function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
   const [nomeUsuario, setNomeUsuario] = useState("Usuário");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     setNomeUsuario(localStorage.getItem("nome_usuario") || "Usuário");
+
+    // Verificar se o usuário é administrador
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setIsAdmin(!!user.administrador);
+      }
+    } catch (error) {
+      console.error("Erro ao verificar permissão de administrador:", error);
+      setIsAdmin(false);
+    }
   }, []);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -269,19 +282,21 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
                   <span className="font-medium">Licença de Uso</span>
                 </button>
 
-                <button
-                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    window.location.href = "/admin/administracao/usuarios";
-                  }}
-                >
-                  <UsersRound
-                    size={18}
-                    className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
-                  />
-                  <span className="font-medium">Gestão de Usuários</span>
-                </button>
+                {isAdmin && (
+                  <button
+                    className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      window.location.href = "/admin/administracao/usuarios";
+                    }}
+                  >
+                    <UsersRound
+                      size={18}
+                      className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
+                    />
+                    <span className="font-medium">Gestão de Usuários</span>
+                  </button>
+                )}
 
                 <button
                   className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"

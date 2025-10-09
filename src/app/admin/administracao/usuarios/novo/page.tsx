@@ -8,6 +8,7 @@ import PageHeader from "@/components/admin/ui/PageHeader";
 import { InputField } from "@/components/admin/form";
 import SuccessModal from "@/components/admin/ui/SuccessModal";
 import { useToast } from "@/components/admin/ui/ToastContainer";
+import AdminAuthGuard from "@/components/admin/common/AdminAuthGuard";
 
 const perfis = [
   { key: "perfil_interno", label: "Interno" },
@@ -181,7 +182,7 @@ export default function NovoUsuario() {
   };
 
   return (
-    <>
+    <AdminAuthGuard>
       <PageHeader
         title="Cadastro de Usuário"
         config={{
@@ -345,6 +346,6 @@ export default function NovoUsuario() {
           </footer>
         </form>
       </main>
-    </>
+    </AdminAuthGuard>
   );
 }

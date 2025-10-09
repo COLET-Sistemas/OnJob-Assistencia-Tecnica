@@ -1,6 +1,7 @@
 "use client";
 import { Loading } from "@/components/LoadingPersonalizado";
 import { TableList, TableStatusColumn } from "@/components/admin/common";
+import AdminAuthGuard from "@/components/admin/common/AdminAuthGuard";
 import { useDataFetch } from "@/hooks";
 import { Usuario } from "@/types/admin/cadastro/usuarios";
 import { useCallback } from "react";
@@ -279,7 +280,7 @@ const CadastroUsuario = () => {
   const itemCount = usuarios ? usuarios.length : 0;
 
   return (
-    <>
+    <AdminAuthGuard>
       <PageHeader
         title="Lista de Usuários"
         config={{
@@ -308,7 +309,7 @@ const CadastroUsuario = () => {
         onApplyFilters={aplicarFiltros}
         onFilterToggle={toggleFilters}
       />
-    </>
+    </AdminAuthGuard>
   );
 };
 
