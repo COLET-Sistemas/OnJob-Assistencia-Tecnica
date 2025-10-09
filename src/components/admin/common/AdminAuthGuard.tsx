@@ -38,7 +38,7 @@ const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
             showError("Acesso negado", "Dados de usuário não encontrados.");
             hasShownErrorRef.current = true;
           }
-          router.push("/admin");
+          router.push("/admin/dashboard");
           setHasPermission(false);
           return;
         }
@@ -56,7 +56,7 @@ const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
             );
             hasShownErrorRef.current = true;
           }
-          router.push("/admin");
+          router.push("/admin/dashboard");
           setHasPermission(false);
           return;
         }
