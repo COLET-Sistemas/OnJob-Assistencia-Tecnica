@@ -73,6 +73,7 @@ interface OrdemServicoResponse {
   situacao_os: {
     codigo: number;
     descricao: string;
+    data_situacao?: string;
     id_motivo_pendencia: number;
     motivo_pendencia: string;
   };

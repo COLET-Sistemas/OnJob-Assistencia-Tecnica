@@ -51,6 +51,7 @@ export interface OSItem {
   situacao_os: {
     codigo: number;
     descricao: string;
+    data_situacao: string;
     id_motivo_pendencia: number;
     motivo_pendencia: string;
   };
@@ -111,7 +112,6 @@ export interface OSRevisao {
   observacoes: string;
 }
 
-// Deslocamento interface for FATs
 export interface OSDeslocamento {
   id_deslocamento: number;
   km_ida: number;
@@ -123,18 +123,18 @@ export interface OSDeslocamento {
   observacoes: string;
 }
 
-// Peça utilizada em FAT
 export interface OSPecaUtilizada {
   id?: number;
   id_peca?: number;
-  nome: string;
+  nome?: string;
+  descricao?: string;
   codigo?: string;
   quantidade: number;
   valor_unitario?: number;
   valor_total?: number;
 }
 
-// FAT detalhado conforme API response - VERSÃO ATUALIZADA
+
 export interface OSFatDetalhado {
   id_fat: number;
   data_atendimento: string;
@@ -326,6 +326,7 @@ export interface OSDetalhadaV2 {
   situacao_os: {
     codigo: number;
     descricao: string;
+    data_situacao?: string;
     id_motivo_pendencia: number;
     motivo_pendencia: string;
     data_alteracao?: string;
@@ -701,6 +702,49 @@ class OrdensServicoService {
         this.cache.delete(key);
       }
     }
+  }
+
+  // Método para salvar revisão da OS
+  async salvarRevisaoOS(
+    id_os: number,
+    dados: {
+      observacoes: string;
+      pecas: OSPecaUtilizada[];
+      deslocamentos: OSDeslocamento[];
+    }
+  ): Promise<{ success: boolean; message: string }> {
+    // Obter ID do usuário atual do localStorage
+    const id_usuario_revisor = Number(localStorage.getItem("id_usuario"));
+
+    // Formatar dados para envio à API
+    const requestData = {
+      id_os: id_os,
+      id_usuario_revisor: id_usuario_revisor,
+      observacoes_revisao: dados.observacoes,
+      pecas_corrigidas: dados.pecas.map((peca) => ({
+        codigo: peca.codigo || "",
+        descricao: peca.descricao || peca.nome || "",
+        quantidade: peca.quantidade,
+        valor_unitario: peca.valor_unitario || 0,
+      })),
+      deslocamentos_corrigidos: dados.deslocamentos.map((desl) => ({
+        km_ida: desl.km_ida,
+        km_volta: desl.km_volta,
+        tempo_ida_min: desl.tempo_ida_min,
+        tempo_volta_min: desl.tempo_volta_min,
+        observacao: desl.observacoes,
+      })),
+    };
+
+    await api.post(`/revisoes_os`, requestData);
+
+    // Invalidar caches relacionados
+    this.invalidateOSCache(id_os);
+
+    return {
+      success: true,
+      message: "Revisão salva com sucesso",
+    };
   }
 }
 

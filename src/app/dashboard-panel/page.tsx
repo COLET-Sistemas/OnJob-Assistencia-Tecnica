@@ -46,6 +46,7 @@ interface OrdemServico {
   situacao_os: {
     codigo: number;
     descricao: string;
+    data_situacao?: string;
     motivo_pendencia: string;
   };
   tecnico: {

@@ -275,7 +275,6 @@ const FATDetalhesPage: React.FC = () => {
         minute: "2-digit",
       }).format(data);
     } catch {
-      // Se falhar, retorna a string original
       return dataString;
     }
   };
