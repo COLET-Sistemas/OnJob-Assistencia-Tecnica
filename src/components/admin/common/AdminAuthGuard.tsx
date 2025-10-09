@@ -69,7 +69,7 @@ const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
           showError("Erro", "Erro ao verificar permissões. Tente novamente.");
           hasShownErrorRef.current = true;
         }
-        router.push("/admin");
+        router.push("/admin/dashboard");
         setHasPermission(false);
       } finally {
         setIsChecking(false);
