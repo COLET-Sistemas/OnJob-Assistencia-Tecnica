@@ -11,7 +11,6 @@ import {
   User,
   BarChart3,
   Zap,
-  CheckCircle2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useCallback, memo } from "react";
@@ -574,16 +573,6 @@ export default function LoginPage() {
               description="Sistema rápido e responsivo com tecnologia de última geração"
               gradient="bg-gradient-to-br from-[#75f9bd] to-[#4de8a5]"
             />
-          </div>
-
-          {/* Footer */}
-          <div className="mt-12 pt-8 border-t border-white/10">
-            <div className="flex items-center justify-center space-x-2">
-              <CheckCircle2 className="w-5 h-5 text-[#75f9bd]" />
-              <p className="text-white/70 text-sm">
-                Tecnologia que transforma a forma como você trabalha
-              </p>
-            </div>
           </div>
         </div>
       </div>

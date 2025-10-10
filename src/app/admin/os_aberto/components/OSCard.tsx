@@ -521,9 +521,53 @@ const OSCard: React.FC<OSCardProps> = ({
                     </h4>
                   </div>
                   <a
-                    href={`/admin/cadastro/clientes/editar/${os.cliente.id}`}
+                    href="/admin/cadastro/clientes"
                     rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Salvar os filtros na sessão
+                      if (typeof window !== "undefined" && os.cliente.nome) {
+                        try {
+                          // Criar objeto de filtro para aplicar na tela de clientes
+                          const filtro = {
+                            nome: os.cliente.nome || "",
+                            uf: "",
+                            incluir_inativos: "",
+                          };
+
+                          // Salvar o filtro na sessão para que seja aplicado quando a página de clientes carregar
+                          const filterKey = "filters_incluir_inativos_nome_uf";
+                          const filterStateKey = `${filterKey}_state`;
+
+                          const filterState = {
+                            showMenu: false,
+                            panelFilters: filtro,
+                            appliedFilters: filtro,
+                          };
+
+                          sessionStorage.setItem(
+                            filterStateKey,
+                            JSON.stringify(filterState)
+                          );
+                          sessionStorage.setItem(
+                            filterKey,
+                            JSON.stringify(filtro)
+                          );
+
+                          // Salvar o ID do cliente - a página de clientes verificará
+                          // se há contatos antes de expandir automaticamente
+                          sessionStorage.setItem(
+                            "expandClienteId",
+                            String(os.cliente.id)
+                          );
+                        } catch (error) {
+                          console.error(
+                            "Erro ao salvar filtros na sessão:",
+                            error
+                          );
+                        }
+                      }
+                    }}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 
                              hover:bg-indigo-100 rounded-md text-xs font-medium transition-colors 
                              border border-indigo-200 transform hover:scale-105 active:scale-95 cursor-pointer"

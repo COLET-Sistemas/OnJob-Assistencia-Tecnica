@@ -81,8 +81,26 @@ const CadastroClientes = () => {
     return Number(cliente.id_cliente ?? cliente.id ?? 0);
   }, []);
 
+  // Armazenar o ID do cliente que deve ser expandido
+  const clienteIdToExpandRef = useRef<number | null>(null);
+
   useEffect(() => {
     setTitle("Clientes");
+
+    // Verificar se há um cliente para verificar automaticamente
+    if (typeof window !== "undefined") {
+      try {
+        const clienteIdToExpand = sessionStorage.getItem("expandClienteId");
+        if (clienteIdToExpand) {
+          // Remover o item da sessionStorage para não expandir novamente em futuras visitas
+          sessionStorage.removeItem("expandClienteId");
+          // Armazenar o ID para uso posterior quando os clientes forem carregados
+          clienteIdToExpandRef.current = Number(clienteIdToExpand);
+        }
+      } catch (error) {
+        console.error("Erro ao verificar cliente para expandir:", error);
+      }
+    }
   }, [setTitle]);
 
   const {
@@ -180,7 +198,38 @@ const CadastroClientes = () => {
     if (isReloadingRef.current) {
       setLocalShowFilters(false);
     }
-  }, [clientes]);
+
+    // Verificar se existe um cliente para expandir após os dados serem carregados
+    if (clienteIdToExpandRef.current && clientes && clientes.length > 0) {
+      const clienteId = clienteIdToExpandRef.current;
+      const cliente = clientes.find((c) => getClienteId(c) === clienteId);
+
+      // Verificar se o cliente tem contatos antes de expandir
+      if (
+        cliente &&
+        ((cliente.qtd_contatos && cliente.qtd_contatos > 0) ||
+          (cliente.contatos && cliente.contatos.length > 0))
+      ) {
+        setExpandedClienteId(clienteId);
+
+        // Pequeno delay para garantir que a interface foi atualizada
+        setTimeout(() => {
+          const clienteElement = document.getElementById(
+            `contatos-cliente-${clienteId}`
+          );
+          if (clienteElement) {
+            clienteElement.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }
+        }, 300);
+      }
+
+      // Limpar a referência
+      clienteIdToExpandRef.current = null;
+    }
+  }, [clientes, getClienteId]);
 
   const toggleExpand = useCallback((id: number | string) => {
     setExpandedClienteId((prevId) => {
@@ -222,6 +271,20 @@ const CadastroClientes = () => {
           if (updateData) {
             updateData(updatedClientes);
           }
+
+          // Scrollar para o cliente expandido após um pequeno delay
+          // para garantir que os dados foram renderizados
+          setTimeout(() => {
+            const clienteElement = document.getElementById(
+              `contatos-cliente-${clientId}`
+            );
+            if (clienteElement) {
+              clienteElement.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+            }
+          }, 300);
         }
       } catch (error) {
         console.error("Erro ao carregar contatos:", error);
@@ -385,7 +448,6 @@ const CadastroClientes = () => {
               e.stopPropagation();
               e.preventDefault();
               if (hasContatos) {
-          
                 toggleExpand(clientId);
               }
             }}
@@ -451,7 +513,6 @@ const CadastroClientes = () => {
 
   // Função para mostrar o modal de confirmação de inativação
   const openInactivateModal = (id: number, name: string) => {
-
     // Garantir que o ID seja um número válido
     if (!id || isNaN(Number(id))) {
       console.error("ID do contato inválido:", id);
@@ -488,7 +549,6 @@ const CadastroClientes = () => {
 
       // Atualizar os dados localmente em vez de fazer refetch completo
       if (expandedClienteId && clientes) {
-
         const updatedClientes = clientes.map((cliente) => {
           if (getClienteId(cliente) === expandedClienteId && cliente.contatos) {
             // Atualizar o status do contato inativado ou remover da lista
@@ -888,16 +948,19 @@ const CadastroClientes = () => {
           </div>
         )}
       />
-      <Pagination
-        currentPage={paginacao.paginaAtual}
-        totalPages={paginacao.totalPaginas}
-        totalRecords={paginacao.totalRegistros}
-        recordsPerPage={paginacao.registrosPorPagina}
-        onPageChange={handlePageChange}
-        onRecordsPerPageChange={handleRecordsPerPageChange}
-        recordsPerPageOptions={[10, 20, 25, 50, 100]}
-        showRecordsPerPage={true}
-      />
+      {/* Only show pagination if we have records */}
+      {paginacao.totalRegistros > 0 && (
+        <Pagination
+          currentPage={paginacao.paginaAtual}
+          totalPages={paginacao.totalPaginas}
+          totalRecords={paginacao.totalRegistros}
+          recordsPerPage={paginacao.registrosPorPagina}
+          onPageChange={handlePageChange}
+          onRecordsPerPageChange={handleRecordsPerPageChange}
+          recordsPerPageOptions={[10, 20, 25, 50, 100]}
+          showRecordsPerPage={true}
+        />
+      )}
 
       {/* Modal de Localização */}
       {selectedCliente && (
@@ -909,6 +972,9 @@ const CadastroClientes = () => {
           address={`${selectedCliente.endereco}, ${selectedCliente.numero}, ${
             selectedCliente.cidade
           }, ${selectedCliente.uf}, ${selectedCliente.cep || ""}`}
+          clientName={
+            selectedCliente.nome_fantasia || selectedCliente.razao_social
+          }
           onLocationSelected={saveClienteLocation}
         />
       )}

@@ -119,19 +119,17 @@ const handleSessionExpiredError = () => {
 
 // Variável para controlar o tempo entre exibições de mensagens de erro 403
 let lastForbiddenErrorTime = 0;
-const ERROR_COOLDOWN_MS = 3000; // 3 segundos de intervalo entre mensagens
+const ERROR_COOLDOWN_MS = 3000; 
 
 // Função para lidar com erros de acesso negado (403)
 const handleForbiddenError = (message: string) => {
-  // Verifica se o módulo de toast está disponível no lado do cliente
   if (typeof window !== "undefined") {
     // Prevenir múltiplas mensagens de erro em sequência rápida
     const now = Date.now();
     if (now - lastForbiddenErrorTime < ERROR_COOLDOWN_MS) {
-      return; // Ignorar esse erro, pois já mostramos um recentemente
+      return; 
     }
 
-    // Atualiza o timestamp da última mensagem
     lastForbiddenErrorTime = now;
 
     // Usamos um evento customizado para garantir que qualquer componente possa escutar
@@ -237,9 +235,6 @@ const apiRequest = async <T>(
 
         throw new Error(fullErrorMessage);
       } catch {
-        // Se não conseguiu fazer parse do JSON
-
-        // Se não for um JSON válido, mas ainda for 401, verificar o texto
         if (response.status === 401) {
           if (
             errorText.includes(
@@ -248,7 +243,6 @@ const apiRequest = async <T>(
           ) {
             handleSessionExpiredError();
           } else {
-            // Erro de autenticação genérico
             authService.logout();
             if (typeof window !== "undefined") {
               window.location.href =
@@ -278,12 +272,10 @@ const apiRequest = async <T>(
     // Para status 201 (Created), tente obter o corpo da resposta ou retorne um objeto de sucesso padrão
     if (response.status === 201) {
       try {
-        // Tenta obter o corpo como JSON
         const jsonData = await response.json();
         return jsonData as T;
       } catch {
-        // Se não conseguir fazer parse do JSON (talvez não tenha corpo),
-        // retorna um objeto com mensagem de sucesso genérica
+ 
         return {
           sucesso: true,
           mensagem: "Operação realizada com sucesso.",

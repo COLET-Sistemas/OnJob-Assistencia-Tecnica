@@ -8,32 +8,25 @@ interface AdminAuthGuardProps {
   children: React.ReactNode;
 }
 
-/**
- * Componente de proteção para páginas que exigem permissão de administrador
- * Verifica se o usuário atual tem permissão de administrador
- */
+
 const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
   const router = useRouter();
   const { showError } = useToast();
 
-  // Estado para controlar se o usuário tem permissão
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState<boolean>(true);
-  // Ref para controlar se já exibimos uma mensagem de erro
+
   const hasShownErrorRef = useRef(false);
 
-  // Verificação imediata no momento da montagem do componente,
-  // antes de qualquer renderização do conteúdo protegido
+
   useEffect(() => {
     const checkAdminPermission = () => {
       try {
         setIsChecking(true);
 
-        // Buscar informações do usuário no localStorage
         const userStr = localStorage.getItem("user");
 
         if (!userStr) {
-          // Se não houver dados do usuário, redirecionar para a página inicial
           if (!hasShownErrorRef.current) {
             showError("Acesso negado", "Dados de usuário não encontrados.");
             hasShownErrorRef.current = true;
@@ -43,12 +36,9 @@ const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
           return;
         }
 
-        // Converter string para objeto
         const user = JSON.parse(userStr);
 
-        // Verificar se o usuário é administrador
         if (!user.administrador) {
-          // Se não for administrador, redirecionar para a página inicial
           if (!hasShownErrorRef.current) {
             showError(
               "Acesso negado",
@@ -61,7 +51,6 @@ const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
           return;
         }
 
-        // Tem permissão
         setHasPermission(true);
       } catch (error) {
         console.error("Erro ao verificar permissão de administrador:", error);
@@ -76,12 +65,9 @@ const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
       }
     };
 
-    // Executar a verificação imediatamente
     checkAdminPermission();
   }, [router, showError]);
 
-  // Não renderiza o conteúdo protegido enquanto estiver verificando permissões
-  // ou se o usuário não tiver permissão
   if (isChecking) {
     return (
       <div className="w-full h-[200px] flex items-center justify-center">
@@ -95,7 +81,6 @@ const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
     );
   }
 
-  // Somente renderiza o conteúdo se o usuário tiver permissão
   return hasPermission ? <>{children}</> : null;
 };
 

@@ -110,6 +110,7 @@ const CadastroMaquinas = () => {
         paginacao.registrosPorPagina,
         filtrosAplicados.incluir_inativos === "true",
         filtrosAplicados.numero_serie?.trim() || undefined,
+        undefined, // modelo parameter
         filtrosAplicados.descricao?.trim() || undefined
       );
 

@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OnJob Assistência Técnica
 
-## Getting Started
+Aplicação web para gerenciamento de ordens de serviço de assistência técnica, desenvolvida com Next.js 15 e TypeScript.
 
-First, run the development server:
+![Logo OnJob](public/images/logo.png)
+
+## Visão Geral
+
+O sistema OnJob Assistência Técnica é uma plataforma completa para gerenciamento de ordens de serviço, clientes, técnicos e empresas. O projeto é dividido em dois módulos principais:
+
+- **Administrativo**: Gerenciamento de ordens de serviço, clientes, usuários, relatórios e configurações
+- **Técnico**: Interface mobile-first para técnicos em campo registrarem ocorrências, FATs e andamento dos serviços
+
+## Tecnologias
+
+- Next.js 15.4.6 com App Router
+- React 19.1.0
+- TypeScript 5
+- TailwindCSS 4
+- JWT Authentication
+- Framer Motion
+
+## Funcionalidades Principais
+
+- Login e autenticação com JWT
+- Dashboard personalizado para administradores e técnicos
+- Gestão de ordens de serviço (criação, edição, consulta)
+- Controle de ocorrências e FATs
+- Gerenciamento de clientes, máquinas e peças
+- Relatórios e análises
+
+## Requisitos
+
+- Node.js 20 ou superior
+- NPM 10 ou superior
+
+## Instalação
+
+Clone o repositório:
+
+```bash
+git clone https://github.com/BCaceress/OnJob-Assistencia-Tecnica.git
+cd OnJob-Assistencia-Tecnica
+```
+
+Instale as dependências:
+
+```bash
+npm install
+```
+
+## Execução
+
+Para iniciar o servidor de desenvolvimento com Turbopack:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse [http://localhost:3000](http://localhost:3000) no navegador.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Produção
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Para construir o aplicativo para produção:
 
-## Learn More
+```bash
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+Para iniciar o servidor em modo produção:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Estrutura do Projeto
 
-## Deploy on Vercel
+- `/src/api` - Serviços e comunicação com API
+- `/src/app` - Rotas e páginas da aplicação (App Router)
+- `/src/components` - Componentes React reutilizáveis
+- `/src/context` - Contextos React para estado global
+- `/src/hooks` - Custom hooks da aplicação
+- `/src/types` - Definições de tipos TypeScript
+- `/src/utils` - Funções utilitárias
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Versão
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Versão atual: 0.20251009.1
+
+## Licença
+
+Propriedade - Colet Sitemas - Bruno Caceres

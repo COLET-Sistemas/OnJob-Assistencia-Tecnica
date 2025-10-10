@@ -37,10 +37,18 @@ function DataTable<T extends object>({
   onRowExpand,
   renderExpandedRow,
 }: DataTableProps<T>): React.ReactElement {
-  // Row expansion is now handled only by specific controls (like the contacts button)
-  // and not by clicking anywhere in the row
+
+  const getContainerHeight = () => {
+    if (data.length === 0) return "min-h-[200px]";
+    if (data.length <= 2) return "min-h-[250px]";
+    if (data.length <= 5) return "min-h-[350px]";
+    return "min-h-[400px] max-h-[70vh]";
+  };
+
   return (
-    <div className="overflow-x-auto overflow-y-auto max-h-[70vh] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 min-h-[400px] flex flex-col">
+    <div
+      className={`overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 ${getContainerHeight()} flex flex-col`}
+    >
       <table className="w-full table-auto border-separate border-spacing-0 flex-1">
         <thead className="bg-[var(--neutral-light-gray)] border-b border-gray-100 sticky top-0 z-10">
           <tr>
@@ -102,7 +110,7 @@ function DataTable<T extends object>({
             })
           ) : (
             <tr key="empty-state" className="h-full">
-              <td colSpan={columns.length} className="p-0 h-[300px]">
+              <td colSpan={columns.length} className="p-0 h-[200px]">
                 <EmptyState
                   title={emptyStateProps.title}
                   description={emptyStateProps.description}

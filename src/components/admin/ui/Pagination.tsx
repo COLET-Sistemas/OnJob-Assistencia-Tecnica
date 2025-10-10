@@ -21,6 +21,12 @@ const Pagination: React.FC<PaginationProps> = ({
   recordsPerPageOptions = [10, 20, 25, 50, 100],
   showRecordsPerPage = true,
 }) => {
+  // Hide pagination when there are no records
+  if (totalRecords === 0) {
+    return null;
+  }
+
+  // Hide pagination when there's only one page and we don't need to show records per page
   if (totalPages <= 1 && !showRecordsPerPage) {
     return null;
   }

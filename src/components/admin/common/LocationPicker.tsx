@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Loading } from "../../LoadingPersonalizado";
+import { MapPin, X, Building, AlertTriangle, Globe, Check } from "lucide-react";
 
 interface LocationPickerProps {
   initialLat: number | null;
   initialLng: number | null;
   address: string;
+  clientName?: string;
   onLocationSelected: (lat: number, lng: number) => void;
   isOpen: boolean;
   onClose: () => void;
@@ -79,6 +81,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   initialLat,
   initialLng,
   address,
+  clientName = "",
   onLocationSelected,
   isOpen,
   onClose,
@@ -297,123 +300,195 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col border-t-4 border-[#7B54BE]">
-        <div className="p-5 flex justify-between items-center bg-gradient-to-r from-[#7B54BE]/10 to-white">
-          <h2 className="text-xl font-semibold text-[#7B54BE]">
-            Ajustar Localização
-          </h2>
+    <div className="fixed inset-0 backdrop-blur-sm bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden">
+        <div className="p-4 sm:p-5 flex justify-between items-center bg-gradient-to-r from-[#7B54BE] to-[#6743a1] text-white">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />
+            <h2 className="text-lg sm:text-xl font-semibold">
+              Ajustar Localização
+            </h2>
+          </div>
           <button
             onClick={onClose}
-            className="text-[#7B54BE] hover:text-[#6743a1] bg-white rounded-full p-1 shadow-sm transition-all hover:shadow cursor-pointer"
+            className="text-white hover:text-white/80 bg-white/10 rounded-full p-1.5 sm:p-2 transition-all hover:bg-white/20 cursor-pointer"
             aria-label="Fechar"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              ></path>
-            </svg>
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
-        <div className="p-6 flex-1 flex flex-col min-h-[550px]">
-          {/* Instruction Banner - Now outside of the map container */}
-          <div className="bg-[#7B54BE] p-3 rounded-lg shadow-lg mb-4 flex items-center justify-center">
-            <span className="text-sm text-white font-medium flex items-center gap-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
+        <div className="p-4 sm:p-6 flex-1 flex flex-col min-h-[550px] overflow-y-auto">
+          {/* Client Info and Instructions Banner */}
+          <div className="mb-4 sm:mb-6">
+            {clientName && (
+              <div className="bg-white rounded-lg border border-gray-100 shadow p-3 sm:p-4 ">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="bg-[#7B54BE]/10 p-1.5 sm:p-2 rounded-lg hidden sm:block">
+                    <Building className="w-5 h-5 sm:w-6 sm:h-6 text-[#7B54BE]" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center">
+                      <Building className="w-4 h-4 mr-1 text-[#7B54BE] sm:hidden" />
+                      <h3 className="font-medium text-gray-800 text-sm sm:text-base">
+                        {clientName}
+                      </h3>
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1 break-words">
+                      {address}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* <div className="flex items-start gap-2 bg-gradient-to-r from-[#F6C647]/10 to-transparent py-2 px-3 border-l-4 border-[#F6C647] rounded-r-lg">
+              <div className="bg-[#F6C647] rounded-full p-1 flex-shrink-0">
+                <svg
+                  className="w-3 h-3 text-white"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
-                ></path>
-              </svg>
-              Arraste o marcador para ajustar a localização exata
-            </span>
+                >
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 16v.01"/>
+                  <path d="M12 8v4"/>
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-2xs text-gray-600">
+                  Arraste o marcador no mapa para definir a posição exata.
+                </p>
+              </div>
+            </div> */}
           </div>
 
           {/* Map Container */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 border border-gray-200 rounded-xl shadow-md overflow-hidden mb-4 sm:mb-6">
+            {/* Map Header */}
+            <div className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 p-2 px-3 sm:px-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-[#7B54BE]" />
+                <span className="text-xs font-medium text-gray-700">
+                  Mapa Interativo
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 italic">
+                <span className="sm:hidden">
+                  Zoom: pinça | Arraste para mover
+                </span>
+                <span className="hidden sm:inline">
+                  Zoom: role a roda do mouse | Arraste para mover
+                </span>
+              </div>
+            </div>
+
             {loading && (
-              <div className="absolute inset-0 bg-white bg-opacity-90 z-10 flex items-center justify-center">
-                <Loading
-                  size="medium"
-                  text="Carregando mapa..."
-                  fullScreen={false}
-                />
+              <div className="absolute inset-0 bg-white bg-opacity-95 z-10 flex items-center justify-center">
+                <div className="bg-white p-6  flex flex-col items-center">
+                  <Loading
+                    size="medium"
+                    text="Carregando mapa..."
+                    fullScreen={false}
+                  />
+                  <p className="text-sm text-gray-500 mt-3">
+                    Aguarde enquanto carregamos o Google Maps
+                  </p>
+                </div>
               </div>
             )}
 
             <div
-              className="bg-gray-100 rounded-lg shadow-inner w-full h-full overflow-hidden"
+              className="bg-gray-50 w-full h-full overflow-hidden"
               ref={mapRef}
-              style={{ minHeight: "400px" }}
+              style={{
+                minHeight: "300px",
+                height: "calc(100vh - 500px)",
+                maxHeight: "400px",
+              }}
             ></div>
           </div>
 
-          {/* Coordinates Display - Now outside of the map container */}
-          <div className="mt-4 bg-white p-4 rounded-lg shadow-lg flex flex-col md:flex-row gap-6 border-l-4 border-[#F6C647]">
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-[#7B54BE]">
-                Latitude
-              </label>
-              <div className="mt-1 font-mono bg-gray-50 p-3 rounded border border-gray-100 text-gray-800 shadow-inner">
-                {currentLat !== null ? Number(currentLat).toFixed(6) : "-"}
+          {/* Coordinates Display - Enhanced with visual improvements */}
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="p-3 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-1 sm:mb-2">
+                  <label className="text-xs font-medium text-gray-700 flex items-center">
+                    <Globe className="w-3 h-3 mr-0.5 text-[#7B54BE]" />
+                    <span className="text-2xs">Latitude</span>
+                  </label>
+                  <span className="text-2xs text-gray-500 hidden xs:inline">
+                    Graus decimais
+                  </span>
+                </div>
+                <div className="relative">
+                  <div className="font-mono bg-gray-50 p-2 rounded-lg border border-gray-200 text-gray-800 shadow-sm text-center text-sm">
+                    {currentLat !== null ? Number(currentLat).toFixed(6) : "-"}
+                  </div>
+                  {currentLat !== null && (
+                    <div className="absolute top-1/2 -translate-y-1/2 right-2">
+                      <Check className="w-3 h-3 text-green-600" />
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-[#7B54BE]">
-                Longitude
-              </label>
-              <div className="mt-1 font-mono bg-gray-50 p-3 rounded border border-gray-100 text-gray-800 shadow-inner">
-                {currentLng !== null ? Number(currentLng).toFixed(6) : "-"}
+
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-1 sm:mb-2">
+                  <label className="text-xs font-medium text-gray-700 flex items-center">
+                    <Globe className="w-3 h-3 mr-0.5 text-[#7B54BE]" />
+                    <span className="text-2xs">Longitude</span>
+                  </label>
+                  <span className="text-2xs text-gray-500 hidden xs:inline">
+                    Graus decimais
+                  </span>
+                </div>
+                <div className="relative">
+                  <div className="font-mono bg-gray-50 p-2 rounded-lg border border-gray-200 text-gray-800 shadow-sm text-center text-sm">
+                    {currentLng !== null ? Number(currentLng).toFixed(6) : "-"}
+                  </div>
+                  {currentLng !== null && (
+                    <div className="absolute top-1/2 -translate-y-1/2 right-2">
+                      <Check className="w-3 h-3 text-green-600" />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-100 flex justify-between bg-gradient-to-b from-white to-gray-50">
+        <div className="p-6 border-t border-gray-200 flex flex-col-reverse sm:flex-row sm:justify-between gap-4 bg-gray-50">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 bg-white text-[#7B54BE] border border-[#7B54BE] rounded-md hover:bg-[#7B54BE]/5 transition-colors font-medium shadow-sm cursor-pointer"
+            className="px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors font-medium shadow-sm flex justify-center items-center gap-2 w-full sm:w-auto"
           >
+            <X className="w-5 h-5" />
             Cancelar
           </button>
+
           <button
             onClick={handleConfirm}
-            className="px-6 py-2.5 bg-gradient-to-r from-[#7B54BE] to-[#6743a1] text-white rounded-md hover:shadow-lg transition-all flex items-center gap-2 font-medium shadow-sm disabled:opacity-70 disabled:hover:shadow-none cursor-pointer"
+            className="px-6 py-3 bg-gradient-to-r from-[#7B54BE] to-[#6743a1] text-white rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 font-medium shadow-sm disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-none w-full sm:w-auto"
             disabled={!currentLat || !currentLng}
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              ></path>
-            </svg>
-            Confirmar Localização
+            {!currentLat || !currentLng ? (
+              <>
+                <AlertTriangle className="w-5 h-5 animate-pulse" />
+                Defina a Localização
+              </>
+            ) : (
+              <>
+                <Check className="w-5 h-5" />
+                Confirmar Localização
+              </>
+            )}
           </button>
         </div>
       </div>
