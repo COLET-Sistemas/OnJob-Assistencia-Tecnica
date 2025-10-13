@@ -11,14 +11,26 @@ import { useNotificacoes } from "@/hooks";
 const NotificacoesUpdater = () => {
   const { fetchNotificacoesCount } = useNotificacoes();
 
-  // Efeito para buscar notificações assim que a aplicação carrega
+  // Verificar se o usuário está autenticado
+  const isAuthenticated = () => {
+    if (typeof window === "undefined") return false;
+    return !!localStorage.getItem("token");
+  };
+
+  // Efeito para buscar notificações apenas quando o usuário estiver autenticado
   useEffect(() => {
+    // Verifica se o usuário está autenticado antes de buscar notificações
+    if (!isAuthenticated()) return;
+
     // Atualiza apenas uma vez ao montar o componente
     fetchNotificacoesCount();
 
     // Define um intervalo para atualizar a cada 60 segundos (1 minuto)
     const regularInterval = setInterval(() => {
-      fetchNotificacoesCount();
+      // Verifica novamente a autenticação antes de cada chamada
+      if (isAuthenticated()) {
+        fetchNotificacoesCount();
+      }
     }, 60000); // 1 minuto
 
     // Limpa o intervalo quando o componente for desmontado

@@ -3,6 +3,7 @@
 import Navbar from "@/components/admin/layout/Navbar";
 import Sidebar from "@/components/admin/layout/Sidebar";
 import AuthGuard from "@/components/AuthGuard";
+import NotificacoesUpdater from "@/components/NotificacoesUpdater";
 import { TitleProvider } from "@/context/TitleContext";
 import { useEffect, useState } from "react";
 
@@ -33,6 +34,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <AuthGuard>
       <TitleProvider>
+        {/* NotificacoesUpdater colocado aqui para que só funcione após autenticação */}
+        <NotificacoesUpdater />
         <div className="flex h-screen bg-[#F9F7F7]">
           <div
             className={`fixed inset-0 bg-black/50 z-10 transition-opacity md:hidden ${

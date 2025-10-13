@@ -45,6 +45,11 @@ export function useNotificacoes() {
 
   // Função para buscar a contagem de notificações
   const fetchNotificacoesCount = async () => {
+    // Verifica autenticação antes de fazer a chamada à API
+    if (!isAuthenticated()) {
+      return { nao_lidas: 0, total_notificacoes: 0 };
+    }
+
     try {
       setLoading(true);
       setError(null);
