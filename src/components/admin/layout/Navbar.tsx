@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  Bell,
   ChevronDown,
   ArrowRightFromLine,
   LogOut,
@@ -16,6 +15,7 @@ import {
 import { useEffect, useState, memo } from "react";
 import { useEmpresa } from "@/hooks";
 import { authService, empresaService } from "@/api/services";
+import NotificacoesDropdown from "./NotificacoesDropdown";
 
 const CompanyName = memo(function CompanyName() {
   const { nomeEmpresa, loading } = useEmpresa();
@@ -58,6 +58,8 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
   const [nomeUsuario, setNomeUsuario] = useState("Usuário");
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Utilizamos o hook sem referência direta ao componente
+
   useEffect(() => {
     setNomeUsuario(localStorage.getItem("nome_usuario") || "Usuário");
 
@@ -73,6 +75,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
       setIsAdmin(false);
     }
   }, []);
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -184,17 +187,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
         </div>
 
         <div className="flex items-center space-x-5">
-          <div className="relative">
-            <button className="p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer">
-              <Bell
-                className="text-gray-700 hover:text-[#7B54BE] transition-colors cursor-pointer"
-                size={20}
-              />
-              <span className="absolute -top-1 -right-1 bg-[#7B54BE] text-white font-bold text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
-                3
-              </span>
-            </button>
-          </div>
+          <NotificacoesDropdown />
           <Link
             href="/dashboard-panel"
             target="_blank"

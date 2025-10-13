@@ -128,9 +128,10 @@ const CadastroUsuario = () => {
       accessor: "perfil_interno" as keyof Usuario,
       render: (usuario: Usuario) => (
         <div className="flex flex-wrap gap-1.5">
-          {usuario.perfil_interno && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-blue-100 text-blue-800">
-              Interno
+          {usuario.administrador && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-red-100 text-red-800 gap-1">
+              <ShieldCheck size={12} />
+              Admin
             </span>
           )}
           {usuario.perfil_gestor_assistencia && (
@@ -138,20 +139,19 @@ const CadastroUsuario = () => {
               Gestor
             </span>
           )}
+          {usuario.perfil_interno && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-blue-100 text-blue-800">
+              Interno
+            </span>
+          )}
           {usuario.perfil_tecnico_proprio && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-green-100 text-green-800">
-              Técnico próprio
+              Técnico Próprio
             </span>
           )}
           {usuario.perfil_tecnico_terceirizado && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-amber-100 text-amber-800">
-              Técnico terceirizado
-            </span>
-          )}
-          {usuario.administrador && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-red-100 text-red-800 gap-1">
-              <ShieldCheck size={12} />
-              Admin
+              Técnico Terceirizado
             </span>
           )}
         </div>

@@ -1,0 +1,125 @@
+/* Animações para o Dashboard */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-pulse-subtle {
+  animation: pulse 2s infinite ease-in-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+/* Transições suaves */
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+/* Delay de animação para cards em cascata */
+.card-delay-1 {
+  animation-delay: 50ms;
+}
+.card-delay-2 {
+  animation-delay: 100ms;
+}
+.card-delay-3 {
+  animation-delay: 150ms;
+}
+.card-delay-4 {
+  animation-delay: 200ms;
+}
+.card-delay-5 {
+  animation-delay: 250ms;
+}
+.card-delay-6 {
+  animation-delay: 300ms;
+}
+.card-delay-7 {
+  animation-delay: 350ms;
+}
+.card-delay-8 {
+  animation-delay: 400ms;
+}
+.card-delay-9 {
+  animation-delay: 450ms;
+}
+
+/* Responsividade adicional */
+@media (max-width: 640px) {
+  .card-title-mobile {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-value-mobile {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+}
+
+/* Melhorias na acessibilidade para foco */
+.focus-ring {
+  transition: box-shadow 0.2s ease;
+}
+
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #7b54be;
+}

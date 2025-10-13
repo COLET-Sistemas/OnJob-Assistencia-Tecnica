@@ -203,6 +203,7 @@ export default function AlterarSenhaPage() {
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                 className="absolute inset-y-0 right-0 pr-4 flex items-center"
                 disabled={loading || success}
+                tabIndex={-1}
               >
                 {showCurrentPassword ? (
                   <EyeOff className="h-5 w-5 text-gray-400 hover:text-[#7C54BD] transition-colors" />

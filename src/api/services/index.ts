@@ -9,9 +9,9 @@ export * from "./empresaService";
 export * from "./maquinasService";
 export * from "./motivosAtendimentoService";
 export * from "./motivosPendenciaService";
+export * from "./notificacoesService";
 export * from "./ordensServicoService";
 export * from "./pecasService";
 export * from "./regioesService";
 export * from "./tiposPecasService";
 export * from "./usuariosService";
-

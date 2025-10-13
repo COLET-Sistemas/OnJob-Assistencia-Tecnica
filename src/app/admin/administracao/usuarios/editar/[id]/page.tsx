@@ -26,6 +26,7 @@ const perfis = [
 ];
 
 interface FormData {
+  login: string;
   nome: string;
   email: string;
   situacao: string;
@@ -49,6 +50,7 @@ const EditarUsuario = (props: PageProps) => {
   const [savingData, setSavingData] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<FormData>({
+    login: "",
     nome: "",
     email: "",
     situacao: "A",
@@ -110,6 +112,7 @@ const EditarUsuario = (props: PageProps) => {
 
             const usuario = response[0];
             const userData = {
+              login: usuario.login,
               nome: usuario.nome,
               email: usuario.email,
               situacao: usuario.situacao,
@@ -272,7 +275,17 @@ const EditarUsuario = (props: PageProps) => {
             <section>
               <div className="space-y-6">
                 {/* Nome e Email */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <InputField
+                    label="Login"
+                    name="login"
+                    value={formData.nome}
+                    error={formErrors.nome}
+                    placeholder="Login do usuário"
+                    onChange={handleInputChange}
+                    disabled
+                    className="disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  />
                   <InputField
                     label="Nome"
                     name="nome"

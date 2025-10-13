@@ -4,8 +4,9 @@ type MenuOption = {
   onClick: () => void;
 };
 import React, { useState, useRef, useEffect } from "react";
-import { Menu, Plus } from "lucide-react";
+import { Menu, Plus, Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useNotificacoes } from "@/hooks";
 
 interface MobileHeaderProps {
   title: string;
@@ -64,6 +65,9 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
     { label: "Sair", onClick: handleSair },
   ];
 
+  // Use o hook de notificações
+  const { totalNotificacoes } = useNotificacoes();
+
   return (
     <header className="bg-[#7B54BE] text-white relative">
       <div className="flex items-center justify-between px-4 py-3">
@@ -82,12 +86,28 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
 
         <h1 className="text-lg font-medium text-center flex-1 px-4">{title}</h1>
 
+        {/* Botão de Notificações */}
+        <div className="relative">
+          <button
+            className="p-2 hover:bg-[#6A47A8] rounded-lg transition-colors"
+            onClick={() => router.push("/tecnico/notificacoes")}
+            aria-label="Notificações"
+          >
+            <Bell className="w-6 h-6" />
+            {totalNotificacoes > 0 && (
+              <span className="absolute -top-1 -right-1 bg-white text-[#7B54BE] font-bold text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                {totalNotificacoes > 99 ? "99+" : totalNotificacoes}
+              </span>
+            )}
+          </button>
+        </div>
+
         {/* Direita: botão de menu */}
         {onMenuClick ? (
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((open) => !open)}
-              className="p-2 hover:bg-[#7B54BE] rounded-lg transition-colors"
+              className="p-2 hover:bg-[#6A47A8] rounded-lg transition-colors"
               aria-label="Menu"
             >
               <Menu className="w-6 h-6" />

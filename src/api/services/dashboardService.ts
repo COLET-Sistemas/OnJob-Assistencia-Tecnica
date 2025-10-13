@@ -1,40 +1,60 @@
 import api from "../api";
 
 interface DashboardGestor {
-  os_status_count: {
-    abertas: number;
-    pendentes: number;
-    em_execucao: number;
-    finalizadas: number;
-    total: number;
+  cards: {
+    os_abertas_total: number;
+    os_encerradas_total: number;
+    os_abertas_mes: number;
+    os_encerradas_mes: number;
+    os_abertas_hoje: number;
+    os_encerradas_hoje: number;
+    os_aberto_total: number;
+    os_aberto_garantia: number;
+    os_aberto_pendentes: number;
   };
-  os_por_regiao: {
-    regiao: string;
-    quantidade: number;
-  }[];
-  os_por_cliente: {
-    cliente: string;
-    quantidade: number;
-  }[];
-  os_por_motivo: {
-    motivo: string;
-    quantidade: number;
-  }[];
-  os_por_periodo: {
-    periodo: string;
-    quantidade: number;
-  }[];
+  graficos: {
+    motivos_atendimento: {
+      descricao: string;
+      quantidade: number;
+    }[];
+    por_tecnico: {
+      nome: string;
+      quantidade: number;
+    }[];
+    top_clientes: {
+      cliente: string;
+      quantidade: number;
+    }[];
+  };
 }
 
 interface DashboardTecnico {
-  os_status_count: {
-    abertas: number;
-    pendentes: number;
-    em_execucao: number;
-    finalizadas: number;
-    total: number;
+  cards: {
+    os_abertas_total: number;
+    os_encerradas_total: number;
+    os_abertas_mes: number;
+    os_encerradas_mes: number;
+    os_abertas_hoje: number;
+    os_encerradas_hoje: number;
+    os_aberto_total: number;
+    os_aberto_garantia: number;
+    os_aberto_pendentes: number;
   };
-  os_ultimas: {
+  graficos: {
+    motivos_atendimento: {
+      descricao: string;
+      quantidade: number;
+    }[];
+    por_tecnico: {
+      nome: string;
+      quantidade: number;
+    }[];
+    top_clientes: {
+      cliente: string;
+      quantidade: number;
+    }[];
+  };
+  os_ultimas?: {
     id: number;
     numero_os: string;
     data_abertura: string;
@@ -43,23 +63,19 @@ interface DashboardTecnico {
     };
     status: string;
   }[];
-  os_por_periodo: {
-    periodo: string;
-    quantidade: number;
-  }[];
 }
 
 class DashboardService {
   async getGestorData(
     params?: Record<string, string | number | boolean>
   ): Promise<DashboardGestor> {
-    return api.get<DashboardGestor>("/dashboard/gestor", { params });
+    return api.get<DashboardGestor>("/dashboard", { params });
   }
 
   async getTecnicoData(
     params?: Record<string, string | number | boolean>
   ): Promise<DashboardTecnico> {
-    return api.get<DashboardTecnico>("/dashboard/tecnico", { params });
+    return api.get<DashboardTecnico>("/dashboard", { params });
   }
 }
 

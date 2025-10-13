@@ -569,8 +569,8 @@ const CadastroClientes = () => {
       // Fechar o modal
       setShowInactivateModal(false);
     } catch (error) {
-      console.error("Erro ao inativar contato:", error);
-      showError("Erro ao inativar", error as Record<string, unknown>);
+      console.error("Erro ao excluir contato:", error);
+      showError("Erro ao excluir", error as Record<string, unknown>);
     } finally {
       setIsInactivating(false);
     }
@@ -824,7 +824,7 @@ const CadastroClientes = () => {
                                 );
                               }}
                               className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                              title="Inativar contato"
+                              title="Excluir contato"
                             >
                               <Trash2 size={16} />
                             </button>

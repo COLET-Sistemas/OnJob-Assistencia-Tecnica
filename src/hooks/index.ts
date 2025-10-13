@@ -5,3 +5,4 @@ export { useEmpresa } from "./useEmpresa";
 export { useLoading } from "./useLoading";
 export { useClienteSearch } from "./useClienteSearch";
 export { useAuth } from "./useAuth";
+export { useNotificacoes } from "./useNotificacoes";

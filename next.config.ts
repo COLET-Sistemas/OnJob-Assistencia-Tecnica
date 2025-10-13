@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api-proxy/:path*",
-        destination: "http://10.0.0.154:8080/:path*", 
+        destination: "http://10.0.1.14:8080/:path*", 
       },
     ];
   },
@@ -28,6 +28,7 @@ const nextConfig: NextConfig = {
     "10.0.1.14",
     "10.0.0.154",
     "10.0.1.10",
+    "10.0.1.14",
     "10.0.1.6",
     "192.168.137.1",
   ],

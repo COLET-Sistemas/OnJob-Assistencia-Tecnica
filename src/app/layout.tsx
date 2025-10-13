@@ -4,6 +4,7 @@ import "./globals.css";
 import ClientToastProvider from "@/components/admin/ui/ClientToastProvider";
 import { FeedbackProvider } from "@/context/FeedbackContext";
 import AuthStorageCleaner from "@/components/AuthStorageCleaner";
+import NotificacoesUpdater from "@/components/NotificacoesUpdater";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <FeedbackProvider>
           <ClientToastProvider>
             <AuthStorageCleaner />
+            <NotificacoesUpdater />
             {children}
           </ClientToastProvider>
         </FeedbackProvider>

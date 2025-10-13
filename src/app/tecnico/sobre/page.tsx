@@ -60,10 +60,10 @@ export default function SobrePage() {
             <div className="group">
               <p className="text-sm text-gray-500 mb-1">Suporte técnico</p>
               <a
-                href="mailto:suporte_onjob@coletsistemas.com.br"
+                href="mailto:suporte.onjob@coletsistemas.com.br"
                 className="text-purple-600 hover:text-purple-700 transition-colors font-medium"
               >
-                suporte_onjob@coletsistemas.com.br
+                suporte.onjob@coletsistemas.com.br
               </a>
             </div>
 

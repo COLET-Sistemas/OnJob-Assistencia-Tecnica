@@ -301,3 +301,63 @@ export function isDataAgendadaPassada(dataAgendada: string): boolean {
     return false;
   }
 }
+
+/**
+ * Formata uma data para exibição relativa (ex: "Há 5 minutos", "Hoje às 14:30", "Ontem às 10:15")
+ * @param date Data a ser formatada
+ * @returns String com a data relativa formatada
+ */
+export function formatRelativeDate(date: Date): string {
+  if (!date || isNaN(date.getTime())) {
+    return "";
+  }
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  // Formato da hora
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const formattedTime = `${hours}:${minutes}`;
+
+  // Menos de 1 minuto
+  if (diffSeconds < 60) {
+    return "Agora mesmo";
+  }
+
+  // Menos de 1 hora
+  if (diffMinutes < 60) {
+    return diffMinutes === 1 ? `Há 1 minuto` : `Há ${diffMinutes} minutos`;
+  }
+
+  // Menos de 24 horas
+  if (diffHours < 24) {
+    if (date.getDate() === now.getDate()) {
+      return `Hoje às ${formattedTime}`;
+    } else {
+      return `Ontem às ${formattedTime}`;
+    }
+  }
+
+  // Menos de 7 dias
+  if (diffDays < 7) {
+    return `Há ${diffDays} ${diffDays === 1 ? "dia" : "dias"}`;
+  }
+
+  // Mais de 7 dias
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear();
+
+  // Se for o mesmo ano, não exibe o ano
+  if (year === now.getFullYear()) {
+    return `${day}/${month} às ${formattedTime}`;
+  }
+
+  // Caso contrário, exibe a data completa
+  return `${day}/${month}/${year} às ${formattedTime}`;
+}

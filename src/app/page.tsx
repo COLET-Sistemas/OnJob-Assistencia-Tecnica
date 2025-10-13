@@ -99,6 +99,7 @@ const LoginInput = memo<LoginInputProps>(
           <button
             type="button"
             onClick={onToggle}
+            tabIndex={-1}
             className="absolute inset-y-0 right-0 pr-4 flex items-center group"
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
             disabled={disabled}
