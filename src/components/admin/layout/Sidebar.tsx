@@ -94,7 +94,7 @@ const menuItems: MenuItem[] = [
       },
       {
         key: "tipos_pecas",
-        label: "Tipos Peças",
+        label: "Tipos de Peças",
         icon: Tag,
         path: "/admin/cadastro/tipos_pecas",
       },

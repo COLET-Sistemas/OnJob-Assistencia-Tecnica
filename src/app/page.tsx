@@ -182,7 +182,6 @@ LoginButton.displayName = "LoginButton";
 // Padrões decorativos minimalistas
 const DecorativePattern = memo(() => (
   <div className="absolute inset-0 opacity-10 overflow-hidden">
-    <div className="absolute top-20 left-10 w-40 h-40 rounded-full border-4 border-[#FDAD15]"></div>
     <div className="absolute top-40 right-20 w-32 h-32 rounded-full bg-[#75f9bd] opacity-30 blur-3xl"></div>
     <div className="absolute bottom-32 left-1/4 w-24 h-24 rotate-45 border-4 border-[#7B54BE]"></div>
     <div className="absolute bottom-20 right-1/3 w-28 h-28 rounded-full border-2 border-white opacity-30"></div>

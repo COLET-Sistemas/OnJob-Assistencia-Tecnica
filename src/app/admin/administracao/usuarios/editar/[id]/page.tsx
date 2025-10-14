@@ -279,8 +279,8 @@ const EditarUsuario = (props: PageProps) => {
                   <InputField
                     label="Login"
                     name="login"
-                    value={formData.nome}
-                    error={formErrors.nome}
+                    value={formData.login}
+                    error={formErrors.login}
                     placeholder="Login do usuário"
                     onChange={handleInputChange}
                     disabled

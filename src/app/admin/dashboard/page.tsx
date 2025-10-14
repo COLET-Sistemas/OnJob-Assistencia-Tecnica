@@ -1,24 +1,15 @@
 "use client";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { dashboardService } from "@/api/services/dashboardService";
+import { LoadingSpinner } from "@/components/LoadingPersonalizado";
 import {
+  RefreshCcw,
+  PieChart,
+  User,
   BarChartHorizontal,
   Filter,
-  PieChart,
-  RefreshCcw,
-  User,
-  Activity,
-  CheckSquare,
   AlertCircle,
-  Calendar,
-  CalendarCheck,
-  BarChart3,
-  Shield,
-  AlertTriangle,
 } from "lucide-react";
-
-// Adicionando estilos para animações
-import "./dashboard.css";
-import { LoadingSpinner } from "@/components/LoadingPersonalizado";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -30,7 +21,7 @@ import {
   Title,
 } from "chart.js";
 import { Pie, Bar } from "react-chartjs-2";
-import { dashboardService } from "@/api/services/dashboardService";
+import "./dashboard.css";
 
 // Register Chart.js components
 ChartJS.register(
@@ -93,39 +84,43 @@ export default function DashboardPage() {
 
   // Handle refresh with useCallback para evitar re-renderizações desnecessárias
   const handleRefresh = useCallback(() => {
-    // Força uma atualização dos dados sem mudar o período
+    // Força uma atualização dos dados, incluindo os cards desta vez
     setIsRefreshing(true);
+    setInitialLoad(true); // Forçar atualização dos cards também
     const currentPeriod = selectedPeriod;
     setSelectedPeriod("");
     setTimeout(() => setSelectedPeriod(currentPeriod), 10);
   }, [selectedPeriod]);
 
-  // Color palettes - Usando as cores padrão do projeto
+  // Color palettes - Cores mais vibrantes para gráficos coloridos
   const chartColors = useMemo(
     () => [
+      "#FF6384", // Rosa vibrante
+      "#36A2EB", // Azul vibrante
+      "#FFCE56", // Amarelo vibrante
+      "#4BC0C0", // Verde água
+      "#9966FF", // Roxo vibrante
+      "#FF9F40", // Laranja
+      "#8AC926", // Verde limão
+      "#C9184A", // Vermelho escuro
+      "#FF85EA", // Rosa claro
+      "#00F5D4", // Verde água neon
       "#7B54BE", // Roxo principal
       "#FDAD15", // Amarelo/Laranja
-      "#75f9bd", // Verde claro
-      "#abc7e0", // Azul claro
-      "#9B74DE", // Variação do roxo
-      "#FFC045", // Variação do amarelo
-      "#95FFD1", // Variação do verde
-      "#CBE7FF", // Variação do azul
-      "#6B44AE", // Roxo escuro
-      "#ED9D05", // Laranja escuro
-      "#55D99D", // Verde mais escuro
-      "#8BA7C0", // Azul mais escuro
-      "#AC95E4", // Variação clara do roxo
-      "#FFDB75", // Variação clara do amarelo
-      "#B5FFDD", // Variação clara do verde
-      "#DBE7F0", // Variação clara do azul
-      "#5A39A7", // Roxo mais escuro
-      "#D38B04", // Laranja mais escuro
-      "#45B983", // Verde mais escuro
-      "#6B87A0", // Azul mais escuro
+      "#1982C4", // Azul médio
+      "#FF595E", // Vermelho coral
+      "#6A4C93", // Roxo médio
+      "#FFCA3A", // Amarelo médio
+      "#00AFB9", // Azul esverdeado
+      "#FB5607", // Laranja brilhante
+      "#8338EC", // Roxo intenso
+      "#3A86FF", // Azul brilhante
     ],
     []
   );
+
+  // State para controlar o carregamento inicial vs. atualização apenas dos gráficos
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // Fetch dashboard data based on selected period
   useEffect(() => {
@@ -133,8 +128,13 @@ export default function DashboardPage() {
     if (!selectedPeriod) return;
 
     const fetchData = async () => {
-      setIsLoading(true);
-      setIsRefreshing(true);
+      // Mostra loading apenas no carregamento inicial
+      if (initialLoad) {
+        setIsLoading(true);
+      } else {
+        // Nas filtragens posteriores, mostrar apenas refreshing nos gráficos
+        setIsRefreshing(true);
+      }
       setError(null);
 
       try {
@@ -146,27 +146,52 @@ export default function DashboardPage() {
 
         console.log("Dashboard API response:", response);
 
-        // Dados já vêm formatados corretamente da API
-        const transformedData: DashboardData = {
-          cards: {
-            os_abertas_total: response.cards.os_abertas_total || 0,
-            os_encerradas_total: response.cards.os_encerradas_total || 0,
-            os_abertas_mes: response.cards.os_abertas_mes || 0,
-            os_encerradas_mes: response.cards.os_encerradas_mes || 0,
-            os_abertas_hoje: response.cards.os_abertas_hoje || 0,
-            os_encerradas_hoje: response.cards.os_encerradas_hoje || 0,
-            os_aberto_total: response.cards.os_aberto_total || 0,
-            os_aberto_garantia: response.cards.os_aberto_garantia || 0,
-            os_aberto_pendentes: response.cards.os_aberto_pendentes || 0,
-          },
-          graficos: {
-            motivos_atendimento: response.graficos.motivos_atendimento || [],
-            por_tecnico: response.graficos.por_tecnico || [],
-            top_clientes: response.graficos.top_clientes || [],
-          },
+        // Processar cards data
+        const newCardsData = {
+          os_abertas_total: response.cards.os_abertas_total || 0,
+          os_encerradas_total: response.cards.os_encerradas_total || 0,
+          os_abertas_mes: response.cards.os_abertas_mes || 0,
+          os_encerradas_mes: response.cards.os_encerradas_mes || 0,
+          os_abertas_hoje: response.cards.os_abertas_hoje || 0,
+          os_encerradas_hoje: response.cards.os_encerradas_hoje || 0,
+          os_aberto_total: response.cards.os_aberto_total || 0,
+          os_aberto_garantia: response.cards.os_aberto_garantia || 0,
+          os_aberto_pendentes: response.cards.os_aberto_pendentes || 0,
         };
 
-        setDashboardData(transformedData);
+        // Na primeira carga, atualizamos o flag para indicar que é carga subsequente
+        if (initialLoad) {
+          setInitialLoad(false);
+        }
+
+        // Atualizar dados do dashboard
+        setDashboardData((prevData) => {
+          if (!prevData) {
+            // Caso não exista dados prévios, criar objeto completo
+            return {
+              cards: newCardsData,
+              graficos: {
+                motivos_atendimento:
+                  response.graficos.motivos_atendimento || [],
+                por_tecnico: response.graficos.por_tecnico || [],
+                top_clientes: response.graficos.top_clientes || [],
+              },
+            };
+          } else {
+            // Caso existam dados prévios, atualizar apenas os gráficos
+            return {
+              // Manter os cards existentes se não for o carregamento inicial
+              cards: initialLoad ? newCardsData : prevData.cards,
+              // Sempre atualizar os gráficos
+              graficos: {
+                motivos_atendimento:
+                  response.graficos.motivos_atendimento || [],
+                por_tecnico: response.graficos.por_tecnico || [],
+                top_clientes: response.graficos.top_clientes || [],
+              },
+            };
+          }
+        });
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         setError(
@@ -179,7 +204,7 @@ export default function DashboardPage() {
     };
 
     fetchData();
-  }, [selectedPeriod]);
+  }, [selectedPeriod, initialLoad]);
 
   // Prepare chart data usando useMemo para evitar re-cálculos desnecessários
   const pieChartData = useMemo(
@@ -198,17 +223,27 @@ export default function DashboardPage() {
             0,
             dashboardData?.graficos.motivos_atendimento.length || 0
           ),
-          borderWidth: 1,
-          borderRadius: 3,
-          hoverOffset: 10,
+          borderColor: "white",
+          borderWidth: 2,
+          borderRadius: 5,
+          hoverBackgroundColor: chartColors.slice(
+            0,
+            dashboardData?.graficos.motivos_atendimento.length || 0
+          ), // Mantém a mesma cor no hover
+          hoverBorderColor: "white",
         },
       ],
     }),
     [dashboardData?.graficos.motivos_atendimento, chartColors]
   );
 
-  const verticalBarChartData = useMemo(
-    () => ({
+  const verticalBarChartData = useMemo(() => {
+    const backgroundColors =
+      dashboardData?.graficos.por_tecnico.map(
+        (_, idx) => chartColors[idx % chartColors.length]
+      ) || [];
+
+    return {
       labels:
         dashboardData?.graficos.por_tecnico.map((item) => item.nome) || [],
       datasets: [
@@ -218,19 +253,22 @@ export default function DashboardPage() {
             dashboardData?.graficos.por_tecnico.map(
               (item) => item.quantidade
             ) || [],
-          backgroundColor: "#7B54BE", // Roxo principal
-          borderColor: "#6642B0",
+          backgroundColor: backgroundColors,
+          hoverBackgroundColor: backgroundColors, // Mantém a mesma cor no hover
           borderWidth: 1,
           borderRadius: 6,
-          hoverBackgroundColor: "#9B74DE",
         },
       ],
-    }),
-    [dashboardData?.graficos.por_tecnico]
-  );
+    };
+  }, [dashboardData?.graficos.por_tecnico, chartColors]);
 
-  const horizontalBarChartData = useMemo(
-    () => ({
+  const horizontalBarChartData = useMemo(() => {
+    const backgroundColors =
+      dashboardData?.graficos.top_clientes
+        .slice(0, 20)
+        .map((_, idx) => chartColors[(idx + 5) % chartColors.length]) || [];
+
+    return {
       labels:
         dashboardData?.graficos.top_clientes
           .slice(0, 20)
@@ -242,16 +280,14 @@ export default function DashboardPage() {
             dashboardData?.graficos.top_clientes
               .slice(0, 20)
               .map((item) => item.quantidade) || [],
-          backgroundColor: "#abc7e0", // Azul claro
-          borderColor: "#8BA7C0",
+          backgroundColor: backgroundColors,
+          hoverBackgroundColor: backgroundColors, // Mantém a mesma cor no hover
           borderWidth: 1,
           borderRadius: 6,
-          hoverBackgroundColor: "#CBE7FF",
         },
       ],
-    }),
-    [dashboardData?.graficos.top_clientes]
-  );
+    };
+  }, [dashboardData?.graficos.top_clientes, chartColors]);
 
   const chartOptions = {
     responsive: true,
@@ -287,6 +323,11 @@ export default function DashboardPage() {
         cornerRadius: 6,
         displayColors: true,
       },
+    },
+    animation: {
+      animateScale: true,
+      animateRotate: true,
+      duration: 1000,
     },
   };
 
@@ -353,158 +394,74 @@ export default function DashboardPage() {
         },
       },
     },
+    animation: {
+      duration: 1000,
+    },
   };
 
-  // Card data with icons and colors - Usando as cores padrão do projeto e ícones Lucide
+  // Card data with updated titles and organized by rows
   const cards = [
+    // Primeira linha - OSs abertas (Roxo)
     {
-      title: "Total de OSs Abertas",
+      title: "OSs abertas até hoje",
       value: dashboardData?.cards.os_abertas_total || 0,
-      icon: <AlertTriangle size={20} strokeWidth={1.5} />,
       color: "#7B54BE", // Roxo principal
-      bgColor: "#F0EBFF",
+      bgColor: "#7B54BE", // Fundo roxo
     },
     {
-      title: "Total de OSs Encerradas",
-      value: dashboardData?.cards.os_encerradas_total || 0,
-      icon: <CheckSquare size={20} strokeWidth={1.5} />,
-      color: "#75f9bd", // Verde
-      bgColor: "#E6FFF2",
-    },
-    {
-      title: "OSs Abertas no Mês",
+      title: "OSs abertas no mês",
       value: dashboardData?.cards.os_abertas_mes || 0,
-      icon: <Calendar size={20} strokeWidth={1.5} />,
       color: "#7B54BE", // Roxo principal
-      bgColor: "#F0EBFF",
+      bgColor: "#7B54BE", // Fundo roxo
     },
     {
-      title: "OSs Encerradas no Mês",
-      value: dashboardData?.cards.os_encerradas_mes || 0,
-      icon: <CalendarCheck size={20} strokeWidth={1.5} />,
-      color: "#75f9bd", // Verde
-      bgColor: "#E6FFF2",
-    },
-    {
-      title: "OSs Abertas no Dia",
+      title: "OSs abertas hoje",
       value: dashboardData?.cards.os_abertas_hoje || 0,
-      icon: <Activity size={20} strokeWidth={1.5} />,
       color: "#7B54BE", // Roxo principal
-      bgColor: "#F0EBFF",
+      bgColor: "#7B54BE", // Fundo roxo
+    },
+    // Segunda linha - OSs atendidas (Amarelo)
+    {
+      title: "OSs atendidas até hoje",
+      value: dashboardData?.cards.os_encerradas_total || 0,
+      color: "#FDAD15", // Amarelo/Laranja
+      bgColor: "#FDAD15", // Fundo amarelo
     },
     {
-      title: "OSs Encerradas no Dia",
+      title: "OSs atendidas no mês",
+      value: dashboardData?.cards.os_encerradas_mes || 0,
+      color: "#FDAD15", // Amarelo/Laranja
+      bgColor: "#FDAD15", // Fundo amarelo
+    },
+    {
+      title: "OSs atendidas hoje",
       value: dashboardData?.cards.os_encerradas_hoje || 0,
-      icon: <CheckSquare size={20} strokeWidth={1.5} />,
-      color: "#75f9bd", // Verde
-      bgColor: "#E6FFF2",
+      color: "#FDAD15", // Amarelo/Laranja
+      bgColor: "#FDAD15", // Fundo amarelo
     },
+    // Terceira linha - OSs em aberto/pendentes (Verde)
     {
-      title: "Total de OSs em Aberto",
+      title: "OSs em aberto agora",
       value: dashboardData?.cards.os_aberto_total || 0,
-      icon: <BarChart3 size={20} strokeWidth={1.5} />,
-      color: "#abc7e0", // Azul
-      bgColor: "#E6F0F9",
+      color: "#75f9bd", // Verde
+      bgColor: "#75f9bd", // Fundo verde
     },
     {
-      title: "OSs em Aberto em Garantia",
+      title: "OSs em aberto em garantia",
       value: dashboardData?.cards.os_aberto_garantia || 0,
-      icon: <Shield size={20} strokeWidth={1.5} />,
-      color: "#FDAD15", // Amarelo/Laranja
-      bgColor: "#FFF6E6",
+      color: "#75f9bd", // Verde
+      bgColor: "#75f9bd", // Fundo verde
     },
     {
-      title: "OSs Pendentes Agora",
+      title: "OSs pendentes agora",
       value: dashboardData?.cards.os_aberto_pendentes || 0,
-      icon: <AlertCircle size={20} strokeWidth={1.5} />,
-      color: "#FDAD15", // Amarelo/Laranja
-      bgColor: "#FFF6E6",
+      color: "#75f9bd", // Verde
+      bgColor: "#75f9bd", // Fundo verde
     },
   ];
 
   return (
     <div className="px-2 sm:px-4 py-4 sm:py-6 space-y-6 sm:space-y-8 animate-fadeIn">
-      {/* Header with period selector */}
-      <div
-        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 sm:p-5 rounded-xl shadow-sm animate-slideIn"
-        style={{ borderLeft: "3px solid #7B54BE" }}
-      >
-        <div className="animate-fadeIn" style={{ animationDelay: "100ms" }}>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#7B54BE] flex items-center gap-2">
-            <span className="bg-[#F0EBFF] p-1.5 rounded-md inline-block">
-              <BarChart3
-                size={22}
-                strokeWidth={1.5}
-                className="text-[#7B54BE]"
-              />
-            </span>
-            Dashboard
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">
-            Visão geral dos indicadores operacionais
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 self-start sm:self-end md:self-auto w-full sm:w-auto">
-          <div
-            className="flex items-center gap-2 w-full sm:w-auto animate-fadeIn"
-            style={{ animationDelay: "200ms" }}
-          >
-            <div className="relative w-full sm:w-auto flex items-center">
-              <div className="absolute left-2 pointer-events-none text-[#7B54BE]">
-                <Filter size={16} strokeWidth={1.5} />
-              </div>
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="appearance-none border-0 bg-[#F0EBFF] text-[#7B54BE] rounded-md pl-8 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7B54BE] w-full sm:w-auto transition-all duration-300 focus-ring"
-              >
-                {periodOptions.map((option) => (
-                  <option
-                    key={option.value}
-                    value={option.value}
-                    className="text-gray-800"
-                  >
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute right-0 inset-y-0 flex items-center px-2 text-[#7B54BE]">
-                <svg
-                  className="fill-current h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className={`focus-ring flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all duration-300 animate-scaleIn ${
-              isRefreshing
-                ? "bg-[#F0EBFF] text-[#7B54BE] opacity-70 cursor-not-allowed"
-                : "bg-[#7B54BE] text-white hover:opacity-90"
-            } w-full sm:w-auto`}
-            aria-label="Atualizar dados"
-          >
-            <RefreshCcw
-              size={15}
-              strokeWidth={1.5}
-              className={`${isRefreshing ? "animate-spin" : ""}`}
-            />
-            <span>{isRefreshing ? "Atualizando..." : "Atualizar"}</span>
-          </button>
-        </div>
-      </div>
-
       {/* Loading state */}
       {isLoading && (
         <div className="py-20">
@@ -556,45 +513,160 @@ export default function DashboardPage() {
       {/* Dashboard content */}
       {!isLoading && !error && dashboardData && (
         <>
-          {/* Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4">
-            {cards.map((card, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn flex flex-col"
-                style={{
-                  borderLeft: `3px solid ${card.color}`,
-                  animationDelay: `${index * 50}ms`,
-                }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-gray-700 text-xs sm:text-sm font-medium whitespace-normal line-clamp-2 flex-1">
-                    {card.title}
-                  </p>
-                  <div
-                    className="p-1.5 rounded-md flex-shrink-0"
-                    style={{ backgroundColor: card.bgColor, color: card.color }}
-                  >
-                    {card.icon}
+          {/* Cards Grid - Agora organizado por linhas conforme solicitado */}
+          <div className="grid gap-3 sm:gap-4">
+            {/* Primeira linha - OSs abertas (Roxo) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {cards.slice(0, 3).map((card, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn"
+                  style={{
+                    backgroundColor: card.bgColor,
+                    animationDelay: `${index * 50}ms`,
+                  }}
+                >
+                  <div className="flex flex-col items-center justify-center">
+                    <p className="text-2xl sm:text-3xl font-bold text-center text-white">
+                      {card.value.toLocaleString()}
+                    </p>
+                    <p className="text-white text-sm text-center mt-2 font-medium">
+                      {card.title}
+                    </p>
                   </div>
                 </div>
-                <div className="mt-auto pt-2">
-                  <p
-                    className="text-2xl sm:text-3xl font-bold"
-                    style={{ color: card.color }}
-                  >
-                    {card.value.toLocaleString()}
-                  </p>
+              ))}
+            </div>
+
+            {/* Segunda linha - OSs atendidas (Amarelo) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {cards.slice(3, 6).map((card, index) => (
+                <div
+                  key={index + 3}
+                  className="rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn"
+                  style={{
+                    backgroundColor: card.bgColor,
+                    animationDelay: `${(index + 3) * 50}ms`,
+                  }}
+                >
+                  <div className="flex flex-col items-center justify-center">
+                    <p className="text-2xl sm:text-3xl font-bold text-center text-white">
+                      {card.value.toLocaleString()}
+                    </p>
+                    <p className="text-white text-sm text-center mt-2 font-medium">
+                      {card.title}
+                    </p>
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            {/* Terceira linha - OSs em aberto/pendentes (Verde) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {cards.slice(6, 9).map((card, index) => (
+                <div
+                  key={index + 6}
+                  className="rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn"
+                  style={{
+                    backgroundColor: card.bgColor,
+                    animationDelay: `${(index + 6) * 50}ms`,
+                  }}
+                >
+                  <div className="flex flex-col items-center justify-center">
+                    <p className="text-2xl sm:text-3xl font-bold text-center text-white">
+                      {card.value.toLocaleString()}
+                    </p>
+                    <p className="text-white text-sm text-center mt-2 font-medium">
+                      {card.title}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Period selector - Movido para abaixo dos cards */}
+          <div className="bg-white p-4 rounded-xl shadow-sm animate-slideIn flex flex-col sm:flex-row justify-center items-center gap-3">
+            <div className="relative w-full max-w-xs flex items-center">
+              <div className="absolute left-2 pointer-events-none text-[#7B54BE]">
+                <Filter size={16} strokeWidth={1.5} />
               </div>
-            ))}
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                className="appearance-none border-0 bg-[#F0EBFF] text-[#7B54BE] rounded-md pl-8 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7B54BE] w-full transition-all duration-300 focus-ring"
+                title="Alterar o período irá atualizar apenas os gráficos"
+              >
+                <option value="" disabled>
+                  Selecione um período
+                </option>
+                {periodOptions.map((option) => (
+                  <option
+                    key={option.value}
+                    value={option.value}
+                    className="text-gray-800"
+                  >
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute right-0 inset-y-0 flex items-center px-2 text-[#7B54BE]">
+                <svg
+                  className="fill-current h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={`ml-4 focus-ring flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all duration-300 animate-scaleIn ${
+                isRefreshing
+                  ? "bg-[#F0EBFF] text-[#7B54BE] opacity-70 cursor-not-allowed"
+                  : "bg-[#7B54BE] text-white hover:opacity-90"
+              }`}
+              aria-label="Atualizar dados"
+            >
+              <RefreshCcw
+                size={15}
+                strokeWidth={1.5}
+                className={`${isRefreshing ? "animate-spin" : ""}`}
+              />
+              <span>{isRefreshing ? "Atualizando..." : "Atualizar"}</span>
+            </button>
           </div>
 
           {/* Charts Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 relative charts-container charts-refresh-transition ${
+              isRefreshing && !isLoading ? "charts-refreshing" : ""
+            }`}
+          >
+            {/* Overlay for when charts are refreshing */}
+            {isRefreshing && !isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center z-10 rounded-xl pointer-events-none">
+                <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-lg flex items-center space-x-3">
+                  <RefreshCcw className="w-5 h-5 text-[#7B54BE] animate-spin" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Atualizando gráficos...
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Pie Chart - Distribuição de OSs por Motivo */}
             <div
-              className="bg-white p-4 rounded-xl shadow-sm h-[350px] sm:h-[400px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-1"
+              className={`bg-white p-4 rounded-xl shadow-sm h-[350px] sm:h-[400px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-1 chart-container ${
+                isRefreshing && !isLoading ? "chart-refreshing" : ""
+              }`}
               style={{ borderLeft: "3px solid #7B54BE" }}
             >
               <div className="flex items-center justify-between mb-4">
@@ -637,7 +709,9 @@ export default function DashboardPage() {
 
             {/* Bar Chart - OSs por Técnico */}
             <div
-              className="bg-white p-4 rounded-xl shadow-sm h-[350px] sm:h-[400px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-2"
+              className={`bg-white p-4 rounded-xl shadow-sm h-[350px] sm:h-[400px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-2 chart-container ${
+                isRefreshing && !isLoading ? "chart-refreshing" : ""
+              }`}
               style={{ borderLeft: "3px solid #75f9bd" }}
             >
               <div className="flex items-center justify-between mb-4">
@@ -660,7 +734,39 @@ export default function DashboardPage() {
                 style={{ animationDelay: "250ms" }}
               >
                 {dashboardData.graficos.por_tecnico.length > 0 ? (
-                  <Bar data={verticalBarChartData} options={chartOptions} />
+                  <div className="relative h-full">
+                    <Bar
+                      data={verticalBarChartData}
+                      options={{
+                        ...chartOptions,
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 },
+                          },
+                          x: {
+                            ticks: { color: "#666" },
+                          },
+                        },
+                        layout: {
+                          padding: {
+                            top: 25,
+                          },
+                        },
+                      }}
+                    />
+                    {/* Adicionar rótulos em divs absolutas em cima do gráfico */}
+                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex justify-around items-start pt-3">
+                      {dashboardData.graficos.por_tecnico.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="text-xs font-bold text-gray-700"
+                        >
+                          {item.quantidade}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full w-full">
                     <div className="p-4 rounded-full bg-gray-100">
@@ -680,7 +786,9 @@ export default function DashboardPage() {
 
             {/* Horizontal Bar Chart - Top 20 Clientes */}
             <div
-              className="bg-white p-4 rounded-xl shadow-sm h-[350px] sm:h-[400px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] md:col-span-2 lg:col-span-1 animate-fadeIn card-delay-3"
+              className={`bg-white p-4 rounded-xl shadow-sm h-[350px] sm:h-[400px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] md:col-span-2 lg:col-span-1 animate-fadeIn card-delay-3 chart-container ${
+                isRefreshing && !isLoading ? "chart-refreshing" : ""
+              }`}
               style={{ borderLeft: "3px solid #abc7e0" }}
             >
               <div className="flex items-center justify-between mb-4">
@@ -703,10 +811,45 @@ export default function DashboardPage() {
                 style={{ animationDelay: "300ms" }}
               >
                 {dashboardData.graficos.top_clientes.length > 0 ? (
-                  <Bar
-                    data={horizontalBarChartData}
-                    options={horizontalChartOptions}
-                  />
+                  <div className="relative h-full">
+                    <Bar
+                      data={horizontalBarChartData}
+                      options={{
+                        ...horizontalChartOptions,
+                        layout: {
+                          padding: {
+                            right: 40,
+                          },
+                        },
+                      }}
+                    />
+                    {/* Adicionar rótulos em divs absolutas no final das barras */}
+                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                      {dashboardData.graficos.top_clientes
+                        .slice(0, 20)
+                        .map((item, idx) => {
+                          // Calcular a posição vertical aproximada para cada item
+                          const totalItems = Math.min(
+                            20,
+                            dashboardData.graficos.top_clientes.length
+                          );
+                          const heightPerItem = 100 / totalItems;
+                          const topPosition = `${
+                            heightPerItem * idx + heightPerItem / 2
+                          }%`;
+
+                          return (
+                            <div
+                              key={idx}
+                              className="absolute right-2 transform -translate-y-1/2 text-xs font-bold text-gray-700"
+                              style={{ top: topPosition }}
+                            >
+                              {item.quantidade}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full w-full">
                     <div className="p-4 rounded-full bg-gray-100">
