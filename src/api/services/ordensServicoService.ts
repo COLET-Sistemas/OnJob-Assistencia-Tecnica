@@ -134,7 +134,6 @@ export interface OSPecaUtilizada {
   valor_total?: number;
 }
 
-
 export interface OSFatDetalhado {
   id_fat: number;
   data_atendimento: string;
@@ -331,6 +330,7 @@ export interface OSDetalhadaV2 {
     motivo_pendencia: string;
     data_alteracao?: string;
     usuario_alteracao?: string;
+    motivo_cancelamento?: string;
   };
   // Informações do técnico expandidas
   tecnico: {
@@ -383,6 +383,7 @@ export interface OSDetalhadaV2 {
   tags?: string[];
   categoria?: string;
   subcategoria?: string;
+  motivo_cancelamento?: string;
 }
 
 interface OSPaginada {

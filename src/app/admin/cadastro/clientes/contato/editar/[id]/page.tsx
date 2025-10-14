@@ -11,7 +11,7 @@ import api from "@/api/api";
 import { ClienteContato } from "@/types/admin/cadastro/clientes";
 
 // Componentes
-import FormActions from "@/app/admin/os_aberto/novo/components/FormActions";
+import FormActions from "./components/FormActions";
 import FormContainer from "@/app/admin/os_aberto/novo/components/FormContainer";
 import FormField from "../../novo/components/FormField";
 import { Loading } from "@/components/LoadingPersonalizado";
@@ -27,9 +27,25 @@ interface ClienteOption extends OptionType {
 
 // Funções de validação
 const isValidEmail = (email: string) => {
+  // Primeiro verifica se o email está vazio, o que é permitido
+  if (email.trim() === "") return true;
+
+  // Validação mais robusta de email
   const re =
     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  return email.trim() === "" || re.test(String(email).toLowerCase());
+
+  // Verifica o formato
+  if (!re.test(String(email).toLowerCase())) return false;
+
+  // Verifica tamanho máximo (RFC 5321 limita a 254 caracteres)
+  if (email.length > 254) return false;
+
+  // Verifica se o domínio tem pelo menos um ponto
+  const parts = email.split("@");
+  if (parts.length !== 2) return false;
+  if (!parts[1].includes(".")) return false;
+
+  return true;
 };
 
 const isValidPhone = (phone: string) => {
@@ -63,6 +79,7 @@ const EditarContato = () => {
   const [errors, setErrors] = useState<{
     cliente?: boolean;
     nome?: boolean;
+    nomeCompleto?: boolean;
     email?: boolean;
     telefone?: boolean;
   }>({});
@@ -72,10 +89,6 @@ const EditarContato = () => {
     const fetchContatoData = async () => {
       setIsLoading(true);
       try {
-        console.log("Buscando contato com ID:", contatoId);
-
-        // Fazemos uma requisição direta à API para obter os dados do contato
-        // Isso permite pegar os dados independente do formato de resposta
         const response = await api.get<Record<string, unknown>>(
           "/clientes_contatos",
           {
@@ -83,10 +96,6 @@ const EditarContato = () => {
           }
         );
 
-        console.log("Resposta da API para contato:", response);
-
-        // Variável para armazenar os dados do contato encontrado
-        // Variável para armazenar os dados do contato encontrado
         let contato: ClienteContato | null = null;
         let contatoClienteId: number | null = null;
 
@@ -125,13 +134,6 @@ const EditarContato = () => {
           router.push("/admin/cadastro/clientes");
           return;
         }
-
-        console.log(
-          "Dados do contato carregados:",
-          contato,
-          "Cliente ID:",
-          contatoClienteId
-        );
 
         // Preencher os campos com os dados do contato
         setNome(contato.nome || "");
@@ -199,6 +201,7 @@ const EditarContato = () => {
     const validationErrors: {
       cliente?: boolean;
       nome?: boolean;
+      nomeCompleto?: boolean;
       email?: boolean;
       telefone?: boolean;
     } = {};
@@ -206,9 +209,16 @@ const EditarContato = () => {
     // O cliente não pode ser alterado na edição, então não é necessário validar
     // Ele já deve estar preenchido desde o carregamento do contato
 
-    // Validar nome (obrigatório)
+    // Validar nome (obrigatório e máximo 20 caracteres)
     if (!nome.trim()) {
       validationErrors.nome = true;
+    } else if (nome.trim().length > 20) {
+      validationErrors.nome = true;
+    }
+
+    // Validar nome completo (obrigatório)
+    if (!nomeCompleto.trim()) {
+      validationErrors.nomeCompleto = true;
     }
 
     // Validar formato de email (opcional)
@@ -254,13 +264,16 @@ const EditarContato = () => {
         situacao: "A",
       };
 
-      // Adicionar propriedades extras que a API pode precisar
+ 
       const apiData = {
         ...contatoData,
         id_cliente: selectedCliente.value,
-      } as unknown as Partial<ClienteContato> & { id_cliente: number }; // Typing para contornar a verificação de tipo
+        id: Number(contatoId), 
+      } as unknown as Partial<ClienteContato> & {
+        id_cliente: number;
+        id: number;
+      };
 
-      // Usando a resposta para validar o sucesso da atualização do contato
       const response = await clientesService.updateContact(
         Number(contatoId),
         apiData
@@ -300,11 +313,12 @@ const EditarContato = () => {
       />
 
       <FormContainer onSubmit={handleSubmit}>
+        {/* Cliente (ocupando toda a linha) */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, type: "spring", stiffness: 100 }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="grid grid-cols-1 gap-6"
         >
           <FormField
             id="cliente"
@@ -323,24 +337,9 @@ const EditarContato = () => {
               </div>
             )}
           </FormField>
-
-          <FormField
-            id="nome"
-            label="Nome"
-            error={errors.nome ? "O nome é obrigatório" : undefined}
-            className={errors.nome ? "campo-erro" : ""}
-          >
-            <input
-              type="text"
-              id="nome"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              placeholder="Nome do contato"
-            />
-          </FormField>
         </motion.div>
 
+        {/* Nome ou Apelido e Nome Completo */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -352,7 +351,35 @@ const EditarContato = () => {
           }}
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
-          <FormField id="nomeCompleto" label="Nome Completo">
+          <FormField
+            id="nome"
+            label="Nome ou Apelido"
+            error={
+              errors.nome
+                ? "O nome é obrigatório e deve ter no máximo 20 caracteres"
+                : undefined
+            }
+            className={errors.nome ? "campo-erro" : ""}
+          >
+            <input
+              type="text"
+              id="nome"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Nome do contato"
+              maxLength={20}
+            />
+          </FormField>
+
+          <FormField
+            id="nomeCompleto"
+            label="Nome Completo"
+            error={
+              errors.nomeCompleto ? "O nome completo é obrigatório" : undefined
+            }
+            className={errors.nomeCompleto ? "campo-erro" : ""}
+          >
             <input
               type="text"
               id="nomeCompleto"
@@ -360,21 +387,12 @@ const EditarContato = () => {
               value={nomeCompleto}
               onChange={(e) => setNomeCompleto(e.target.value)}
               placeholder="Nome completo do contato"
-            />
-          </FormField>
-
-          <FormField id="cargo" label="Cargo">
-            <input
-              type="text"
-              id="cargo"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500"
-              value={cargo}
-              onChange={(e) => setCargo(e.target.value)}
-              placeholder="Cargo do contato"
+              required
             />
           </FormField>
         </motion.div>
 
+        {/* Cargo e Email */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -386,9 +404,53 @@ const EditarContato = () => {
           }}
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
+          <FormField id="cargo" label="Cargo">
+            <input
+              type="text"
+              id="cargo"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500"
+              value={cargo}
+              onChange={(e) => setCargo(e.target.value)}
+              placeholder="Cargo do contato"
+            />
+          </FormField>
+
+          <FormField
+            id="email"
+            label="Email"
+            error={
+              errors.email
+                ? "Formato de email inválido. Ex: nome@empresa.com"
+                : undefined
+            }
+            className={errors.email ? "campo-erro" : ""}
+          >
+            <input
+              type="email"
+              id="email"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="email@exemplo.com"
+            />
+          </FormField>
+        </motion.div>
+
+        {/* Telefone, WhatsApp e Recebe Avisos */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.3,
+            delay: 0.15,
+            type: "spring",
+            stiffness: 100,
+          }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
           <FormField
             id="telefone"
-            label="Telefone"
+            label="Telefone de Contato"
             error={
               errors.telefone
                 ? "Formato inválido. Use (00) 00000-0000"
@@ -436,38 +498,9 @@ const EditarContato = () => {
               maxLength={15}
             />
           </FormField>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: 0.3,
-            delay: 0.15,
-            type: "spring",
-            stiffness: 100,
-          }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
-        >
-          <FormField
-            id="email"
-            label="Email"
-            error={errors.email ? "Formato de email inválido" : undefined}
-            className={errors.email ? "campo-erro" : ""}
-          >
-            <input
-              type="email"
-              id="email"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@exemplo.com"
-              pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$"
-            />
-          </FormField>
 
           <FormField id="recebeAvisoOS" label="Recebe Avisos de OS">
-            <div className="flex items-center h-full pt-2">
+            <div className="flex items-center h-full pb-5">
               <input
                 type="checkbox"
                 id="recebeAvisoOS"
@@ -479,7 +512,7 @@ const EditarContato = () => {
                 htmlFor="recebeAvisoOS"
                 className="ml-2 text-sm text-gray-700"
               >
-                Enviar notificações sobre Ordens de Serviço
+                Enviar notificações sobre OS
               </label>
             </div>
           </FormField>

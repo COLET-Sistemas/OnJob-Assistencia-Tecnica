@@ -65,23 +65,25 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
                 </button>
               </div>
 
-              {config.newButton.onClick ? (
-                <button
-                  onClick={config.newButton.onClick}
-                  className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
-                >
-                  <Plus size={18} />
-                  {config.newButton.label}
-                </button>
-              ) : (
-                <Link
-                  href={config.newButton.link || "#"}
-                  className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
-                >
-                  <Plus size={18} />
-                  {config.newButton.label}
-                </Link>
-              )}
+              {/* Don't render the button if the label is empty */}
+              {config.newButton.label &&
+                (config.newButton.onClick ? (
+                  <button
+                    onClick={config.newButton.onClick}
+                    className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
+                  >
+                    <Plus size={18} />
+                    {config.newButton.label}
+                  </button>
+                ) : (
+                  <Link
+                    href={config.newButton.link || "#"}
+                    className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
+                  >
+                    <Plus size={18} />
+                    {config.newButton.label}
+                  </Link>
+                ))}
             </div>
           </div>
         </div>

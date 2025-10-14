@@ -656,19 +656,30 @@ const OSDetalhesPage: React.FC = () => {
                     {/* Situação da OS */}
                     {osData.situacao_os && osData.situacao_os.codigo && (
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-gray-500">
-                            Situação desde{" "}
+                        <div className="flex items-center gap-2">
+                          <StatusBadge
+                            status={String(osData.situacao_os.codigo)}
+                            mapping={statusMapping}
+                          />
+                          <span className="text-sm text-gray-500">
+                            desde{" "}
                             {String(
                               (osData.situacao_os as Record<string, unknown>)
                                 .data_situacao
                             )}
-                          </p>
+                          </span>
                         </div>
-                        <StatusBadge
-                          status={String(osData.situacao_os.codigo)}
-                          mapping={statusMapping}
-                        />
+                        {/* Mostrar motivo de cancelamento se existir */}
+                        {osData.situacao_os.motivo_cancelamento && (
+                          <div className="mt-2 text-sm">
+                            <span className="font-medium text-red-600">
+                              Motivo do cancelamento:{" "}
+                            </span>
+                            <span className="text-gray-700">
+                              {osData.situacao_os.motivo_cancelamento}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 

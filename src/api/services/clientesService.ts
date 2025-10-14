@@ -189,20 +189,29 @@ class ClientesService {
     }
 
     try {
+      // Garantir que o ID seja passado apenas como parâmetro de query
+      // Incluir apenas o id no corpo da requisição, sem id_contato
+      const dataWithId = {
+        ...data,
+        id: id, // Adicionando id no corpo
+      };
+
+      console.log("Atualizando contato com ID:", id, "e dados:", dataWithId);
+
       const response = await api.put<{
         dados?: ClienteContato;
         mensagem?: string;
         sucesso?: boolean;
-      }>("/clientes_contatos", data, {
-        params: {
-          id: id,
-        },
-      });
+      }>(`/clientes_contatos?id=${id}`, dataWithId);
+
+      console.log("Resposta da atualização:", response);
 
       return {
         mensagem: response?.mensagem || "Contato atualizado com sucesso",
       };
     } catch (error) {
+      console.error("Erro na atualização do contato:", error);
+
       // Se o erro contiver uma mensagem de sucesso, tratar como sucesso
       if (
         error instanceof Error &&

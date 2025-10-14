@@ -260,25 +260,6 @@ const FATDetalhesPage: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Formatar a data para exibição
-  const formatarData = (dataString: string | null) => {
-    if (!dataString) return "N/A";
-
-    try {
-      // Tentativa de formatar a data
-      const data = new Date(dataString);
-      return new Intl.DateTimeFormat("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(data);
-    } catch {
-      return dataString;
-    }
-  };
-
   // Formatar números para exibição (evitando notação científica)
   const formatarNumero = (numero: number | string | null | undefined) => {
     if (numero === null || numero === undefined) return "N/A";
@@ -416,7 +397,7 @@ const FATDetalhesPage: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <CalendarClock className="h-4 w-4 text-blue-500" />
                         <p className="text-gray-800">
-                          {formatarData(fatData.data_atendimento)}
+                          {fatData.data_atendimento}
                         </p>
                       </div>
                     </div>
@@ -904,7 +885,7 @@ const FATDetalhesPage: React.FC = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="text-xs text-gray-500">
-                              {formatarData(foto.data_cadastro)}
+                              {foto.data_cadastro}
                             </p>
                             <p className="text-sm text-gray-800 truncate">
                               {foto.descricao || `Foto ${index + 1}`}
@@ -949,214 +930,196 @@ const FATDetalhesPage: React.FC = () => {
                     <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
 
                     {/* Ordenar ocorrências por data (mais recente primeiro) */}
-                    {fatData.ocorrencias
-                      .sort((a, b) => {
-                        // Comparar datas (considerando que podem estar em formato DD/MM/YYYY HH:MM)
-                        const dateA = new Date(
-                          a.data_ocorrencia.replace(
-                            /(\d{2})\/(\d{2})\/(\d{4})/,
-                            "$3-$2-$1"
-                          )
-                        );
-                        const dateB = new Date(
-                          b.data_ocorrencia.replace(
-                            /(\d{2})\/(\d{2})\/(\d{4})/,
-                            "$3-$2-$1"
-                          )
-                        );
-                        return dateB.getTime() - dateA.getTime();
-                      })
-                      .map((ocorrencia, index) => {
-                        // Função para renderizar círculo de status na timeline
-                        const renderTimelineCircle = () => {
-                          const statusCode = ocorrencia.nova_situacao.codigo;
-                          let bgColor = "bg-gray-100";
-                          let borderColor = "border-gray-300";
-                          let textColor = "text-gray-500";
+                    {fatData.ocorrencias.map((ocorrencia, index) => {
+                      // Função para renderizar círculo de status na timeline
+                      const renderTimelineCircle = () => {
+                        const statusCode = ocorrencia.nova_situacao.codigo;
+                        let bgColor = "bg-gray-100";
+                        let borderColor = "border-gray-300";
+                        let textColor = "text-gray-500";
 
-                          switch (statusCode) {
-                            case 1: // Pendente
-                              bgColor = "bg-gray-100";
-                              borderColor = "border-gray-300";
-                              textColor = "text-gray-500";
-                              break;
-                            case 2: // A atender
-                              bgColor = "bg-blue-100";
-                              borderColor = "border-blue-300";
-                              textColor = "text-blue-500";
-                              break;
-                            case 3: // Em deslocamento
-                              bgColor = "bg-purple-100";
-                              borderColor = "border-purple-300";
-                              textColor = "text-purple-500";
-                              break;
-                            case 4: // Em atendimento
-                              bgColor = "bg-orange-100";
-                              borderColor = "border-orange-300";
-                              textColor = "text-orange-500";
-                              break;
-                            case 5: // Atendimento interrompido
-                              bgColor = "bg-amber-100";
-                              borderColor = "border-amber-300";
-                              textColor = "text-amber-500";
-                              break;
-                            case 6: // Em Revisão
-                              bgColor = "bg-indigo-100";
-                              borderColor = "border-indigo-300";
-                              textColor = "text-indigo-500";
-                              break;
-                            case 7: // Concluída
-                              bgColor = "bg-green-100";
-                              borderColor = "border-green-300";
-                              textColor = "text-green-500";
-                              break;
-                            case 8: // Cancelada
-                              bgColor = "bg-red-100";
-                              borderColor = "border-red-300";
-                              textColor = "text-red-500";
-                              break;
-                            case 9: // Cancelada pelo Cliente
-                              bgColor = "bg-rose-100";
-                              borderColor = "border-rose-300";
-                              textColor = "text-rose-500";
-                              break;
-                          }
-
-                          return (
-                            <div
-                              className={`absolute -left-10 top-1.5 w-6 h-6 rounded-full flex items-center justify-center z-10 ${bgColor} border-2 ${borderColor}`}
-                            >
-                              {statusMapping[statusCode]?.icon || (
-                                <Clock className={`w-3 h-3 ${textColor}`} />
-                              )}
-                            </div>
-                          );
-                        };
-
-                        // Função para renderizar o card da ocorrência
-                        const renderOcorrenciaCard = () => {
-                          const statusCode = ocorrencia.nova_situacao.codigo;
-                          let bgHeaderColor = "bg-gray-50";
-                          let borderHeaderColor = "border-gray-100";
-                          let borderCardColor = "border-gray-100";
-                          let textStatusColor = "text-gray-700";
-
-                          switch (statusCode) {
-                            case 1: // Pendente
-                              bgHeaderColor = "bg-gray-50";
-                              borderHeaderColor = "border-gray-100";
-                              borderCardColor = "border-gray-100";
-                              textStatusColor = "text-gray-700";
-                              break;
-                            case 2: // A atender
-                              bgHeaderColor = "bg-blue-50";
-                              borderHeaderColor = "border-blue-100";
-                              borderCardColor = "border-blue-100";
-                              textStatusColor = "text-blue-700";
-                              break;
-                            case 3: // Em deslocamento
-                              bgHeaderColor = "bg-purple-50";
-                              borderHeaderColor = "border-purple-100";
-                              borderCardColor = "border-purple-100";
-                              textStatusColor = "text-purple-700";
-                              break;
-                            case 4: // Em atendimento
-                              bgHeaderColor = "bg-orange-50";
-                              borderHeaderColor = "border-orange-100";
-                              borderCardColor = "border-orange-100";
-                              textStatusColor = "text-orange-700";
-                              break;
-                            case 5: // Atendimento interrompido
-                              bgHeaderColor = "bg-amber-50";
-                              borderHeaderColor = "border-amber-100";
-                              borderCardColor = "border-amber-100";
-                              textStatusColor = "text-amber-700";
-                              break;
-                            case 6: // Em Revisão
-                              bgHeaderColor = "bg-indigo-50";
-                              borderHeaderColor = "border-indigo-100";
-                              borderCardColor = "border-indigo-100";
-                              textStatusColor = "text-indigo-700";
-                              break;
-                            case 7: // Concluída
-                              bgHeaderColor = "bg-green-50";
-                              borderHeaderColor = "border-green-100";
-                              borderCardColor = "border-green-100";
-                              textStatusColor = "text-green-700";
-                              break;
-                            case 8: // Cancelada
-                              bgHeaderColor = "bg-red-50";
-                              borderHeaderColor = "border-red-100";
-                              borderCardColor = "border-red-100";
-                              textStatusColor = "text-red-700";
-                              break;
-                            case 9: // Cancelada pelo Cliente
-                              bgHeaderColor = "bg-rose-50";
-                              borderHeaderColor = "border-rose-100";
-                              borderCardColor = "border-rose-100";
-                              textStatusColor = "text-rose-700";
-                              break;
-                          }
-
-                          return (
-                            <div
-                              className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border ${borderCardColor}`}
-                            >
-                              {/* Cabeçalho do card */}
-                              <div
-                                className={`px-4 py-2 flex justify-between items-center ${bgHeaderColor} border-b ${borderHeaderColor}`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="flex flex-col">
-                                    <span
-                                      className={`font-medium text-sm ${textStatusColor}`}
-                                    >
-                                      {ocorrencia.nova_situacao.descricao}
-                                    </span>
-                                    <span className="text-xs text-gray-500 flex items-center gap-1">
-                                      <CalendarClock className="w-3 h-3" />
-                                      {formatarData(ocorrencia.data_ocorrencia)}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <User className="w-3.5 h-3.5 text-gray-400" />
-                                  <span className="text-xs font-medium text-gray-600">
-                                    {ocorrencia.usuario?.nome || "Sistema"}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Corpo do card */}
-                              {ocorrencia.descricao_ocorrencia ? (
-                                <div className="px-4 py-3">
-                                  <p className="text-sm text-gray-700 whitespace-pre-line">
-                                    {ocorrencia.descricao_ocorrencia}
-                                  </p>
-                                </div>
-                              ) : (
-                                <div className="px-4 py-3">
-                                  <p className="text-xs text-gray-400 italic">
-                                    Alteração de status sem comentários
-                                    adicionais
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        };
+                        switch (statusCode) {
+                          case 1: // Pendente
+                            bgColor = "bg-gray-100";
+                            borderColor = "border-gray-300";
+                            textColor = "text-gray-500";
+                            break;
+                          case 2: // A atender
+                            bgColor = "bg-blue-100";
+                            borderColor = "border-blue-300";
+                            textColor = "text-blue-500";
+                            break;
+                          case 3: // Em deslocamento
+                            bgColor = "bg-purple-100";
+                            borderColor = "border-purple-300";
+                            textColor = "text-purple-500";
+                            break;
+                          case 4: // Em atendimento
+                            bgColor = "bg-orange-100";
+                            borderColor = "border-orange-300";
+                            textColor = "text-orange-500";
+                            break;
+                          case 5: // Atendimento interrompido
+                            bgColor = "bg-amber-100";
+                            borderColor = "border-amber-300";
+                            textColor = "text-amber-500";
+                            break;
+                          case 6: // Em Revisão
+                            bgColor = "bg-indigo-100";
+                            borderColor = "border-indigo-300";
+                            textColor = "text-indigo-500";
+                            break;
+                          case 7: // Concluída
+                            bgColor = "bg-green-100";
+                            borderColor = "border-green-300";
+                            textColor = "text-green-500";
+                            break;
+                          case 8: // Cancelada
+                            bgColor = "bg-red-100";
+                            borderColor = "border-red-300";
+                            textColor = "text-red-500";
+                            break;
+                          case 9: // Cancelada pelo Cliente
+                            bgColor = "bg-rose-100";
+                            borderColor = "border-rose-300";
+                            textColor = "text-rose-500";
+                            break;
+                        }
 
                         return (
                           <div
-                            key={ocorrencia.id_ocorrencia}
-                            className="ml-10 mb-6 relative animate-fadeIn last:mb-0"
-                            style={{ animationDelay: `${0.05 * index}s` }}
+                            className={`absolute -left-10 top-1.5 w-6 h-6 rounded-full flex items-center justify-center z-10 ${bgColor} border-2 ${borderColor}`}
                           >
-                            {renderTimelineCircle()}
-                            {renderOcorrenciaCard()}
+                            {statusMapping[statusCode]?.icon || (
+                              <Clock className={`w-3 h-3 ${textColor}`} />
+                            )}
                           </div>
                         );
-                      })}
+                      };
+
+                      // Função para renderizar o card da ocorrência
+                      const renderOcorrenciaCard = () => {
+                        const statusCode = ocorrencia.nova_situacao.codigo;
+                        let bgHeaderColor = "bg-gray-50";
+                        let borderHeaderColor = "border-gray-100";
+                        let borderCardColor = "border-gray-100";
+                        let textStatusColor = "text-gray-700";
+
+                        switch (statusCode) {
+                          case 1: // Pendente
+                            bgHeaderColor = "bg-gray-50";
+                            borderHeaderColor = "border-gray-100";
+                            borderCardColor = "border-gray-100";
+                            textStatusColor = "text-gray-700";
+                            break;
+                          case 2: // A atender
+                            bgHeaderColor = "bg-blue-50";
+                            borderHeaderColor = "border-blue-100";
+                            borderCardColor = "border-blue-100";
+                            textStatusColor = "text-blue-700";
+                            break;
+                          case 3: // Em deslocamento
+                            bgHeaderColor = "bg-purple-50";
+                            borderHeaderColor = "border-purple-100";
+                            borderCardColor = "border-purple-100";
+                            textStatusColor = "text-purple-700";
+                            break;
+                          case 4: // Em atendimento
+                            bgHeaderColor = "bg-orange-50";
+                            borderHeaderColor = "border-orange-100";
+                            borderCardColor = "border-orange-100";
+                            textStatusColor = "text-orange-700";
+                            break;
+                          case 5: // Atendimento interrompido
+                            bgHeaderColor = "bg-amber-50";
+                            borderHeaderColor = "border-amber-100";
+                            borderCardColor = "border-amber-100";
+                            textStatusColor = "text-amber-700";
+                            break;
+                          case 6: // Em Revisão
+                            bgHeaderColor = "bg-indigo-50";
+                            borderHeaderColor = "border-indigo-100";
+                            borderCardColor = "border-indigo-100";
+                            textStatusColor = "text-indigo-700";
+                            break;
+                          case 7: // Concluída
+                            bgHeaderColor = "bg-green-50";
+                            borderHeaderColor = "border-green-100";
+                            borderCardColor = "border-green-100";
+                            textStatusColor = "text-green-700";
+                            break;
+                          case 8: // Cancelada
+                            bgHeaderColor = "bg-red-50";
+                            borderHeaderColor = "border-red-100";
+                            borderCardColor = "border-red-100";
+                            textStatusColor = "text-red-700";
+                            break;
+                          case 9: // Cancelada pelo Cliente
+                            bgHeaderColor = "bg-rose-50";
+                            borderHeaderColor = "border-rose-100";
+                            borderCardColor = "border-rose-100";
+                            textStatusColor = "text-rose-700";
+                            break;
+                        }
+
+                        return (
+                          <div
+                            className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border ${borderCardColor}`}
+                          >
+                            {/* Cabeçalho do card */}
+                            <div
+                              className={`px-4 py-2 flex justify-between items-center ${bgHeaderColor} border-b ${borderHeaderColor}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="flex flex-col">
+                                  <span
+                                    className={`font-medium text-sm ${textStatusColor}`}
+                                  >
+                                    {ocorrencia.nova_situacao.descricao}
+                                  </span>
+                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    <CalendarClock className="w-3 h-3" />
+                                    {ocorrencia.data_ocorrencia}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <User className="w-3.5 h-3.5 text-gray-400" />
+                                <span className="text-xs font-medium text-gray-600">
+                                  {ocorrencia.usuario?.nome || "Sistema"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Corpo do card */}
+                            {ocorrencia.descricao_ocorrencia ? (
+                              <div className="px-4 py-3">
+                                <p className="text-sm text-gray-700 whitespace-pre-line">
+                                  {ocorrencia.descricao_ocorrencia}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="px-4 py-3">
+                                <p className="text-xs text-gray-400 italic">
+                                  Alteração de status sem comentários adicionais
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      };
+
+                      return (
+                        <div
+                          key={ocorrencia.id_ocorrencia}
+                          className="ml-10 mb-6 relative animate-fadeIn last:mb-0"
+                          style={{ animationDelay: `${0.05 * index}s` }}
+                        >
+                          {renderTimelineCircle()}
+                          {renderOcorrenciaCard()}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

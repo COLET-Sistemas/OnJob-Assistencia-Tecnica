@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
-import { EnhancedDataTable, StatusBadge } from "@/components/admin/common";
+import { StatusBadge } from "@/components/admin/common";
 import { ordensServicoService } from "@/api/services/ordensServicoService";
 import { usuariosService } from "@/api/services/usuariosService";
 import { formatarData } from "@/utils/formatters";
@@ -14,9 +14,6 @@ import {
   Search,
   ChevronDown,
   X,
-  Eye,
-  Info,
-  ClipboardList,
   Clock,
   Bell,
   Car,
@@ -26,8 +23,6 @@ import {
   CheckCircle,
   XCircle,
   UserX,
-  User,
-  Laptop,
   RefreshCw,
 } from "lucide-react";
 
@@ -125,7 +120,6 @@ const fadeInAnimation = `
 
 const ConsultaOSPage: React.FC = () => {
   // showFilters is now provided by useFilters hook
-  const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<{
@@ -653,10 +647,7 @@ const ConsultaOSPage: React.FC = () => {
     }
   }, [filtrosPainel.status]);
 
-  // Função para lidar com o clique em uma linha da tabela
-  const handleRowClick = (id: number | string) => {
-    setExpandedRowId(expandedRowId === Number(id) ? null : Number(id));
-  };
+  // Removed unused row click handler
 
   // Adicionar suporte a navegação por teclado para acessibilidade
   useEffect(() => {
@@ -726,7 +717,6 @@ const ConsultaOSPage: React.FC = () => {
             }
           });
 
-          // Add campo_data if it exists
           if (
             currentFilters.campo_data &&
             currentFilters.campo_data.trim() !== ""
@@ -737,15 +727,12 @@ const ConsultaOSPage: React.FC = () => {
           // Make the API call
           const result = await ordensServicoService.getAll(params);
 
-          // Process the result
           if (result) {
-            // Handle both formats: array response or object with dados property
             let responseData;
             let total = 0;
             let totalPages = 1;
 
             if (Array.isArray(result)) {
-              // Direct array response
               responseData = result;
               total = result.length;
               totalPages = Math.ceil(total / paginacao.registrosPorPagina);
@@ -764,10 +751,8 @@ const ConsultaOSPage: React.FC = () => {
               return;
             }
 
-            // Filter out invalid items
             const validItems = responseData.filter((item) => !!item);
 
-            // Transform data to match expected format
             const mappedData = {
               total_registros: total,
               dados: validItems.map((item) => {
@@ -805,10 +790,8 @@ const ConsultaOSPage: React.FC = () => {
               }),
             };
 
-            // Set processed data
             setData(mappedData);
 
-            // Update pagination state with the correct page number
             setPaginacao((prev) => ({
               ...prev,
               paginaAtual: novaPagina,
@@ -823,8 +806,6 @@ const ConsultaOSPage: React.FC = () => {
           setLoading(false);
         }
       };
-
-      // Execute the search immediately with the correct page number
       searchWithCorrectPage();
     },
     [filtrosPainel, paginacao.registrosPorPagina]
@@ -837,26 +818,21 @@ const ConsultaOSPage: React.FC = () => {
         registrosPorPagina: novoValor,
         paginaAtual: 1,
       }));
-
-      // Create a custom search function that will use the new value directly
       const searchWithNewRecordsPerPage = async () => {
         setLoading(true);
         setError(null);
 
-        // Get current filters before applying them
         const currentFilters = { ...filtrosPainel };
 
-        // Apply filters and close filter panel
         aplicarFiltros();
 
         try {
           const params: Record<string, string | number | boolean> = {
             resumido: "s",
-            nro_pagina: 1, // Reset to page 1
-            qtde_registros: novoValor, // Use the new value directly
+            nro_pagina: 1, 
+            qtde_registros: novoValor, 
           };
 
-          // Add other filters as in handleSearch - use currentFilters instead
           Object.entries(currentFilters).forEach(([key, value]) => {
             if (key === "campo_data") return;
 
@@ -957,7 +933,7 @@ const ConsultaOSPage: React.FC = () => {
             totalPaginas: totalPages,
           }));
 
-          setExpandedRowId(null);
+          // No need to reset expanded rows in card-based layout
         } catch (error) {
           console.error("Erro ao buscar ordens de serviço:", error);
           setError("Erro ao buscar ordens de serviço. Tente novamente.");
@@ -1067,92 +1043,6 @@ const ConsultaOSPage: React.FC = () => {
     [saveCurrentState]
   );
 
-  // Nota: A função de renderização das linhas expandidas é definida diretamente no componente EnhancedDataTable
-
-  // Definição das colunas da tabela - memoizada para evitar recalculos
-  const columns = useMemo(
-    () => [
-      {
-        header: "OS",
-        accessor: (item: OSItemExtended) => item.id_os || "-",
-        className: "font-medium text-gray-900",
-        render: (item: OSItemExtended) => (
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-900">
-              {item.id_os || "-"}
-            </span>
-          </div>
-        ),
-      },
-      {
-        header: "Cliente",
-        accessor: (item: OSItemExtended) =>
-          item.cliente?.nome || item.cliente?.nome_fantasia || "-",
-        className: "max-w-[180px]",
-        render: (item: OSItemExtended) => (
-          <div className="flex flex-col">
-            <span className="font-medium text-gray-800 truncate">
-              {item.cliente?.nome || item.cliente?.nome_fantasia || "-"}
-            </span>
-            <span className="text-xs text-gray-500">
-              {item.cliente?.cidade
-                ? `${item.cliente.cidade}/${item.cliente.uf || ""}`
-                : "-"}
-            </span>
-          </div>
-        ),
-      },
-      {
-        header: "Máquina",
-        accessor: (item: OSItemExtended) => item.maquina?.numero_serie || "-",
-        className: "hidden md:table-cell",
-        render: (item: OSItemExtended) => (
-          <div className="flex flex-col">
-            <span className="font-medium text-gray-800">
-              {item.maquina?.numero_serie || "-"}
-            </span>
-            <span className="text-xs text-gray-500 truncate max-w-[180px]">
-              {item.maquina?.modelo || "-"}
-            </span>
-          </div>
-        ),
-      },
-      {
-        header: "Data Abertura",
-        accessor: (item: OSItemExtended) =>
-          item.abertura?.data_abertura ?? item.data_abertura ?? "-",
-        className: "whitespace-nowrap hidden md:table-cell",
-      },
-      {
-        header: "Técnico",
-        accessor: (item: OSItemExtended) => item.tecnico?.nome || "-",
-        className: "hidden lg:table-cell",
-        render: (item: OSItemExtended) => (
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1">
-              <span className="font-medium text-gray-800 truncate max-w-[120px]">
-                {item.tecnico?.nome || "-"}
-              </span>
-              {item.tecnico?.tipo && <TecnicoBadge tipo={item.tecnico.tipo} />}
-            </div>
-          </div>
-        ),
-      },
-      {
-        header: "Status",
-        accessor: (item: OSItemExtended) =>
-          item.situacao_os?.descricao || String(item.status),
-        render: (item: OSItemExtended) => (
-          <StatusBadge
-            status={String(item.situacao_os?.codigo || item.status)}
-            mapping={statusMapping}
-          />
-        ),
-      },
-    ],
-    [statusMapping]
-  );
-
   return (
     <>
       <style jsx global>
@@ -1180,8 +1070,10 @@ const ConsultaOSPage: React.FC = () => {
             },
             activeFiltersCount: activeFiltersCount,
             newButton: {
-              label: "Nova OS",
-              link: "/admin/os_aberto/novo",
+              label: "",
+              link: "#",
+              onClick: () => {},
+              
             },
           }}
         />
@@ -1189,20 +1081,20 @@ const ConsultaOSPage: React.FC = () => {
 
       {/* Seção de Filtros */}
       <div
+        role="region"
+        aria-label="Filtros de pesquisa"
         className={`bg-white rounded-xl shadow-sm border border-gray-100 mb-3 overflow-hidden transition-all duration-300 ease-in-out ${
           showFilters
             ? "opacity-100 max-h-[2000px]"
             : "opacity-0 max-h-0 mt-0 mb-0 border-0"
         }`}
-        role="region"
-        aria-label="Filtros de pesquisa"
       >
         <div aria-hidden={!showFilters}>
           <div className="bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 px-6 py-4 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-3">
-              <div className="bg-[var(--primary)]/10 p-2 rounded-lg">
+              <span className="bg-[var(--primary)]/10 p-2 rounded-lg">
                 <Search size={20} className="text-[var(--primary)]" />
-              </div>
+              </span>
               Filtros de Pesquisa
             </h2>
           </div>
@@ -1590,377 +1482,120 @@ const ConsultaOSPage: React.FC = () => {
           </div>
         </div>
       ) : data.dados && data.dados.length > 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-2 border-b border-gray-100">
-            <h2 className="text-base font-semibold text-gray-800 flex items-center gap-1.5">
-              <span className="text-[var(--primary)]">
-                <ClipboardList className="h-4 w-4" />
-              </span>
-              Resultados da Pesquisa
-              <span className="ml-2 text-xs font-medium bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded-full">
-                {data.total_registros} encontrados
-              </span>
-            </h2>
+        <>
+          {/* Column headers */}
+          <div className="grid grid-cols-12 gap-x-1 px-3 py-2 bg-gray-50 rounded-md text-xs font-semibold text-gray-600 mb-2 shadow-sm">
+            <div className="col-span-1">OS</div>
+            <div className="col-span-3">Cliente / Cidade</div>
+            <div className="col-span-2">Série / Modelo</div>
+            <div className="col-span-2 text-center">Data Abertura</div>
+            <div className="col-span-2">Técnico</div>
+            <div className="col-span-2 text-right">Status</div>
           </div>
-          <EnhancedDataTable
-            columns={columns}
-            data={data.dados || []}
-            keyField="id_os"
-            expandedRowId={expandedRowId}
-            onRowExpand={handleRowClick}
-            onRowClick={handleRowNavigate}
-            renderExpandedRow={(item: OSItemExtended) => (
-              <div className="p-5 bg-gradient-to-r from-gray-50 to-white border-t border-b border-gray-100 rounded-b-lg shadow-inner animate-fadeIn">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                    <span className="text-[var(--primary)]">
-                      <Info className="h-5 w-5" />
-                    </span>
-                    Detalhes da OS #{item.id_os || item.numero_os}
-                  </h3>
 
-                  <div className="flex items-center gap-2">
+          <div className="space-y-1 mt-1 mb-8">
+            {data.dados.map((item) => (
+              <div
+                key={item.id_os}
+                className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 animate-fadeIn py-2 px-3 cursor-pointer group"
+                onClick={() => handleRowNavigate(item)}
+                tabIndex={0}
+                role="button"
+                aria-label={`Ver detalhes da OS ${item.id_os}`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ")
+                    handleRowNavigate(item);
+                }}
+              >
+                {/* First line: OS #, Cliente, Série, Abertura, Técnico, Status */}
+                {/* First line with all main data */}
+                <div className="grid grid-cols-12 gap-x-1 items-center">
+                  {/* OS Number */}
+                  <div className="col-span-1">
+                    <span className="text-sm font-bold text-[var(--primary)]">
+                      #{item.id_os}
+                    </span>
+                  </div>
+
+                  {/* Client Name */}
+                  <div className="col-span-3">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-gray-700 truncate">
+                        {item.cliente?.nome ||
+                          item.cliente?.nome_fantasia ||
+                          "-"}
+                      </span>
+                      {/* City/UF in the second row */}
+                      <span className="text-xs text-gray-500 truncate">
+                        {item.cliente?.cidade
+                          ? `${item.cliente.cidade}/${item.cliente.uf || ""}`
+                          : "-"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Serial and Machine model */}
+                  <div className="col-span-2">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-gray-700 truncate">
+                        {item.maquina?.numero_serie || "-"}
+                      </span>
+                      <span className="text-xs text-gray-500 truncate">
+                        {(
+                          item.maquina?.modelo ||
+                          item.maquina?.descricao ||
+                          "-"
+                        ).substring(0, 18)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Opening Date */}
+                  <div className="col-span-2 text-center">
+                    <span className="text-xs text-gray-700 whitespace-nowrap">
+                      {item.abertura?.data_abertura
+                        ? formatarData(item.abertura.data_abertura)
+                        : item.data_abertura
+                        ? formatarData(item.data_abertura)
+                        : "-"}
+                    </span>
+                  </div>
+
+                  {/* Technician */}
+                  <div className="col-span-2">
+                    <span className="text-xs text-gray-700 flex items-center gap-1 truncate">
+                      {item.tecnico?.nome || "-"}
+                      {item.tecnico?.tipo && (
+                        <TecnicoBadge tipo={item.tecnico.tipo} />
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Status */}
+                  <div className="col-span-2 flex justify-end">
                     <StatusBadge
                       status={String(item.situacao_os?.codigo || item.status)}
                       mapping={statusMapping}
                     />
                   </div>
                 </div>
-
-                {/* Summary Card */}
-                <div className="bg-[var(--primary)]/5 p-4 rounded-lg mb-5 border border-[var(--primary)]/20">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <span className="text-xs text-gray-500 block">
-                        Cliente
-                      </span>
-                      <span className="font-medium">
-                        {item.cliente?.nome ||
-                          item.cliente?.nome_fantasia ||
-                          "-"}
-                      </span>
-                      <span className="text-xs text-gray-500 block mt-1">
-                        {item.cliente?.cidade
-                          ? `${item.cliente.cidade}/${item.cliente.uf || ""}`
-                          : "-"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-gray-500 block">
-                        Máquina
-                      </span>
-                      <span className="font-medium">
-                        {item.maquina?.numero_serie || "-"}
-                      </span>
-                      <span className="text-xs text-gray-500 block mt-1">
-                        {item.maquina?.modelo || "-"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-gray-500 block">
-                        Técnico
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">
-                          {item.tecnico?.nome || "Não atribuído"}
-                        </span>
-                        {item.tecnico?.tipo && (
-                          <TecnicoBadge tipo={item.tecnico.tipo} />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-5 rounded-lg border border-gray-100 shadow-sm">
-                  {/* Coluna da esquerda */}
-                  <div>
-                    <div className="mb-5">
-                      <h4 className="text-sm font-semibold text-gray-700 border-b pb-1 mb-3 border-gray-200 flex items-center gap-2">
-                        <span className="text-[var(--primary)] bg-[var(--primary)]/10 p-1 rounded">
-                          <User className="h-3.5 w-3.5" />
-                        </span>
-                        Informações do Cliente
-                      </h4>
-                      <div className="grid grid-cols-1 gap-2">
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Nome:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {item.cliente?.nome ||
-                              item.cliente?.nome_fantasia ||
-                              "-"}
-                          </span>
-                        </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Endereço:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {[
-                              item.cliente?.endereco,
-                              item.cliente?.numero &&
-                                `Nº ${item.cliente.numero}`,
-                              item.cliente?.complemento,
-                            ]
-                              .filter(Boolean)
-                              .join(", ") || "-"}
-                          </span>
-                        </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Cidade/UF:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {[item.cliente?.cidade, item.cliente?.uf]
-                              .filter(Boolean)
-                              .join("/") || "-"}
-                            {item.cliente?.cep && ` - CEP: ${item.cliente.cep}`}
-                          </span>
-                        </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Contato:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {item.contato?.nome || "-"}
-                          </span>
-                        </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Telefone:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {item.contato?.telefone || "-"}
-                            {item.contato?.whatsapp && (
-                              <span className="ml-1 text-xs px-1.5 py-0.5 rounded-full bg-green-100 text-green-800">
-                                WhatsApp
-                              </span>
-                            )}
-                          </span>
-                        </p>
-                        {item.contato?.email && (
-                          <p className="text-sm flex flex-wrap items-baseline gap-2">
-                            <span className="font-medium text-gray-700 min-w-[120px]">
-                              Email:
-                            </span>{" "}
-                            <span className="text-gray-800">
-                              {item.contato.email}
-                            </span>
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-700 border-b pb-1 mb-3 border-gray-200 flex items-center gap-2">
-                        <span className="text-[var(--primary)] bg-[var(--primary)]/10 p-1 rounded">
-                          <Laptop className="h-3.5 w-3.5" />
-                        </span>
-                        Máquina
-                      </h4>
-                      <div className="grid grid-cols-1 gap-2">
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Número de Série:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {item.maquina?.numero_serie || "-"}
-                          </span>
-                        </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Modelo:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {item.maquina?.modelo || "-"}
-                          </span>
-                        </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Descrição:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {item.maquina?.descricao || "-"}
-                          </span>
-                        </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Garantia:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {item.em_garantia ? (
-                              <span className="text-green-600 font-medium flex items-center gap-1">
-                                <CheckCircle className="h-3.5 w-3.5" /> Sim
-                              </span>
-                            ) : (
-                              <span className="text-gray-500 flex items-center gap-1">
-                                <XCircle className="h-3.5 w-3.5" /> Não
-                              </span>
-                            )}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Coluna da direita */}
-                  <div>
-                    <div className="mb-5">
-                      <h4 className="text-sm font-semibold text-gray-700 border-b pb-1 mb-3 border-gray-200 flex items-center gap-2">
-                        <span className="text-[var(--primary)] bg-[var(--primary)]/10 p-1 rounded">
-                          <ClipboardList className="h-3.5 w-3.5" />
-                        </span>
-                        Detalhes do Atendimento
-                      </h4>
-                      <div className="grid grid-cols-1 gap-2">
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Data Abertura:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {formatarData(
-                              item.abertura?.data_abertura ??
-                                item.data_abertura ??
-                                ""
-                            ) || "-"}
-                          </span>
-                        </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Usuário Abertura:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {item.abertura?.nome_usuario || "-"}
-                          </span>
-                        </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Data Agendada:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {item.data_agendada || "-"}
-                          </span>
-                        </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Data Fechamento:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {item.data_fechamento || "-"}
-                          </span>
-                        </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Status:
-                          </span>{" "}
-                          <StatusBadge
-                            status={String(
-                              item.situacao_os?.codigo || item.status
-                            )}
-                            mapping={statusMapping}
-                          />
-                        </p>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Motivo Pendência:
-                          </span>{" "}
-                          <span className="text-gray-800">
-                            {item.situacao_os?.motivo_pendencia || "-"}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-700 border-b pb-1 mb-3 border-gray-200 flex items-center gap-2">
-                        <span className="text-[var(--primary)] bg-[var(--primary)]/10 p-1 rounded">
-                          <Wrench className="h-3.5 w-3.5" />
-                        </span>
-                        Técnico e Problema
-                      </h4>
-                      <div className="grid grid-cols-1 gap-2">
-                        {item.tecnico && (
-                          <p className="text-sm flex flex-wrap items-baseline gap-2">
-                            <span className="font-medium text-gray-700 min-w-[120px]">
-                              Técnico:
-                            </span>{" "}
-                            <span className="text-gray-800 flex items-center gap-1 flex-wrap">
-                              {item.tecnico.nome}
-                              {item.tecnico?.tipo && (
-                                <TecnicoBadge tipo={item.tecnico.tipo} />
-                              )}
-                            </span>
-                          </p>
-                        )}
-                        <div className="text-sm flex flex-wrap gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Descrição:
-                          </span>{" "}
-                          <div className="text-gray-800 break-words whitespace-pre-wrap flex-1 max-h-[150px] overflow-y-auto custom-scrollbar">
-                            {item.descricao_problema || "-"}
-                          </div>
-                        </div>
-                        <p className="text-sm flex flex-wrap items-baseline gap-2">
-                          <span className="font-medium text-gray-700 min-w-[120px]">
-                            Liberada Financ.:
-                          </span>{" "}
-                          <span className="text-gray-800 flex items-center gap-1">
-                            {item.liberacao_financeira?.liberada ? (
-                              <span className="text-green-600 font-medium flex items-center gap-1">
-                                <CheckCircle className="h-3.5 w-3.5" /> Sim
-                                {item.liberacao_financeira
-                                  ?.nome_usuario_liberacao && (
-                                  <span className="text-xs text-gray-600 ml-2">
-                                    por{" "}
-                                    {
-                                      item.liberacao_financeira
-                                        .nome_usuario_liberacao
-                                    }
-                                  </span>
-                                )}
-                              </span>
-                            ) : (
-                              <span className="text-gray-500 flex items-center gap-1">
-                                <XCircle className="h-3.5 w-3.5" /> Não
-                              </span>
-                            )}
-                          </span>
-                        </p>
-                        {item.liberacao_financeira?.data_liberacao && (
-                          <p className="text-sm flex flex-wrap items-baseline gap-2">
-                            <span className="font-medium text-gray-700 min-w-[120px]">
-                              Data Liberação:
-                            </span>{" "}
-                            <span className="text-gray-800">
-                              {item.liberacao_financeira.data_liberacao}
-                            </span>
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-5 flex justify-end gap-3">
-                  <a
-                    href={`/admin/os_aberto/${item.id_os || item.id}`}
-                    onClick={saveCurrentState}
-                    className="px-4 py-2.5 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-dark)] transition-colors shadow hover:shadow-md flex items-center gap-2"
-                  >
-                    <Eye className="h-4 w-4" />
-                    Ver Detalhes Completos
-                  </a>
-                </div>
               </div>
-            )}
-            emptyStateProps={{
-              title: "Nenhuma ordem de serviço encontrada",
-              description:
-                "Não foram encontradas ordens de serviço com os filtros atuais.",
-            }}
-          />
-        </div>
+            ))}
+          </div>
+
+          <div className="mt-4 mb-6">
+            <Pagination
+              currentPage={paginacao.paginaAtual}
+              totalPages={paginacao.totalPaginas}
+              totalRecords={paginacao.totalRegistros}
+              recordsPerPage={paginacao.registrosPorPagina}
+              onPageChange={handlePageChange}
+              onRecordsPerPageChange={handleRecordsPerPageChange}
+              recordsPerPageOptions={[10, 25, 50, 100]}
+              showRecordsPerPage={true}
+            />
+          </div>
+        </>
       ) : (
         <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100 p-10 animate-fadeIn">
           <div className="w-20 h-20 bg-[var(--primary)]/10 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
@@ -1981,21 +1616,6 @@ const ConsultaOSPage: React.FC = () => {
             <Search className="h-4 w-4" />
             Exibir filtros
           </button>
-        </div>
-      )}
-
-      {data.dados && data.dados.length > 0 && (
-        <div className="mt-4 mb-6">
-          <Pagination
-            currentPage={paginacao.paginaAtual}
-            totalPages={paginacao.totalPaginas}
-            totalRecords={paginacao.totalRegistros}
-            recordsPerPage={paginacao.registrosPorPagina}
-            onPageChange={handlePageChange}
-            onRecordsPerPageChange={handleRecordsPerPageChange}
-            recordsPerPageOptions={[10, 25, 50, 100]}
-            showRecordsPerPage={true}
-          />
         </div>
       )}
     </>

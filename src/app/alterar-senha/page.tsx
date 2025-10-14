@@ -236,6 +236,7 @@ export default function AlterarSenhaPage() {
                 onClick={() => setShowNewPassword(!showNewPassword)}
                 className="absolute inset-y-0 right-0 pr-4 flex items-center"
                 disabled={loading || success}
+                tabIndex={-1}
               >
                 {showNewPassword ? (
                   <EyeOff className="h-5 w-5 text-gray-400 hover:text-[#7C54BD] transition-colors" />
@@ -272,6 +273,7 @@ export default function AlterarSenhaPage() {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute inset-y-0 right-0 pr-4 flex items-center"
                 disabled={loading || success}
+                tabIndex={-1}
               >
                 {showConfirmPassword ? (
                   <EyeOff className="h-5 w-5 text-gray-400 hover:text-[#7C54BD] transition-colors" />
