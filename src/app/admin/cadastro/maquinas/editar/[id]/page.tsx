@@ -65,6 +65,22 @@ const EditarMaquina = () => {
   );
   const [isSearchingCliente, setIsSearchingCliente] = useState(false);
 
+  // Função auxiliar para converter data do formato brasileiro para ISO (YYYY-MM-DD)
+  const converterDataBRparaISO = (dataBR: string): string => {
+    if (!dataBR) return "";
+    // Se já está no formato ISO (YYYY-MM-DD), retorna direto
+    if (/^\d{4}-\d{2}-\d{2}/.test(dataBR)) {
+      return dataBR.split("T")[0];
+    }
+    // Se está no formato brasileiro (DD/MM/YYYY), converte
+    const partes = dataBR.split("/");
+    if (partes.length === 3) {
+      const [dia, mes, ano] = partes;
+      return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
+    }
+    return "";
+  };
+
   // Set page title when component mounts
   useEffect(() => {
     setTitle("Edição de Máquina");
@@ -104,13 +120,11 @@ const EditarMaquina = () => {
           null,
         situacao: maquinaData.situacao || "A",
         data_1a_venda: maquinaData.data_1a_venda
-          ? new Date(maquinaData.data_1a_venda).toISOString().split("T")[0]
+          ? converterDataBRparaISO(maquinaData.data_1a_venda)
           : "",
         nota_fiscal_venda: maquinaData.nota_fiscal_venda || "",
         data_final_garantia: maquinaData.data_final_garantia
-          ? new Date(maquinaData.data_final_garantia)
-              .toISOString()
-              .split("T")[0]
+          ? converterDataBRparaISO(maquinaData.data_final_garantia)
           : "",
       });
 
@@ -208,7 +222,10 @@ const EditarMaquina = () => {
   ) => {
     const { name, value } = e.target;
 
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
     // Limpar erro do campo quando usuário digitar
     if (formErrors[name]) {
@@ -335,9 +352,9 @@ const EditarMaquina = () => {
         modelo: formData.modelo,
         id_cliente_atual: formData.id_cliente_atual ?? undefined,
         situacao: formData.situacao,
-        data_1a_venda: formData.data_1a_venda,
+        data_1a_venda: formData.data_1a_venda || undefined,
         nota_fiscal_venda: formData.nota_fiscal_venda,
-        data_final_garantia: formData.data_final_garantia,
+        data_final_garantia: formData.data_final_garantia || undefined,
       });
       showSuccess("Sucesso", "Máquina atualizada com sucesso");
       router.push("/admin/cadastro/maquinas");
@@ -363,13 +380,6 @@ const EditarMaquina = () => {
 
   return (
     <>
-      {savingData && (
-        <Loading
-          fullScreen={true}
-          text="Salvando alterações..."
-          size="medium"
-        />
-      )}
       <PageHeader
         title="Edição de Máquina"
         config={{

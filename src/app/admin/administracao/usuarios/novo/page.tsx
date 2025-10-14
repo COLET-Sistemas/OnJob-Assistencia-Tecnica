@@ -11,11 +11,11 @@ import { useToast } from "@/components/admin/ui/ToastContainer";
 import AdminAuthGuard from "@/components/admin/common/AdminAuthGuard";
 
 const perfis = [
+  { key: "administrador", label: "Administrador" },
+  { key: "perfil_gestor_assistencia", label: "Gestor" },
   { key: "perfil_interno", label: "Interno" },
-  { key: "perfil_gestor_assistencia", label: "Gestor Assistência" },
   { key: "perfil_tecnico_proprio", label: "Técnico Próprio" },
   { key: "perfil_tecnico_terceirizado", label: "Técnico Terceirizado" },
-  { key: "administrador", label: "Administrador" },
 ];
 
 export default function NovoUsuario() {

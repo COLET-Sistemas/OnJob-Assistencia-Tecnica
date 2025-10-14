@@ -53,7 +53,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <FeedbackProvider>
           <ClientToastProvider>
             <AuthStorageCleaner />
-            {/* NotificacoesUpdater removido daqui para evitar chamadas desnecessárias na tela de login */}
             {children}
           </ClientToastProvider>
         </FeedbackProvider>

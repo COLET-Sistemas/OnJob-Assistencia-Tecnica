@@ -336,17 +336,6 @@ export default function DashboardPage() {
     maintainAspectRatio: false,
     indexAxis: "y" as const,
     plugins: {
-      title: {
-        display: true,
-        text: "Top 20 Clientes com OSs Abertas",
-        font: {
-          size: 14,
-          weight: "bold" as const,
-          family: "'Inter', sans-serif",
-        },
-        color: "#333",
-        padding: 10,
-      },
       legend: {
         display: false,
       },

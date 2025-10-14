@@ -25,9 +25,9 @@ interface FormData {
   modelo: string;
   id_cliente_atual: number | null;
   situacao: string;
-  data_1a_venda: string;
+  data_1a_venda: Date | null;
   nota_fiscal_venda: string;
-  data_final_garantia: string;
+  data_final_garantia: Date | null;
 }
 
 // Define ClienteOption to ensure type compatibility with CustomSelect's OptionType
@@ -54,9 +54,9 @@ const CadastrarMaquina = () => {
     modelo: "",
     id_cliente_atual: null,
     situacao: "A",
-    data_1a_venda: "",
+    data_1a_venda: null,
     nota_fiscal_venda: "",
-    data_final_garantia: "",
+    data_final_garantia: null,
   });
 
   // Estados para o cliente
@@ -75,7 +75,15 @@ const CadastrarMaquina = () => {
   ) => {
     const { name, value } = e.target;
 
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Tratar campos de data como Date
+    if (name === "data_1a_venda" || name === "data_final_garantia") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value ? new Date(value) : null,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
 
     // Limpar erro do campo quando usuário digitar
     if (formErrors[name]) {
@@ -198,14 +206,25 @@ const CadastrarMaquina = () => {
 
     try {
       // Convert form data to match expected API format
+      // Função para formatar Date para dd/mm/yyyy
+      const formatDateBR = (date: Date | null) => {
+        if (!date) return "";
+        if (typeof date === "string") return date; // fallback
+        const d = date;
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+      };
+
       const maquinaData = {
         numero_serie: formData.numero_serie,
         descricao: formData.descricao,
         modelo: formData.modelo,
         id_cliente_atual: formData.id_cliente_atual!,
-        data_1a_venda: formData.data_1a_venda,
+        data_1a_venda: formatDateBR(formData.data_1a_venda),
         nota_fiscal_venda: formData.nota_fiscal_venda,
-        data_final_garantia: formData.data_final_garantia,
+        data_final_garantia: formatDateBR(formData.data_final_garantia),
         situacao: formData.situacao,
       };
 
@@ -312,7 +331,13 @@ const CadastrarMaquina = () => {
                       type="date"
                       label="Data 1ª Venda"
                       name="data_1a_venda"
-                      value={formData.data_1a_venda}
+                      value={
+                        formData.data_1a_venda
+                          ? typeof formData.data_1a_venda === "string"
+                            ? formData.data_1a_venda
+                            : formData.data_1a_venda.toISOString().split("T")[0]
+                          : ""
+                      }
                       onChange={handleInputChange}
                     />
                   </div>
@@ -334,7 +359,15 @@ const CadastrarMaquina = () => {
                       type="date"
                       label="Data Final Garantia"
                       name="data_final_garantia"
-                      value={formData.data_final_garantia}
+                      value={
+                        formData.data_final_garantia
+                          ? typeof formData.data_final_garantia === "string"
+                            ? formData.data_final_garantia
+                            : formData.data_final_garantia
+                                .toISOString()
+                                .split("T")[0]
+                          : ""
+                      }
                       onChange={handleInputChange}
                     />
                   </div>
