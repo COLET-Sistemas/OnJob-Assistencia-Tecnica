@@ -2,32 +2,33 @@ import { Link2 } from "lucide-react";
 
 interface VincularButtonProps {
   onClick: () => void;
-  label?: string;
   iconSize?: number;
   className?: string;
   disabled?: boolean;
-  iconOnly?: boolean;
 }
 
 export const VincularButton = ({
   onClick,
-  label = "Vincular Região",
-  iconSize = 15,
+  iconSize = 18,
   className = "",
   disabled = false,
-  iconOnly = false,
 }: VincularButtonProps) => {
-  const baseClasses = `inline-flex items-center px-3 py-1.5 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] rounded-lg transition-colors gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${className}`;
+  const baseClasses = `
+    inline-flex items-center justify-center p-2
+    bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20
+    text-[var(--primary)] rounded-lg transition-colors
+    cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
+    ${className}
+  `.trim();
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={baseClasses}
-      title={label}
+      title="Vincular Região"
     >
       <Link2 size={iconSize} />
-      {iconOnly !== true && <span>{label}</span>}
     </button>
   );
 };

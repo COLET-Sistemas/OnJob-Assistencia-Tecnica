@@ -2,17 +2,16 @@ import { useState } from "react";
 import { KeyRound, X, Copy, Check } from "lucide-react";
 import { usuariosService } from "@/api/services/usuariosService";
 import { useToast } from "./ToastContainer";
+import { Usuario } from "@/types/admin/cadastro/usuarios";
 
 type ResetPasswordButtonProps = {
   id: number;
   userName: string;
   userLogin: string;
   className?: string;
-  onResetSuccess?: () => void; 
-  onUpdateUser?: (updates: Partial<Usuario>) => void; 
+  onResetSuccess?: () => void;
+  onUpdateUser?: (updates: Partial<Usuario>) => void;
 };
-
-import { Usuario } from "@/types/admin/cadastro/usuarios";
 
 export const ResetPasswordButton = ({
   id,
@@ -46,9 +45,7 @@ export const ResetPasswordButton = ({
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
         })
-        .catch((error) => {
-          console.error("Failed to copy: ", error);
-        });
+        .catch((error) => console.error("Failed to copy: ", error));
     }
   };
 
@@ -56,33 +53,24 @@ export const ResetPasswordButton = ({
     setLoading(true);
     try {
       const fixedPassword = "E9D9D9D9D9D9D9D9D9";
-
       const result = await usuariosService.resetPassword(id, {
         senha_atual: fixedPassword,
         nova_senha: fixedPassword,
       });
 
-    
-
       if (result && typeof result === "object") {
         const isSuccess =
           result.sucesso === true || result.senha_provisoria !== undefined;
-
         if (isSuccess) {
           setResetSuccess(true);
           if (result.senha_provisoria) {
             setProvisionalPassword(result.senha_provisoria);
           }
-
           if (onUpdateUser) {
-            onUpdateUser({
-              senha_provisoria: true,
-            });
-          }
-          else if (onResetSuccess) {
+            onUpdateUser({ senha_provisoria: true });
+          } else if (onResetSuccess) {
             onResetSuccess();
           }
-
         } else {
           showError("Erro ao resetar senha", {
             message: result.mensagem || "Não foi possível resetar a senha.",
@@ -102,9 +90,7 @@ export const ResetPasswordButton = ({
     }
   };
 
-  const handleCancel = () => {
-    setShowModal(false);
-  };
+  const handleCancel = () => setShowModal(false);
 
   return (
     <>
@@ -113,12 +99,18 @@ export const ResetPasswordButton = ({
         disabled={loading}
         title="Resetar Senha"
         className={`
-          inline-flex items-center px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg transition-colors gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
+          inline-flex items-center justify-center p-2
+          bg-amber-100 hover:bg-amber-200 text-amber-800
+          rounded-lg transition-colors cursor-pointer
+          disabled:opacity-50 disabled:cursor-not-allowed
           ${className}
         `.trim()}
       >
-        <KeyRound size={15} />
-        {loading ? "Resetando..." : "Resetar Senha"}
+        {loading ? (
+          <div className="w-4 h-4 border-2 border-amber-400 border-t-amber-800 rounded-full animate-spin" />
+        ) : (
+          <KeyRound size={18} />
+        )}
       </button>
 
       {showModal && (

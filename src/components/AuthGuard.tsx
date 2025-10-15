@@ -25,12 +25,20 @@ const AuthGuardInner: React.FC<AuthGuardProps> = ({ children }) => {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Verificar se existe uma mensagem de erro de autenticação nos parâmetros de consulta
+    // Verificar se existe uma mensagem de erro de autenticacao nos parametros de consulta
     const authError = searchParams.get("authError");
-    if (authError) {
-      showError("Autenticação", authError);
+    const permissionDenied = searchParams.get("permissionDenied");
 
-      // Remover o parâmetro de consulta da URL sem recarregar a página
+    if (authError) {
+      showError("Autenticacao", authError);
+    }
+
+    if (permissionDenied) {
+      showError("Acesso negado", permissionDenied);
+    }
+
+    if (authError || permissionDenied) {
+      // Remover os parametros de consulta da URL sem recarregar a pagina
       const newUrl = window.location.pathname;
       window.history.replaceState({}, "", newUrl);
     }
@@ -75,3 +83,4 @@ const AuthGuardInner: React.FC<AuthGuardProps> = ({ children }) => {
 };
 
 export default AuthGuard;
+

@@ -1,7 +1,9 @@
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, memo } from "react";
 import { Bell, CheckSquare, X } from "lucide-react";
 import { notificacoesService } from "@/api/services/notificacoesService";
 import { useNotificacoes } from "@/hooks";
+import { formatRelativeDate } from "@/utils/formatters";
 
 // Interface local para o componente, adaptada à nossa UI
 interface Notificacao {
@@ -12,7 +14,6 @@ interface Notificacao {
   data_criacao: string;
   lida: boolean;
 }
-import { formatRelativeDate } from "@/utils/formatters";
 
 /**
  * Converte uma string de data em vários formatos possíveis para um objeto Date
@@ -42,6 +43,7 @@ interface NotificacoesDropdownProps {
 
 const NotificacoesDropdown = memo(
   ({ onNotificationRead }: NotificacoesDropdownProps) => {
+    const router = useRouter();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
     const [paginaAtual, setPaginaAtual] = useState(1);
@@ -218,18 +220,32 @@ const NotificacoesDropdown = memo(
 
     // Função para navegar para o link da notificação, se existir
     const navegarParaLink = (notificacao: Notificacao) => {
+      const navegar = (link?: string) => {
+        if (!link) {
+          return;
+        }
+        const isExternal =
+          link.startsWith("http://") || link.startsWith("https://");
+        if (isExternal) {
+          if (typeof window !== "undefined") {
+            window.location.href = link;
+          }
+        } else {
+          router.push(link);
+        }
+      };
+
       // Se já estiver lida, apenas navega
       if (notificacao.lida) {
-        if (notificacao.link) {
-          window.location.href = notificacao.link;
-        }
+        navegar(notificacao.link);
         return;
       }
 
       // Se não estiver lida, marca como lida e depois navega
       marcarComoLida(notificacao.id).then(() => {
-        if (notificacao.link) {
-          window.location.href = notificacao.link;
+        navegar(notificacao.link);
+        if (onNotificationRead) {
+          onNotificationRead();
         }
       });
     };

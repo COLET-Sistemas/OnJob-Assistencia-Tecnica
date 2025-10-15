@@ -252,7 +252,7 @@ export default function LoginPage() {
     if (error) {
       timer = setTimeout(() => {
         setError("");
-      }, 15000); // 15 segundos
+      }, 15000);
     }
 
     return () => {
@@ -267,7 +267,7 @@ export default function LoginPage() {
     if (error) {
       timer = setTimeout(() => {
         setError("");
-      }, 15000); // 15 segundos
+      }, 15000); 
     }
 
     return () => {

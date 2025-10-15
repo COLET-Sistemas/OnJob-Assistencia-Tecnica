@@ -393,72 +393,71 @@ export default function DashboardPage() {
     // Primeira linha - OSs abertas (Roxo)
     {
       title: "OSs abertas até hoje",
-      value: dashboardData?.cards.os_abertas_total || 0,
-      color: "#7B54BE", // Roxo principal
-      bgColor: "#7B54BE", // Fundo roxo
+      value: dashboardData?.cards.os_abertas_total,
+      color: "#7B54BE",
+      bgColor: "#7B54BE",
     },
     {
       title: "OSs abertas no mês",
-      value: dashboardData?.cards.os_abertas_mes || 0,
-      color: "#7B54BE", // Roxo principal
-      bgColor: "#7B54BE", // Fundo roxo
+      value: dashboardData?.cards.os_abertas_mes,
+      color: "#7B54BE",
+      bgColor: "#7B54BE",
     },
     {
       title: "OSs abertas hoje",
-      value: dashboardData?.cards.os_abertas_hoje || 0,
-      color: "#7B54BE", // Roxo principal
-      bgColor: "#7B54BE", // Fundo roxo
+      value: dashboardData?.cards.os_abertas_hoje,
+      color: "#7B54BE",
+      bgColor: "#7B54BE",
     },
-    // Segunda linha - OSs atendidas (Amarelo)
+    // Segunda linha - OSs atendidas (Azul)
     {
       title: "OSs atendidas até hoje",
-      value: dashboardData?.cards.os_encerradas_total || 0,
-      color: "#FDAD15", // Amarelo/Laranja
-      bgColor: "#FDAD15", // Fundo amarelo
+      value: dashboardData?.cards.os_encerradas_total,
+      color: "#9CBEDA",
+      bgColor: "#9CBEDA",
     },
     {
       title: "OSs atendidas no mês",
-      value: dashboardData?.cards.os_encerradas_mes || 0,
-      color: "#FDAD15", // Amarelo/Laranja
-      bgColor: "#FDAD15", // Fundo amarelo
+      value: dashboardData?.cards.os_encerradas_mes,
+      color: "#9CBEDA",
+      bgColor: "#9CBEDA",
     },
     {
       title: "OSs atendidas hoje",
-      value: dashboardData?.cards.os_encerradas_hoje || 0,
-      color: "#FDAD15", // Amarelo/Laranja
-      bgColor: "#FDAD15", // Fundo amarelo
+      value: dashboardData?.cards.os_encerradas_hoje,
+      color: "#9CBEDA",
+      bgColor: "#9CBEDA",
     },
-    // Terceira linha - OSs em aberto/pendentes (Verde)
+    // Terceira linha - OSs em aberto/pendentes (Amarelo)
     {
       title: "OSs em aberto agora",
-      value: dashboardData?.cards.os_aberto_total || 0,
-      color: "#75f9bd", // Verde
-      bgColor: "#75f9bd", // Fundo verde
+      value: dashboardData?.cards.os_aberto_total,
+      color: "#FDAD15",
+      bgColor: "#FDAD15",
     },
     {
       title: "OSs em aberto em garantia",
-      value: dashboardData?.cards.os_aberto_garantia || 0,
-      color: "#75f9bd", // Verde
-      bgColor: "#75f9bd", // Fundo verde
+      value: dashboardData?.cards.os_aberto_garantia,
+      color: "#FDAD15",
+      bgColor: "#FDAD15",
     },
     {
       title: "OSs pendentes agora",
-      value: dashboardData?.cards.os_aberto_pendentes || 0,
-      color: "#75f9bd", // Verde
-      bgColor: "#75f9bd", // Fundo verde
+      value: dashboardData?.cards.os_aberto_pendentes,
+      color: "#FDAD15",
+      bgColor: "#FDAD15",
     },
   ];
 
   return (
     <div className="px-2 sm:px-4 py-4 sm:py-6 space-y-6 sm:space-y-8 animate-fadeIn">
-      {/* Loading state */}
       {isLoading && (
-        <div className="py-20">
+        <div className="fixed inset-0 flex items-center justify-center h-screen bg-white/80 z-50">
           <LoadingSpinner
+            fullScreen={true}
+            preventScroll={false}
+            text="Carregando dashboard..."
             size="large"
-            text="Carregando indicadores"
-            color="primary"
-            showText={true}
           />
         </div>
       )}
@@ -517,7 +516,7 @@ export default function DashboardPage() {
                 >
                   <div className="flex flex-col items-center justify-center">
                     <p className="text-2xl sm:text-3xl font-bold text-center text-white">
-                      {card.value.toLocaleString()}
+                      {(card.value ?? 0).toLocaleString()}
                     </p>
                     <p className="text-white text-sm text-center mt-2 font-medium">
                       {card.title}
@@ -540,7 +539,7 @@ export default function DashboardPage() {
                 >
                   <div className="flex flex-col items-center justify-center">
                     <p className="text-2xl sm:text-3xl font-bold text-center text-white">
-                      {card.value.toLocaleString()}
+                      {(card.value ?? 0).toLocaleString()}
                     </p>
                     <p className="text-white text-sm text-center mt-2 font-medium">
                       {card.title}
@@ -563,7 +562,7 @@ export default function DashboardPage() {
                 >
                   <div className="flex flex-col items-center justify-center">
                     <p className="text-2xl sm:text-3xl font-bold text-center text-white">
-                      {card.value.toLocaleString()}
+                      {(card.value ?? 0).toLocaleString()}
                     </p>
                     <p className="text-white text-sm text-center mt-2 font-medium">
                       {card.title}

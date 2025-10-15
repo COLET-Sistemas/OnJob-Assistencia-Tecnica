@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { LoadingSpinner as Loading } from "@/components/LoadingPersonalizado";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import {
@@ -140,6 +140,7 @@ interface FormaAberturaOption extends OptionType {
 const EditarOrdemServico = () => {
   const params = useParams();
   const osId = params.id as string;
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [clienteOptions, setClienteOptions] = useState<ClienteOption[]>([]);
@@ -1241,7 +1242,7 @@ const EditarOrdemServico = () => {
 
         // Redirecionar para a página de listagem de OS usando window.location para navegação direta
         setTimeout(() => {
-          window.location.href = "/admin/os_aberto";
+          router.push("/admin/os_aberto");
         }, 500);
       } catch (apiError) {
         console.error("Erro específico da API:", apiError);

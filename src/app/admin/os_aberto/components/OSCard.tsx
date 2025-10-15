@@ -281,7 +281,7 @@ const OSCard: React.FC<OSCardProps> = ({
                                 os.tecnico.nome
                               );
                             }}
-                            className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 
+                            className="flex-shrink-0 p-1 text-gray-600 hover:text-gray-700 hover:bg-gray-100 
                                       rounded transition-colors cursor-pointer"
                             title="Alterar técnico"
                           >

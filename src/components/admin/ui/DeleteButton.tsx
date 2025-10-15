@@ -7,7 +7,6 @@ type DeleteButtonProps = {
   loading?: boolean;
   confirmText?: string;
   confirmTitle?: string;
-  label?: string;
   className?: string;
   itemName?: string;
 };
@@ -18,16 +17,13 @@ export const DeleteButton = ({
   loading = false,
   confirmText = "Tem certeza que deseja inativar este item?",
   confirmTitle = "Confirmar Inativação",
-  label = "Inativar",
   className = "",
   itemName = "",
 }: DeleteButtonProps) => {
   const [localLoading, setLocalLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const handleClick = () => {
-    setShowModal(true);
-  };
+  const handleClick = () => setShowModal(true);
 
   const handleConfirm = async () => {
     setLocalLoading(true);
@@ -41,10 +37,7 @@ export const DeleteButton = ({
     }
   };
 
-  const handleCancel = () => {
-    setShowModal(false);
-  };
-
+  const handleCancel = () => setShowModal(false);
   const isLoading = loading || localLoading;
 
   return (
@@ -52,14 +45,19 @@ export const DeleteButton = ({
       <button
         onClick={handleClick}
         disabled={isLoading}
-        title={label}
+        title="Inativar"
         className={`
-          inline-flex items-center px-3 py-1.5 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] rounded-lg transition-colors gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
+          inline-flex items-center justify-center p-2 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20
+          text-[var(--primary)] rounded-lg transition-colors cursor-pointer
+          disabled:opacity-50 disabled:cursor-not-allowed
           ${className}
         `.trim()}
       >
-        <Ban size={15} />
-        {isLoading ? "Inativando..." : label}
+        {isLoading ? (
+          <div className="w-4 h-4 border-2 border-[var(--primary)]/30 border-t-[var(--primary)] rounded-full animate-spin" />
+        ) : (
+          <Ban size={18} />
+        )}
       </button>
 
       {showModal && (
@@ -69,7 +67,6 @@ export const DeleteButton = ({
             onClick={handleCancel}
           />
 
-          {/* Modal */}
           <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-in fade-in-0 zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">

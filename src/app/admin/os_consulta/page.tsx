@@ -31,6 +31,7 @@ import {
   UserX,
   RefreshCw,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 // Interface estendida para suportar os campos adicionais do exemplo da API
 interface OSItemExtended {
@@ -126,6 +127,7 @@ const fadeInAnimation = `
 `;
 
 const ConsultaOSPage: React.FC = () => {
+  const router = useRouter();
   // showFilters is now provided by useFilters hook
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -1052,9 +1054,9 @@ const ConsultaOSPage: React.FC = () => {
     (item: OSItemExtended) => {
       saveCurrentState();
       const osId = item.id_os;
-      window.location.href = `/admin/os_detalhes/${osId}`;
+      router.push(`/admin/os_detalhes/${osId}`);
     },
-    [saveCurrentState]
+    [router, saveCurrentState]
   );
 
   return (

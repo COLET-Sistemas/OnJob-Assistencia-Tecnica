@@ -1,5 +1,9 @@
 import api from "../api";
 import { empresaService } from "./empresaService";
+import {
+  clearStoredRoles,
+  setStoredRoles,
+} from "@/utils/userRoles";
 
 type ModuleType = "admin" | "tecnico";
 
@@ -53,6 +57,8 @@ class AuthService {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         this.clearActiveModule();
+        this.clearRolesCookie();
+        clearStoredRoles();
 
         // Limpar cookie com as mesmas configurações usadas para criá-lo
         const secure = window.location.protocol === "https:" ? "; secure" : "";
@@ -94,6 +100,22 @@ class AuthService {
       if (module) {
         this.setActiveModule(module);
       }
+
+      setStoredRoles({
+        admin: authData.user.administrador,
+        gestor: authData.user.perfil_gestor_assistencia,
+        interno: authData.user.perfil_interno,
+        tecnico_proprio: authData.user.perfil_tecnico_proprio,
+        tecnico_terceirizado: authData.user.perfil_tecnico_terceirizado,
+      });
+
+      this.setRolesCookie({
+        admin: authData.user.administrador,
+        gestor: authData.user.perfil_gestor_assistencia,
+        interno: authData.user.perfil_interno,
+        tecnico_proprio: authData.user.perfil_tecnico_proprio,
+        tecnico_terceirizado: authData.user.perfil_tecnico_terceirizado,
+      });
     }
   }
 
@@ -135,6 +157,35 @@ class AuthService {
     const sameSite = "; samesite=lax";
 
     document.cookie = `active_module=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${secure}${sameSite}`;
+  }
+
+  private setRolesCookie(roles: {
+    admin: boolean;
+    gestor: boolean;
+    interno: boolean;
+    tecnico_proprio: boolean;
+    tecnico_terceirizado: boolean;
+  }): void {
+    if (typeof window === "undefined") return;
+
+    const expirationDate = new Date();
+    expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000);
+
+    const secure = window.location.protocol === "https:" ? "; secure" : "";
+    const sameSite = "; samesite=lax";
+
+    const encodedRoles = encodeURIComponent(JSON.stringify(roles));
+
+    document.cookie = `user_roles=${encodedRoles}; expires=${expirationDate.toUTCString()}; path=/${secure}${sameSite}`;
+  }
+
+  private clearRolesCookie(): void {
+    if (typeof window === "undefined") return;
+
+    const secure = window.location.protocol === "https:" ? "; secure" : "";
+    const sameSite = "; samesite=lax";
+
+    document.cookie = `user_roles=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${secure}${sameSite}`;
   }
 }
 

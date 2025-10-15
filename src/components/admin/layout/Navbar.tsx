@@ -13,8 +13,14 @@ import {
   MonitorDot,
 } from "lucide-react";
 import { useEffect, useState, memo } from "react";
+import { useRouter } from "next/navigation";
 import { useEmpresa } from "@/hooks";
 import { authService, empresaService } from "@/api/services";
+import {
+  defaultRoles,
+  getStoredRoles,
+  USER_ROLES_UPDATED_EVENT,
+} from "@/utils/userRoles";
 import NotificacoesDropdown from "./NotificacoesDropdown";
 
 const CompanyName = memo(function CompanyName() {
@@ -55,25 +61,43 @@ interface NavbarProps {
 }
 
 function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
-  const [nomeUsuario, setNomeUsuario] = useState("Usuário");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
+  const [nomeUsuario, setNomeUsuario] = useState("Usuario");
+  const [roles, setRoles] = useState(defaultRoles);
+  const isAdmin = roles.admin;
 
   // Utilizamos o hook sem referência direta ao componente
 
   useEffect(() => {
-    setNomeUsuario(localStorage.getItem("nome_usuario") || "Usuário");
-
-    // Verificar se o usuário é administrador
-    try {
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        setIsAdmin(!!user.administrador);
-      }
-    } catch (error) {
-      console.error("Erro ao verificar permissão de administrador:", error);
-      setIsAdmin(false);
+    if (typeof window === "undefined") {
+      return;
     }
+
+    const syncUserData = () => {
+      setNomeUsuario(localStorage.getItem("nome_usuario") || "Usuario");
+      setRoles(getStoredRoles());
+    };
+
+    syncUserData();
+
+    const handleRolesUpdated = () => syncUserData();
+    const handleStorage = (event: StorageEvent) => {
+      if (
+        !event.key ||
+        event.key === "user_roles_state" ||
+        event.key === "nome_usuario"
+      ) {
+        syncUserData();
+      }
+    };
+
+    window.addEventListener(USER_ROLES_UPDATED_EVENT, handleRolesUpdated);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener(USER_ROLES_UPDATED_EVENT, handleRolesUpdated);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -87,29 +111,34 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
   };
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      document.addEventListener("click", closeDropdown);
-      return () => {
-        document.removeEventListener("click", closeDropdown);
-      };
+    if (typeof window === "undefined") {
+      return;
     }
+
+    document.addEventListener("click", closeDropdown);
+    return () => {
+      document.removeEventListener("click", closeDropdown);
+    };
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const handleFullScreenChange = () => {
-        setIsFullScreen(!!document.fullscreenElement);
-      };
-
-      document.addEventListener("fullscreenchange", handleFullScreenChange);
-      return () => {
-        document.removeEventListener(
-          "fullscreenchange",
-          handleFullScreenChange
-        );
-      };
+    if (typeof window === "undefined") {
+      return;
     }
+
+    const handleFullScreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullScreenChange);
+    return () => {
+      document.removeEventListener(
+        "fullscreenchange",
+        handleFullScreenChange
+      );
+    };
   }, []);
+
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
@@ -146,12 +175,14 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
       sessionStorage.clear();
       empresaService.clearEmpresaData();
 
-      window.location.href = "/";
+      router.replace("/");
+      router.refresh();
     } catch (error) {
       console.error("Erro durante logout:", error);
       localStorage.clear();
       sessionStorage.clear();
-      window.location.href = "/";
+      router.replace("/");
+      router.refresh();
     }
   };
 
@@ -251,7 +282,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
                   className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
                   onClick={() => {
                     setDropdownOpen(false);
-                    window.location.href = "/admin/perfil";
+                    router.push("/admin/perfil");
                   }}
                 >
                   <UserCircle
@@ -265,7 +296,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
                   className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
                   onClick={() => {
                     setDropdownOpen(false);
-                    window.location.href = "/admin/administracao/empresa";
+                    router.push("/admin/administracao/empresa");
                   }}
                 >
                   <ScrollText
@@ -280,7 +311,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
                     className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
                     onClick={() => {
                       setDropdownOpen(false);
-                      window.location.href = "/admin/administracao/usuarios";
+                      router.push("/admin/administracao/usuarios");
                     }}
                   >
                     <UsersRound
@@ -295,7 +326,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
                   className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
                   onClick={() => {
                     setDropdownOpen(false);
-                    window.location.href = "/admin/sobre";
+                    router.push("/admin/sobre");
                   }}
                 >
                   <Info

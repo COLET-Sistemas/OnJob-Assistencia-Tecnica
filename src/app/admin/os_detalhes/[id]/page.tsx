@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { LocationButtonIcon } from "@/components/admin/ui/LocationButton";
 import {
   ordensServicoService,
@@ -112,6 +112,7 @@ const fadeInAnimation = `
 const OSDetalhesPage: React.FC = () => {
   const params = useParams();
   const osId = params.id as string;
+  const router = useRouter();
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -875,9 +876,9 @@ const OSDetalhesPage: React.FC = () => {
                             key={fat.id_fat}
                             className="hover:bg-gray-50 cursor-pointer transition-colors duration-150 animate-fadeIn"
                             style={{ animationDelay: `${0.05 * index}s` }}
-                            onClick={() =>
-                              (window.location.href = `/admin/fat_detalhes/${fat.id_fat}`)
-                            }
+                              onClick={() =>
+                                router.push(`/admin/fat_detalhes/${fat.id_fat}`)
+                              }
                             onMouseEnter={(e) => {
                               e.currentTarget.classList.add("shadow-sm");
                               e.currentTarget.style.transform =

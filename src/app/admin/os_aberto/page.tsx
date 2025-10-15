@@ -18,6 +18,7 @@ import AlterarPendenciaModal from "@/app/admin/os_aberto/components/AlterarPende
 import TecnicoModal from "@/app/admin/os_aberto/components/TecnicoModal";
 import CancelarOSModal from "@/app/admin/os_aberto/components/CancelarOSModal";
 import { OrdemServico } from "@/types/OrdemServico";
+import { useRouter } from "next/navigation";
 
 const CODIGO_SITUACAO = {
   PENDENTE: 1,
@@ -28,6 +29,7 @@ const CODIGO_SITUACAO = {
 };
 
 const TelaOSAbertas: React.FC = () => {
+  const router = useRouter();
   const [ordensServico, setOrdensServico] = useState<OrdemServico[]>([]);
   const [allOrdensServico, setAllOrdensServico] = useState<OrdemServico[]>([]);
   const [loading, setLoading] = useState(true);
@@ -414,9 +416,12 @@ const TelaOSAbertas: React.FC = () => {
   );
 
   // Função para navegar para a tela de edição da OS
-  const handleEditarOS = useCallback((osId: number) => {
-    window.location.href = `/admin/os_aberto/editar/${osId}`;
-  }, []);
+  const handleEditarOS = useCallback(
+    (osId: number) => {
+      router.push(`/admin/os_aberto/editar/${osId}`);
+    },
+    [router]
+  );
 
   // Funções para lidar com o cancelamento de OS
   const handleOpenCancelamentoModal = useCallback((osId: number) => {
