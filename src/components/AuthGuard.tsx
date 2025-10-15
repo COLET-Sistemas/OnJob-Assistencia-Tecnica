@@ -9,10 +9,7 @@ interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-/**
- * Componente de proteção de rotas no lado do cliente
- * Complementa o middleware verificando a autenticação local e exibindo mensagens de feedback
- */
+
 const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   return (
     <Suspense fallback={<div>Loading...</div>}>

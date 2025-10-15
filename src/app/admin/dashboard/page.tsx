@@ -229,7 +229,7 @@ export default function DashboardPage() {
           hoverBackgroundColor: chartColors.slice(
             0,
             dashboardData?.graficos.motivos_atendimento.length || 0
-          ), // Mantém a mesma cor no hover
+          ),
           hoverBorderColor: "white",
         },
       ],
@@ -248,13 +248,12 @@ export default function DashboardPage() {
         dashboardData?.graficos.por_tecnico.map((item) => item.nome) || [],
       datasets: [
         {
-          label: "Ordens de Serviço",
           data:
             dashboardData?.graficos.por_tecnico.map(
               (item) => item.quantidade
             ) || [],
           backgroundColor: backgroundColors,
-          hoverBackgroundColor: backgroundColors, // Mantém a mesma cor no hover
+          hoverBackgroundColor: backgroundColors,
           borderWidth: 1,
           borderRadius: 6,
         },
@@ -294,6 +293,7 @@ export default function DashboardPage() {
     maintainAspectRatio: false,
     plugins: {
       legend: {
+        display: false,
         position: "bottom" as const,
         labels: {
           usePointStyle: true,

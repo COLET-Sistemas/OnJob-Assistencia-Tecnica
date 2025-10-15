@@ -27,19 +27,15 @@ const NotificacoesUpdater = () => {
 
     // Define um intervalo para atualizar a cada 60 segundos (1 minuto)
     const regularInterval = setInterval(() => {
-      // Verifica novamente a autenticação antes de cada chamada
       if (isAuthenticated()) {
         fetchNotificacoesCount();
       }
-    }, 60000); // 1 minuto
-
-    // Limpa o intervalo quando o componente for desmontado
+    }, 60000);
     return () => clearInterval(regularInterval);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Este componente não renderiza nada visualmente
   return null;
 };
 

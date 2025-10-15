@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { StatusBadge } from "@/components/admin/common";
 import { ordensServicoService } from "@/api/services/ordensServicoService";
@@ -98,7 +104,8 @@ const fadeInAnimation = `
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fadeIn {
-  animation: fadeIn 0.3s ease-in-out;
+  animation: fadeIn 0.3s ease-in-out forwards;
+  opacity: 1;
 }
 .os-data-table tr:hover td {
   background-color: rgba(var(--color-primary-rgb), 0.05);
@@ -177,6 +184,12 @@ const ConsultaOSPage: React.FC = () => {
     toggleFilters,
     setShowFilters,
   } = useFilters(INITIAL_OS_FILTERS, "os_consulta_filters");
+
+  const handleFiltroChangeRef = useRef(handleFiltroChange);
+
+  useEffect(() => {
+    handleFiltroChangeRef.current = handleFiltroChange;
+  }, [handleFiltroChange]);
 
   // Abre os filtros por padrão ao carregar a página
   useEffect(() => {
@@ -280,14 +293,14 @@ const ConsultaOSPage: React.FC = () => {
         setTecnicos(tecnicosFiltrados.length > 0 ? tecnicosFiltrados : []);
       } catch (err) {
         console.error("Erro ao buscar técnicos:", err);
-        setTecnicos([]); 
+        setTecnicos([]);
       } finally {
         setLoadingTecnicos(false);
       }
     };
 
     fetchTecnicos();
-  }, [handleFiltroChange, handleSearch]);
+  }, []);
 
   // Definir status mapping para as ordens de serviço
   // Memoize status mapping to avoid rebuilding on each render
@@ -627,6 +640,12 @@ const ConsultaOSPage: React.FC = () => {
     paginacao.registrosPorPagina,
   ]);
 
+  const handleSearchRef = useRef(handleSearch);
+
+  useEffect(() => {
+    handleSearchRef.current = handleSearch;
+  }, [handleSearch]);
+
   // Configurar campos de data com base no status ao iniciar ou quando o status muda
   useEffect(() => {
     const currentStatus = filtrosPainel.status;
@@ -955,6 +974,8 @@ const ConsultaOSPage: React.FC = () => {
 
   // Check for saved state on component mount and restore if needed
   useEffect(() => {
+    let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
     const isSavedStateValid = () => {
       const timestamp = localStorage.getItem("os_consulta_state_timestamp");
       if (!timestamp) return false;
@@ -977,7 +998,7 @@ const ConsultaOSPage: React.FC = () => {
         if (savedFilters) {
           const parsedFilters = JSON.parse(savedFilters);
           Object.entries(parsedFilters).forEach(([key, value]) => {
-            handleFiltroChange(key, value as string);
+            handleFiltroChangeRef.current?.(key, value as string);
           });
         }
 
@@ -987,7 +1008,9 @@ const ConsultaOSPage: React.FC = () => {
         }
 
         if (hasSearch && JSON.parse(hasSearch)) {
-          setTimeout(() => handleSearch(), 200);
+          searchTimeout = setTimeout(() => {
+            handleSearchRef.current?.();
+          }, 200);
         }
       } catch (error) {
         console.error("Erro ao restaurar estado dos filtros:", error);
@@ -996,6 +1019,9 @@ const ConsultaOSPage: React.FC = () => {
 
     // Limpa o estado somente ao sair da tela
     return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
       localStorage.removeItem("os_consulta_saved_filters");
       localStorage.removeItem("os_consulta_saved_pagination");
       localStorage.removeItem("os_consulta_has_search");
@@ -1024,7 +1050,6 @@ const ConsultaOSPage: React.FC = () => {
   // Função para navegar para a página de detalhes da OS
   const handleRowNavigate = useCallback(
     (item: OSItemExtended) => {
-      // Salva o estado atual antes de navegar
       saveCurrentState();
       const osId = item.id_os;
       window.location.href = `/admin/os_detalhes/${osId}`;
@@ -1472,7 +1497,7 @@ const ConsultaOSPage: React.FC = () => {
       ) : data.dados && data.dados.length > 0 ? (
         <>
           {/* Column headers */}
-          <div className="grid grid-cols-12 gap-x-1 px-3 py-2 bg-gray-50 rounded-md text-xs font-semibold text-gray-600 mb-2 shadow-sm">
+          <div className="grid grid-cols-12 gap-x-1 px-3 py-2 bg-gray-50 rounded-md text-xs font-semibold text-gray-600 mb-0 shadow-sm">
             <div className="col-span-1">OS</div>
             <div className="col-span-3">Cliente / Cidade</div>
             <div className="col-span-2">Série / Modelo</div>
@@ -1481,7 +1506,7 @@ const ConsultaOSPage: React.FC = () => {
             <div className="col-span-2 text-right">Status</div>
           </div>
 
-          <div className="space-y-1 mt-1 mb-8">
+          <div className="space-y-1 mt-1 mb-4">
             {data.dados.map((item) => (
               <div
                 key={item.id_os}
@@ -1495,8 +1520,6 @@ const ConsultaOSPage: React.FC = () => {
                     handleRowNavigate(item);
                 }}
               >
-                {/* First line: OS #, Cliente, Série, Abertura, Técnico, Status */}
-                {/* First line with all main data */}
                 <div className="grid grid-cols-12 gap-x-1 items-center">
                   {/* OS Number */}
                   <div className="col-span-1">
@@ -1571,7 +1594,7 @@ const ConsultaOSPage: React.FC = () => {
             ))}
           </div>
 
-          <div className="mt-4 mb-6">
+          <div className="mt-4 mb-4">
             <Pagination
               currentPage={paginacao.paginaAtual}
               totalPages={paginacao.totalPaginas}
