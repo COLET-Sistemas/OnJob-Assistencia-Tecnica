@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyToken } from "./utils/jwtUtils";
 
@@ -23,6 +23,8 @@ const ignoredRoutes = [
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isTechRoute = pathname.startsWith("/tecnico");
 
   console.log("Middleware executando para:", pathname);
 
@@ -169,6 +171,35 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
+  const activeModuleCookie = request.cookies.get("active_module")?.value;
+  const normalizedModule =
+    activeModuleCookie === "admin" || activeModuleCookie === "tecnico"
+      ? activeModuleCookie
+      : null;
+  let moduleResponse: NextResponse | null = null;
+
+  if (!isApiRequest && (isAdminRoute || isTechRoute)) {
+    const requestedModule = isAdminRoute ? "admin" : "tecnico";
+
+    if (normalizedModule && normalizedModule !== requestedModule) {
+      const redirectPath =
+        normalizedModule === "admin" ? "/admin/dashboard" : "/tecnico/dashboard";
+      const redirectUrl = new URL(redirectPath, request.url);
+
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    if (!normalizedModule) {
+      moduleResponse = NextResponse.next();
+      moduleResponse.cookies.set("active_module", requestedModule, {
+        path: "/",
+        maxAge: 60 * 60 * 24,
+        sameSite: "lax",
+        secure: request.nextUrl.protocol === "https:",
+        httpOnly: false,
+      });
+    }
+  }
   // Se chegou até aqui, o token é válido
   // Para APIs, adicionar o payload do usuário no cabeçalho da requisição para uso posterior
   if (isApiRequest && payload) {
@@ -212,6 +243,10 @@ export function middleware(request: NextRequest) {
     });
   }
 
+  if (moduleResponse) {
+    return moduleResponse;
+  }
+
   return NextResponse.next();
 }
 
@@ -227,3 +262,5 @@ export const config = {
     "/api/:path*",
   ],
 };
+
+

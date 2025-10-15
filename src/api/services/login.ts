@@ -196,11 +196,15 @@ export class LoginService {
       "perfil",
       "versao_api",
       "empresa",
+      "active_module",
     ];
 
     keysToRemove.forEach((key) => {
       localStorage.removeItem(key);
     });
+
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `active_module=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax${secure}`;
   }
 
   /**

@@ -325,7 +325,7 @@ export default function LoginPage() {
               perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
               administrador: authData.perfil.admin,
             },
-          });
+          }, "admin");
         } catch (authStoreError) {
           console.error("Erro ao salvar dados no authService:", authStoreError);
         }
@@ -432,7 +432,7 @@ export default function LoginPage() {
             perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
             administrador: authData.perfil.admin,
           },
-        });
+        }, "tecnico");
       } catch (authStoreError) {
         console.error("Erro ao salvar dados no authService:", authStoreError);
       }

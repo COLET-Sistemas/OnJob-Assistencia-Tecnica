@@ -1,6 +1,8 @@
 import api from "../api";
 import { empresaService } from "./empresaService";
 
+type ModuleType = "admin" | "tecnico";
+
 interface LoginCredentials {
   login: string;
   senha: string;
@@ -50,6 +52,7 @@ class AuthService {
         // Limpar localStorage
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        this.clearActiveModule();
 
         // Limpar cookie com as mesmas configurações usadas para criá-lo
         const secure = window.location.protocol === "https:" ? "; secure" : "";
@@ -64,7 +67,7 @@ class AuthService {
     }
   }
 
-  saveAuthData(authData: AuthResponse): void {
+  saveAuthData(authData: AuthResponse, module?: ModuleType): void {
     if (typeof window !== "undefined") {
       // Salvar no localStorage
       localStorage.setItem("token", authData.token);
@@ -87,6 +90,10 @@ class AuthService {
       // Limpar qualquer sinalização de limpeza de localStorage
       document.cookie =
         "clearLocalStorage=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+      if (module) {
+        this.setActiveModule(module);
+      }
     }
   }
 
@@ -103,6 +110,31 @@ class AuthService {
       return Boolean(localStorage.getItem("token"));
     }
     return false;
+  }
+
+  setActiveModule(module: ModuleType): void {
+    if (typeof window === "undefined") return;
+
+    localStorage.setItem("active_module", module);
+
+    const expirationDate = new Date();
+    expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000);
+
+    const secure = window.location.protocol === "https:" ? "; secure" : "";
+    const sameSite = "; samesite=lax";
+
+    document.cookie = `active_module=${module}; expires=${expirationDate.toUTCString()}; path=/${secure}${sameSite}`;
+  }
+
+  clearActiveModule(): void {
+    if (typeof window === "undefined") return;
+
+    localStorage.removeItem("active_module");
+
+    const secure = window.location.protocol === "https:" ? "; secure" : "";
+    const sameSite = "; samesite=lax";
+
+    document.cookie = `active_module=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${secure}${sameSite}`;
   }
 }
 
