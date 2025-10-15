@@ -280,14 +280,14 @@ const ConsultaOSPage: React.FC = () => {
         setTecnicos(tecnicosFiltrados.length > 0 ? tecnicosFiltrados : []);
       } catch (err) {
         console.error("Erro ao buscar técnicos:", err);
-        setTecnicos([]); // Garante que tecnicos seja sempre um array, mesmo em caso de erro
+        setTecnicos([]); 
       } finally {
         setLoadingTecnicos(false);
       }
     };
 
     fetchTecnicos();
-  }, []);
+  }, [handleFiltroChange, handleSearch]);
 
   // Definir status mapping para as ordens de serviço
   // Memoize status mapping to avoid rebuilding on each render
@@ -829,8 +829,8 @@ const ConsultaOSPage: React.FC = () => {
         try {
           const params: Record<string, string | number | boolean> = {
             resumido: "s",
-            nro_pagina: 1, 
-            qtde_registros: novoValor, 
+            nro_pagina: 1,
+            qtde_registros: novoValor,
           };
 
           Object.entries(currentFilters).forEach(([key, value]) => {
@@ -955,19 +955,17 @@ const ConsultaOSPage: React.FC = () => {
 
   // Check for saved state on component mount and restore if needed
   useEffect(() => {
-    // Função para checar se o estado salvo é válido (menos de 30 minutos)
     const isSavedStateValid = () => {
       const timestamp = localStorage.getItem("os_consulta_state_timestamp");
       if (!timestamp) return false;
 
       const savedTime = parseInt(timestamp);
       const currentTime = Date.now();
-      const MAX_AGE = 30 * 60 * 1000; // 30 minutes in milliseconds
+      const MAX_AGE = 30 * 60 * 1000; // 30 minutos
 
       return currentTime - savedTime < MAX_AGE;
     };
 
-    // Se tiver um estado salvo válido, restaura ele
     if (isSavedStateValid()) {
       try {
         const savedFilters = localStorage.getItem("os_consulta_saved_filters");
@@ -978,7 +976,6 @@ const ConsultaOSPage: React.FC = () => {
 
         if (savedFilters) {
           const parsedFilters = JSON.parse(savedFilters);
-          // Atualizar filtrosAplicados diretamente via limparFiltros e aplicarFiltros
           Object.entries(parsedFilters).forEach(([key, value]) => {
             handleFiltroChange(key, value as string);
           });
@@ -989,33 +986,25 @@ const ConsultaOSPage: React.FC = () => {
           setPaginacao(parsedPagination);
         }
 
-        // Se tinha uma busca anterior, executa a busca novamente
         if (hasSearch && JSON.parse(hasSearch)) {
-          // Pequeno timeout para garantir que os estados foram atualizados
-          setTimeout(() => {
-            handleSearch();
-          }, 100);
+          setTimeout(() => handleSearch(), 200);
         }
       } catch (error) {
         console.error("Erro ao restaurar estado dos filtros:", error);
       }
     }
 
-    // Limpar o estado salvo após utilizá-lo
-    const cleanSavedState = () => {
+    // Limpa o estado somente ao sair da tela
+    return () => {
       localStorage.removeItem("os_consulta_saved_filters");
       localStorage.removeItem("os_consulta_saved_pagination");
       localStorage.removeItem("os_consulta_has_search");
       localStorage.removeItem("os_consulta_state_timestamp");
     };
-
-    // Remover o estado salvo ao desmontar o componente
-    return () => cleanSavedState();
-  }, [handleFiltroChange, handleSearch]);
+  }, []);
 
   // Função para salvar o estado atual dos filtros e paginação
   const saveCurrentState = useCallback(() => {
-    // Salva filtros e estado de paginação no localStorage
     localStorage.setItem(
       "os_consulta_saved_filters",
       JSON.stringify(filtrosAplicados)
@@ -1073,7 +1062,6 @@ const ConsultaOSPage: React.FC = () => {
               label: "",
               link: "#",
               onClick: () => {},
-              
             },
           }}
         />
