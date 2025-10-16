@@ -1,5 +1,10 @@
 import { authService } from "./services/authService";
 
+interface ApiError extends Error {
+  status?: number;
+  data?: unknown;
+}
+
 // Função para determinar a baseURL da API com base no ambiente
 const getBaseUrl = (): string => {
   // Em ambiente de desenvolvimento local, use o proxy para evitar problemas de CORS
@@ -180,6 +185,18 @@ const apiRequest = async <T>(
       const errorText = await response.text();
       const status = response.status;
 
+      const createApiError = (
+        message: string,
+        data?: unknown
+      ): ApiError => {
+        const error = new Error(message || "Erro na API") as ApiError;
+        error.status = status;
+        if (data !== undefined) {
+          error.data = data;
+        }
+        return error;
+      };
+
       try {
         const errorData = JSON.parse(errorText);
 
@@ -203,9 +220,11 @@ const apiRequest = async <T>(
             apiMessage === "Sessão encerrada: novo login efetuado neste usuário"
           ) {
             handleSessionExpiredError();
-            throw new Error(
-              "Sessão encerrada devido a um novo login. Por favor, faça login novamente."
+            const sessionError = createApiError(
+              "Sessão encerrada devido a um novo login. Por favor, faça login novamente.",
+              errorData
             );
+            throw sessionError;
           }
 
           // Outros erros de autenticação
@@ -215,15 +234,20 @@ const apiRequest = async <T>(
             window.location.href =
               "/?authError=Sessão expirada. Faça login novamente.";
           }
-          throw new Error(
-            "Sua sessão expirou. Por favor, faça login novamente."
+          const authError = createApiError(
+            "Sua sessão expirou. Por favor, faça login novamente.",
+            errorData
           );
+          throw authError;
         }
 
         // Tratar erros de status 403 (Forbidden)
         if (response.status === 403) {
           handleForbiddenError(apiMessage || "Acesso negado");
-          const forbiddenError = new Error(apiMessage || "Acesso negado");
+          const forbiddenError = createApiError(
+            apiMessage || "Acesso negado",
+            errorData
+          );
           forbiddenError.name = "ForbiddenError";
           throw forbiddenError;
         }
@@ -233,7 +257,8 @@ const apiRequest = async <T>(
           ? `${apiMessage || "Erro na API"}: ${errorDetail}`
           : apiMessage || "Erro desconhecido na API";
 
-        throw new Error(fullErrorMessage);
+        const apiError = createApiError(fullErrorMessage, errorData);
+        throw apiError;
       } catch {
         if (response.status === 401) {
           if (
@@ -249,18 +274,24 @@ const apiRequest = async <T>(
                 "/?authError=Sessão expirada. Faça login novamente.";
             }
           }
-          throw new Error("Sessão encerrada. Por favor, faça login novamente.");
+          const sessionError = createApiError(
+            "Sessão encerrada. Por favor, faça login novamente."
+          );
+          throw sessionError;
         }
 
         // Se for um erro 403, mas não for JSON válido
         if (response.status === 403) {
           handleForbiddenError(errorText || "Acesso negado");
-          const forbiddenError = new Error(errorText || "Acesso negado");
+          const forbiddenError = createApiError(errorText || "Acesso negado");
           forbiddenError.name = "ForbiddenError";
           throw forbiddenError;
         }
 
-        throw new Error(errorText || "Erro inesperado na requisição");
+        const fallbackError = createApiError(
+          errorText || "Erro inesperado na requisição"
+        );
+        throw fallbackError;
       }
     }
 

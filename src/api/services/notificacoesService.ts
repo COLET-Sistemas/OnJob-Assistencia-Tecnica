@@ -5,17 +5,18 @@ export interface Notificacao {
   titulo: string;
   mensagem: string;
   link?: string;
-  data: string; // Alterado de data_criacao para data
-  lido: boolean; // Alterado de lida para lido
+  data: string;
+  lido: boolean;
 }
 
 export interface NotificacoesResponse {
-  dados: Notificacao[]; // Alterado de notificacoes para dados
-  total_registros: number; // Alterado de total para total_registros
-  total_notificacoes: number; // Novo campo
-  nao_lidas: number; // Mantido
-  pagina_atual: number; // Mantido
-  total_paginas: number; // Mantido
+  dados: Notificacao[];
+  total_registros: number;
+  total_notificacoes: number;
+  nao_lidas: number;
+  pagina_atual: number;
+  total_paginas: number;
+  [key: string]: unknown;
 }
 
 export interface NotificacoesCountResponse {
@@ -23,42 +24,67 @@ export interface NotificacoesCountResponse {
   total_notificacoes: number;
 }
 
+export interface NotificacaoUpdateResponse extends NotificacoesCountResponse {
+  mensagem?: string;
+  message?: string;
+  sucesso?: boolean;
+}
+
+const normalizeText = (value?: string) => {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const text = value.trim();
+  return text.length > 0 ? text : undefined;
+};
+
+const extractMessages = (
+  response?: Partial<NotificacaoUpdateResponse>
+): Pick<NotificacaoUpdateResponse, "mensagem" | "message"> => {
+  if (!response) {
+    return {};
+  }
+  const mensagemDaApi = normalizeText(response.mensagem);
+  const messageDaApi = normalizeText(response.message);
+  const fallback = mensagemDaApi ?? messageDaApi;
+
+  return {
+    mensagem: mensagemDaApi ?? fallback,
+    message: messageDaApi ?? fallback,
+  };
+};
+
 export const notificacoesService = {
   /**
-   * Obtém a quantidade de notificações não lidas
+   * Obtem a quantidade de notificacoes nao lidas
    */
   getNotificacoesCount: async (): Promise<NotificacoesCountResponse> => {
     try {
-      // Adicionamos um timestamp para evitar cache do navegador e garantir polling de 1 minuto
       const response = await api.get<NotificacoesCountResponse>(
         `/notificacoes?qtde=S&_t=${Date.now()}`
       );
 
-      // Caso a API retorne um objeto vazio {}, isso significa que não há notificações
       if (response && Object.keys(response).length === 0) {
         return { nao_lidas: 0, total_notificacoes: 0 };
       }
 
-      // Verificar se a resposta tem a estrutura esperada
       if (typeof response?.nao_lidas !== "number") {
-        // Não vamos logar como erro, apenas como informação
         return { nao_lidas: 0, total_notificacoes: 0 };
       }
 
-      // Se não tiver total_notificacoes na resposta, usar o valor de nao_lidas
       if (typeof response.total_notificacoes !== "number") {
         response.total_notificacoes = response.nao_lidas;
       }
 
       return response;
     } catch (error) {
-      console.error("Erro ao buscar contagem de notificações:", error);
+      console.error("Erro ao buscar contagem de notificacoes:", error);
       return { nao_lidas: 0, total_notificacoes: 0 };
     }
   },
 
   /**
-   * Obtém lista de notificações paginada
+   * Obtem lista de notificacoes paginada
    */
   getNotificacoes: async (
     pagina: number = 1,
@@ -75,7 +101,6 @@ export const notificacoesService = {
 
       const response = await api.get<NotificacoesResponse>(url);
 
-      // Caso a API retorne um objeto vazio {}, isso significa que não há notificações
       if (response && Object.keys(response).length === 0) {
         return {
           dados: [],
@@ -87,7 +112,6 @@ export const notificacoesService = {
         };
       }
 
-      // Verificar se a resposta tem a estrutura esperada
       if (!Array.isArray(response?.dados)) {
         return {
           dados: [],
@@ -101,7 +125,7 @@ export const notificacoesService = {
 
       return response;
     } catch (error) {
-      console.error("Erro ao buscar notificações:", error);
+      console.error("Erro ao buscar notificacoes:", error);
       return {
         dados: [],
         total_registros: 0,
@@ -114,29 +138,75 @@ export const notificacoesService = {
   },
 
   /**
-   * Marca uma notificação específica como lida
+   * Marca uma notificacao especifica como lida
    */
-  marcarComoLida: async (id: number): Promise<NotificacoesCountResponse> => {
+  marcarComoLida: async (
+    id: number
+  ): Promise<NotificacaoUpdateResponse> => {
     try {
-      await api.patch(`/notificacoes?id=${id}`, {});
-      // Atualizar contador após marcar como lida
-      return await notificacoesService.getNotificacoesCount();
+      const patchResponse = await api.patch<Partial<NotificacaoUpdateResponse>>(
+        `/notificacoes?id=${id}`,
+        {}
+      );
+
+      let counts: NotificacoesCountResponse;
+      const mensagens = extractMessages(patchResponse);
+
+      if (
+        typeof patchResponse?.nao_lidas === "number" &&
+        typeof patchResponse?.total_notificacoes === "number"
+      ) {
+        counts = {
+          nao_lidas: patchResponse.nao_lidas,
+          total_notificacoes: patchResponse.total_notificacoes,
+        };
+      } else {
+        counts = await notificacoesService.getNotificacoesCount();
+      }
+
+      return {
+        ...counts,
+        ...mensagens,
+        sucesso: patchResponse?.sucesso,
+      };
     } catch (error) {
-      console.error(`Erro ao marcar notificação ${id} como lida:`, error);
+      console.error(`Erro ao marcar notificacao ${id} como lida:`, error);
       throw error;
     }
   },
 
   /**
-   * Marca todas as notificações como lidas
+   * Marca todas as notificacoes como lidas
    */
-  marcarTodasComoLidas: async (): Promise<NotificacoesCountResponse> => {
+  marcarTodasComoLidas: async (): Promise<NotificacaoUpdateResponse> => {
     try {
-      await api.patch("/notificacoes?id=-1", {});
-      // Atualizar contador após marcar todas como lidas
-      return await notificacoesService.getNotificacoesCount();
+      const patchResponse = await api.patch<Partial<NotificacaoUpdateResponse>>(
+        "/notificacoes?id=-1",
+        {}
+      );
+
+      let counts: NotificacoesCountResponse;
+      const mensagens = extractMessages(patchResponse);
+
+      if (
+        typeof patchResponse?.nao_lidas === "number" &&
+        typeof patchResponse?.total_notificacoes === "number"
+      ) {
+        counts = {
+          nao_lidas: patchResponse.nao_lidas,
+          total_notificacoes: patchResponse.total_notificacoes,
+        };
+      } else {
+        counts = await notificacoesService.getNotificacoesCount();
+      }
+
+      return {
+        ...counts,
+        ...mensagens,
+        sucesso: patchResponse?.sucesso,
+      };
     } catch (error) {
-      console.error("Erro ao marcar todas notificações como lidas:", error);
+      console.error("Erro ao marcar todas notificacoes como lidas:", error);
       throw error;
     }
   },

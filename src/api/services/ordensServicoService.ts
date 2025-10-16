@@ -534,9 +534,29 @@ class OrdensServicoService {
     }
 
     const cacheKey = `pendentes_${idUsuario || "all"}`;
-    return this.getCachedOrFetch(cacheKey, () =>
-      api.get(`${this.baseUrl}`, { params })
-    );
+    const emptyResponse = {
+      total_registros: 0,
+      total_paginas: 0,
+      nro_pagina: 1,
+      qtde_registros: 0,
+      dados: [] as OSItem[],
+    };
+    return this.getCachedOrFetch(cacheKey, async () => {
+      try {
+        return await api.get(`${this.baseUrl}`, { params });
+      } catch (error) {
+        const status =
+          typeof error === "object" && error !== null && "status" in error
+            ? (error as { status?: number }).status
+            : undefined;
+
+        if (status === 404) {
+          return { ...emptyResponse, dados: [] as OSItem[] };
+        }
+
+        throw error;
+      }
+    });
   }
 
   async getDashboard(params = {}): Promise<{

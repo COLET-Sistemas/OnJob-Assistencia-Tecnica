@@ -273,8 +273,7 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
         descricao_ocorrencia: descricao,
       };
 
-      const response =
-        await ocorrenciasOSService.registrarOcorrencia(payload);
+      const response = await ocorrenciasOSService.registrarOcorrencia(payload);
 
       switch (modalOpen) {
         case "iniciar":
@@ -346,7 +345,7 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
   };
 
   const baseBtn =
-    "group relative flex items-center gap-2 p-3 rounded-xl text-xs font-medium transition-all duration-200 active:scale-[0.98] shadow-sm flex-1 justify-center min-w-[120px] min-h-[90px]";
+    "group relative flex items-center gap-2 p-3 rounded-xl text-xs font-medium transition-all duration-200 active:scale-[0.98] shadow-sm flex-1 justify-center min-w-[120px] ";
   const purpleBtn =
     "bg-gray-50 border border-[#7B54BE] text-[#7B54BE] hover:bg-gray-100";
   const redBtn =

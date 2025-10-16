@@ -86,7 +86,7 @@ const NotificacoesDropdown = memo(
             mensagem: item.mensagem,
             link: item.link,
             data_criacao: item.data, // Mapeamento de data para data_criacao
-            lida: !item.lido, // Mapeamento inverso de lido para lida
+            lida: item.lido,
           }));
 
           // Se for página 1, substitui as notificações. Se não, concatena com as existentes.

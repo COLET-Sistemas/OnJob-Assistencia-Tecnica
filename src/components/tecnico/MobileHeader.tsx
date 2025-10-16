@@ -4,20 +4,20 @@ type MenuOption = {
   onClick: () => void;
 };
 import React, { useState, useRef, useEffect } from "react";
-import { Menu, Plus, Bell } from "lucide-react";
+import { Menu, Plus, Bell, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useNotificacoes } from "@/hooks";
 
 interface MobileHeaderProps {
   title: string;
-  onMenuClick?: () => void;
   onAddClick?: () => void;
+  leftVariant?: "plus" | "back";
 }
 
 const MobileHeader: React.FC<MobileHeaderProps> = ({
   title,
-  onMenuClick,
   onAddClick,
+  leftVariant = "plus",
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -75,13 +75,17 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
         {onAddClick ? (
           <button
             onClick={onAddClick}
-            className="p-2 hover:bg-[#7B54BE] rounded-lg transition-colors"
-            aria-label="Adicionar"
+            className="relative p-2 hover:bg-[#6A47A8] rounded-lg transition-colors"
+            aria-label={leftVariant === "back" ? "Voltar" : "Adicionar"}
           >
-            <Plus className="w-6 h-6" />
+            {leftVariant === "back" ? (
+              <ArrowLeft className="w-6 h-6" />
+            ) : (
+              <Plus className="w-6 h-6" />
+            )}
           </button>
         ) : (
-          <></>
+          <div style={{ width: 40 }} />
         )}
 
         <h1 className="text-lg font-medium text-center flex-1 px-4">{title}</h1>
@@ -102,52 +106,48 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
           </button>
         </div>
 
-        {/* Direita: botão de menu */}
-        {onMenuClick ? (
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen((open) => !open)}
-              className="p-2 hover:bg-[#6A47A8] rounded-lg transition-colors"
-              aria-label="Menu"
+        {/* Direita: botão de menu fixo */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen((open) => !open)}
+            className="p-2 hover:bg-[#6A47A8] rounded-lg transition-colors"
+            aria-label="Menu"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          {menuOpen && (
+            <div
+              className="absolute right-2 top-10 min-w-[150px] bg-white text-[#22223b] rounded-xl shadow-xl z-50 border border-[#ece9f6] flex flex-col animate-fade-in"
+              style={{
+                boxShadow: "0 8px 24px 0 rgba(60, 60, 90, 0.10)",
+                padding: "0.5rem 0",
+              }}
             >
-              <Menu className="w-6 h-6" />
-            </button>
-            {menuOpen && (
-              <div
-                className="absolute right-2 top-10 min-w-[150px] bg-white text-[#22223b] rounded-xl shadow-xl z-50 border border-[#ece9f6] flex flex-col animate-fade-in"
-                style={{
-                  boxShadow: "0 8px 24px 0 rgba(60, 60, 90, 0.10)",
-                  padding: "0.5rem 0",
-                }}
-              >
-                {menuOptions.map((option, idx) => (
-                  <button
-                    key={option.label}
-                    onClick={option.onClick}
-                    className={`w-full text-left px-5 py-3 text-base font-medium transition-colors focus:outline-none focus:bg-[#f3eaff] hover:bg-[#f3eaff] ${
-                      idx === menuOptions.length - 1
-                        ? ""
-                        : "border-b border-[#ece9f6]"
-                    }`}
-                    style={{
-                      borderRadius:
-                        idx === 0
-                          ? "12px 12px 0 0"
-                          : idx === menuOptions.length - 1
-                          ? "0 0 12px 12px"
-                          : "0",
-                      background: "none",
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div style={{ width: 40 }} />
-        )}
+              {menuOptions.map((option, idx) => (
+                <button
+                  key={option.label}
+                  onClick={option.onClick}
+                  className={`w-full text-left px-5 py-3 text-base font-medium transition-colors focus:outline-none focus:bg-[#f3eaff] hover:bg-[#f3eaff] ${
+                    idx === menuOptions.length - 1
+                      ? ""
+                      : "border-b border-[#ece9f6]"
+                  }`}
+                  style={{
+                    borderRadius:
+                      idx === 0
+                        ? "12px 12px 0 0"
+                        : idx === menuOptions.length - 1
+                        ? "0 0 12px 12px"
+                        : "0",
+                    background: "none",
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

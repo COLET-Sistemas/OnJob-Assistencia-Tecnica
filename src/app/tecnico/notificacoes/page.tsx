@@ -2,28 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckSquare, ChevronLeft, Mail, MailOpen } from "lucide-react";
+import { CheckSquare, Mail, MailOpen } from "lucide-react";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import { notificacoesService } from "@/api/services/notificacoesService";
 import { useNotificacoes } from "@/hooks";
+import { useFeedback } from "@/context/FeedbackContext";
 import { formatRelativeDate } from "@/utils/formatters";
 
-// Interface para o componente local
 interface Notificacao {
   id: number;
   titulo: string;
   mensagem: string;
-  link?: string;
   data_criacao: string;
   lida: boolean;
 }
 
 /**
- * Converte uma string de data em vários formatos possíveis para um objeto Date
- * Suporta formatos como "13/10/2025 11:24" ou ISO "2025-10-13T11:24:00"
+ * Converte uma string de data (dd/mm/yyyy hh:mm ou ISO) em Date
  */
 function parseNotificationDate(dateString: string): Date {
-  // Verificar se é formato dd/mm/yyyy hh:mm
   if (dateString.includes("/")) {
     const [datePart, timePart] = dateString.split(" ");
     const [day, month, year] = datePart.split("/").map(Number);
@@ -36,7 +33,6 @@ function parseNotificationDate(dateString: string): Date {
     return new Date(year, month - 1, day);
   }
 
-  // Caso contrário, assume que é formato ISO
   return new Date(dateString);
 }
 
@@ -46,40 +42,38 @@ export default function NotificacoesPage() {
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [loading, setLoading] = useState(true);
-  // Usar o hook atualizado com suporte a cache
-  const { updateCount, refreshCount, getNotificacoes, totalNotificacoes } =
-    useNotificacoes();
 
-  // Função para buscar notificações (agora usando o cache do hook)
+  // removido 'notificacoesCount' pois não é usado
+  const { updateCount, refreshCount, getNotificacoes } = useNotificacoes();
+  const { showToast } = useFeedback();
+
+  const hasUnread = notificacoes.some((notif) => !notif.lida);
+
   const fetchNotificacoes = async (
     pagina: number = 1,
     forceRefresh: boolean = false
   ) => {
     setLoading(true);
     try {
-      // Usar o hook para buscar notificações com suporte a cache
       const response = await getNotificacoes(pagina, forceRefresh);
 
-      // Se a API retornou um objeto vazio {}, significa que não há notificações
       if (!response || Object.keys(response).length === 0) {
         setNotificacoes([]);
         setTotalPaginas(1);
         setPaginaAtual(1);
-        updateCount(0);
+        updateCount(0, 0);
+        return;
       }
-      // Verificar se response e response.dados são válidos
-      else if (Array.isArray(response.dados)) {
-        // Adaptar o formato da API para o formato usado no componente
+
+      if (Array.isArray(response.dados)) {
         const notificacoesAdaptadas = response.dados.map((item) => ({
           id: item.id,
           titulo: item.titulo,
           mensagem: item.mensagem,
-          link: item.link,
-          data_criacao: item.data, // Mapeamento de data para data_criacao
-          lida: !item.lido, // Mapeamento inverso de lido para lida
+          data_criacao: item.data,
+          lida: item.lido,
         }));
 
-        // Se for página 1, substitui as notificações. Se não, concatena com as existentes.
         if (pagina === 1) {
           setNotificacoes(notificacoesAdaptadas);
         } else {
@@ -87,102 +81,97 @@ export default function NotificacoesPage() {
         }
 
         setTotalPaginas(response.total_paginas || 1);
-        setPaginaAtual(response.pagina_atual || 1);
-        // Atualizar tanto o contador de não lidas quanto o total de notificações
+        setPaginaAtual(response.pagina_atual || pagina);
+
         updateCount(
           response.nao_lidas || 0,
           (response.total_notificacoes as number) || response.dados.length || 0
         );
-      } else {
-        // Não vamos tratar como erro, apenas definir valores padrão
-        setNotificacoes([]);
-        setTotalPaginas(1);
-        setPaginaAtual(1);
+        return;
       }
+
+      setNotificacoes([]);
+      setTotalPaginas(1);
+      setPaginaAtual(1);
     } catch (error) {
-      console.error("Erro ao buscar notificações:", error);
+      console.error("Erro ao buscar notificacoes:", error);
       setNotificacoes([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Carregar notificações ao montar o componente
   useEffect(() => {
-    // Forçar refresh ao carregar a página de notificações
-    // mas não chamar fetchNotificacoesCount() que já é feito pelo NotificacoesUpdater
     fetchNotificacoes(1, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Função para marcar uma notificação como lida
   const marcarComoLida = async (id: number) => {
     try {
-      await notificacoesService.marcarComoLida(id);
+      const response = await notificacoesService.marcarComoLida(id);
 
-      // Atualizar a notificação localmente como lida
       setNotificacoes((prev) =>
         prev.map((notif) =>
           notif.id === id ? { ...notif, lida: true } : notif
         )
       );
 
-      // Atualizar contagem no hook
-      refreshCount();
+      if (typeof response?.nao_lidas === "number") {
+        updateCount(response.nao_lidas, response.total_notificacoes);
+      } else {
+        refreshCount();
+      }
+
+      const toastMessage =
+        response?.mensagem ||
+        response?.message ||
+        "Notificação marcada como lida.";
+      const toastType = response?.sucesso === false ? "error" : "success";
+      showToast(toastMessage, toastType);
     } catch (error) {
       console.error(`Erro ao marcar notificação ${id} como lida:`, error);
+      showToast("Erro ao marcar notificação como lida.", "error");
     }
   };
 
-  // Função para marcar todas as notificações como lidas
   const marcarTodasComoLidas = async () => {
-    try {
-      await notificacoesService.marcarTodasComoLidas();
+    if (!hasUnread) return;
 
-      // Atualizar todas as notificações localmente como lidas
+    try {
+      const response = await notificacoesService.marcarTodasComoLidas();
+
       setNotificacoes((prev) =>
         prev.map((notif) => ({ ...notif, lida: true }))
       );
 
-      // Atualizar contagem no hook - manter o total de notificações, mas zerar as não lidas
-      updateCount(0, totalNotificacoes);
+      if (typeof response?.nao_lidas === "number") {
+        updateCount(response.nao_lidas, response.total_notificacoes);
+      } else {
+        refreshCount();
+      }
+
+      const toastMessage =
+        response?.mensagem ||
+        response?.message ||
+        "Notificações marcadas como lidas.";
+      const toastType = response?.sucesso === false ? "error" : "success";
+      showToast(toastMessage, toastType);
     } catch (error) {
       console.error("Erro ao marcar todas notificações como lidas:", error);
+      showToast("Erro ao marcar todas notificações como lidas.", "error");
     }
   };
 
-  // Função para carregar mais notificações
   const carregarMaisNotificacoes = () => {
     if (paginaAtual < totalPaginas && !loading) {
-      // Não forçamos refresh para paginação
       fetchNotificacoes(paginaAtual + 1, false);
     }
   };
 
-  // Função para navegar para o link da notificação, se existir
-  const navegarParaLink = (notificacao: Notificacao) => {
-    // Se já estiver lida, apenas navega
-    if (notificacao.lida) {
-      if (notificacao.link) {
-        router.push(notificacao.link);
-      }
-      return;
-    }
-
-    // Se não estiver lida, marca como lida e depois navega
-    marcarComoLida(notificacao.id).then(() => {
-      if (notificacao.link) {
-        router.push(notificacao.link);
-      }
-    });
-  };
-
-  // Voltar para a página anterior
   const voltarParaPaginaAnterior = () => {
     router.back();
   };
 
-  // Renderizar notificações vazias
   const renderNotificacoesVazias = () => (
     <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
       <div className="bg-gray-100 p-5 rounded-full mb-4">
@@ -201,62 +190,49 @@ export default function NotificacoesPage() {
     <div className="min-h-screen bg-gray-50">
       <MobileHeader
         title="Notificações"
-        onMenuClick={() => {}}
-        onAddClick={() => voltarParaPaginaAnterior()}
+        onAddClick={voltarParaPaginaAnterior}
+        leftVariant="back"
       />
 
       <div className="p-4">
-        {/* Cabeçalho da página */}
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={voltarParaPaginaAnterior}
-            className="flex items-center text-gray-600"
-          >
-            <ChevronLeft size={20} />
-            <span className="ml-1">Voltar</span>
-          </button>
-
-          {notificacoes.length > 0 && (
+        {hasUnread && (
+          <div className="flex justify-end mb-4">
             <button
               onClick={marcarTodasComoLidas}
-              className="text-sm text-[#7B54BE] font-medium flex items-center"
+              className="text-sm text-[#7B54BE] font-medium flex items-center gap-1 rounded-full border border-[#7B54BE] px-4 py-2 transition-colors hover:bg-[#7B54BE] hover:text-white"
             >
-              <CheckSquare size={16} className="mr-1" />
-              <span>Marcar todas como lidas</span>
+              <CheckSquare size={16} />
+              Marcar todas como lidas
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Lista de notificações */}
         <div className="bg-white rounded-lg shadow">
           {loading && (
             <div className="p-6 text-center text-gray-500">
-              Carregando notificações...
+              Carregando notificacoes...
             </div>
           )}
 
-          {!loading &&
-            (!notificacoes || notificacoes.length === 0) &&
-            renderNotificacoesVazias()}
+          {!loading && notificacoes.length === 0 && renderNotificacoesVazias()}
 
           {!loading &&
-            notificacoes &&
             notificacoes.length > 0 &&
             notificacoes.map((notificacao) => (
               <div
                 key={notificacao.id}
-                className={`border-b border-gray-100 p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  !notificacao.lida ? "bg-purple-50/50" : ""
+                className={`border-b border-gray-100 p-4 transition-colors ${
+                  notificacao.lida
+                    ? "bg-white"
+                    : "bg-purple-50/80 border-l-4 border-l-[#7B54BE]"
                 }`}
-                onClick={() => navegarParaLink(notificacao)}
               >
                 <div className="flex items-start gap-3">
-                  {/* Ícone de notificação */}
                   <div
                     className={`p-2 rounded-full mt-1 ${
                       notificacao.lida
-                        ? "bg-gray-100 text-gray-500"
-                        : "bg-purple-100 text-[#7B54BE]"
+                        ? "bg-gray-200 text-gray-500"
+                        : "bg-[#7B54BE] text-white"
                     }`}
                   >
                     {notificacao.lida ? (
@@ -266,55 +242,59 @@ export default function NotificacoesPage() {
                     )}
                   </div>
 
-                  {/* Conteúdo da notificação */}
-                  <div className="flex-1">
-                    {/* Título */}
-                    <h4
-                      className={`text-base ${
-                        !notificacao.lida
-                          ? "font-semibold text-[#7B54BE]"
-                          : "font-medium text-gray-800"
-                      }`}
-                    >
-                      {notificacao.titulo}
-                    </h4>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h4
+                        className={`text-base ${
+                          notificacao.lida
+                            ? "font-medium text-gray-800"
+                            : "font-semibold text-[#7B54BE]"
+                        }`}
+                      >
+                        {notificacao.titulo}
+                      </h4>
 
-                    {/* Mensagem */}
-                    <p className="text-sm text-gray-600 mt-1">
+                      {!notificacao.lida ? (
+                        <button
+                          type="button"
+                          onClick={() => marcarComoLida(notificacao.id)}
+                          className="flex items-center gap-1 rounded-full border border-[#7B54BE] px-3 py-1 text-xs font-medium text-[#7B54BE] transition-colors hover:bg-[#7B54BE] hover:text-white"
+                        >
+                          <CheckSquare size={14} />
+                          Marcar como lida
+                        </button>
+                      ) : (
+                        <span className="flex items-center gap-1 text-xs font-semibold text-gray-400">
+                          <CheckSquare size={12} />
+                          Lida
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-sm text-gray-600">
                       {notificacao.mensagem}
                     </p>
 
-                    {/* Data */}
-                    <div className="text-xs text-gray-400 mt-2">
+                    <div className="text-xs text-gray-400">
                       {notificacao.data_criacao
                         ? formatRelativeDate(
                             parseNotificationDate(notificacao.data_criacao)
                           )
                         : ""}
                     </div>
-
-                    {/* Indicador de link */}
-                    {notificacao.link && (
-                      <div className="mt-2">
-                        <span className="text-xs text-[#7B54BE] font-medium">
-                          Acessar →
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
             ))}
 
-          {/* Botão para carregar mais */}
           {!loading && paginaAtual < totalPaginas && (
             <div className="p-4 text-center">
               <button
                 onClick={carregarMaisNotificacoes}
                 disabled={loading}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 rounded-full text-sm font-medium transition-colors"
               >
-                {loading ? "Carregando..." : "Carregar mais notificações"}
+                {loading ? "Carregando..." : "Carregar mais notificacoes"}
               </button>
             </div>
           )}

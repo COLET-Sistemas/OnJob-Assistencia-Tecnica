@@ -948,7 +948,6 @@ const CadastroClientes = () => {
           </div>
         )}
       />
-      {/* Only show pagination if we have records */}
       {paginacao.totalRegistros > 0 && (
         <Pagination
           currentPage={paginacao.paginaAtual}

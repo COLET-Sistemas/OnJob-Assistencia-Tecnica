@@ -275,7 +275,8 @@ export default function OSDetalheMobile() {
       <>
         <MobileHeader
           title="Detalhes da OS"
-          onMenuClick={() => router.back()}
+          onAddClick={() => router.push("/tecnico/dashboard")}
+          leftVariant="back"
         />
         <Loading
           fullScreen={true}
@@ -292,7 +293,8 @@ export default function OSDetalheMobile() {
       <>
         <MobileHeader
           title="Detalhes da OS"
-          onMenuClick={() => router.back()}
+          onAddClick={() => router.push("/tecnico/dashboard")}
+          leftVariant="back"
         />
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-lg border border-red-200">
@@ -326,7 +328,8 @@ export default function OSDetalheMobile() {
       <>
         <MobileHeader
           title="Detalhes da OS"
-          onMenuClick={() => router.back()}
+          onAddClick={() => router.push("/tecnico/dashboard")}
+          leftVariant="back"
         />
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
           <div className="text-center">
@@ -348,12 +351,13 @@ export default function OSDetalheMobile() {
 
   return (
     <main
-      className="min-h-screen bg-slate-50 pb-30"
+      className="min-h-screen bg-slate-50 pb-20"
       key={`os-${os.id_os}-${refreshCount}`}
     >
       <MobileHeader
         title={os.id_os ? `OS #${os.id_os}` : "Detalhes da OS"}
-        onMenuClick={() => router.back()}
+        onAddClick={() => router.push("/tecnico/dashboard")}
+        leftVariant="back"
       />
 
       {/* Status Header */}
@@ -533,7 +537,7 @@ export default function OSDetalheMobile() {
       </div>
 
       {/* Quick Actions - Fixo na parte inferior */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 p-3 safe-area-bottom">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 p-4 safe-area-bottom">
         <QuickActions os={os} />
       </div>
     </main>

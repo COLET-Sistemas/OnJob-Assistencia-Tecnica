@@ -46,9 +46,9 @@ const ActionButton = memo<{
       }}
       disabled={action.disabled}
       className={`
-        group relative flex flex-col items-center justify-center gap-2 p-3
+        group relative flex flex-col items-center justify-center gap-1 px-3 py-1
         rounded-xl border transition-all duration-200 ease-out active:scale-[0.98]
-        w-full min-w-[120px] min-h-[90px] shadow-sm bg-gray-50 hover:bg-gray-100
+        w-full min-w-[120px] shadow-sm bg-white hover:bg-gray-50
         ${action.color}
         ${
           action.disabled
@@ -296,7 +296,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
         icon: <Navigation className="w-3.5 h-3.5 text-blue-600" />,
         label: "Navegar",
         action: showNavigationModal,
-        color: "border border-blue-200 text-blue-600 hover:border-blue-300",
+        color: "hover:border-blue-300",
         disabled: isLocationLoading,
       });
     }
@@ -306,7 +306,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
         icon: <Phone className="w-3.5 h-3.5 text-green-600" />,
         label: "Ligar",
         action: () => window.open(`tel:${os.contato!.telefone}`),
-        color: "border border-green-200 text-green-600 hover:border-green-300",
+        color: "hover:border-green-300",
         disabled: false,
       });
     }
@@ -320,8 +320,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
             `https://wa.me/${os.contato!.whatsapp.replace(/\D/g, "")}`,
             "_blank"
           ),
-        color:
-          "border border-emerald-200 text-emerald-600 hover:border-emerald-300",
+        color: "hover:border-emerald-300",
         disabled: false,
       });
     }
@@ -331,7 +330,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
         icon: <Mail className="w-3.5 h-3.5 text-purple-600" />,
         label: "E-mail",
         action: () => window.open(`mailto:${os.contato!.email}`),
-        color: "border border-purple-200 text-purple-600 hover:border-purple-300",
+        color: "hover:border-purple-300",
         disabled: false,
       });
     }

@@ -24,10 +24,9 @@ import {
 import { fatService, type FATDetalhada } from "@/api/services/fatService";
 import { Loading } from "@/components/LoadingPersonalizado";
 import Toast from "@/components/tecnico/Toast";
-
 import StatusBadge from "@/components/tecnico/StatusBadge";
 
-// Botão de ação para FAT, inspirado no QuickActions
+// Botão de ação para FAT
 type ActionButtonFatProps = {
   label: string;
   icon: React.ReactNode;
@@ -44,15 +43,15 @@ function ActionButtonFat({
     <button
       onClick={onClick}
       className={`
-        group relative flex flex-col items-center gap-2 p-3 
+        group relative flex flex-col items-center gap-1.5 p-2 
         rounded-xl border transition-all duration-200 ease-out
-        min-w-[80px] bg-white hover:bg-gray-50
+        w-28 flex-shrink-0 bg-white hover:bg-gray-50
         ${color}
         hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 border-gray-200 hover:border-gray-300
       `}
       type="button"
     >
-      <div className="flex items-center justify-center w-7 h-7">{icon}</div>
+      <div className="flex items-center justify-center w-6 h-6">{icon}</div>
       <span className="text-xs font-medium text-gray-700 text-center">
         {label}
       </span>
@@ -151,8 +150,6 @@ export default function FATDetalheMobile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Log de inicialização da página para debug
-
   const [toast, setToast] = useState<{
     visible: boolean;
     message: string;
@@ -166,19 +163,15 @@ export default function FATDetalheMobile() {
   // Função auxiliar para mostrar toast com auto-hide
   const showToast = useCallback(
     (message: string, type: "success" | "error" = "success") => {
-      // Define o toast como visível com a mensagem e tipo
       setToast({
         visible: true,
         message,
         type,
       });
-
-      // Opcional: pode deixar o auto-hide para o componente Toast através do onClose
     },
     []
   );
 
-  // Ref para controlar se já está carregando
   const isLoadingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -245,7 +238,6 @@ export default function FATDetalheMobile() {
         const response = await fatService.getById(Number(params.id), force);
 
         if (abortControllerRef.current?.signal.aborted) {
-          console.log("Requisição cancelada");
           return;
         }
 
@@ -256,33 +248,14 @@ export default function FATDetalheMobile() {
         setFat(response);
       } catch (error: unknown) {
         if (abortControllerRef.current?.signal.aborted) {
-          console.log("Requisição cancelada");
           return;
         }
 
         console.error("Erro ao carregar FAT:", error);
-
         let errorMessage = "Erro ao carregar detalhes da FAT";
 
         if (error && typeof error === "object") {
-          if (
-            "response" in error &&
-            error.response &&
-            typeof error.response === "object"
-          ) {
-            if (
-              "data" in error.response &&
-              error.response.data &&
-              typeof error.response.data === "object"
-            ) {
-              if (
-                "message" in error.response.data &&
-                typeof error.response.data.message === "string"
-              ) {
-                errorMessage = error.response.data.message;
-              }
-            }
-          } else if ("message" in error && typeof error.message === "string") {
+          if ("message" in error && typeof error.message === "string") {
             errorMessage = error.message;
           }
         }
@@ -310,7 +283,6 @@ export default function FATDetalheMobile() {
     return () => {
       mounted = false;
       isLoadingRef.current = false;
-
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
@@ -326,7 +298,6 @@ export default function FATDetalheMobile() {
     };
   }, []);
 
-  // Handlers para os botões de ação
   const handleIniciarAtendimento = useCallback(async () => {
     try {
       setLoading(true);
@@ -334,15 +305,12 @@ export default function FATDetalheMobile() {
       // Exemplo: const response = await fatService.iniciarAtendimento(fat?.id_fat);
 
       try {
-        // Simulando uma chamada à API com timeout (remover na implementação real)
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Simulando sucesso da API
         const responseMessage = "Atendimento iniciado com sucesso!";
-
         showToast(responseMessage, "success");
 
-        // Recarregar detalhes da FAT após sucesso
         await fetchFAT(true);
       } catch (error) {
         console.error("Erro ao iniciar atendimento:", error);
@@ -364,7 +332,6 @@ export default function FATDetalheMobile() {
       // Exemplo: const response = await fatService.pausarAtendimento(fat?.id_fat);
 
       try {
-        // Simulando uma chamada à API com timeout (remover na implementação real)
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Simulando sucesso da API
@@ -372,7 +339,6 @@ export default function FATDetalheMobile() {
 
         showToast(responseMessage, "success");
 
-        // Recarregar detalhes da FAT após sucesso
         await fetchFAT(true);
       } catch (error) {
         console.error("Erro ao pausar atendimento:", error);
@@ -394,7 +360,6 @@ export default function FATDetalheMobile() {
       // Exemplo: const response = await fatService.retomarAtendimento(fat?.id_fat);
 
       try {
-        // Simulando uma chamada à API com timeout (remover na implementação real)
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Simulando sucesso da API
@@ -402,7 +367,6 @@ export default function FATDetalheMobile() {
 
         showToast(responseMessage, "success");
 
-        // Recarregar detalhes da FAT após sucesso
         await fetchFAT(true);
       } catch (error) {
         console.error("Erro ao retomar atendimento:", error);
@@ -417,14 +381,12 @@ export default function FATDetalheMobile() {
   }, [fetchFAT, extractErrorMessage, showToast]);
 
   const handleInterromperAtendimento = useCallback(async () => {
-  
     try {
       setLoading(true);
       // TODO: implementar API call para interromper atendimento
       // Exemplo: const response = await fatService.interromperAtendimento(fat?.id_fat);
 
       try {
-        // Simulando uma chamada à API com timeout (remover na implementação real)
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Simulando sucesso da API
@@ -432,7 +394,6 @@ export default function FATDetalheMobile() {
 
         showToast(responseMessage, "success");
 
-        // Recarregar detalhes da FAT após sucesso
         await fetchFAT(true);
       } catch (error) {
         console.error("Erro ao interromper atendimento:", error);
@@ -447,23 +408,19 @@ export default function FATDetalheMobile() {
   }, [fetchFAT, extractErrorMessage, showToast]);
 
   const handleCancelarAtendimento = useCallback(async () => {
-  
     try {
       setLoading(true);
       // TODO: implementar API call para cancelar atendimento
       // Exemplo: const response = await fatService.cancelarAtendimento(fat?.id_fat);
 
       try {
-        // Simulando uma chamada à API com timeout (remover na implementação real)
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        // Simulando sucesso da API (na implementação real, virá da resposta da API)
         const responseMessage = "Atendimento cancelado com sucesso!";
 
         // Mostrar mensagem de sucesso
         showToast(responseMessage, "success");
 
-        // Aguardar um momento para o usuário ver a mensagem antes de redirecionar
         setTimeout(() => {
           router.push("/tecnico/os");
         }, 1500);
@@ -487,16 +444,13 @@ export default function FATDetalheMobile() {
       // Exemplo: const response = await fatService.concluirAtendimento(fat?.id_fat);
 
       try {
-        // Simulando uma chamada à API com timeout (remover na implementação real)
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        // Simulando sucesso da API (na implementação real, virá da resposta da API)
         const responseMessage = "Atendimento concluído com sucesso!";
 
         // Mostrar mensagem de sucesso
         showToast(responseMessage, "success");
 
-        // Aguardar um momento para o usuário ver a mensagem antes de redirecionar
         setTimeout(() => {
           router.push("/tecnico/os");
         }, 1500);
@@ -513,8 +467,6 @@ export default function FATDetalheMobile() {
     }
   }, [router, extractErrorMessage, showToast]);
 
-  // Mostrar tela de carregamento apenas quando estiver carregando inicialmente
-  // Para ações subsequentes, mostrar um overlay de carregamento sobre o conteúdo
   const initialLoading = loading && !fat;
 
   if (initialLoading) {
@@ -522,7 +474,8 @@ export default function FATDetalheMobile() {
       <>
         <MobileHeader
           title="Detalhes da FAT"
-          onMenuClick={() => router.back()}
+          onAddClick={() => router.back()}
+          leftVariant="back"
         />
         <Loading
           fullScreen={true}
@@ -539,7 +492,8 @@ export default function FATDetalheMobile() {
       <>
         <MobileHeader
           title="Detalhes da FAT"
-          onMenuClick={() => router.back()}
+          onAddClick={() => router.back()}
+          leftVariant="back"
         />
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-lg border border-red-200">
@@ -573,7 +527,8 @@ export default function FATDetalheMobile() {
       <>
         <MobileHeader
           title="Detalhes da FAT"
-          onMenuClick={() => router.back()}
+          onAddClick={() => router.back()}
+          leftVariant="back"
         />
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
           <div className="text-center">
@@ -594,13 +549,13 @@ export default function FATDetalheMobile() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-30">
+    <main className="min-h-screen bg-slate-50 pb-25">
       <MobileHeader
         title={fat.id_fat ? `FAT #${fat.id_fat}` : "Detalhes da FAT"}
-        onMenuClick={() => router.back()}
+        onAddClick={() => router.back()}
+        leftVariant="back"
       />
 
-      {/* Toast para mensagens de sucesso e erro - fixo na tela quando visível */}
       {toast.visible && (
         <div className="fixed inset-x-0 bottom-20 z-[9999] flex items-center justify-center pointer-events-none">
           <Toast
@@ -611,7 +566,6 @@ export default function FATDetalheMobile() {
         </div>
       )}
 
-      {/* Overlay de carregamento para ações após carregamento inicial */}
       {loading && fat && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[100]">
           <div className="bg-white p-4 rounded-xl shadow-lg">
@@ -620,9 +574,7 @@ export default function FATDetalheMobile() {
         </div>
       )}
 
-      {/* Header com informações principais */}
       <div className="bg-white border-b border-slate-100">
-        {/* Problema descrição */}
         {fat.descricao_problema && (
           <div className="p-4">
             <div className="text-md text-slate-700 leading-relaxed bg-slate-100 p-3 rounded-lg break-words whitespace-pre-wrap max-h-[200px] overflow-y-auto custom-scrollbar">
@@ -650,7 +602,6 @@ export default function FATDetalheMobile() {
 
       {/* Content Sections */}
       <div className="px-4 pb-6 space-y-4 mt-4">
-        {/* Informações Gerais */}
         <Section
           title="Informações Gerais"
           icon={<FileText className="w-4 h-4" />}
@@ -731,7 +682,6 @@ export default function FATDetalheMobile() {
           )}
         </Section>
 
-        {/* Máquina */}
         {fat.maquina?.modelo && fat.maquina.modelo.trim() !== "" && (
           <Section title="Máquina" icon={<Settings className="w-4 h-4" />}>
             <Field
@@ -752,7 +702,6 @@ export default function FATDetalheMobile() {
           </Section>
         )}
 
-        {/* Peças Utilizadas */}
         {fat.pecas && fat.pecas.length > 0 && (
           <Section
             title={`Peças Utilizadas (${fat.pecas.length})`}
@@ -892,7 +841,6 @@ export default function FATDetalheMobile() {
           </Section>
         )}
 
-        {/* Ocorrências/Histórico */}
         {fat.ocorrencias && fat.ocorrencias.length > 0 && (
           <Section
             title={`Ocorrências (${fat.ocorrencias.length})`}
@@ -928,10 +876,9 @@ export default function FATDetalheMobile() {
         )}
       </div>
 
-      {/* Botões de ação fixos na parte inferior */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50">
-        <div className="p-4">
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="px-3 py-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             <ActionButtonFat
               label="Deslocamento"
               icon={<Car className="w-5 h-5 text-emerald-600" />}
@@ -972,8 +919,7 @@ export default function FATDetalheMobile() {
         </div>
       </div>
 
-      {/* Botões de ação de status (mantidos no final do conteúdo) */}
-      <div className="px-4 pb-6">
+      <div className="px-2">
         <ActionButtonsFat
           fat={fat}
           id_os={fat.id_os}
