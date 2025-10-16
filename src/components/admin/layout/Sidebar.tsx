@@ -19,8 +19,7 @@ import {
   FileCog,
   UsersRound,
 } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { LucideIcon } from "lucide-react";
 import Image from "next/image";
@@ -30,6 +29,8 @@ import {
   USER_ROLES_UPDATED_EVENT,
 } from "@/utils/userRoles";
 import packageInfo from "../../../../package.json";
+
+/* ---------------------------- Tipos ---------------------------- */
 
 interface MenuItem {
   key: string;
@@ -44,7 +45,7 @@ interface SidebarProps {
   isOpen: boolean;
 }
 
-/* ---------------------------- MENUS PRINCIPAIS ---------------------------- */
+/* ---------------------------- Menus ---------------------------- */
 
 const menuItems: MenuItem[] = [
   {
@@ -135,7 +136,7 @@ const menuItems: MenuItem[] = [
   },
 ];
 
-/* ---------------------------- CACHE GLOBAL ---------------------------- */
+/* ---------------------------- Cache Global ---------------------------- */
 
 type RolesCacheState = {
   roles: typeof defaultRoles;
@@ -147,10 +148,11 @@ const rolesCacheState: RolesCacheState = {
   loaded: false,
 };
 
-/* ---------------------------- COMPONENTE ---------------------------- */
+/* ---------------------------- Componente ---------------------------- */
 
 export default function Sidebar({ isOpen }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const [roles, setRoles] = useState(defaultRoles);
   const [rolesLoaded, setRolesLoaded] = useState(false);
@@ -160,11 +162,9 @@ export default function Sidebar({ isOpen }: SidebarProps) {
   useEffect(() => {
     setIsMounted(true);
 
-    // 🔸 Sincroniza versão da API
     const version = localStorage.getItem("versao_api") || "não definido";
     setApiVersion(version);
 
-    // 🔸 Atualiza roles do localStorage
     const updateRolesFromStorage = () => {
       const storedRoles = getStoredRoles();
       rolesCacheState.roles = storedRoles;
@@ -175,7 +175,6 @@ export default function Sidebar({ isOpen }: SidebarProps) {
 
     updateRolesFromStorage();
 
-    // 🔸 Escuta eventos de atualização e logout
     window.addEventListener(USER_ROLES_UPDATED_EVENT, updateRolesFromStorage);
     window.addEventListener("storage", (event) => {
       if (event.key === "user_roles_state") {
@@ -236,7 +235,6 @@ export default function Sidebar({ isOpen }: SidebarProps) {
   const hasAccessToMenuItem = useCallback(
     (item: MenuItem): boolean => {
       if (!rolesLoaded) return false;
-
       switch (item.key) {
         case "os_aberto":
         case "revisao_os":
@@ -265,10 +263,23 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     [hasAccessToMenuItem]
   );
 
-  /* ------------------------- Renderização UI ------------------------- */
+  /* ------------------------- Renderização ------------------------- */
 
   const toggleSubmenu = (menuKey: string) =>
     setExpandedMenus((prev) => ({ ...prev, [menuKey]: !prev[menuKey] }));
+
+  const handleMenuClick = (item: MenuItem, hasSubmenu: boolean) => {
+    if (hasSubmenu && !isOpen) {
+      // 🔸 Quando o menu está FECHADO, vai direto para o link principal
+      if (item.path) router.push(item.path);
+    } else if (hasSubmenu && isOpen) {
+      // 🔸 Quando o menu está ABERTO, apenas expande
+      toggleSubmenu(item.key);
+    } else if (item.path) {
+      setActiveMenu(item.key);
+      router.push(item.path);
+    }
+  };
 
   const renderMenuItem = (item: MenuItem, level = 0): React.JSX.Element => {
     if (!hasAccessToMenuItem(item)) return <React.Fragment key={item.key} />;
@@ -279,7 +290,6 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     const isExpanded = expandedMenus[item.key];
     const isActive =
       activeMenu === item.key || (item.path && pathname === item.path);
-
     const hasActiveChild =
       hasSubmenu &&
       submenuItems.some(
@@ -288,23 +298,20 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           (subItem.path && pathname.startsWith(subItem.path))
       );
 
-    const menuContent = (
-      <div
-        className={`flex items-center justify-between px-4 py-3.5 cursor-pointer transition-all duration-200 group ${
-          isActive
-            ? "bg-gradient-to-r from-white/15 to-white/10 text-white shadow-sm"
-            : hasActiveChild
-            ? "bg-white/8 text-white/95"
-            : "text-white/75 hover:text-white hover:bg-white/10"
-        } ${
-          level > 0 ? "ml-2 border-l-2 border-white/10" : ""
-        } rounded-xl mx-2 my-0.5`}
-        style={{ paddingLeft: `${level > 0 ? 0.75 : 1}rem` }}
-        onClick={() =>
-          hasSubmenu ? toggleSubmenu(item.key) : setActiveMenu(item.key)
-        }
-      >
-        <div className="flex items-center space-x-3">
+    return (
+      <div key={item.key} className="relative group">
+        <div
+          onClick={() => handleMenuClick(item, hasSubmenu)}
+          className={`flex items-center transition-all duration-200 px-3 py-3 rounded-xl mx-2 my-0.5 cursor-pointer
+            ${
+              isActive
+                ? "bg-white/15 text-white"
+                : hasActiveChild
+                ? "bg-white/10 text-white"
+                : "text-white/70 hover:text-white hover:bg-white/10"
+            }
+          `}
+        >
           {Icon && (
             <div
               className={`p-2 rounded-lg transition-all duration-200 ${
@@ -315,56 +322,36 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                   : "bg-white/10 text-[#FDAD15] group-hover:bg-[#FDAD15]/80 group-hover:text-[#7B54BE]"
               }`}
             >
-              <Icon size={18} strokeWidth={2.5} />
+              <Icon size={20} strokeWidth={2.5} />
             </div>
           )}
-          <span
-            className={`text-sm ${isActive ? "font-semibold" : "font-normal"}`}
-          >
-            {item.label}
-          </span>
-        </div>
-        {hasSubmenu && (
-          <div className={`p-1.5 rounded-lg transition-all duration-200`}>
-            {isExpanded ? (
-              <ChevronDown
-                size={16}
-                className="text-[#FDAD15]"
-                strokeWidth={2.5}
-              />
-            ) : (
-              <ChevronRight
-                size={16}
-                className="text-[#FDAD15]"
-                strokeWidth={2.5}
-              />
-            )}
-          </div>
-        )}
-      </div>
-    );
-
-    return (
-      <div key={item.key} className="relative">
-        {!hasSubmenu && item.path ? (
-          <Link href={item.path} className="block w-full">
-            {menuContent}
-          </Link>
-        ) : (
-          menuContent
-        )}
-
-        {hasSubmenu && isExpanded && (
-          <div
-            className={`transition-all duration-300 ease-in-out overflow-hidden ${
-              level > 0
-                ? "bg-[#6A4399]/80 rounded-b-xl mx-3 border border-white/5 backdrop-blur-sm"
-                : "bg-[#6A4399]/40 rounded-xl mx-2 mt-1 border border-white/5 backdrop-blur-sm"
-            }`}
-          >
-            <div className="py-2">
-              {submenuItems.map((s) => renderMenuItem(s, level + 1))}
+          {isOpen && (
+            <span className="ml-3 text-sm font-medium whitespace-nowrap">
+              {item.label}
+            </span>
+          )}
+          {isOpen && hasSubmenu && (
+            <div className="ml-auto">
+              {isExpanded ? (
+                <ChevronDown
+                  size={16}
+                  className="text-[#FDAD15]"
+                  strokeWidth={2.5}
+                />
+              ) : (
+                <ChevronRight
+                  size={16}
+                  className="text-[#FDAD15]"
+                  strokeWidth={2.5}
+                />
+              )}
             </div>
+          )}
+        </div>
+
+        {isOpen && hasSubmenu && isExpanded && (
+          <div className="pl-6 mt-1 border-l border-white/10">
+            {submenuItems.map((s) => renderMenuItem(s, level + 1))}
           </div>
         )}
       </div>
@@ -374,71 +361,67 @@ export default function Sidebar({ isOpen }: SidebarProps) {
   /* ------------------------- Render Final ------------------------- */
 
   return (
-    <>
-      <div
-        className={`${
-          isOpen ? "w-72" : "w-0 md:w-20"
-        } transition-all duration-300 bg-gradient-to-b from-[#7B54BE] to-[#6A4399] shadow-2xl h-screen flex flex-col overflow-hidden`}
-      >
-        {/* Header com logo */}
-        <div className="flex items-center justify-center h-20 border-10 border-[#7B54BE] bg-[#F5F3F3]">
-          {isOpen ? (
-            <div className="relative w-48 h-20">
-              <Image
-                src="/images/logoEscrito.png"
-                alt="OnJob Logo"
-                fill
-                sizes="192px"
-                className="object-contain"
-                priority
-              />
-            </div>
-          ) : (
-            <div className="relative w-22 h-22">
-              <Image
-                src="/images/logo.png"
-                alt="OnJob"
-                fill
-                sizes="62px"
-                className="object-contain"
-                priority
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Menu */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden modern-scrollbar py-4 pr-1">
-          {isOpen && visibleMenuItems.map((item) => renderMenuItem(item))}
-        </nav>
-
-        {/* Footer */}
-        {isOpen && (
-          <div className="border-t border-white/10 p-4 mt-auto bg-[#7B54BE]/50 backdrop-blur-sm">
-            <div className="flex flex-col space-y-1 bg-white/5 p-3 rounded-xl border border-white/10">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#FDAD15] to-[#FDAD15]/80 rounded-xl flex items-center justify-center shadow-md">
-                  <Cog size={20} className="text-[#7B54BE]" strokeWidth={2.5} />
-                </div>
-                <div className="flex flex-col">
-                  <p className="text-xs font-semibold text-white/90">
-                    APP:{" "}
-                    <span className="text-[#FDAD15]">
-                      {packageInfo.version}
-                    </span>
-                  </p>
-                  <p className="text-xs font-semibold text-white/90">
-                    API:{" "}
-                    <span className="text-[#FDAD15]">
-                      {isMounted ? apiVersion : "..."}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </div>
+    <div
+      className={`${
+        isOpen ? "w-72" : "w-20"
+      } transition-all duration-300 bg-gradient-to-b from-[#7B54BE] to-[#6A4399] shadow-2xl h-screen flex flex-col overflow-hidden`}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-center h-20 border-10 border-[#7B54BE] bg-[#F5F3F3]">
+        {isOpen ? (
+          <div className="relative w-48 h-20">
+            <Image
+              src="/images/logoEscrito.png"
+              alt="OnJob Logo"
+              fill
+              sizes="192px"
+              className="object-contain"
+              priority
+            />
+          </div>
+        ) : (
+          <div className="relative w-12 h-12">
+            <Image
+              src="/images/logo.png"
+              alt="OnJob"
+              fill
+              sizes="62px"
+              className="object-contain"
+              priority
+            />
           </div>
         )}
       </div>
-    </>
+
+      {/* Menu */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden modern-scrollbar py-4 pr-1">
+        {visibleMenuItems.map((item) => renderMenuItem(item))}
+      </nav>
+
+      {/* Footer */}
+      {isOpen && (
+        <div className="border-t border-white/10 p-4 mt-auto bg-[#7B54BE]/50 backdrop-blur-sm">
+          <div className="flex flex-col space-y-1 bg-white/5 p-3 rounded-xl border border-white/10">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#FDAD15] to-[#FDAD15]/80 rounded-xl flex items-center justify-center shadow-md">
+                <Cog size={20} className="text-[#7B54BE]" strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col">
+                <p className="text-xs font-semibold text-white/90">
+                  APP:{" "}
+                  <span className="text-[#FDAD15]">{packageInfo.version}</span>
+                </p>
+                <p className="text-xs font-semibold text-white/90">
+                  API:{" "}
+                  <span className="text-[#FDAD15]">
+                    {isMounted ? apiVersion : "..."}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

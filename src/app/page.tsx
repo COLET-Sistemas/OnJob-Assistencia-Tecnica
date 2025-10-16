@@ -338,7 +338,6 @@ export default function LoginPage() {
         }
 
         if (authData.senha_provisoria) {
-          console.log("Redirecionando para alterar senha");
           setTimeout(() => {
             router.push("/alterar-senha");
           }, 300);

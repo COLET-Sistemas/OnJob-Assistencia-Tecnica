@@ -573,9 +573,6 @@ const ConsultaOSPage: React.FC = () => {
         setError("Formato de dados inválido recebido da API. Tente novamente.");
         return;
       }
-
-
-      // Use type assertion to handle the response data
       const validItems = responseData.filter((item) => !!item);
 
       const mappedData = {
@@ -1374,20 +1371,6 @@ const ConsultaOSPage: React.FC = () => {
                           disableDateFields || !filtrosPainel.campo_data
                         }
                       />
-                      {!disableDateFields &&
-                        filtrosPainel.campo_data &&
-                        filtrosPainel.data_ini && (
-                          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                            <button
-                              type="button"
-                              onClick={() => handleClearField("data_ini")}
-                              className="text-gray-400 hover:text-gray-600 focus:outline-none"
-                              aria-label="Limpar data inicial"
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        )}
                     </div>
                   </div>
 
@@ -1412,20 +1395,6 @@ const ConsultaOSPage: React.FC = () => {
                           disableDateFields || !filtrosPainel.campo_data
                         }
                       />
-                      {!disableDateFields &&
-                        filtrosPainel.campo_data &&
-                        filtrosPainel.data_fim && (
-                          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                            <button
-                              type="button"
-                              onClick={() => handleClearField("data_fim")}
-                              className="text-gray-400 hover:text-gray-600 focus:outline-none"
-                              aria-label="Limpar data final"
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        )}
                     </div>
                   </div>
                 </div>

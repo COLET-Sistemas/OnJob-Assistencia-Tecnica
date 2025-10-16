@@ -1,9 +1,13 @@
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef, memo } from "react";
-import { Bell, CheckSquare, X } from "lucide-react";
+import { useState, useEffect, useRef, useMemo, memo } from "react";
+import { Bell, CheckSquare, CheckCircle2 } from "lucide-react";
 import { notificacoesService } from "@/api/services/notificacoesService";
 import { useNotificacoes } from "@/hooks";
 import { formatRelativeDate } from "@/utils/formatters";
+import {
+  getNotificationTimestamp,
+  parseNotificationDate,
+} from "@/utils/notifications";
 
 // Interface local para o componente, adaptada à nossa UI
 interface Notificacao {
@@ -15,37 +19,19 @@ interface Notificacao {
   lida: boolean;
 }
 
-/**
- * Converte uma string de data em vários formatos possíveis para um objeto Date
- * Suporta formatos como "13/10/2025 11:24" ou ISO "2025-10-13T11:24:00"
- */
-function parseNotificationDate(dateString: string): Date {
-  // Verificar se é formato dd/mm/yyyy hh:mm
-  if (dateString.includes("/")) {
-    const [datePart, timePart] = dateString.split(" ");
-    const [day, month, year] = datePart.split("/").map(Number);
-
-    if (timePart) {
-      const [hours, minutes] = timePart.split(":").map(Number);
-      return new Date(year, month - 1, day, hours, minutes);
-    }
-
-    return new Date(year, month - 1, day);
-  }
-
-  // Caso contrário, assume que é formato ISO
-  return new Date(dateString);
-}
-
 interface NotificacoesDropdownProps {
   onNotificationRead?: () => void;
 }
+
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 const NotificacoesDropdown = memo(
   ({ onNotificationRead }: NotificacoesDropdownProps) => {
     const router = useRouter();
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
+    const [todasNotificacoes, setTodasNotificacoes] = useState<Notificacao[]>(
+      []
+    );
     const [paginaAtual, setPaginaAtual] = useState(1);
     const [totalPaginas, setTotalPaginas] = useState(1);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -72,7 +58,7 @@ const NotificacoesDropdown = memo(
 
         // Se não há resposta ou API retornou um objeto vazio {}, significa que não há notificações
         if (!response || Object.keys(response).length === 0) {
-          setNotificacoes([]);
+          setTodasNotificacoes([]);
           setTotalPaginas(1);
           setPaginaAtual(1);
           updateCount(0, 0);
@@ -91,9 +77,9 @@ const NotificacoesDropdown = memo(
 
           // Se for página 1, substitui as notificações. Se não, concatena com as existentes.
           if (pagina === 1) {
-            setNotificacoes(notificacoesAdaptadas);
+            setTodasNotificacoes(notificacoesAdaptadas);
           } else {
-            setNotificacoes((prev) => [...prev, ...notificacoesAdaptadas]);
+            setTodasNotificacoes((prev) => [...prev, ...notificacoesAdaptadas]);
           }
 
           setTotalPaginas(response.total_paginas || 1);
@@ -107,13 +93,13 @@ const NotificacoesDropdown = memo(
           );
         } else {
           // Não vamos tratar como erro, apenas definir valores padrão
-          setNotificacoes([]);
+          setTodasNotificacoes([]);
           setTotalPaginas(1);
           setPaginaAtual(1);
         }
       } catch (error) {
         console.error("Erro ao buscar notificações:", error);
-        setNotificacoes([]);
+        setTodasNotificacoes([]);
       } finally {
         setLoading(false);
       }
@@ -153,14 +139,20 @@ const NotificacoesDropdown = memo(
         fetchNotificacoes(1, true); // Força refresh ao clicar no ícone
         // Removido refreshCount e fetchNotificacoesCount pois já são chamados dentro de fetchNotificacoes
       }
-    }; // Função para marcar uma notificação como lida
+    };
+
+    const abrirTelaNotificacoes = () => {
+      setDropdownOpen(false);
+      router.push("/admin/notificacoes");
+    };
+    // Função para marcar uma notificação como lida
     const marcarComoLida = async (id: number) => {
       try {
         // O serviço agora retorna o novo contador
         const response = await notificacoesService.marcarComoLida(id);
 
         // Atualizar a notificação localmente como lida
-        setNotificacoes((prev) =>
+        setTodasNotificacoes((prev) =>
           prev.map((notif) =>
             notif.id === id ? { ...notif, lida: true } : notif
           )
@@ -190,7 +182,7 @@ const NotificacoesDropdown = memo(
         const response = await notificacoesService.marcarTodasComoLidas();
 
         // Atualizar todas as notificações localmente como lidas
-        setNotificacoes((prev) =>
+        setTodasNotificacoes((prev) =>
           prev.map((notif) => ({ ...notif, lida: true }))
         );
 
@@ -218,7 +210,7 @@ const NotificacoesDropdown = memo(
       }
     };
 
-    // Função para navegar para o link da notificação, se existir
+    // Funcao para navegar para o link da notificacao, se existir
     const navegarParaLink = (notificacao: Notificacao) => {
       const navegar = (link?: string) => {
         if (!link) {
@@ -235,20 +227,46 @@ const NotificacoesDropdown = memo(
         }
       };
 
-      // Se já estiver lida, apenas navega
-      if (notificacao.lida) {
-        navegar(notificacao.link);
-        return;
-      }
+      const marcarPromise = notificacao.lida
+        ? Promise.resolve()
+        : marcarComoLida(notificacao.id);
 
-      // Se não estiver lida, marca como lida e depois navega
-      marcarComoLida(notificacao.id).then(() => {
+      marcarPromise.finally(() => {
         navegar(notificacao.link);
         if (onNotificationRead) {
           onNotificationRead();
         }
       });
     };
+
+    const notificacoesVisiveis = useMemo(() => {
+      const naoLidas = todasNotificacoes.filter((notif) => !notif.lida);
+
+      if (naoLidas.length >= 5) {
+        return naoLidas;
+      }
+
+      const agora = Date.now();
+      const lidasRecentes = todasNotificacoes
+        .filter((notif) => notif.lida)
+        .map((notif) => ({
+          notif,
+          timestamp: getNotificationTimestamp(notif.data_criacao),
+        }))
+        .filter(
+          ({ timestamp }) =>
+            timestamp !== null && agora - timestamp <= THIRTY_DAYS_MS
+        )
+        .sort((a, b) => {
+          const timeA = a.timestamp ?? 0;
+          const timeB = b.timestamp ?? 0;
+          return timeB - timeA;
+        })
+        .slice(0, 3)
+        .map(({ notif }) => notif);
+
+      return [...naoLidas, ...lidasRecentes];
+    }, [todasNotificacoes]);
 
     return (
       <div className="relative" ref={dropdownRef}>
@@ -279,9 +297,13 @@ const NotificacoesDropdown = memo(
         >
           {/* Cabeçalho */}
           <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-md font-semibold text-gray-700">
+            <button
+              type="button"
+              onClick={abrirTelaNotificacoes}
+              className="text-md font-semibold text-gray-700 hover:text-[#7B54BE] transition-colors cursor-pointer"
+            >
               Notificações
-            </h3>
+            </button>
 
             {notificacoesCount > 0 && (
               <button
@@ -302,77 +324,84 @@ const NotificacoesDropdown = memo(
               </div>
             )}
 
-            {!loading && (!notificacoes || notificacoes.length === 0) && (
-              <div className="p-6 text-center text-gray-500">
-                Nenhuma notificação encontrada.
-              </div>
-            )}
+            {!loading &&
+              (!notificacoesVisiveis || notificacoesVisiveis.length === 0) && (
+                <div className="p-6 text-center text-gray-500">
+                  Nenhuma notificação encontrada.
+                </div>
+              )}
 
-            {!loading && notificacoes && notificacoes.length > 0 && (
-              <div>
-                {notificacoes.map((notificacao) => (
-                  <div
-                    key={notificacao.id}
-                    className={`border-b border-gray-100 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors relative ${
-                      !notificacao.lida ? "bg-purple-50/50" : ""
-                    }`}
-                    onClick={() => navegarParaLink(notificacao)}
-                  >
-                    {/* Título e Botão de Marcar como Lida */}
-                    <div className="flex justify-between items-start mb-1">
-                      <h4
-                        className={`text-sm font-semibold ${
-                          !notificacao.lida ? "text-[#7B54BE]" : "text-gray-800"
-                        }`}
-                      >
-                        {notificacao.titulo}
-                      </h4>
-
-                      {/* Indicador não-lida ou botão marcar como lida */}
-                      {!notificacao.lida && (
-                        <button
-                          className="text-[#7B54BE] hover:text-[#9333ea] p-1 rounded-full hover:bg-purple-100/50 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation(); // Evitar navegação ao clicar no botão
-                            marcarComoLida(notificacao.id);
-                          }}
-                          title="Marcar como lida"
-                        >
-                          <X size={14} />
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Mensagem */}
-                    <p className="text-sm text-gray-600 mb-1">
-                      {notificacao.mensagem}
-                    </p>
-
-                    {/* Data */}
-                    <div className="text-xs text-gray-400 mt-1">
-                      {notificacao.data_criacao
-                        ? formatRelativeDate(
-                            parseNotificationDate(notificacao.data_criacao)
-                          )
-                        : ""}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Botão para carregar mais */}
-                {paginaAtual < totalPaginas && (
-                  <div className="p-3 text-center">
-                    <button
-                      onClick={carregarMaisNotificacoes}
-                      disabled={loading}
-                      className="text-sm text-[#7B54BE] hover:text-[#9333ea] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            {!loading &&
+              notificacoesVisiveis &&
+              notificacoesVisiveis.length > 0 && (
+                <div>
+                  {notificacoesVisiveis.map((notificacao) => (
+                    <div
+                      key={notificacao.id}
+                      className={`border-b border-gray-100 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors relative ${
+                        !notificacao.lida ? "bg-purple-50/50" : ""
+                      }`}
+                      onClick={() => navegarParaLink(notificacao)}
                     >
-                      {loading ? "Carregando..." : "Carregar mais notificações"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+                      {/* Título e Botão de Marcar como Lida */}
+                      <div className="flex justify-between items-start mb-1">
+                        <h4
+                          className={`text-sm font-semibold ${
+                            !notificacao.lida
+                              ? "text-[#7B54BE]"
+                              : "text-gray-800"
+                          }`}
+                        >
+                          {notificacao.titulo}
+                        </h4>
+
+                        {/* Indicador não-lida ou botão marcar como lida */}
+                        {!notificacao.lida && (
+                          <button
+                            className="text-[#7B54BE] hover:text-[#9333ea] p-1 rounded-full hover:bg-purple-100/50 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Evitar navegacao ao clicar no botao
+                              marcarComoLida(notificacao.id);
+                            }}
+                            title="Marcar como lida"
+                          >
+                            <CheckCircle2 size={14} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Mensagem */}
+                      <p className="text-sm text-gray-600 mb-1">
+                        {notificacao.mensagem}
+                      </p>
+
+                      {/* Data */}
+                      <div className="text-xs text-gray-400 mt-1">
+                        {notificacao.data_criacao
+                          ? formatRelativeDate(
+                              parseNotificationDate(notificacao.data_criacao)
+                            )
+                          : ""}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Botão para carregar mais */}
+                  {paginaAtual < totalPaginas && (
+                    <div className="p-3 text-center">
+                      <button
+                        onClick={carregarMaisNotificacoes}
+                        disabled={loading}
+                        className="text-sm text-[#7B54BE] hover:text-[#9333ea] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading
+                          ? "Carregando..."
+                          : "Carregar mais notificações"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
           </div>
         </div>
       </div>
