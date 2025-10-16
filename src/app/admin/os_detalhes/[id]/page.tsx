@@ -8,7 +8,6 @@ import React, {
   useRef,
 } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { LocationButtonIcon } from "@/components/admin/ui/LocationButton";
 import {
   ordensServicoService,
   OSDetalhadaV2,
@@ -353,12 +352,13 @@ const OSDetalhesPage: React.FC = () => {
                   </div>
 
                   {/* Botões de Ação */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ">
                     {contatoData?.email && (
                       <a
                         href={`mailto:${contatoData.email}`}
+                        title="Enviar E-mail"
                         data-tooltip="Enviar E-mail"
-                        className="action-button tooltip text-blue-600 hover:bg-blue-50 bg-blue-50/30"
+                        className="flex items-center justify-center h-9 w-9 rounded-lg border border-gray-200 text-blue-600 bg-white hover:bg-blue-50 hover:border-blue-200 transition-colors duration-200 shadow-sm"
                       >
                         <Mail className="h-5 w-5" />
                       </a>
@@ -372,8 +372,9 @@ const OSDetalhesPage: React.FC = () => {
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        title="Abrir WhatsApp"
                         data-tooltip="Abrir WhatsApp"
-                        className="action-button tooltip text-green-600 hover:bg-green-50 bg-green-50/30"
+                        className="flex items-center justify-center h-9 w-9 rounded-lg border border-gray-200 text-green-600 bg-white hover:bg-green-50 hover:border-green-200 transition-colors duration-200 shadow-sm"
                       >
                         <MessageCircle className="h-5 w-5" />
                       </a>
@@ -390,41 +391,15 @@ const OSDetalhesPage: React.FC = () => {
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        title="Ver no Google Maps"
                         data-tooltip="Ver no Google Maps"
-                        className="action-button tooltip text-orange-600 hover:bg-orange-50 bg-orange-50/30"
+                        className="flex items-center justify-center h-9 w-9 rounded-lg border border-gray-200 text-orange-600 bg-white hover:bg-orange-50 hover:border-orange-200 transition-colors duration-200 shadow-sm"
                       >
                         <MapPinned className="h-5 w-5" />
                       </a>
                     )}
 
-                    {clienteData && (
-                      <div className="tooltip" data-tooltip="Traçar Rota">
-                        <LocationButtonIcon
-                          cliente={{
-                            id: clienteData.id,
-                            nome_fantasia: clienteData.nome || "",
-                            razao_social: clienteData.nome || "",
-                            cnpj: clienteData.cnpj_cpf || "",
-                            endereco: clienteData.endereco || "",
-                            numero: clienteData.numero || "",
-                            bairro: clienteData.bairro || "",
-                            cidade: clienteData.cidade || "",
-                            uf: clienteData.uf || "",
-                            cep: clienteData.cep || "",
-                            complemento: clienteData.complemento,
-                            latitude: parseFloat(clienteData.latitude) || 0,
-                            longitude: parseFloat(clienteData.longitude) || 0,
-                            situacao: "A",
-                          }}
-                          enderecoEmpresa={`${clienteData.endereco || ""}${
-                            clienteData.numero ? ", " + clienteData.numero : ""
-                          }, ${clienteData.bairro || ""}, ${
-                            clienteData.cidade || ""
-                          }, ${clienteData.uf || ""}`}
-                          className="action-button text-purple-600 hover:bg-purple-50 bg-purple-50/30"
-                        />
-                      </div>
-                    )}
+             
                   </div>
                 </div>
               </div>
@@ -835,7 +810,8 @@ const OSDetalhesPage: React.FC = () => {
                       <tbody className="bg-white divide-y divide-gray-200">
                         {fatsData.map((fat, index) => {
                           const rawStatusKey =
-                            fat?.situacao !== undefined && fat?.situacao !== null
+                            fat?.situacao !== undefined &&
+                            fat?.situacao !== null
                               ? String(fat.situacao)
                               : undefined;
                           const baseStatusConfig = rawStatusKey

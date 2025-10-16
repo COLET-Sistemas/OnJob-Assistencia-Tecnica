@@ -66,6 +66,12 @@ const statusConfig = {
 export default function FATCard({ fat }: { fat: any; index: number }) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = React.useState(false);
+  const touchTrackRef = React.useRef({
+    startX: 0,
+    startY: 0,
+    moved: false,
+  });
+  const ignoreClickRef = React.useRef(false);
 
   // Get status configuration based on situacao
   const statusId = fat.situacao || 1;
@@ -118,8 +124,63 @@ export default function FATCard({ fat }: { fat: any; index: number }) {
     }
   };
 
-  const handleMouseClick = (e: React.MouseEvent) => handleClick(e);
-  const handleTouchEnd = (e: React.TouchEvent) => handleClick(e);
+  const suppressNextClick = () => {
+    ignoreClickRef.current = true;
+    window.setTimeout(() => {
+      ignoreClickRef.current = false;
+    }, 250);
+  };
+
+  const resetTouchTracking = () => {
+    touchTrackRef.current = { startX: 0, startY: 0, moved: false };
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    touchTrackRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      moved: false,
+    };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch || touchTrackRef.current.moved) return;
+
+    const deltaX = Math.abs(touch.clientX - touchTrackRef.current.startX);
+    const deltaY = Math.abs(touch.clientY - touchTrackRef.current.startY);
+
+    if (deltaX > 8 || deltaY > 8) {
+      touchTrackRef.current.moved = true;
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchTrackRef.current.moved) {
+      suppressNextClick();
+      resetTouchTracking();
+      return;
+    }
+
+    suppressNextClick();
+    handleClick(e);
+    resetTouchTracking();
+  };
+
+  const handleTouchCancel = () => {
+    resetTouchTracking();
+    ignoreClickRef.current = false;
+  };
+
+  const handleMouseClick = (e: React.MouseEvent) => {
+    if (ignoreClickRef.current) {
+      return;
+    }
+
+    handleClick(e);
+  };
 
   // Alternativa usando Link como fallback
   const fatUrl = `/tecnico/os/fat/${fat.id_fat}`;
@@ -134,6 +195,9 @@ export default function FATCard({ fat }: { fat: any; index: number }) {
           }`}
           onClick={handleMouseClick}
           onTouchEnd={handleTouchEnd}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchCancel={handleTouchCancel}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
