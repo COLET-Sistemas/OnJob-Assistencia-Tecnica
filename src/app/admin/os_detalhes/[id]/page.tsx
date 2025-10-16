@@ -833,71 +833,94 @@ const OSDetalhesPage: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {fatsData.map((fat, index) => (
-                          <tr
-                            key={fat.id_fat}
-                            className="hover:bg-gray-50 cursor-pointer transition-colors duration-150 animate-fadeIn"
-                            style={{ animationDelay: `${0.05 * index}s` }}
-                            onClick={() => handleFatClick(fat.id_fat)}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.classList.add("shadow-sm");
-                              e.currentTarget.style.transform =
-                                "translateY(-1px)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.classList.remove("shadow-sm");
-                              e.currentTarget.style.transform =
-                                "translateY(0px)";
-                            }}
-                          >
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                              <div className="flex items-center">
-                                #{fat.id_fat}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                              <div className="flex items-center">
-                                <CalendarClock className="h-4 w-4 text-gray-400 mr-1" />
-                                {fat.data_atendimento}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                              <div className="flex items-center">
-                                <User className="h-4 w-4 text-gray-400 mr-1" />
-                                {fat.tecnico.nome}
-                                {fat.tecnico.tipo && (
-                                  <span
-                                    className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
-                                      fat.tecnico.tipo === "interno"
-                                        ? "bg-blue-50 text-blue-600"
-                                        : "bg-amber-50 text-amber-600"
-                                    }`}
-                                  >
-                                    {fat.tecnico.tipo === "interno"
-                                      ? "Interno"
-                                      : "Terceiro"}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-all duration-200 ${
-                                  fat.aprovado
-                                    ? "bg-green-100 text-green-800 hover:bg-green-200"
-                                    : "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                }`}
-                              >
-                                {fat.aprovado ? (
-                                  <CheckCircle className="mr-1 h-3 w-3" />
-                                ) : (
-                                  <Clock className="mr-1 h-3 w-3" />
-                                )}
-                                {fat.aprovado ? "Aprovado" : "Pendente"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                        {fatsData.map((fat, index) => {
+                          const rawStatusKey =
+                            fat?.situacao !== undefined && fat?.situacao !== null
+                              ? String(fat.situacao)
+                              : undefined;
+                          const baseStatusConfig = rawStatusKey
+                            ? STATUS_MAPPING[rawStatusKey]
+                            : undefined;
+                          const resolvedStatusKey =
+                            baseStatusConfig && rawStatusKey
+                              ? rawStatusKey
+                              : "desconhecido";
+                          const statusMapping =
+                            baseStatusConfig && rawStatusKey
+                              ? {
+                                  [rawStatusKey]: {
+                                    ...baseStatusConfig,
+                                    label:
+                                      fat?.descricao_situacao ||
+                                      baseStatusConfig.label,
+                                  },
+                                }
+                              : {
+                                  desconhecido: {
+                                    label:
+                                      fat?.descricao_situacao ||
+                                      "Status não informado",
+                                    className:
+                                      "bg-gray-100 text-gray-700 border border-gray-200",
+                                  },
+                                };
+
+                          return (
+                            <tr
+                              key={fat.id_fat}
+                              className="hover:bg-gray-50 cursor-pointer transition-colors duration-150 animate-fadeIn"
+                              style={{ animationDelay: `${0.05 * index}s` }}
+                              onClick={() => handleFatClick(fat.id_fat)}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.classList.add("shadow-sm");
+                                e.currentTarget.style.transform =
+                                  "translateY(-1px)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.classList.remove("shadow-sm");
+                                e.currentTarget.style.transform =
+                                  "translateY(0px)";
+                              }}
+                            >
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <div className="flex items-center">
+                                  #{fat.id_fat}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                <div className="flex items-center">
+                                  <CalendarClock className="h-4 w-4 text-gray-400 mr-1" />
+                                  {fat.data_atendimento}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                <div className="flex items-center">
+                                  <User className="h-4 w-4 text-gray-400 mr-1" />
+                                  {fat.tecnico.nome}
+                                  {fat.tecnico.tipo && (
+                                    <span
+                                      className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
+                                        fat.tecnico.tipo === "interno"
+                                          ? "bg-blue-50 text-blue-600"
+                                          : "bg-amber-50 text-amber-600"
+                                      }`}
+                                    >
+                                      {fat.tecnico.tipo === "interno"
+                                        ? "Interno"
+                                        : "Terceiro"}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <StatusBadge
+                                  status={resolvedStatusKey}
+                                  mapping={statusMapping}
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

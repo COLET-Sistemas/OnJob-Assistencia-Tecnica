@@ -164,6 +164,8 @@ export interface OSFatDetalhado {
   valor_deslocamento?: number;
   valor_pecas?: number;
   valor_total?: number;
+  situacao?: number | string;
+  descricao_situacao?: string;
   // Arrays relacionados
   pecas_utilizadas: OSPecaUtilizada[];
   deslocamentos: OSDeslocamento[];

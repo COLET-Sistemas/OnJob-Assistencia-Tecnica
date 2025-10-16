@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
-import Image from "next/image";
+// import Image from "next/image";
 import { fatService, FATDetalhada } from "@/api/services/fatService";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { StatusBadge } from "@/components/admin/common";
@@ -26,11 +26,10 @@ import {
   ArrowLeft,
   ArrowUp,
   Package,
-  Image as ImageIcon,
+  // Image as ImageIcon,
   Truck,
-  ExternalLink,
+  // ExternalLink,
 } from "lucide-react";
-
 
 const FATDetalhesPage: React.FC = () => {
   const params = useParams();
@@ -140,9 +139,6 @@ const FATDetalhesPage: React.FC = () => {
     const fetchFATData = async () => {
       if (!memoizedFatId) return;
 
-      // Evitar re-fetch se já tivermos os dados
-      if (fatData && fatData.id_fat === parseInt(memoizedFatId, 10)) return;
-
       try {
         setLoading(true);
         setError(null);
@@ -167,7 +163,7 @@ const FATDetalhesPage: React.FC = () => {
     };
 
     fetchFATData();
-  }, [memoizedFatId, fatData]);
+  }, [memoizedFatId]);
 
   const handleVoltar = () => {
     window.history.back();
@@ -767,7 +763,7 @@ const FATDetalhesPage: React.FC = () => {
               </div>
             )}
 
-            {/* Card Fotos */}
+            {/* Card Fotos
             {fatData.fotos && fatData.fotos.length > 0 && (
               <div
                 className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
@@ -830,7 +826,7 @@ const FATDetalhesPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Card Ocorrências - Redesenhado como Timeline */}
             {fatData.ocorrencias && fatData.ocorrencias.length > 0 && (
