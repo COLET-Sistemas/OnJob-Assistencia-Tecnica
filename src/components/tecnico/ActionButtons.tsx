@@ -124,9 +124,12 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   };
 
   const baseBtn =
-    "group relative flex items-center gap-3 p-4 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.98] bg-gray-50 border border-[#7B54BE] text-[#7B54BE] shadow-sm flex-1 justify-center";
+    "group relative flex items-center gap-2 p-3 rounded-xl text-xs font-medium transition-all duration-200 active:scale-[0.98] shadow-sm flex-1 justify-center min-w-[120px]";
+  const purpleBtn =
+    "bg-gray-50 border border-[#7B54BE] text-[#7B54BE] hover:bg-gray-100";
   const disabledBtn = "opacity-50 cursor-not-allowed";
-  const hoverBtn = "hover:bg-gray-100";
+  const gradientOverlay =
+    "absolute inset-0 rounded-xl bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300";
 
   return (
     <>
@@ -137,44 +140,44 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           onClose={() => setMessage(null)}
         />
       )}
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3 justify-center">
         <button
           disabled={modalOpen !== null}
-          className={
-            baseBtn + " " + (modalOpen !== null ? disabledBtn : hoverBtn)
-          }
+          className={`${baseBtn} ${purpleBtn} ${
+            modalOpen !== null ? disabledBtn : ""
+          }`}
           onClick={handleDeslocamento}
         >
           <span className="relative flex items-center">
             {modalOpen === "deslocamento" && modalLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Car className="w-4 h-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3" />
+              <Car className="w-3.5 h-3.5 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3" />
             )}
           </span>
-          <span className="flex-1 text-left font-medium">
+          <span className="font-medium">
             Iniciar Deslocamento
           </span>
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className={gradientOverlay}></div>
         </button>
         <button
           disabled={modalOpen !== null}
-          className={
-            baseBtn + " " + (modalOpen !== null ? disabledBtn : hoverBtn)
-          }
+          className={`${baseBtn} ${purpleBtn} ${
+            modalOpen !== null ? disabledBtn : ""
+          }`}
           onClick={handleAtendimento}
         >
           <span className="relative flex items-center">
             {modalOpen === "atendimento" && modalLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Play className="w-4 h-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3" />
+              <Play className="w-3.5 h-3.5 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3" />
             )}
           </span>
-          <span className="flex-1 text-left font-medium">
+          <span className="font-medium">
             Iniciar Atendimento
           </span>
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className={gradientOverlay}></div>
         </button>
       </div>
       <OcorrenciaModal

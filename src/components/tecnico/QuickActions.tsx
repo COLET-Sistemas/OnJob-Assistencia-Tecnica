@@ -20,7 +20,7 @@ const ActionButton = memo<{
 }>(({ action, index, isDragging }) => {
   const wasClickedWhileDraggingRef = React.useRef(false);
 
-  // Monitorar quando o botão for clicado durante o arrasto
+  // Monitorar quando o botao for clicado durante o arrasto
   React.useEffect(() => {
     if (isDragging) {
       wasClickedWhileDraggingRef.current = true;
@@ -36,19 +36,19 @@ const ActionButton = memo<{
   return (
     <button
       onClick={() => {
-        // Verificar se está arrastando ou se foi clicado durante o arraste
+        // Verificar se esta arrastando ou se foi clicado durante o arraste
         if (isDragging || wasClickedWhileDraggingRef.current) {
           return;
         }
-        // Chamar a ação apenas quando não estiver arrastando
+        // Chamar a acao apenas quando nao estiver arrastando
         action.action();
         console.log("Button clicked:", action.label);
       }}
       disabled={action.disabled}
       className={`
-        group relative flex flex-col items-center justify-center gap-2 p-4
-        rounded-xl border transition-all duration-200 ease-out
-        w-[90px] h-[90px] bg-white hover:bg-gray-50
+        group relative flex flex-col items-center justify-center gap-2 p-3
+        rounded-xl border transition-all duration-200 ease-out active:scale-[0.98]
+        w-full min-w-[120px] min-h-[90px] shadow-sm bg-gray-50 hover:bg-gray-100
         ${action.color}
         ${
           action.disabled
@@ -60,13 +60,13 @@ const ActionButton = memo<{
         animationDelay: `${index * 100}ms`,
       }}
     >
-      {/* Ícone simples */}
-      <div className="flex items-center justify-center w-8 h-8">
+      {/* Icone simples */}
+      <div className="flex items-center justify-center w-3.5 h-3.5">
         {action.icon}
       </div>
 
       {/* Label */}
-      <span className="text-xs font-medium text-gray-700 text-center">
+      <span className="text-xs font-medium text-gray-700 text-center leading-snug">
         {action.label}
       </span>
     </button>
@@ -95,7 +95,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
         setIsLocationLoading(false);
       },
       (error) => {
-        console.error("Erro ao obter localização:", error);
+        console.error("Erro ao obter localiza\u00E7\u00E3o:", error);
         setIsLocationLoading(false);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 300000 }
@@ -120,7 +120,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
         } - ${os.cliente.bairro}, ${os.cliente.cidade}/${os.cliente.uf}`;
         destinationUrl = encodeURIComponent(enderecoCompleto);
       } else {
-        alert("Endereço do cliente não disponível");
+        alert("Endere\u00E7o do cliente n\u00E3o dispon\u00EDvel");
         return;
       }
 
@@ -192,7 +192,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
       `;
       modalContent.innerHTML = `
         <div class="text-center mb-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-1">Escolher Navegação</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-1">Escolher Navega\u00E7\u00E3o</h3>
         </div>
         <div class="space-y-3">
           <button id="google-maps-btn" class="w-full flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors duration-200">
@@ -293,44 +293,45 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
       (os.cliente?.latitude && os.cliente?.longitude)
     ) {
       actionList.push({
-        icon: <Navigation className="w-5 h-5 text-blue-600" />,
+        icon: <Navigation className="w-3.5 h-3.5 text-blue-600" />,
         label: "Navegar",
         action: showNavigationModal,
-        color: "hover:border-blue-300",
+        color: "border border-blue-200 text-blue-600 hover:border-blue-300",
         disabled: isLocationLoading,
       });
     }
 
     if (os.contato?.telefone) {
       actionList.push({
-        icon: <Phone className="w-5 h-5 text-green-600" />,
+        icon: <Phone className="w-3.5 h-3.5 text-green-600" />,
         label: "Ligar",
         action: () => window.open(`tel:${os.contato!.telefone}`),
-        color: "hover:border-green-300",
+        color: "border border-green-200 text-green-600 hover:border-green-300",
         disabled: false,
       });
     }
 
     if (os.contato?.whatsapp?.trim()) {
       actionList.push({
-        icon: <MessageSquare className="w-5 h-5 text-emerald-600" />,
+        icon: <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />,
         label: "WhatsApp",
         action: () =>
           window.open(
             `https://wa.me/${os.contato!.whatsapp.replace(/\D/g, "")}`,
             "_blank"
           ),
-        color: "hover:border-emerald-300",
+        color:
+          "border border-emerald-200 text-emerald-600 hover:border-emerald-300",
         disabled: false,
       });
     }
 
     if (os.contato?.email) {
       actionList.push({
-        icon: <Mail className="w-5 h-5 text-purple-600" />,
+        icon: <Mail className="w-3.5 h-3.5 text-purple-600" />,
         label: "E-mail",
         action: () => window.open(`mailto:${os.contato!.email}`),
-        color: "hover:border-purple-300",
+        color: "border border-purple-200 text-purple-600 hover:border-purple-300",
         disabled: false,
       });
     }
@@ -344,7 +345,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
-  // Verificar se o conteúdo precisa de rolagem
+  // Verificar se o conteudo precisa de rolagem
   useEffect(() => {
     const checkScrollable = () => {
       if (scrollRef.current) {
@@ -359,13 +360,13 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
   }, [actions.length]);
 
   // Manipuladores de eventos de arraste
-  // Referência para armazenar o temporizador
+  // Referencia para armazenar o temporizador
   const dragTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollRef.current) return;
 
-    // Armazenar posição inicial, mas não ativar o arrastar imediatamente
+    // Armazenar posicao inicial, mas nao ativar o arrastar imediatamente
     setStartX(e.pageX - scrollRef.current.offsetLeft);
     setScrollLeft(scrollRef.current.scrollLeft);
 
@@ -378,7 +379,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!scrollRef.current) return;
 
-    // Armazenar posição inicial, mas não ativar o arrastar imediatamente
+    // Armazenar posicao inicial, mas nao ativar o arrastar imediatamente
     setStartX(e.touches[0].pageX - scrollRef.current.offsetLeft);
     setScrollLeft(scrollRef.current.scrollLeft);
 
@@ -393,7 +394,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
 
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startX) * 1.5; // Velocidade de rolagem
+    const walk = (x - startX) * 1.5;
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
@@ -406,7 +407,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
   };
 
   const handleMouseUpOrLeave = () => {
-    // Limpar o timeout para evitar que o arrasto seja ativado após soltar o botão
+    // Limpar o timeout para evitar que o arrasto seja ativado apos soltar o botao
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
       dragTimeoutRef.current = null;
@@ -418,7 +419,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
 
   return (
     <div
-      className={`overflow-x-auto pb-2 hide-scrollbar relative ${
+      className={`overflow-x-auto pb-1 hide-scrollbar relative ${
         isDragging ? "cursor-grabbing" : "cursor-grab"
       }`}
       style={{
@@ -435,15 +436,14 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleMouseUpOrLeave}
     >
-      <div className="flex gap-3 pb-1 px-1">
+      <div className="grid grid-flow-col auto-cols-[minmax(120px,1fr)] gap-3 pb-1 px-2">
         {actions.map((action, index) => (
-          <div key={index} className="flex-shrink-0">
-            <ActionButton
-              action={action}
-              index={index}
-              isDragging={isDragging}
-            />
-          </div>
+          <ActionButton
+            key={index}
+            action={action}
+            index={index}
+            isDragging={isDragging}
+          />
         ))}
       </div>
 
