@@ -351,7 +351,7 @@ export default function OSDetalheMobile() {
 
   return (
     <main
-      className="min-h-screen bg-slate-50 pb-20"
+      className="min-h-screen bg-slate-50 flex flex-col relative pb-[100px]"
       key={`os-${os.id_os}-${refreshCount}`}
     >
       <MobileHeader
@@ -537,7 +537,7 @@ export default function OSDetalheMobile() {
       </div>
 
       {/* Quick Actions - Fixo na parte inferior */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 p-4 safe-area-bottom">
+       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 p-4 pb-[env(safe-area-inset-bottom)]">
         <QuickActions os={os} />
       </div>
     </main>
