@@ -516,7 +516,6 @@ const EditarOrdemServico = () => {
     };
 
     fetchOSData();
-
   }, [osId]);
 
   const fetchTecnicos = useCallback(
@@ -540,9 +539,7 @@ const EditarOrdemServico = () => {
           fetchAll
             ? undefined
             : {
-                params: {
-                  id_regiao: clienteRegiaoId ?? undefined,
-                },
+                params: clienteRegiaoId ? { id_regiao: clienteRegiaoId } : {},
               }
         );
 
@@ -1650,8 +1647,6 @@ const EditarOrdemServico = () => {
                   className={errors.motivoAtendimento ? "campo-erro" : ""}
                   isClearable
                 />
-
-
               </div>
             </div>
 
@@ -1728,7 +1723,8 @@ const EditarOrdemServico = () => {
                           : "text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md px-3 py-1 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       }
                       disabled={
-                        loadingTecnicos || (!clienteRegiaoId && !showAllTecnicos)
+                        loadingTecnicos ||
+                        (!clienteRegiaoId && !showAllTecnicos)
                       }
                     >
                       {showAllTecnicos

@@ -19,7 +19,11 @@ export default function SobrePage() {
   }, []);
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <MobileHeader title="Sobre o OnJob" onMenuClick={() => router.back()} />
+      <MobileHeader
+        title="Sobre o OnJob"
+        onAddClick={() => router.back()}
+        leftVariant="back"
+      />
 
       <main className="flex-1 flex flex-col items-center px-4 py-8 max-w-md w-full mx-auto">
         <div className="bg-white rounded-3xl p-8 w-full border border-gray-100">
