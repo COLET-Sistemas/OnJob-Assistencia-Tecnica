@@ -431,6 +431,25 @@ const CadastrarCliente: React.FC = () => {
     );
   }
 
+  const clientDisplayName =
+    [formData.nome_fantasia, formData.razao_social].find(
+      (value) => value && value.trim()
+    ) || "";
+  const addressParts = [
+    formData.endereco,
+    formData.numero,
+    formData.complemento,
+    formData.bairro,
+    formData.cidade,
+    formData.uf,
+    formData.cep,
+  ].filter(
+    (part): part is string => typeof part === "string" && part.trim().length > 0
+  );
+  const fullAddress = addressParts.length
+    ? `${addressParts.join(", ")}, Brasil`
+    : "";
+
   return (
     <>
       <PageHeader
@@ -704,7 +723,8 @@ const CadastrarCliente: React.FC = () => {
             ? parseFloat(formData.longitude)
             : formData.longitude ?? null
         }
-        address={`${formData.endereco}, ${formData.numero}, ${formData.cidade}, ${formData.uf}, ${formData.cep}, Brasil`}
+        clientName={clientDisplayName}
+        address={fullAddress}
         onLocationSelected={handleLocationSelected}
       />
     </>

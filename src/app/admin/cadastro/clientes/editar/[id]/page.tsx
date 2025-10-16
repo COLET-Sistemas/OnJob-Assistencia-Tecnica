@@ -540,6 +540,25 @@ const EditarCliente: React.FC = () => {
     );
   }
 
+  const clientDisplayName =
+    [formData.nome_fantasia, formData.razao_social].find(
+      (value) => value && value.trim()
+    ) || "";
+  const addressParts = [
+    formData.endereco,
+    formData.numero,
+    formData.complemento,
+    formData.bairro,
+    formData.cidade,
+    formData.uf,
+    formData.cep,
+  ].filter(
+    (part): part is string => typeof part === "string" && part.trim().length > 0
+  );
+  const fullAddress = addressParts.length
+    ? `${addressParts.join(", ")}, Brasil`
+    : "";
+
   return (
     <>
       <PageHeader
@@ -766,13 +785,7 @@ const EditarCliente: React.FC = () => {
                     />
                   </div>
 
-                  {formData.latitude && formData.longitude && (
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-sm text-green-700 font-medium mb-1">
-                        ✅ Coordenadas definidas
-                      </p>
-                    </div>
-                  )}
+                  
                 </div>
 
                 {showMapPreview && formData.latitude && formData.longitude && (
@@ -824,7 +837,8 @@ const EditarCliente: React.FC = () => {
             ? parseFloat(formData.longitude)
             : formData.longitude ?? null
         }
-        address={`${formData.endereco}, ${formData.numero}, ${formData.cidade}, ${formData.uf}, ${formData.cep}, Brasil`}
+        clientName={clientDisplayName}
+        address={fullAddress}
         onLocationSelected={handleLocationSelected}
       />
     </>
