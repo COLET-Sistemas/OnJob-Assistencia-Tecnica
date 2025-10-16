@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import { LocationButtonIcon } from "@/components/admin/ui/LocationButton";
 import {
@@ -35,236 +41,196 @@ import {
   CalendarRange,
 } from "lucide-react";
 
-// CSS para animações personalizadas
-const fadeInAnimation = `
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes pulseScale {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-10px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-in-out;
-}
-.animate-pulseScale {
-  animation: pulseScale 0.4s ease-in-out;
-}
-.animate-slideIn {
-  animation: slideIn 0.3s ease-in-out;
-}
-.action-button {
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-  padding: 0.5rem;
-}
-.action-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-}
-.tooltip {
-  position: relative;
-}
-.tooltip:before {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: -35px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 5px 10px;
-  border-radius: 4px;
-  background: #333;
-  color: white;
-  font-size: 12px;
-  white-space: nowrap;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.2s ease;
-  z-index: 10;
-}
-.tooltip:hover:before {
-  opacity: 1;
-  visibility: visible;
-}
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(var(--color-primary-rgb), 0.3);
-  border-radius: 3px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 3px;
-}
-`;
+// Status mapping como constante fora do componente para máxima estabilidade
+const STATUS_MAPPING: Record<
+  string,
+  { label: string; className: string; icon: React.ReactNode }
+> = {
+  "1": {
+    label: "Pendente",
+    className: "bg-gray-100 text-gray-700 border border-gray-200",
+    icon: (
+      <span title="Pendente">
+        <Clock className="w-3.5 h-3.5 text-gray-500" />
+      </span>
+    ),
+  },
+  "2": {
+    label: "A atender",
+    className: "bg-blue-100 text-blue-700 border border-blue-200",
+    icon: (
+      <span title="A atender">
+        <Bell className="w-3.5 h-3.5 text-blue-600" />
+      </span>
+    ),
+  },
+  "3": {
+    label: "Em deslocamento",
+    className: "bg-purple-100 text-purple-700 border border-purple-200",
+    icon: (
+      <span title="Em deslocamento">
+        <Car className="w-3.5 h-3.5 text-purple-600" />
+      </span>
+    ),
+  },
+  "4": {
+    label: "Em atendimento",
+    className: "bg-orange-100 text-orange-700 border border-orange-200",
+    icon: (
+      <span title="Em atendimento">
+        <Wrench className="w-3.5 h-3.5 text-orange-600" />
+      </span>
+    ),
+  },
+  "5": {
+    label: "Atendimento interrompido",
+    className: "bg-amber-100 text-amber-700 border border-amber-200",
+    icon: (
+      <span title="Atendimento interrompido">
+        <PauseCircle className="w-3.5 h-3.5 text-amber-600" />
+      </span>
+    ),
+  },
+  "6": {
+    label: "Em Revisão",
+    className: "bg-indigo-100 text-indigo-700 border border-indigo-200",
+    icon: (
+      <span title="Em Revisão">
+        <FileSearch className="w-3.5 h-3.5 text-indigo-600" />
+      </span>
+    ),
+  },
+  "7": {
+    label: "Concluída",
+    className: "bg-green-100 text-green-700 border border-green-200",
+    icon: (
+      <span title="Concluída">
+        <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+      </span>
+    ),
+  },
+  "8": {
+    label: "Cancelada",
+    className: "bg-red-100 text-red-700 border border-red-200",
+    icon: (
+      <span title="Cancelada">
+        <XCircle className="w-3.5 h-3.5 text-red-600" />
+      </span>
+    ),
+  },
+  "9": {
+    label: "Cancelada pelo Cliente",
+    className: "bg-rose-100 text-rose-700 border border-rose-200",
+    icon: (
+      <span title="Cancelada pelo Cliente">
+        <UserX className="w-3.5 h-3.5 text-rose-600" />
+      </span>
+    ),
+  },
+};
 
 const OSDetalhesPage: React.FC = () => {
   const params = useParams();
-  const osId = params.id as string;
   const router = useRouter();
+
+  const rawOsId = params?.id;
+  const osId = useMemo(() => {
+    if (!rawOsId) return null;
+    return Array.isArray(rawOsId) ? rawOsId[0] : rawOsId;
+  }, [rawOsId]);
+
+  const numericOsId = useMemo(() => {
+    if (!osId) return null;
+    const parsedId = Number(osId);
+    return Number.isFinite(parsedId) ? parsedId : null;
+  }, [osId]);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [osData, setOsData] = useState<OSDetalhadaV2 | null>(null);
   const [showScrollToTop, setShowScrollToTop] = useState<boolean>(false);
+  const hasLoadedOnceRef = useRef(false);
+  const lastLoadedOsIdRef = useRef<number | null>(null);
 
-  // Memoizado para evitar re-renderizações desnecessárias
-  const memoizedOsId = useMemo(() => osId, [osId]);
+  // Callbacks memoizados
+  const handleVoltar = useCallback(() => {
+    window.history.back();
+  }, []);
 
-  // Status mapping memoizado
-  const statusMapping: Record<
-    string,
-    { label: string; className: string; icon: React.ReactNode }
-  > = useMemo(
-    () => ({
-      "1": {
-        label: "Pendente",
-        className: "bg-gray-100 text-gray-700 border border-gray-200",
-        icon: (
-          <span title="Pendente">
-            <Clock className="w-3.5 h-3.5 text-gray-500" />
-          </span>
-        ),
-      },
-      "2": {
-        label: "A atender",
-        className: "bg-blue-100 text-blue-700 border border-blue-200",
-        icon: (
-          <span title="A atender">
-            <Bell className="w-3.5 h-3.5 text-blue-600" />
-          </span>
-        ),
-      },
-      "3": {
-        label: "Em deslocamento",
-        className: "bg-purple-100 text-purple-700 border border-purple-200",
-        icon: (
-          <span title="Em deslocamento">
-            <Car className="w-3.5 h-3.5 text-purple-600" />
-          </span>
-        ),
-      },
-      "4": {
-        label: "Em atendimento",
-        className: "bg-orange-100 text-orange-700 border border-orange-200",
-        icon: (
-          <span title="Em atendimento">
-            <Wrench className="w-3.5 h-3.5 text-orange-600" />
-          </span>
-        ),
-      },
-      "5": {
-        label: "Atendimento interrompido",
-        className: "bg-amber-100 text-amber-700 border border-amber-200",
-        icon: (
-          <span title="Atendimento interrompido">
-            <PauseCircle className="w-3.5 h-3.5 text-amber-600" />
-          </span>
-        ),
-      },
-      "6": {
-        label: "Em Revisão",
-        className: "bg-indigo-100 text-indigo-700 border border-indigo-200",
-        icon: (
-          <span title="Em Revisão">
-            <FileSearch className="w-3.5 h-3.5 text-indigo-600" />
-          </span>
-        ),
-      },
-      "7": {
-        label: "Concluída",
-        className: "bg-green-100 text-green-700 border border-green-200",
-        icon: (
-          <span title="Concluída">
-            <CheckCircle className="w-3.5 h-3.5 text-green-600" />
-          </span>
-        ),
-      },
-      "8": {
-        label: "Cancelada",
-        className: "bg-red-100 text-red-700 border border-red-200",
-        icon: (
-          <span title="Cancelada">
-            <XCircle className="w-3.5 h-3.5 text-red-600" />
-          </span>
-        ),
-      },
-      "9": {
-        label: "Cancelada pelo Cliente",
-        className: "bg-rose-100 text-rose-700 border border-rose-200",
-        icon: (
-          <span title="Cancelada pelo Cliente">
-            <UserX className="w-3.5 h-3.5 text-rose-600" />
-          </span>
-        ),
-      },
-    }),
-    []
+  const handleScrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const handleFatClick = useCallback(
+    (fatId: number) => {
+      router.push(`/admin/fat_detalhes/${fatId}`);
+    },
+    [router]
   );
 
-  // Carregar dados da OS
+  // Fetch data effect
   useEffect(() => {
+    if (numericOsId === null) {
+      setError("Identificador da Ordem de Servi��o inv��lido.");
+      setLoading(false);
+      return;
+    }
+
+    if (lastLoadedOsIdRef.current !== numericOsId) {
+      hasLoadedOnceRef.current = false;
+      lastLoadedOsIdRef.current = numericOsId;
+    }
+
+    let isActive = true;
+    const shouldBlockScreen = !hasLoadedOnceRef.current;
+
+    if (shouldBlockScreen) {
+      setLoading(true);
+    }
+
+    setError(null);
+
     const fetchOSData = async () => {
-      if (!memoizedOsId) return;
-
-      // Evitar re-fetch se já tivermos os dados
-      if (osData && osData.id_os === parseInt(memoizedOsId, 10)) return;
-
       try {
-        setLoading(true);
-        setError(null);
-        const data = await ordensServicoService.getById(
-          parseInt(memoizedOsId, 10)
-        );
+        const data = await ordensServicoService.getById(numericOsId);
 
-        if (data) {
-          if (Array.isArray(data) && data.length > 0) {
-            if (data[0] && typeof data[0] === "object" && "id_os" in data[0]) {
-              setOsData(data[0]);
-            } else {
-              setError("Estrutura de dados inválida");
-            }
-          } else if (typeof data === "object" && "id_os" in data) {
-            setOsData(data);
-          } else {
-            setError("Estrutura de dados não reconhecida");
-          }
+        if (!isActive) {
+          return;
+        }
+
+        const osItem = Array.isArray(data) && data.length > 0 ? data[0] : data;
+
+        if (osItem && typeof osItem === "object" && "id_os" in osItem) {
+          setOsData(osItem as OSDetalhadaV2);
+          hasLoadedOnceRef.current = true;
         } else {
-          setError("Nenhum dado encontrado para esta OS");
+          throw new Error("Estrutura de dados da OS inv��lida.");
         }
       } catch (err) {
+        if (!isActive) {
+          return;
+        }
+
         console.error("Erro ao carregar detalhes da OS:", err);
         setError(
-          "Não foi possível carregar os detalhes da Ordem de Serviço. Tente novamente mais tarde."
+          err instanceof Error && err.message
+            ? err.message
+            : "N��o foi poss��vel carregar os detalhes da Ordem de Servi��o."
         );
       } finally {
-        setLoading(false);
+        if (isActive && shouldBlockScreen) {
+          setLoading(false);
+        }
       }
     };
 
     fetchOSData();
-  }, [memoizedOsId, osData]);
 
-  const handleVoltar = () => {
-    window.history.back();
-  };
+    return () => {
+      isActive = false;
+    };
+  }, [numericOsId]);
 
-  const handleScrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  // Detectar rolagem para botão scroll to top
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollToTop(window.scrollY > 300);
@@ -273,6 +239,12 @@ const OSDetalhesPage: React.FC = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Valores memoizados para otimização
+  const clienteData = useMemo(() => osData?.cliente, [osData]);
+  const contatoData = useMemo(() => osData?.contato, [osData]);
+  const maquinaData = useMemo(() => osData?.maquina, [osData]);
+  const fatsData = useMemo(() => osData?.fats || [], [osData]);
 
   if (loading) {
     return (
@@ -285,7 +257,7 @@ const OSDetalhesPage: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && !osData) {
     return (
       <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100 p-10 animate-fadeIn">
         <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -333,9 +305,11 @@ const OSDetalhesPage: React.FC = () => {
 
   return (
     <>
-      <style jsx global>
-        {fadeInAnimation}
-      </style>
+      {error && osData && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 animate-fadeIn">
+          {error}
+        </div>
+      )}
       <div className="animate-fadeIn">
         <PageHeader
           title={`Ordem de Serviço #${osData.id_os}`}
@@ -380,9 +354,9 @@ const OSDetalhesPage: React.FC = () => {
 
                   {/* Botões de Ação */}
                   <div className="flex items-center gap-2">
-                    {osData.contato?.email && (
+                    {contatoData?.email && (
                       <a
-                        href={`mailto:${osData.contato.email}`}
+                        href={`mailto:${contatoData.email}`}
                         data-tooltip="Enviar E-mail"
                         className="action-button tooltip text-blue-600 hover:bg-blue-50 bg-blue-50/30"
                       >
@@ -390,9 +364,9 @@ const OSDetalhesPage: React.FC = () => {
                       </a>
                     )}
 
-                    {osData.contato?.telefone && osData.contato?.whatsapp && (
+                    {contatoData?.telefone && contatoData?.whatsapp && (
                       <a
-                        href={`https://wa.me/${osData.contato.telefone.replace(
+                        href={`https://wa.me/${contatoData.telefone.replace(
                           /\D/g,
                           ""
                         )}`}
@@ -405,16 +379,14 @@ const OSDetalhesPage: React.FC = () => {
                       </a>
                     )}
 
-                    {osData.cliente?.endereco && (
+                    {clienteData?.endereco && (
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                          `${osData.cliente.endereco}${
-                            osData.cliente.numero
-                              ? ", " + osData.cliente.numero
-                              : ""
-                          }, ${osData.cliente.bairro || ""}, ${
-                            osData.cliente.cidade || ""
-                          }, ${osData.cliente.uf || ""}`
+                          `${clienteData.endereco}${
+                            clienteData.numero ? ", " + clienteData.numero : ""
+                          }, ${clienteData.bairro || ""}, ${
+                            clienteData.cidade || ""
+                          }, ${clienteData.uf || ""}`
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -425,33 +397,30 @@ const OSDetalhesPage: React.FC = () => {
                       </a>
                     )}
 
-                    {osData.cliente && (
+                    {clienteData && (
                       <div className="tooltip" data-tooltip="Traçar Rota">
                         <LocationButtonIcon
                           cliente={{
-                            id: osData.cliente.id,
-                            nome_fantasia: osData.cliente.nome || "",
-                            razao_social: osData.cliente.nome || "",
-                            cnpj: osData.cliente.cnpj_cpf || "",
-                            endereco: osData.cliente.endereco || "",
-                            numero: osData.cliente.numero || "",
-                            bairro: osData.cliente.bairro || "",
-                            cidade: osData.cliente.cidade || "",
-                            uf: osData.cliente.uf || "",
-                            cep: osData.cliente.cep || "",
-                            complemento: osData.cliente.complemento,
-                            latitude: parseFloat(osData.cliente.latitude) || 0,
-                            longitude:
-                              parseFloat(osData.cliente.longitude) || 0,
+                            id: clienteData.id,
+                            nome_fantasia: clienteData.nome || "",
+                            razao_social: clienteData.nome || "",
+                            cnpj: clienteData.cnpj_cpf || "",
+                            endereco: clienteData.endereco || "",
+                            numero: clienteData.numero || "",
+                            bairro: clienteData.bairro || "",
+                            cidade: clienteData.cidade || "",
+                            uf: clienteData.uf || "",
+                            cep: clienteData.cep || "",
+                            complemento: clienteData.complemento,
+                            latitude: parseFloat(clienteData.latitude) || 0,
+                            longitude: parseFloat(clienteData.longitude) || 0,
                             situacao: "A",
                           }}
-                          enderecoEmpresa={`${osData.cliente.endereco || ""}${
-                            osData.cliente.numero
-                              ? ", " + osData.cliente.numero
-                              : ""
-                          }, ${osData.cliente.bairro || ""}, ${
-                            osData.cliente.cidade || ""
-                          }, ${osData.cliente.uf || ""}`}
+                          enderecoEmpresa={`${clienteData.endereco || ""}${
+                            clienteData.numero ? ", " + clienteData.numero : ""
+                          }, ${clienteData.bairro || ""}, ${
+                            clienteData.cidade || ""
+                          }, ${clienteData.uf || ""}`}
                           className="action-button text-purple-600 hover:bg-purple-50 bg-purple-50/30"
                         />
                       </div>
@@ -461,17 +430,17 @@ const OSDetalhesPage: React.FC = () => {
               </div>
               <div className="p-6">
                 <div className="space-y-4">
-                  {osData.cliente?.nome && (
+                  {clienteData?.nome && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">Nome</p>
                       <p className="text-gray-800">
-                        <span className="font-bold">{osData.cliente.nome}</span>{" "}
-                        ({osData.cliente.id})
+                        <span className="font-bold">{clienteData.nome}</span> (
+                        {clienteData.id})
                       </p>
-                      {osData.cliente && "razao_social" in osData.cliente && (
+                      {clienteData && "razao_social" in clienteData && (
                         <p className="text-gray-800">
                           {String(
-                            (osData.cliente as { razao_social: string })
+                            (clienteData as { razao_social: string })
                               .razao_social
                           )}
                         </p>
@@ -479,67 +448,62 @@ const OSDetalhesPage: React.FC = () => {
                     </div>
                   )}
 
-                  {(osData.cliente?.endereco ||
-                    osData.cliente?.numero ||
-                    osData.cliente?.bairro ||
-                    osData.cliente?.cidade ||
-                    osData.cliente?.uf ||
-                    osData.cliente?.cep) && (
+                  {(clienteData?.endereco ||
+                    clienteData?.numero ||
+                    clienteData?.bairro ||
+                    clienteData?.cidade ||
+                    clienteData?.uf ||
+                    clienteData?.cep) && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
                         Endereço
                       </p>
                       <p className="text-gray-800">
-                        {osData.cliente.endereco}
-                        {osData.cliente.numero
-                          ? `, ${osData.cliente.numero}`
-                          : ""}
-                        {osData.cliente.complemento
-                          ? `, ${osData.cliente.complemento}`
+                        {clienteData.endereco}
+                        {clienteData.numero ? `, ${clienteData.numero}` : ""}
+                        {clienteData.complemento
+                          ? `, ${clienteData.complemento}`
                           : ""}
                       </p>
                       <p className="text-gray-800">
-                        {osData.cliente.bairro && `${osData.cliente.bairro}, `}
-                        {osData.cliente.cidade}/{osData.cliente.uf} -{" "}
-                        {osData.cliente.cep}
+                        {clienteData.bairro && `${clienteData.bairro}, `}
+                        {clienteData.cidade}/{clienteData.uf} -{" "}
+                        {clienteData.cep}
                       </p>
                     </div>
                   )}
 
-                  {osData.cliente?.nome_regiao && (
+                  {clienteData?.nome_regiao && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
                         Região
                       </p>
-                      <p className="text-gray-800">
-                        {osData.cliente.nome_regiao}
-                      </p>
+                      <p className="text-gray-800">{clienteData.nome_regiao}</p>
                     </div>
                   )}
 
-                  {(osData.contato?.nome ||
-                    osData.contato?.telefone ||
-                    osData.contato?.email) && (
+                  {(contatoData?.nome ||
+                    contatoData?.telefone ||
+                    contatoData?.email) && (
                     <div className="flex flex-col gap-2">
                       <p className="text-sm font-medium text-gray-500">
                         Contato
                       </p>
-                      {osData.contato.nome && (
+                      {contatoData.nome && (
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-gray-400" />
                           <span className="text-gray-800">
-                            {osData.contato.nome}
-                            {osData.contato.cargo &&
-                              ` (${osData.contato.cargo})`}
+                            {contatoData.nome}
+                            {contatoData.cargo && ` (${contatoData.cargo})`}
                           </span>
                         </div>
                       )}
-                      {osData.contato.telefone && (
+                      {contatoData.telefone && (
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4 text-gray-400" />
                           <span className="text-gray-800">
-                            {osData.contato.telefone}
-                            {osData.contato.whatsapp && (
+                            {contatoData.telefone}
+                            {contatoData.whatsapp && (
                               <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
                                 WhatsApp
                               </span>
@@ -547,11 +511,11 @@ const OSDetalhesPage: React.FC = () => {
                           </span>
                         </div>
                       )}
-                      {osData.contato.email && (
+                      {contatoData.email && (
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-gray-400" />
                           <span className="text-gray-800">
-                            {osData.contato.email}
+                            {contatoData.email}
                           </span>
                         </div>
                       )}
@@ -577,14 +541,14 @@ const OSDetalhesPage: React.FC = () => {
               </div>
               <div className="p-6">
                 <div className="space-y-4">
-                  {osData.maquina?.numero_serie && (
+                  {maquinaData?.numero_serie && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
                         Nº de Série
                       </p>
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-gray-800">
-                          {osData.maquina.numero_serie}
+                          {maquinaData.numero_serie}
                         </p>
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -609,23 +573,21 @@ const OSDetalhesPage: React.FC = () => {
                     </div>
                   )}
 
-                  {osData.maquina?.descricao && (
+                  {maquinaData?.descricao && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
                         Descrição
                       </p>
-                      <p className="text-gray-800">
-                        {osData.maquina.descricao}
-                      </p>
+                      <p className="text-gray-800">{maquinaData.descricao}</p>
                     </div>
                   )}
 
-                  {osData.maquina?.modelo && (
+                  {maquinaData?.modelo && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
                         Modelo
                       </p>
-                      <p className="text-gray-800">{osData.maquina.modelo}</p>
+                      <p className="text-gray-800">{maquinaData.modelo}</p>
                     </div>
                   )}
                 </div>
@@ -660,7 +622,7 @@ const OSDetalhesPage: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <StatusBadge
                             status={String(osData.situacao_os.codigo)}
-                            mapping={statusMapping}
+                            mapping={STATUS_MAPPING}
                           />
                           <span className="text-sm text-gray-500">
                             desde{" "}
@@ -837,7 +799,7 @@ const OSDetalhesPage: React.FC = () => {
             </div>
 
             {/* Tabela de FATs - se tiver FATs */}
-            {osData.fats && osData.fats.length > 0 && (
+            {fatsData.length > 0 && (
               <div
                 className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
                 style={{ animationDelay: "0.4s" }}
@@ -848,7 +810,7 @@ const OSDetalhesPage: React.FC = () => {
                       className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
                       style={{ animationDelay: "0.5s" }}
                     />
-                    Fichas de Atendimento Técnico ({osData.fats.length})
+                    Fichas de Atendimento Técnico ({fatsData.length})
                   </h3>
                 </div>
                 <div className="p-6">
@@ -871,14 +833,12 @@ const OSDetalhesPage: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {osData.fats.map((fat, index) => (
+                        {fatsData.map((fat, index) => (
                           <tr
                             key={fat.id_fat}
                             className="hover:bg-gray-50 cursor-pointer transition-colors duration-150 animate-fadeIn"
                             style={{ animationDelay: `${0.05 * index}s` }}
-                              onClick={() =>
-                                router.push(`/admin/fat_detalhes/${fat.id_fat}`)
-                              }
+                            onClick={() => handleFatClick(fat.id_fat)}
                             onMouseEnter={(e) => {
                               e.currentTarget.classList.add("shadow-sm");
                               e.currentTarget.style.transform =

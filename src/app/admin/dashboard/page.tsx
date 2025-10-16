@@ -144,7 +144,6 @@ export default function DashboardPage() {
 
         const response = await dashboardService.getGestorData(params);
 
-        console.log("Dashboard API response:", response);
 
         // Processar cards data
         const newCardsData = {
@@ -328,6 +327,17 @@ export default function DashboardPage() {
       animateScale: true,
       animateRotate: true,
       duration: 1000,
+    },
+  };
+
+  const pieChartOptions = {
+    ...chartOptions,
+    plugins: {
+      ...chartOptions.plugins,
+      legend: {
+        ...chartOptions.plugins.legend,
+        display: true,
+      },
     },
   };
 
@@ -677,7 +687,7 @@ export default function DashboardPage() {
                 style={{ animationDelay: "200ms" }}
               >
                 {dashboardData.graficos.motivos_atendimento.length > 0 ? (
-                  <Pie data={pieChartData} options={chartOptions} />
+                  <Pie data={pieChartData} options={pieChartOptions} />
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full w-full">
                     <div className="p-4 rounded-full bg-gray-100">

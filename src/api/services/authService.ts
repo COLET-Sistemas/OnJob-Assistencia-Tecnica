@@ -45,27 +45,19 @@ class AuthService {
   async logout(): Promise<void> {
     if (typeof window !== "undefined") {
       try {
-        // Tenta fazer uma requisição de logout para o servidor antes de limpar os dados
-        // Se falhar, continua com o logout local de qualquer forma
-        try {
-          await api.post<void>("/auth/logout", {});
-        } catch (error) {
-          console.warn("Falha ao notificar servidor sobre logout:", error);
-        }
-
-        // Limpar localStorage
+        // 🔹 Apenas limpeza local (sem chamada à API)
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         this.clearActiveModule();
         this.clearRolesCookie();
         clearStoredRoles();
 
-        // Limpar cookie com as mesmas configurações usadas para criá-lo
+        // Remove cookie do token
         const secure = window.location.protocol === "https:" ? "; secure" : "";
         const sameSite = "; samesite=lax";
         document.cookie = `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${secure}${sameSite}`;
 
-        // Limpar dados da empresa
+        // Limpa dados da empresa
         empresaService.clearEmpresaData();
       } catch (error) {
         console.error("Erro durante logout:", error);
@@ -75,25 +67,19 @@ class AuthService {
 
   saveAuthData(authData: AuthResponse, module?: ModuleType): void {
     if (typeof window !== "undefined") {
-      // Salvar no localStorage
       localStorage.setItem("token", authData.token);
       localStorage.setItem("user", JSON.stringify(authData.user));
 
-      // Salvar em cookie para ser acessível pelo middleware
-      // Define o cookie com expiração de 24 horas e disponível em todo o site
       const expirationDate = new Date();
-      expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000); // 24 horas
+      expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000);
 
-      // Configura cookies seguros
       const secure = window.location.protocol === "https:" ? "; secure" : "";
-      const sameSite = "; samesite=lax"; // Proteção CSRF mais equilibrada
+      const sameSite = "; samesite=lax";
 
-      // Garante que o cookie seja definido corretamente
       document.cookie = `token=${
         authData.token
       }; expires=${expirationDate.toUTCString()}; path=/${secure}${sameSite}`;
 
-      // Limpar qualquer sinalização de limpeza de localStorage
       document.cookie =
         "clearLocalStorage=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
@@ -101,21 +87,16 @@ class AuthService {
         this.setActiveModule(module);
       }
 
-      setStoredRoles({
+      const roles = {
         admin: authData.user.administrador,
         gestor: authData.user.perfil_gestor_assistencia,
         interno: authData.user.perfil_interno,
         tecnico_proprio: authData.user.perfil_tecnico_proprio,
         tecnico_terceirizado: authData.user.perfil_tecnico_terceirizado,
-      });
+      };
 
-      this.setRolesCookie({
-        admin: authData.user.administrador,
-        gestor: authData.user.perfil_gestor_assistencia,
-        interno: authData.user.perfil_interno,
-        tecnico_proprio: authData.user.perfil_tecnico_proprio,
-        tecnico_terceirizado: authData.user.perfil_tecnico_terceirizado,
-      });
+      setStoredRoles(roles);
+      this.setRolesCookie(roles);
     }
   }
 

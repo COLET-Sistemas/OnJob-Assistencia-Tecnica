@@ -558,8 +558,6 @@ const ConsultaOSPage: React.FC = () => {
       let totalPages = 1;
 
       if (Array.isArray(result)) {
-        // Direct array response as shown in your example
-        console.log("API returned array response", result);
         responseData = result;
         total = result.length;
         totalPages = Math.ceil(total / paginacao.registrosPorPagina);
@@ -576,10 +574,6 @@ const ConsultaOSPage: React.FC = () => {
         return;
       }
 
-      // Log the first item to help with debugging
-      if (responseData.length > 0) {
-        console.log("First response item:", responseData[0]);
-      }
 
       // Use type assertion to handle the response data
       const validItems = responseData.filter((item) => !!item);
