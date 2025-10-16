@@ -113,7 +113,7 @@ TextAreaField.displayName = "TextAreaField";
 
 export default function FATAtendimentoPage() {
   const router = useRouter();
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const [fat, setFat] = useState<FATDetalhada | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -296,11 +296,19 @@ export default function FATAtendimentoPage() {
     }
   };
 
+  const handleBackToFat = useCallback(() => {
+    router.push(`/tecnico/os/fat/${params.id}`);
+  }, [router, params.id]);
+
   // Componente de loading otimizado
   if (loading) {
     return (
       <>
-        <MobileHeader title="Atendimento" onMenuClick={() => router.back()} />
+        <MobileHeader
+          title="Atendimento"
+          onAddClick={handleBackToFat}
+          leftVariant="back"
+        />
         <Loading
           fullScreen={true}
           preventScroll={false}
@@ -315,7 +323,11 @@ export default function FATAtendimentoPage() {
   if (error && !fat) {
     return (
       <>
-        <MobileHeader title="Atendimento" onMenuClick={() => router.back()} />
+        <MobileHeader
+          title="Atendimento"
+          onAddClick={handleBackToFat}
+          leftVariant="back"
+        />
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-xl border border-red-100">
             <div className="w-16 h-16 mx-auto mb-4 bg-red-50 rounded-full flex items-center justify-center">
@@ -349,7 +361,8 @@ export default function FATAtendimentoPage() {
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <MobileHeader
         title={fat?.id_fat ? `FAT #${fat.id_fat}` : "Atendimento"}
-        onMenuClick={() => router.back()}
+        onAddClick={handleBackToFat}
+        leftVariant="back"
       />
 
       {/* Toast de feedback */}

@@ -168,7 +168,6 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
 
   // Combinando os efeitos em um único efeito mais limpo
   useEffect(() => {
-    // Quando o modal fecha, reseta o estado
     if (!isOpen) {
       setSelectedTecnico(null);
       setError(null);
@@ -176,7 +175,6 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
       return;
     }
 
-    // Quando o modal abre, carrega os dados
     if (idRegiao) {
       console.log(`Modal aberto para região: ${idRegiao}`);
       fetchTecnicos(false);
@@ -198,12 +196,10 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
 
     setIsLoading(true);
     try {
-      // Enviar PATCH para liberar a OS com o técnico selecionado
       await api.patch(`/ordens_servico/liberacao?id=${osId}`, {
         id_tecnico: selectedTecnico.id,
       });
 
-      // Chamar a função de callback se fornecida
       await onConfirm(osId, selectedTecnico.id, selectedTecnico.nome);
       onClose();
     } catch (error) {
@@ -219,7 +215,6 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
     }
   };
 
-  // Função para obter as classes do badge baseado no tipo
   const getBadgeClasses = (tipo: "interno" | "terceiro") => {
     return tipo === "interno"
       ? "bg-amber-50 text-amber-600 border border-amber-100"
@@ -236,7 +231,7 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-in fade-in-0 zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 animate-in fade-in-0 zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
@@ -306,7 +301,6 @@ const TecnicoModal: React.FC<TecnicoModalProps> = ({
                     </div>
                   )}
 
-                  {/* Lista visual dos técnicos com badges */}
                   {tecnicos.length > 0 && (
                     <div className="mb-3">
                       <label className="block text-sm font-medium text-gray-700 mb-2">

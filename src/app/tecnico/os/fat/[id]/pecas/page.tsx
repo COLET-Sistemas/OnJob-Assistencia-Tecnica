@@ -220,7 +220,7 @@ PecaItem.displayName = "PecaItem";
 // Componente principal
 export default function FATPecasPage() {
   const router = useRouter();
-  const params = useParams();
+  const params = useParams<{ id: string }>();
 
   // Estados principais
   const [pecas, setPecas] = useState<FATPecaVinculada[]>([]);
@@ -462,6 +462,10 @@ export default function FATPecasPage() {
 
   const pecasCount = useMemo(() => pecas.length, [pecas]);
 
+  const handleBackToFat = useCallback(() => {
+    router.push(`/tecnico/os/fat/${params.id}`);
+  }, [router, params.id]);
+
   return (
     <main className="min-h-screen bg-gray-50">
       <style jsx>{`
@@ -482,7 +486,8 @@ export default function FATPecasPage() {
 
       <MobileHeader
         title="Peças Utilizadas"
-        onMenuClick={() => router.back()}
+        onAddClick={handleBackToFat}
+        leftVariant="back"
       />
 
       <div className="p-4 max-w-2xl mx-auto space-y-5">

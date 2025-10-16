@@ -128,7 +128,7 @@ DeslocamentoItem.displayName = "DeslocamentoItem";
 
 export default function FATDeslocamentoPage() {
   const router = useRouter();
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const [deslocamentos, setDeslocamentos] = useState<FATDeslocamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -267,6 +267,10 @@ export default function FATDeslocamentoPage() {
     setExpandedId(null);
   };
 
+  const handleBackToFat = useCallback(() => {
+    router.push(`/tecnico/os/fat/${params.id}`);
+  }, [router, params.id]);
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <style jsx>{`
@@ -284,7 +288,11 @@ export default function FATDeslocamentoPage() {
           animation: slideInUp 0.2s ease-out forwards;
         }
       `}</style>
-      <MobileHeader title="Deslocamentos" onMenuClick={() => router.back()} />
+      <MobileHeader
+        title="Deslocamentos"
+        onAddClick={handleBackToFat}
+        leftVariant="back"
+      />
 
       <div className="p-4 max-w-lg mx-auto space-y-4">
         {/* Formulário */}

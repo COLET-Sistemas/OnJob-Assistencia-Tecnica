@@ -16,11 +16,13 @@ import { maquinasService } from "@/api/services/maquinasService";
 import { motivosPendenciaService } from "@/api/services/motivosPendenciaService";
 import { motivosAtendimentoService } from "@/api/services/motivosAtendimentoService";
 // Removed ordensServicoService import as we're using API directly
-import { usuariosService } from "@/api/services/usuariosService";
 import { Cliente, ClienteContato } from "@/types/admin/cadastro/clientes";
 import { MotivoPendencia } from "@/types/admin/cadastro/motivos_pendencia";
 import { Maquina } from "@/types/admin/cadastro/maquinas";
-import { Usuario } from "@/types/admin/cadastro/usuarios";
+import type {
+  UsuarioComRegioes,
+  UsuariosRegioesResponse,
+} from "@/types/admin/cadastro/usuarios";
 import { OptionType } from "@/components/admin/form/CustomSelect";
 import useDebouncedCallback from "@/hooks/useDebouncedCallback";
 import { feedback } from "@/utils/feedback";
@@ -111,6 +113,8 @@ interface ClienteOption extends OptionType {
   value: number;
   cidade?: string;
   uf?: string;
+  regiaoId?: number | null;
+  regiaoNome?: string | null;
 }
 
 interface MaquinaOption extends MachineOptionType {
@@ -199,6 +203,12 @@ const EditarOrdemServico = () => {
   const [selectedTecnico, setSelectedTecnico] = useState<TecnicoOption | null>(
     null
   );
+  const [clienteRegiaoId, setClienteRegiaoId] = useState<number | null>(null);
+  const [clienteRegiaoNome, setClienteRegiaoNome] = useState<string | null>(
+    null
+  );
+  const [showAllTecnicos, setShowAllTecnicos] = useState(false);
+  const [tecnicoError, setTecnicoError] = useState<string | null>(null);
   const [loadingTecnicos, setLoadingTecnicos] = useState(false);
   const [showNameError, setShowNameError] = useState(false);
 
@@ -216,8 +226,8 @@ const EditarOrdemServico = () => {
 
   // Refs para controlar chamadas à API
   const motivosPendenciaLoaded = useRef(false);
-  const tecnicosLoaded = useRef(false);
   const osDataLoaded = useRef(false);
+  const [tecnicosLoaded, setTecnicosLoaded] = useState(false);
 
   // Carregar dados da OS existente
   useEffect(() => {
@@ -255,8 +265,15 @@ const EditarOrdemServico = () => {
             label: `${os.cliente.nome} (${os.cliente.id})`,
             cidade: os.cliente.cidade,
             uf: os.cliente.uf,
+            regiaoId: os.cliente.id_regiao ?? null,
+            regiaoNome: os.cliente.nome_regiao ?? null,
           };
           setSelectedCliente(clienteOption);
+          setClienteRegiaoId(os.cliente.id_regiao ?? null);
+          setClienteRegiaoNome(os.cliente.nome_regiao ?? null);
+          setShowAllTecnicos(false);
+          setTecnicosLoaded(false);
+          setTecnicoError(null);
 
           // Pre-load machine options for the selected client to ensure machine selection works
           if (os.cliente.id) {
@@ -500,51 +517,90 @@ const EditarOrdemServico = () => {
 
     fetchOSData();
 
-    // Garantir que os técnicos sejam carregados imediatamente
-    if (!tecnicosLoaded.current) {
-      const loadTecnicos = async () => {
-        setLoadingTecnicos(true);
-        try {
-          console.log("Carregando técnicos na inicialização");
-          const tecnicosResponse = await usuariosService.getAllTecnicos();
-          console.log("Resposta técnicos na inicialização:", tecnicosResponse);
-
-          const tecnicos: TecnicoOption[] = [];
-
-          if (
-            tecnicosResponse &&
-            tecnicosResponse.dados &&
-            Array.isArray(tecnicosResponse.dados)
-          ) {
-            tecnicosResponse.dados.forEach((tecnico: Usuario) => {
-              tecnicos.push({
-                value: tecnico.id,
-                label: tecnico.nome,
-              });
-            });
-          } else if (Array.isArray(tecnicosResponse)) {
-            tecnicosResponse.forEach((tecnico: Usuario) => {
-              tecnicos.push({
-                value: tecnico.id,
-                label: tecnico.nome,
-              });
-            });
-          }
-
-          if (tecnicos.length > 0) {
-            setTecnicosOptions(tecnicos);
-          }
-        } catch (error) {
-          console.error("Erro ao carregar técnicos na inicialização:", error);
-        } finally {
-          tecnicosLoaded.current = true;
-          setLoadingTecnicos(false);
-        }
-      };
-
-      loadTecnicos();
-    }
   }, [osId]);
+
+  const fetchTecnicos = useCallback(
+    async (fetchAll = false) => {
+      if (!fetchAll && !clienteRegiaoId) {
+        setTecnicosOptions([]);
+        setTecnicosLoaded(false);
+        setTecnicoError(null);
+        return;
+      }
+
+      setTecnicosLoaded(false);
+      setLoadingTecnicos(true);
+      setTecnicoError(null);
+
+      try {
+        const response = await api.get<
+          UsuariosRegioesResponse | UsuarioComRegioes[]
+        >(
+          "/usuarios_regioes",
+          fetchAll
+            ? undefined
+            : {
+                params: {
+                  id_regiao: clienteRegiaoId ?? undefined,
+                },
+              }
+        );
+
+        let usuarios: UsuarioComRegioes[] = [];
+
+        if (Array.isArray(response)) {
+          usuarios = response;
+        } else if (response && Array.isArray(response.dados)) {
+          usuarios = response.dados;
+        }
+
+        const filteredUsuarios = fetchAll
+          ? usuarios
+          : usuarios.filter((usuario) =>
+              usuario.regioes?.some(
+                (regiao) => regiao.id_regiao === clienteRegiaoId
+              )
+            );
+
+        const options = filteredUsuarios.map((usuario) => ({
+          value: usuario.id_usuario,
+          label: usuario.nome_usuario,
+        }));
+
+        if (options.length === 0) {
+          setTecnicoError(
+            fetchAll
+              ? "Nenhum tecnico encontrado."
+              : "Nenhum tecnico encontrado para esta regiao."
+          );
+        }
+
+        let mergedOptions = options;
+
+        if (selectedTecnico) {
+          const withoutSelected = options.filter(
+            (option) => option.value !== selectedTecnico.value
+          );
+          mergedOptions = [selectedTecnico, ...withoutSelected];
+        }
+
+        setTecnicosOptions(mergedOptions);
+        setTecnicosLoaded(true);
+      } catch (error) {
+        console.error("Erro ao carregar tecnicos:", error);
+        setTecnicoError(
+          error instanceof Error
+            ? `Erro ao carregar tecnicos: ${error.message}`
+            : "Erro ao carregar tecnicos."
+        );
+        setTecnicosOptions([]);
+        setTecnicosLoaded(false);
+      } finally {
+        setLoadingTecnicos(false);
+      }
+    },
+    [clienteRegiaoId, selectedTecnico]
+  );
 
   // Define handleClienteChange before it's referenced
   const handleClienteChange = useCallback(
@@ -558,6 +614,61 @@ const EditarOrdemServico = () => {
       setUseCustomContato(false);
 
       if (selectedOption) {
+        setShowAllTecnicos(false);
+        setTecnicosOptions([]);
+        setTecnicoError(null);
+        setSelectedTecnico(null);
+
+        let regiaoId = selectedOption.regiaoId ?? null;
+        let regiaoNome = selectedOption.regiaoNome ?? null;
+
+        if (!regiaoId) {
+          try {
+            const clienteDetalhes = await clientesService.getById(
+              selectedOption.value
+            );
+            const clienteDados =
+              clienteDetalhes && Array.isArray(clienteDetalhes.dados)
+                ? clienteDetalhes.dados[0]
+                : null;
+
+            if (clienteDados) {
+              const clienteComRegiao = clienteDados as {
+                id_regiao?: number;
+                nome_regiao?: string;
+                regiao?: {
+                  id?: number;
+                  nome?: string;
+                  id_regiao?: number;
+                  nome_regiao?: string;
+                };
+              };
+
+              const regiaoInfo = clienteComRegiao.regiao;
+
+              regiaoId =
+                regiaoId ??
+                regiaoInfo?.id ??
+                regiaoInfo?.id_regiao ??
+                clienteComRegiao.id_regiao ??
+                null;
+
+              regiaoNome =
+                regiaoNome ??
+                regiaoInfo?.nome ??
+                regiaoInfo?.nome_regiao ??
+                clienteComRegiao.nome_regiao ??
+                null;
+            }
+          } catch (error) {
+            console.error("Erro ao carregar regiao do cliente:", error);
+          }
+        }
+
+        setClienteRegiaoId(regiaoId ?? null);
+        setClienteRegiaoNome(regiaoNome ?? null);
+        setTecnicosLoaded(false);
+
         setLoadingMaquinas(true);
         try {
           const maquinasResponse = await maquinasService.getByClienteId(
@@ -657,6 +768,13 @@ const EditarOrdemServico = () => {
         setMaquinaOptions([]);
         setMaquinaInput("");
         setContatoOptions([]);
+        setClienteRegiaoId(null);
+        setClienteRegiaoNome(null);
+        setShowAllTecnicos(false);
+        setTecnicosOptions([]);
+        setSelectedTecnico(null);
+        setTecnicoError(null);
+        setTecnicosLoaded(false);
       }
     },
     []
@@ -730,6 +848,18 @@ const EditarOrdemServico = () => {
     setSelectedTecnico(option as TecnicoOption | null);
   }, []);
 
+  const handleMostrarTodosTecnicos = useCallback(() => {
+    setShowAllTecnicos(true);
+    setTecnicoError(null);
+    setTecnicosLoaded(false);
+  }, []);
+
+  const handleFiltrarTecnicosPorRegiao = useCallback(() => {
+    setShowAllTecnicos(false);
+    setTecnicoError(null);
+    setTecnicosLoaded(false);
+  }, []);
+
   // Carregar dados iniciais (motivos de pendência, técnicos e motivos de atendimento)
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -755,64 +885,6 @@ const EditarOrdemServico = () => {
           })
         );
         setMotivosAtendimentoOptions(motivosAtendimento);
-
-        // Carregar técnicos
-        if (!tecnicosLoaded.current) {
-          setLoadingTecnicos(true);
-          try {
-            console.log("Iniciando busca de técnicos");
-            const tecnicosResponse = await usuariosService.getAllTecnicos();
-            console.log("Resposta de técnicos:", tecnicosResponse);
-
-            // Verificar a estrutura da resposta para garantir o mapeamento correto
-            const tecnicos: TecnicoOption[] = [];
-
-            if (
-              tecnicosResponse &&
-              tecnicosResponse.dados &&
-              Array.isArray(tecnicosResponse.dados)
-            ) {
-              console.log(
-                `Encontrados ${tecnicosResponse.dados.length} técnicos`
-              );
-              tecnicosResponse.dados.forEach((tecnico: Usuario) => {
-                tecnicos.push({
-                  value: tecnico.id,
-                  label: tecnico.nome,
-                });
-              });
-            } else if (Array.isArray(tecnicosResponse)) {
-              // Caso a resposta seja diretamente um array
-              console.log(
-                `Encontrados ${tecnicosResponse.length} técnicos (formato array direto)`
-              );
-              tecnicosResponse.forEach((tecnico: Usuario) => {
-                tecnicos.push({
-                  value: tecnico.id,
-                  label: tecnico.nome,
-                });
-              });
-            } else {
-              console.error(
-                "Formato de resposta não reconhecido:",
-                tecnicosResponse
-              );
-            }
-
-            console.log("Lista de técnicos processada:", tecnicos);
-            // Garantir que há sempre opções disponíveis, mesmo que vazia
-            setTecnicosOptions(
-              tecnicos.length > 0
-                ? tecnicos
-                : [{ value: 0, label: "Nenhum técnico disponível" }]
-            );
-          } catch (tecnicoError) {
-            console.error("Erro específico ao buscar técnicos:", tecnicoError);
-          } finally {
-            tecnicosLoaded.current = true;
-            setLoadingTecnicos(false);
-          }
-        }
       } catch (error) {
         console.error("Erro ao carregar dados iniciais:", error);
       }
@@ -820,6 +892,21 @@ const EditarOrdemServico = () => {
 
     fetchInitialData();
   }, []);
+
+  useEffect(() => {
+    if (showAllTecnicos) {
+      fetchTecnicos(true);
+      return;
+    }
+
+    if (clienteRegiaoId) {
+      fetchTecnicos(false);
+    } else {
+      setTecnicosOptions([]);
+      setTecnicosLoaded(false);
+      setTecnicoError(null);
+    }
+  }, [clienteRegiaoId, showAllTecnicos, fetchTecnicos]);
 
   // Função para buscar clientes (memoizada)
   const searchClientes = useCallback(
@@ -838,6 +925,16 @@ const EditarOrdemServico = () => {
                 label: `${cliente.razao_social} (${cliente.codigo_erp || "-"})`,
                 cidade: cliente.cidade,
                 uf: cliente.uf,
+                regiaoId:
+                  cliente.regiao?.id ??
+                  cliente.regiao?.id_regiao ??
+                  (cliente as { id_regiao?: number }).id_regiao ??
+                  null,
+                regiaoNome:
+                  cliente.regiao?.nome ??
+                  cliente.regiao?.nome_regiao ??
+                  (cliente as { nome_regiao?: string }).nome_regiao ??
+                  null,
               }))
             : [];
 
@@ -874,9 +971,9 @@ const EditarOrdemServico = () => {
     console.log("Estado atual dos técnicos:", {
       opcoes: tecnicosOptions.length,
       carregando: loadingTecnicos,
-      carregado: tecnicosLoaded.current,
+      carregado: tecnicosLoaded,
     });
-  }, [tecnicosOptions, loadingTecnicos]);
+  }, [tecnicosOptions, loadingTecnicos, tecnicosLoaded]);
 
   const handleClienteInputChange = useCallback(
     (inputValue: string) => {
@@ -1049,7 +1146,7 @@ const EditarOrdemServico = () => {
         origem_abertura: "I",
         forma_abertura: formaAbertura.value,
         em_garantia: selectedMaquina.isInWarranty || false,
-        id_regiao: 1,
+        id_regiao: clienteRegiaoId ?? 1,
       };
 
       // Adicione id_motivo_atendimento apenas se selecionado
@@ -1553,6 +1650,8 @@ const EditarOrdemServico = () => {
                   className={errors.motivoAtendimento ? "campo-erro" : ""}
                   isClearable
                 />
+
+
               </div>
             </div>
 
@@ -1607,12 +1706,40 @@ const EditarOrdemServico = () => {
                       : "Nenhum técnico disponível"
                   }
                 />
-                {/* Debug info - remover após testes */}
-                {tecnicosOptions.length === 0 && !loadingTecnicos && (
-                  <div className="text-xs text-amber-600">
-                    Nenhum técnico carregado. Recarregue a página.
+                <div className="mt-2 flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">
+                      {showAllTecnicos
+                        ? "Exibindo todos os tecnicos"
+                        : clienteRegiaoNome
+                        ? `Regiao: ${clienteRegiaoNome}`
+                        : "Selecione um cliente para filtrar por regiao"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={
+                        showAllTecnicos
+                          ? handleFiltrarTecnicosPorRegiao
+                          : handleMostrarTodosTecnicos
+                      }
+                      className={
+                        showAllTecnicos
+                          ? "text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-1 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          : "text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md px-3 py-1 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      }
+                      disabled={
+                        loadingTecnicos || (!clienteRegiaoId && !showAllTecnicos)
+                      }
+                    >
+                      {showAllTecnicos
+                        ? "Filtrar por regiao"
+                        : "Ver todos os tecnicos"}
+                    </button>
                   </div>
-                )}
+                  {tecnicoError && (
+                    <span className="text-xs text-red-600">{tecnicoError}</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

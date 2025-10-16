@@ -187,6 +187,16 @@ export default function FATDetalheMobile() {
     return `${hours}h ${mins}min`;
   }, []);
 
+  const handleNavigateToOS = useCallback(() => {
+    const paramId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
+    const targetOsId = fat?.id_os ?? paramId;
+    if (targetOsId) {
+      router.push(`/tecnico/os/${targetOsId}`);
+    } else {
+      router.push("/tecnico/os");
+    }
+  }, [fat?.id_os, params?.id, router]);
+
   // Função para extrair mensagem de erro da API
   const extractErrorMessage = useCallback((error: unknown): string => {
     let errorMessage = "Ocorreu um erro durante a operação";
@@ -457,7 +467,6 @@ export default function FATDetalheMobile() {
       } catch (error) {
         console.error("Erro ao concluir atendimento:", error);
 
-        // Capturar mensagem de erro da API
         const errorMessage = extractErrorMessage(error);
 
         showToast(errorMessage, "error");
@@ -474,7 +483,7 @@ export default function FATDetalheMobile() {
       <>
         <MobileHeader
           title="Detalhes da FAT"
-          onAddClick={() => router.back()}
+          onAddClick={handleNavigateToOS}
           leftVariant="back"
         />
         <Loading
@@ -492,7 +501,7 @@ export default function FATDetalheMobile() {
       <>
         <MobileHeader
           title="Detalhes da FAT"
-          onAddClick={() => router.back()}
+          onAddClick={handleNavigateToOS}
           leftVariant="back"
         />
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -503,12 +512,12 @@ export default function FATDetalheMobile() {
               {error}
             </p>
             <div className="flex gap-3">
-              <button
-                onClick={() => router.back()}
-                className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors"
-              >
-                Voltar
-              </button>
+            <button
+              onClick={handleNavigateToOS}
+              className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors"
+            >
+              Voltar
+            </button>
               <button
                 onClick={() => fetchFAT(true)}
                 className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-colors"
@@ -527,7 +536,7 @@ export default function FATDetalheMobile() {
       <>
         <MobileHeader
           title="Detalhes da FAT"
-          onAddClick={() => router.back()}
+          onAddClick={handleNavigateToOS}
           leftVariant="back"
         />
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -537,7 +546,7 @@ export default function FATDetalheMobile() {
               FAT não encontrada
             </h2>
             <button
-              onClick={() => router.back()}
+              onClick={handleNavigateToOS}
               className="px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
             >
               Voltar
@@ -552,7 +561,7 @@ export default function FATDetalheMobile() {
     <main className="min-h-screen bg-slate-50 pb-25">
       <MobileHeader
         title={fat.id_fat ? `FAT #${fat.id_fat}` : "Detalhes da FAT"}
-        onAddClick={() => router.back()}
+        onAddClick={handleNavigateToOS}
         leftVariant="back"
       />
 
