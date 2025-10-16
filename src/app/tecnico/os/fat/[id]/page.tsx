@@ -928,7 +928,7 @@ export default function FATDetalheMobile() {
         </div>
       </div>
 
-      <div className="px-2">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 p-3 safe-area-bottom">
         <ActionButtonsFat
           fat={fat}
           id_os={fat.id_os}
