@@ -31,79 +31,6 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-// CSS para animações personalizadas
-const fadeInAnimation = `
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes pulseScale {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-10px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-in-out;
-}
-.animate-pulseScale {
-  animation: pulseScale 0.4s ease-in-out;
-}
-.animate-slideIn {
-  animation: slideIn 0.3s ease-in-out;
-}
-.action-button {
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-  padding: 0.5rem;
-}
-.action-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-}
-.tooltip {
-  position: relative;
-}
-.tooltip:before {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: -35px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 5px 10px;
-  border-radius: 4px;
-  background: #333;
-  color: white;
-  font-size: 12px;
-  white-space: nowrap;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.2s ease;
-  z-index: 10;
-}
-.tooltip:hover:before {
-  opacity: 1;
-  visibility: visible;
-}
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(var(--color-primary-rgb), 0.3);
-  border-radius: 3px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 3px;
-}
-`;
 
 const FATDetalhesPage: React.FC = () => {
   const params = useParams();
@@ -335,9 +262,6 @@ const FATDetalhesPage: React.FC = () => {
 
   return (
     <>
-      <style jsx global>
-        {fadeInAnimation}
-      </style>
       <div className="animate-fadeIn">
         <PageHeader
           title={`Ficha de Atendimento Técnico #${fatData.id_fat}`}

@@ -267,7 +267,7 @@ export default function LoginPage() {
     if (error) {
       timer = setTimeout(() => {
         setError("");
-      }, 15000); 
+      }, 15000);
     }
 
     return () => {
@@ -312,20 +312,24 @@ export default function LoginPage() {
 
         // Salvar dados também no authService para garantir que o cookie seja definido
         try {
-          authService.saveAuthData({
-            token: authData.token,
-            user: {
-              id: authData.id_usuario,
-              nome: authData.nome_usuario,
-              login: login,
-              email: authData.email,
-              perfil_interno: authData.perfil.interno,
-              perfil_gestor_assistencia: authData.perfil.gestor,
-              perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
-              perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
-              administrador: authData.perfil.admin,
+          authService.saveAuthData(
+            {
+              token: authData.token,
+              user: {
+                id: authData.id_usuario,
+                nome: authData.nome_usuario,
+                login: login,
+                email: authData.email,
+                perfil_interno: authData.perfil.interno,
+                perfil_gestor_assistencia: authData.perfil.gestor,
+                perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
+                perfil_tecnico_terceirizado:
+                  authData.perfil.tecnico_terceirizado,
+                administrador: authData.perfil.admin,
+              },
             },
-          }, "admin");
+            "admin"
+          );
         } catch (authStoreError) {
           console.error("Erro ao salvar dados no authService:", authStoreError);
         }
@@ -418,29 +422,32 @@ export default function LoginPage() {
 
       // Salvar dados também no authService para garantir que o cookie seja definido
       try {
-        authService.saveAuthData({
-          token: authData.token,
-          user: {
-            id: authData.id_usuario,
-            nome: authData.nome_usuario,
-            login: login,
-            email: authData.email,
-            perfil_interno: authData.perfil.interno,
-            perfil_gestor_assistencia: authData.perfil.gestor,
-            perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
-            perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
-            administrador: authData.perfil.admin,
+        authService.saveAuthData(
+          {
+            token: authData.token,
+            user: {
+              id: authData.id_usuario,
+              nome: authData.nome_usuario,
+              login: login,
+              email: authData.email,
+              perfil_interno: authData.perfil.interno,
+              perfil_gestor_assistencia: authData.perfil.gestor,
+              perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
+              perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
+              administrador: authData.perfil.admin,
+            },
           },
-        }, "tecnico");
+          "tecnico"
+        );
       } catch (authStoreError) {
         console.error("Erro ao salvar dados no authService:", authStoreError);
       }
 
-      // Verificar token depois de salvar
-      const savedToken = localStorage.getItem("token");
-      console.log("Token salvo com sucesso:", !!savedToken, {
-        length: savedToken?.length || 0,
-      });
+      // // Verificar token depois de salvar
+      // const savedToken = localStorage.getItem("token");
+      // console.log("Token salvo com sucesso:", !!savedToken, {
+      //   length: savedToken?.length || 0,
+      // });
 
       if (authData.senha_provisoria) {
         router.push("/alterar-senha");
