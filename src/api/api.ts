@@ -68,12 +68,11 @@ export const createHeaders = () => {
       return {
         ...API_CONFIG.headers,
         Authorization: `Bearer ${token}`,
-        "X-Token": token, // Mantido para compatibilidade com sistemas existentes
+        "X-Token": token, 
       };
     } catch (error) {
       console.error("Erro ao obter token para headers:", error);
-      // Se não conseguir obter o token, retorna apenas os headers básicos
-      // O middleware irá interceptar e bloquear a requisição não autenticada
+
       return API_CONFIG.headers;
     }
   }

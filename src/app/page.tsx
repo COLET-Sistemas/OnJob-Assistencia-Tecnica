@@ -1,24 +1,26 @@
-"use client";
+﻿"use client";
 
 import {
   AlertTriangle,
+  BarChart3,
+  Check,
+  ChevronRight,
   Eye,
   EyeOff,
   Loader2,
   Lock,
+  RefreshCcw,
   Settings,
   Shield,
   User,
-  BarChart3,
+  X,
   Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Image from "next/image";
 import packageInfo from "../../package.json";
-
-// Import dos serviços de login e autenticação
-import { LoginService } from "@/api/services/login";
+import { LoginService, LoginResponse, Empresa } from "@/api/services/login";
 import { authService } from "@/api/services/authService";
 
 // Tipos
@@ -53,6 +55,8 @@ interface LoginButtonProps {
   children: React.ReactNode;
   variant?: "primary" | "secondary";
 }
+
+type ModuleType = "admin" | "tecnico";
 
 // Componente de input otimizado com memo
 const LoginInput = memo<LoginInputProps>(
@@ -137,7 +141,6 @@ const FeatureCard = memo<FeatureCardProps>(
 
 FeatureCard.displayName = "FeatureCard";
 
-// Componente de botão de login otimizado
 const LoginButton = memo<LoginButtonProps>(
   ({
     onClick,
@@ -179,7 +182,6 @@ const LoginButton = memo<LoginButtonProps>(
 
 LoginButton.displayName = "LoginButton";
 
-// Padrões decorativos minimalistas
 const DecorativePattern = memo(() => (
   <div className="absolute inset-0 opacity-10 overflow-hidden">
     <div className="absolute top-40 right-20 w-32 h-32 rounded-full bg-[#75f9bd] opacity-30 blur-3xl"></div>
@@ -202,6 +204,18 @@ export default function LoginPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [redirectReason, setRedirectReason] = useState<string | null>(null);
+  const [isEmpresaModalOpen, setIsEmpresaModalOpen] = useState(false);
+  const [empresasDisponiveis, setEmpresasDisponiveis] = useState<Empresa[]>([]);
+  const [loadingEmpresas, setLoadingEmpresas] = useState(false);
+  const [impersonateLoading, setImpersonateLoading] = useState(false);
+  const [empresaError, setEmpresaError] = useState("");
+  const [selectedEmpresaId, setSelectedEmpresaId] = useState<number | null>(
+    null
+  );
+  const [superAdminContext, setSuperAdminContext] = useState<{
+    data: LoginResponse;
+    module: "admin" | "tecnico";
+  } | null>(null);
 
   const loginInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -225,27 +239,22 @@ export default function LoginPage() {
     setIsMounted(true);
 
     if (typeof window !== "undefined") {
-      // Verificar se há uma mensagem de erro no sessionStorage
       const reason = sessionStorage.getItem("loginRedirectReason");
       if (reason) {
         setRedirectReason(reason);
         setError(reason);
         sessionStorage.removeItem("loginRedirectReason");
       }
-
-      // Verificar se há uma mensagem de erro nos parâmetros de URL (usado pelo middleware)
       const urlParams = new URLSearchParams(window.location.search);
       const authError = urlParams.get("authError");
       if (authError) {
         setError(authError);
 
-        // Limpar parâmetros da URL sem recarregar a página
         window.history.replaceState({}, "", window.location.pathname);
       }
     }
   }, []);
 
-  // Limpar mensagem de erro após 15 segundos
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
@@ -260,7 +269,6 @@ export default function LoginPage() {
     };
   }, [error]);
 
-  // Limpar mensagem de erro após 15 segundos
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
@@ -291,6 +299,199 @@ export default function LoginPage() {
     }
   }, []);
 
+  const resetSuperAdminFlow = useCallback(() => {
+    setIsEmpresaModalOpen(false);
+    setSuperAdminContext(null);
+    setEmpresasDisponiveis([]);
+    setSelectedEmpresaId(null);
+    setEmpresaError("");
+  }, []);
+
+  const persistAuthData = useCallback(
+    (authData: LoginResponse, module: ModuleType) => {
+      try {
+        LoginService.saveUserData(authData);
+      } catch (storageError) {
+        console.error("Erro ao salvar dados no LoginService:", storageError);
+      }
+
+      try {
+        authService.saveAuthData(
+          {
+            token: authData.token,
+            user: {
+              id: authData.id_usuario,
+              nome: authData.nome_usuario,
+              login,
+              email: authData.email,
+              perfil_interno: authData.perfil.interno,
+              perfil_gestor_assistencia: authData.perfil.gestor,
+              perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
+              perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
+              administrador: authData.perfil.admin,
+            },
+          },
+          module
+        );
+      } catch (authStoreError) {
+        console.error("Erro ao salvar dados no authService:", authStoreError);
+      }
+    },
+    [login]
+  );
+
+  const navigateAfterLogin = useCallback(
+    (authData: LoginResponse, module: ModuleType) => {
+      if (authData.senha_provisoria) {
+        if (module === "admin") {
+          setTimeout(() => {
+            router.push("/alterar-senha");
+          }, 300);
+        } else {
+          router.push("/alterar-senha");
+        }
+        return;
+      }
+
+      if (module === "admin") {
+        setTimeout(() => {
+          router.push("/admin/dashboard");
+        }, 300);
+      } else {
+        router.push("/tecnico/dashboard");
+      }
+    },
+    [router]
+  );
+
+  const loadEmpresas = useCallback(async (token: string) => {
+    setLoadingEmpresas(true);
+    setEmpresaError("");
+    setEmpresasDisponiveis([]);
+    try {
+      const empresas = await LoginService.fetchEmpresas(token);
+      setEmpresasDisponiveis(empresas);
+      if (!empresas.length) {
+        setEmpresaError("Nenhuma empresa disponível para seleção.");
+      }
+    } catch (empresasError) {
+      console.error("Erro ao carregar empresas:", empresasError);
+      const message =
+        empresasError instanceof Error
+          ? empresasError.message
+          : "Erro ao carregar empresas.";
+      setEmpresaError(message);
+    } finally {
+      setLoadingEmpresas(false);
+    }
+  }, []);
+
+  const startSuperAdminFlow = useCallback(
+    async (authData: LoginResponse, module: ModuleType) => {
+      setEmpresaError("");
+      setError("");
+      setSelectedEmpresaId(null);
+      setEmpresasDisponiveis([]);
+      setSuperAdminContext({ data: authData, module });
+      setIsEmpresaModalOpen(true);
+      await loadEmpresas(authData.token);
+    },
+    [loadEmpresas]
+  );
+
+  const handleEmpresaSelection = useCallback((id: number) => {
+    setSelectedEmpresaId(id);
+    setEmpresaError("");
+  }, []);
+
+  const handleRetryEmpresas = useCallback(() => {
+    if (superAdminContext) {
+      loadEmpresas(superAdminContext.data.token);
+    }
+  }, [superAdminContext, loadEmpresas]);
+
+  const handleEmpresaModalClose = useCallback(() => {
+    resetSuperAdminFlow();
+  }, [resetSuperAdminFlow]);
+
+  const handleConfirmEmpresaSelection = useCallback(async () => {
+    if (!superAdminContext) {
+      const message = "Não foi possível continuar. Efetue o login novamente.";
+      setEmpresaError(message);
+      setError(message);
+      return;
+    }
+
+    if (!selectedEmpresaId) {
+      setEmpresaError("Selecione uma empresa para continuar.");
+      return;
+    }
+
+    setImpersonateLoading(true);
+    setEmpresaError("");
+
+    try {
+      const impersonatedData = await LoginService.impersonateEmpresa(
+        superAdminContext.data.token,
+        selectedEmpresaId
+      );
+
+      const targetModule = superAdminContext.module;
+
+      if (
+        targetModule === "admin" &&
+        !LoginService.hasAdminAccess(impersonatedData.perfil)
+      ) {
+        const message =
+          "Usuário não tem permissão para acessar o Módulo Administrativo.";
+        setEmpresaError(message);
+        setError(message);
+        return;
+      }
+
+      if (targetModule === "tecnico") {
+        if (!LoginService.hasTechAccess(impersonatedData.perfil)) {
+          const message =
+            "UsuÇ­rio nÇœo possui perfil tÇ¸cnico. Acesso negado ao Mï¿½ï¿½dulo TÇ¸cnico.";
+          setEmpresaError(message);
+          setError(message);
+          return;
+        }
+
+        const { tecnico_proprio, tecnico_terceirizado } =
+          impersonatedData.perfil;
+
+        if (!tecnico_proprio && !tecnico_terceirizado) {
+          const message =
+            "UsuÇ­rio nÇœo Ç¸ tÇ¸cnico prï¿½ï¿½prio nem terceirizado. Acesso negado.";
+          setEmpresaError(message);
+          setError(message);
+          return;
+        }
+      }
+
+      persistAuthData(impersonatedData, targetModule);
+      resetSuperAdminFlow();
+      navigateAfterLogin(impersonatedData, targetModule);
+    } catch (impersonateError) {
+      console.error("Erro ao impersonar empresa:", impersonateError);
+      const message =
+        impersonateError instanceof Error
+          ? impersonateError.message
+          : "Erro ao impersonar empresa.";
+      setEmpresaError(message);
+      setError(message);
+    } finally {
+      setImpersonateLoading(false);
+    }
+  }, [
+    superAdminContext,
+    selectedEmpresaId,
+    persistAuthData,
+    navigateAfterLogin,
+    resetSuperAdminFlow,
+  ]);
+
   const handleAdminAccess = useCallback(async () => {
     if (!login.trim() || !senha.trim()) {
       setError("Por favor, preencha todos os campos.");
@@ -303,62 +504,23 @@ export default function LoginPage() {
     try {
       const authData = await LoginService.authenticate(login, senha);
 
-      if (LoginService.hasAdminAccess(authData.perfil)) {
-        try {
-          LoginService.saveUserData(authData);
-        } catch (storageError) {
-          console.error("Erro ao salvar dados no LoginService:", storageError);
-        }
+      if (authData.super_admin) {
+        await startSuperAdminFlow(authData, "admin");
+        return;
+      }
 
-        // Salvar dados também no authService para garantir que o cookie seja definido
-        try {
-          authService.saveAuthData(
-            {
-              token: authData.token,
-              user: {
-                id: authData.id_usuario,
-                nome: authData.nome_usuario,
-                login: login,
-                email: authData.email,
-                perfil_interno: authData.perfil.interno,
-                perfil_gestor_assistencia: authData.perfil.gestor,
-                perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
-                perfil_tecnico_terceirizado:
-                  authData.perfil.tecnico_terceirizado,
-                administrador: authData.perfil.admin,
-              },
-            },
-            "admin"
-          );
-        } catch (authStoreError) {
-          console.error("Erro ao salvar dados no authService:", authStoreError);
-        }
-
-        // Verificar token depois de salvar
-        const savedToken = localStorage.getItem("token");
-
-        // Não precisamos decodificar o token, apenas verificar sua presença
-        if (savedToken) {
-        }
-
-        if (authData.senha_provisoria) {
-          setTimeout(() => {
-            router.push("/alterar-senha");
-          }, 300);
-        } else {
-          setTimeout(() => {
-            router.push("/admin/dashboard");
-          }, 300);
-        }
-      } else {
+      if (!LoginService.hasAdminAccess(authData.perfil)) {
         console.warn("Acesso administrativo negado");
         setError(
           "Usuário não tem permissão para acessar o Módulo Administrativo."
         );
+        return;
       }
+
+      persistAuthData(authData, "admin");
+      navigateAfterLogin(authData, "admin");
     } catch (error) {
       console.error("Erro no handleAdminAccess:", error);
-      // Informação mais detalhada do erro
       if (error instanceof Error) {
         setError(error.message);
         console.error("Detalhes do erro:", {
@@ -368,12 +530,12 @@ export default function LoginPage() {
         });
       } else {
         setError("Erro interno. Tente novamente.");
-        console.error("Erro não identificado:", error);
+        console.error("Erro nuo identificado:", error);
       }
     } finally {
       setLoadingAdmin(false);
     }
-  }, [login, senha, router]);
+  }, [login, senha, startSuperAdminFlow, persistAuthData, navigateAfterLogin]);
 
   const handleTechAccess = useCallback(async () => {
     if (!login.trim() || !senha.trim()) {
@@ -387,14 +549,18 @@ export default function LoginPage() {
     try {
       const authData = await LoginService.authenticate(login, senha);
 
+      if (authData.super_admin) {
+        await startSuperAdminFlow(authData, "tecnico");
+        return;
+      }
+
       if (!LoginService.hasTechAccess(authData.perfil)) {
         const errorMsg =
           "Usuário não possui perfil técnico. Acesso negado ao Módulo Técnico.";
-        console.warn("Acesso técnico negado:", errorMsg);
+        console.warn("Acesso t?cnico negado:", errorMsg);
         setError(errorMsg);
-        // Mostrar error em mobile diretamente
         if (isMobile) {
-          console.error("Erro de acesso técnico:", errorMsg);
+          console.error("Erro de acesso tecnico:", errorMsg);
         }
         return;
       }
@@ -406,54 +572,14 @@ export default function LoginPage() {
           "Usuário não é técnico próprio nem terceirizado. Acesso negado.";
         console.warn("Perfil técnico inválido:", errorMsg);
         setError(errorMsg);
-        // Mostrar error em mobile diretamente
         if (isMobile) {
-          console.error("Erro de acesso técnico:", errorMsg);
+          console.error("Erro de acesso tecnico:", errorMsg);
         }
         return;
       }
 
-      // Salvar dados usando ambos os serviços para garantir compatibilidade
-      try {
-        LoginService.saveUserData(authData);
-      } catch (storageError) {
-        console.error("Erro ao salvar dados no LoginService:", storageError);
-      }
-
-      // Salvar dados também no authService para garantir que o cookie seja definido
-      try {
-        authService.saveAuthData(
-          {
-            token: authData.token,
-            user: {
-              id: authData.id_usuario,
-              nome: authData.nome_usuario,
-              login: login,
-              email: authData.email,
-              perfil_interno: authData.perfil.interno,
-              perfil_gestor_assistencia: authData.perfil.gestor,
-              perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
-              perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
-              administrador: authData.perfil.admin,
-            },
-          },
-          "tecnico"
-        );
-      } catch (authStoreError) {
-        console.error("Erro ao salvar dados no authService:", authStoreError);
-      }
-
-      // // Verificar token depois de salvar
-      // const savedToken = localStorage.getItem("token");
-      // console.log("Token salvo com sucesso:", !!savedToken, {
-      //   length: savedToken?.length || 0,
-      // });
-
-      if (authData.senha_provisoria) {
-        router.push("/alterar-senha");
-      } else {
-        router.push("/tecnico/dashboard");
-      }
+      persistAuthData(authData, "tecnico");
+      navigateAfterLogin(authData, "tecnico");
     } catch (error) {
       console.error("Erro no handleTechAccess:", error);
       if (error instanceof Error) {
@@ -465,12 +591,19 @@ export default function LoginPage() {
         });
       } else {
         setError("Erro interno. Tente novamente.");
-        console.error("Erro não identificado:", error);
+        console.error("Erro nuo identificado:", error);
       }
     } finally {
       setLoadingTech(false);
     }
-  }, [login, senha, router, isMobile]);
+  }, [
+    login,
+    senha,
+    isMobile,
+    startSuperAdminFlow,
+    persistAuthData,
+    navigateAfterLogin,
+  ]);
 
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent) => {
@@ -552,8 +685,8 @@ export default function LoginPage() {
               </span>
             </h2>
             <p className="text-white/90 text-xl leading-relaxed font-light">
-              Plataforma integrada para otimização de processos de trabalho, com
-              módulos administrativos e operacionais modernos.
+              Plataforma integrada para otimização de processos de trabalho,
+              com módulos administrativos e operacionais modernos.
             </p>
           </div>
 
@@ -727,6 +860,141 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {isEmpresaModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <button
+              type="button"
+              onClick={handleEmpresaModalClose}
+              disabled={impersonateLoading}
+              className="absolute right-4 top-4 rounded-full p-1.5 text-gray-400 transition-colors hover:text-gray-600 disabled:opacity-40"
+              aria-label="Fechar seleï¿½ï¿½Çœo de empresa"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Selecione a empresa
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              {superAdminContext?.module === "admin"
+                ? "Escolha a empresa para continuar no módulo administrativo."
+                : "Escolha a empresa para continuar no módulo técnico."}
+            </p>
+
+            {empresaError && (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {empresaError}
+              </div>
+            )}
+
+            <div className="mt-5">
+              {loadingEmpresas ? (
+                <div className="flex items-center justify-center py-12 text-[#7B54BE]">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
+                  {empresasDisponiveis.length > 0
+                    ? empresasDisponiveis.map((empresa) => {
+                        const isSelected =
+                          selectedEmpresaId === empresa.id_empresa;
+                        const razaoSocial = empresa.razao_social?.trim();
+                        const nomeBd = empresa.nome_bd?.trim();
+                        const displayName =
+                          razaoSocial ||
+                          nomeBd ||
+                          `Empresa ${empresa.id_empresa}`;
+                        const secondaryInfo = empresa.cnpj?.trim()
+                          ? `CNPJ: ${empresa.cnpj}`
+                          : nomeBd && nomeBd !== displayName
+                          ? nomeBd
+                          : "";
+
+                        return (
+                          <button
+                            key={empresa.id_empresa}
+                            type="button"
+                            onClick={() =>
+                              handleEmpresaSelection(empresa.id_empresa)
+                            }
+                            disabled={impersonateLoading}
+                            className={`w-full rounded-xl border-2 p-4 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                              isSelected
+                                ? "border-[#7B54BE] bg-[#f5f0ff] focus:ring-[#7B54BE]"
+                                : "border-gray-200 hover:border-[#7B54BE]/60 hover:bg-[#f5f0ff]/50 focus:ring-[#7B54BE]/40"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <p className="font-semibold text-gray-800">
+                                  {displayName}
+                                </p>
+                                {secondaryInfo && (
+                                  <p className="mt-1 text-sm text-gray-500">
+                                    {secondaryInfo}
+                                  </p>
+                                )}
+                              </div>
+                              {isSelected ? (
+                                <Check className="h-5 w-5 text-[#7B54BE]" />
+                              ) : (
+                                <ChevronRight className="h-5 w-5 text-gray-300" />
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })
+                    : !empresaError && (
+                        <p className="py-6 text-center text-sm text-gray-500">
+                          Nenhuma empresa disponível para seleção.
+                        </p>
+                      )}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <button
+                type="button"
+                onClick={handleRetryEmpresas}
+                disabled={loadingEmpresas || impersonateLoading}
+                className="inline-flex items-center gap-2 text-sm font-medium text-[#7B54BE] transition-colors hover:text-[#553499] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Recarregar lista
+              </button>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <button
+                  type="button"
+                  onClick={handleEmpresaModalClose}
+                  disabled={impersonateLoading}
+                  className="w-full rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmEmpresaSelection}
+                  disabled={impersonateLoading || !selectedEmpresaId}
+                  className="w-full rounded-xl bg-gradient-to-r from-[#7B54BE] to-[#553499] px-5 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:-translate-y-[1px] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                >
+                  {impersonateLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processando...
+                    </span>
+                  ) : (
+                    "Continuar"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes shake {
