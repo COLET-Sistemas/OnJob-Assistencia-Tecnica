@@ -112,9 +112,7 @@ export default function OSAbertoMobile() {
     async function fetchTotal() {
       try {
         const resp = await notificacoesService.getNotificacoesCount();
-        console.log("Resposta da API:", resp); // DEBUG
         if (resp && typeof resp.total_notificacoes === "number") {
-          console.log("Total notificações:", resp.total_notificacoes); // DEBUG
           setTotalNotificacoes(resp.total_notificacoes);
         } else {
           setTotalNotificacoes(0);

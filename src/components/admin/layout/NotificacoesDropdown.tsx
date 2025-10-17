@@ -1,6 +1,6 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo, memo } from "react";
-import { Bell, CheckSquare, CheckCircle2 } from "lucide-react";
+import { Bell, CheckSquare, CheckCircle } from "lucide-react";
 import { notificacoesService } from "@/api/services/notificacoesService";
 import { useNotificacoes } from "@/hooks";
 import { formatRelativeDate } from "@/utils/formatters";
@@ -358,14 +358,14 @@ const NotificacoesDropdown = memo(
                         {/* Indicador não-lida ou botão marcar como lida */}
                         {!notificacao.lida && (
                           <button
-                            className="text-[#7B54BE] hover:text-[#9333ea] p-1 rounded-full hover:bg-purple-100/50 transition-colors"
+                            className="text-[#7B54BE] hover:text-[#9333ea] p-1 rounded-full hover:bg-purple-100/50 transition-colors cursor-pointer"
                             onClick={(e) => {
-                              e.stopPropagation(); // Evitar navegacao ao clicar no botao
+                              e.stopPropagation();
                               marcarComoLida(notificacao.id);
                             }}
                             title="Marcar como lida"
                           >
-                            <CheckCircle2 size={14} />
+                            <CheckCircle size={16} />
                           </button>
                         )}
                       </div>
