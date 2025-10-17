@@ -1,6 +1,6 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo, memo } from "react";
-import { Bell, CheckSquare, CheckCircle } from "lucide-react";
+import { Bell, CheckSquare, Eye } from "lucide-react";
 import { notificacoesService } from "@/api/services/notificacoesService";
 import { useNotificacoes } from "@/hooks";
 import { formatRelativeDate } from "@/utils/formatters";
@@ -112,8 +112,6 @@ const NotificacoesDropdown = memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Removemos o segundo useEffect que atualizava o contador
-    // O NotificacoesUpdater é responsável pelo polling centralizado    // Efeito para fechar dropdown quando clicar fora dele
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
         if (
@@ -134,10 +132,8 @@ const NotificacoesDropdown = memo(
       const novoEstado = !dropdownOpen;
       setDropdownOpen(novoEstado);
 
-      // Se estiver abrindo o dropdown, buscar notificações com refresh forçado
       if (novoEstado) {
-        fetchNotificacoes(1, true); // Força refresh ao clicar no ícone
-        // Removido refreshCount e fetchNotificacoesCount pois já são chamados dentro de fetchNotificacoes
+        fetchNotificacoes(1, true);
       }
     };
 
@@ -148,10 +144,8 @@ const NotificacoesDropdown = memo(
     // Função para marcar uma notificação como lida
     const marcarComoLida = async (id: number) => {
       try {
-        // O serviço agora retorna o novo contador
         const response = await notificacoesService.marcarComoLida(id);
 
-        // Atualizar a notificação localmente como lida
         setTodasNotificacoes((prev) =>
           prev.map((notif) =>
             notif.id === id ? { ...notif, lida: true } : notif
@@ -341,9 +335,13 @@ const NotificacoesDropdown = memo(
                       className={`border-b border-gray-100 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors relative ${
                         !notificacao.lida ? "bg-purple-50/50" : ""
                       }`}
-                      onClick={() => navegarParaLink(notificacao)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        marcarComoLida(notificacao.id);
+                      }}
                     >
-                      {/* Título e Botão de Marcar como Lida */}
+                      {/* Título + Ícone Olho */}
                       <div className="flex justify-between items-start mb-1">
                         <h4
                           className={`text-sm font-semibold ${
@@ -355,17 +353,17 @@ const NotificacoesDropdown = memo(
                           {notificacao.titulo}
                         </h4>
 
-                        {/* Indicador não-lida ou botão marcar como lida */}
-                        {!notificacao.lida && (
+                        {notificacao.link && (
                           <button
                             className="text-[#7B54BE] hover:text-[#9333ea] p-1 rounded-full hover:bg-purple-100/50 transition-colors cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
-                              marcarComoLida(notificacao.id);
+                              setDropdownOpen(false);
+                              navegarParaLink(notificacao);
                             }}
-                            title="Marcar como lida"
+                            title="Abrir link da notificação"
                           >
-                            <CheckCircle size={16} />
+                            <Eye size={16} />
                           </button>
                         )}
                       </div>
