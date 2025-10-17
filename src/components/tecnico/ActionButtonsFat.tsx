@@ -109,7 +109,7 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
           return parsedErro;
         }
       } catch {
-        // ignore parse errors
+        
       }
 
       const regexMatch = trimmed.match(/"erro"\s*:\s*"([^"]*)"/i);
@@ -368,7 +368,7 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
       )}
 
       {/* Ajuste no padding inferior ↓ */}
-      <div className="bg-white border-t border-slate-200 px-4 pt-4 pb-2 flex flex-wrap gap-3 justify-center">
+      <div className="bg-white  px-3 pt-1 pb-1 flex flex-wrap gap-3 justify-center">
         {/* INICIAR */}
         <button
           className={`${baseBtn} ${purpleBtn}`}
