@@ -25,6 +25,7 @@ export interface OSItem {
   data_fechamento: string;
   cliente: {
     nome: string;
+    codigo_erp: string;
     endereco: string;
     numero: string;
     complemento: string;
@@ -177,6 +178,7 @@ export interface OSDetalhada {
   status: number;
   status_descricao: string;
   cliente: {
+        codigo_erp: string;
     id: number;
     nome_fantasia: string;
     endereco?: string;
@@ -287,6 +289,7 @@ export interface OSDetalhadaV2 {
   // Informações do cliente expandidas
   cliente: {
     id: number;
+        codigo_erp: string;
     nome: string;
     nome_fantasia?: string;
     cnpj_cpf?: string;

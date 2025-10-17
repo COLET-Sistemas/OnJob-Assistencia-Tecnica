@@ -410,7 +410,7 @@ const OSDetalhesPage: React.FC = () => {
                       <p className="text-sm font-medium text-gray-500">Nome</p>
                       <p className="text-gray-800">
                         <span className="font-bold">{clienteData.nome}</span> (
-                        {clienteData.id})
+                        {clienteData.codigo_erp})
                       </p>
                       {clienteData && "razao_social" in clienteData && (
                         <p className="text-gray-800">

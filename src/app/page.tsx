@@ -9,7 +9,6 @@ import {
   EyeOff,
   Loader2,
   Lock,
-  RefreshCcw,
   Settings,
   Shield,
   User,
@@ -404,12 +403,6 @@ export default function LoginPage() {
     setEmpresaError("");
   }, []);
 
-  const handleRetryEmpresas = useCallback(() => {
-    if (superAdminContext) {
-      loadEmpresas(superAdminContext.data.token);
-    }
-  }, [superAdminContext, loadEmpresas]);
-
   const handleEmpresaModalClose = useCallback(() => {
     resetSuperAdminFlow();
   }, [resetSuperAdminFlow]);
@@ -685,8 +678,8 @@ export default function LoginPage() {
               </span>
             </h2>
             <p className="text-white/90 text-xl leading-relaxed font-light">
-              Plataforma integrada para otimização de processos de trabalho,
-              com módulos administrativos e operacionais modernos.
+              Plataforma integrada para otimização de processos de trabalho, com
+              módulos administrativos e operacionais modernos.
             </p>
           </div>
 
@@ -955,17 +948,7 @@ export default function LoginPage() {
               )}
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <button
-                type="button"
-                onClick={handleRetryEmpresas}
-                disabled={loadingEmpresas || impersonateLoading}
-                className="inline-flex items-center gap-2 text-sm font-medium text-[#7B54BE] transition-colors hover:text-[#553499] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <RefreshCcw className="h-4 w-4" />
-                Recarregar lista
-              </button>
-
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <button
                   type="button"

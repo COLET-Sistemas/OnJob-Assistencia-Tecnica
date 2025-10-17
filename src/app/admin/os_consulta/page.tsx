@@ -96,9 +96,7 @@ interface OSItemExtended {
   };
 }
 
-// We're using the imported TecnicoBadge component instead of this local one
 
-// CSS para animações personalizadas (adicionado ao componente)
 const fadeInAnimation = `
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }

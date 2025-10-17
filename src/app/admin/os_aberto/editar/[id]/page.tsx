@@ -37,6 +37,7 @@ interface OrdemServicoResponse {
   data_fechamento: string;
   cliente: {
     id: number;
+    codigo_erp: string;
     nome: string;
     endereco: string;
     numero: string;
@@ -271,11 +272,9 @@ const EditarOrdemServico = () => {
         const os = osArray[0] as OrdemServicoResponse;
 
         if (os) {
-          // Preencher os campos com os dados da OS
-          // Cliente
           const clienteOption = {
             value: os.cliente.id || 0,
-            label: `${os.cliente.nome} (${os.cliente.id})`,
+            label: `${os.cliente.nome} (${os.cliente.codigo_erp})`,
             cidade: os.cliente.cidade,
             uf: os.cliente.uf,
             regiaoId: os.cliente.id_regiao ?? null,
@@ -1399,7 +1398,7 @@ const EditarOrdemServico = () => {
         }
 
         showError("Erro ao atualizar ordem de serviço", errorMessage);
-        return; 
+        return;
       }
     } catch (error) {
       console.error("Erro ao atualizar ordem de serviço:", error);
@@ -1545,7 +1544,7 @@ const EditarOrdemServico = () => {
                       value: -1,
                       label: "Adicionar novo contato...",
                       contato: {
-                        id: -1, 
+                        id: -1,
                         nome: "",
                         email: "",
                         telefone: "",
