@@ -25,7 +25,7 @@ import type {
 } from "@/types/admin/cadastro/usuarios";
 import { OptionType } from "@/components/admin/form/CustomSelect";
 import useDebouncedCallback from "@/hooks/useDebouncedCallback";
-import { feedback } from "@/utils/feedback";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 import api from "@/api/api";
 
 // Interface para a resposta da API de OS
@@ -141,10 +141,13 @@ interface FormaAberturaOption extends OptionType {
   label: string;
 }
 
+const EXPANDED_STORAGE_KEY = "osAbertoExpandedId";
+
 const EditarOrdemServico = () => {
   const params = useParams();
   const osId = params.id as string;
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [clienteOptions, setClienteOptions] = useState<ClienteOption[]>([]);
@@ -199,6 +202,16 @@ const EditarOrdemServico = () => {
   const [recebeAvisoOS, setRecebeAvisoOS] = useState(false);
   const [useCustomContato, setUseCustomContato] = useState(false);
   const [saveToClient, setSaveToClient] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (osId) {
+      window.sessionStorage.setItem(EXPANDED_STORAGE_KEY, osId.toString());
+    }
+  }, [osId]);
   const [tecnicosOptions, setTecnicosOptions] = useState<TecnicoOption[]>([]);
   const [selectedTecnico, setSelectedTecnico] = useState<TecnicoOption | null>(
     null
@@ -509,14 +522,14 @@ const EditarOrdemServico = () => {
           console.error("Debug request failed:", debugError);
         }
 
-        feedback.toast("Erro ao carregar dados da OS", "error");
+        showError("Erro ao carregar dados da OS");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchOSData();
-  }, [osId]);
+  }, [osId, showError]);
 
   const fetchTecnicos = useCallback(
     async (fetchAll = false) => {
@@ -1328,24 +1341,21 @@ const EditarOrdemServico = () => {
           }
         }
 
-        // Armazenar mensagem no localStorage para recuperá-la após a navegação
-        localStorage.setItem("osUpdateMessage", apiMessage);
+        showSuccess("Sucesso", apiMessage);
 
-        // Exibir feedback antes de redirecionar usando o componente Toast
-        feedback.toast(apiMessage, "success");
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(EXPANDED_STORAGE_KEY, osId.toString());
+        }
 
-        // Redirecionar para a página de listagem de OS usando window.location para navegação direta
         setTimeout(() => {
           router.push("/admin/os_aberto");
         }, 500);
       } catch (apiError) {
         console.error("Erro específico da API:", apiError);
 
-        // Tentar extrair mensagem de erro da API para exibir ao usuário
         let errorMessage = "Ocorreu um erro ao atualizar a ordem de serviço";
 
         if (apiError && typeof apiError === "object") {
-          // Definir um tipo específico para o objeto de erro
           type ErrorResponseType = {
             message?: string;
             mensagem?: string;
@@ -1388,17 +1398,15 @@ const EditarOrdemServico = () => {
           }
         }
 
-        // Exibir mensagem de erro usando o Toast
-        feedback.toast(errorMessage, "error");
-        return; // Não propagar o erro, já tratamos ele aqui
+        showError("Erro ao atualizar ordem de serviço", errorMessage);
+        return; 
       }
     } catch (error) {
       console.error("Erro ao atualizar ordem de serviço:", error);
 
-      // Mensagem de erro genérica para erros não relacionados à API
       const errorMessage =
         "Ocorreu um erro ao atualizar a ordem de serviço. Por favor, tente novamente.";
-      feedback.toast(errorMessage, "error");
+      showError("Erro ao atualizar ordem de serviço", errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -1526,20 +1534,18 @@ const EditarOrdemServico = () => {
                     contato: contact,
                   };
 
-                  // Adicionar às opções de contato excluindo o item "Adicionar novo contato"
                   const filteredOptions = contatoOptions.filter(
                     (option) => option.value !== -1
                   );
 
-                  // Adicionar o novo contato e depois a opção de "Adicionar novo contato"
                   const newOptions = [
                     ...filteredOptions,
                     newContactOption,
                     {
-                      value: -1, // Usando -1 como valor específico para "adicionar novo"
+                      value: -1,
                       label: "Adicionar novo contato...",
                       contato: {
-                        id: -1, // Garantir que o ID seja um número
+                        id: -1, 
                         nome: "",
                         email: "",
                         telefone: "",
@@ -1552,13 +1558,10 @@ const EditarOrdemServico = () => {
 
                   setContatoOptions(newOptions);
 
-                  // Selecionar automaticamente o contato criado
                   setSelectedContato(newContactOption);
 
-                  // Limpar a flag de uso de contato customizado
                   setUseCustomContato(false);
 
-                  // Limpar os campos do formulário de contato
                   setCustomContatoNome("");
                   setCustomContatoNomeCompleto("");
                   setCustomContatoCargo("");

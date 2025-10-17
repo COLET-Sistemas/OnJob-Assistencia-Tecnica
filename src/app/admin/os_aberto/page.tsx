@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, {
   useState,
   useEffect,
@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import PageHeaderSimple from "@/components/admin/ui/PageHeaderSimple";
 import { ordensServicoService } from "@/api/services/ordensServicoService";
-import { feedback } from "@/utils/feedback";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 import FilterPanel from "@/app/admin/os_aberto/components/FilterPanel";
 import EmptyState from "@/app/admin/os_aberto/components/EmptyState";
 import OSCard from "@/app/admin/os_aberto/components/OSCard";
@@ -28,13 +28,18 @@ const CODIGO_SITUACAO = {
   ATENDIMENTO_INTERROMPIDO: 5,
 };
 
+const EXPANDED_STORAGE_KEY = "osAbertoExpandedId";
+const EXPANDED_RESTORE_FLAG_KEY = "osAbertoShouldRestoreExpanded";
+
 const TelaOSAbertas: React.FC = () => {
   const router = useRouter();
+  const { showSuccess, showError, showInfo } = useToast();
   const [ordensServico, setOrdensServico] = useState<OrdemServico[]>([]);
   const [allOrdensServico, setAllOrdensServico] = useState<OrdemServico[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const [tecnicoFiltros, setTecnicoFiltros] = useState({
     interno: true,
     terceiro: true,
@@ -111,20 +116,20 @@ const TelaOSAbertas: React.FC = () => {
         setAllOrdensServico([]);
         setOrdensServico([]);
         if (didFetch.current) {
-          feedback.toast("Nenhuma ordem de serviço encontrada", "info");
+          showInfo("Nenhuma ordem de serviÃ§o encontrada");
         }
       }
     } catch (error) {
-      console.error("Erro ao buscar ordens de serviço:", error);
+      console.error("Erro ao buscar ordens de serviÃ§o:", error);
       setAllOrdensServico([]);
       setOrdensServico([]);
       if (didFetch.current) {
-        feedback.toast("Erro ao atualizar a lista", "error");
+        showError("Erro ao atualizar a lista");
       }
     } finally {
       setLoading(false);
     }
-  }, [situacoes]);
+  }, [situacoes, showError, showInfo]);
 
   const didFetch = useRef(false);
 
@@ -134,7 +139,7 @@ const TelaOSAbertas: React.FC = () => {
     const updateMessage = localStorage.getItem("osUpdateMessage");
     if (updateMessage) {
       // Show the success message from the edit page
-      feedback.toast(updateMessage, "success");
+      showSuccess(updateMessage);
       // Remove the message from localStorage to prevent showing it again
       localStorage.removeItem("osUpdateMessage");
     }
@@ -148,13 +153,13 @@ const TelaOSAbertas: React.FC = () => {
         ? `${createMessage} ID: ${createId}`
         : createMessage;
 
-      feedback.toast(message, "success");
+      showSuccess(message);
 
       // Remove the messages from localStorage to prevent showing them again
       localStorage.removeItem("osCreateMessage");
       localStorage.removeItem("osCreateId");
     }
-  }, []);
+  }, [showSuccess]);
 
   useEffect(() => {
     if (!didFetch.current) {
@@ -162,6 +167,32 @@ const TelaOSAbertas: React.FC = () => {
       didFetch.current = true;
     }
   }, [fetchData]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const shouldRestore = window.sessionStorage.getItem(
+      EXPANDED_RESTORE_FLAG_KEY
+    );
+    const storedExpandedId = window.sessionStorage.getItem(
+      EXPANDED_STORAGE_KEY
+    );
+
+    if (shouldRestore === "true" && storedExpandedId) {
+      const parsedId = Number(storedExpandedId);
+      if (!Number.isNaN(parsedId)) {
+        setExpandedCards(new Set<number>([parsedId]));
+      }
+    } else if (storedExpandedId) {
+      window.sessionStorage.removeItem(EXPANDED_STORAGE_KEY);
+    }
+
+    if (shouldRestore !== null) {
+      window.sessionStorage.removeItem(EXPANDED_RESTORE_FLAG_KEY);
+    }
+  }, []);
 
   useEffect(() => {
     if (didFetch.current && allOrdensServico.length > 0) {
@@ -189,6 +220,14 @@ const TelaOSAbertas: React.FC = () => {
       const newExpanded = new Set<number>();
       if (!prev.has(osId)) {
         newExpanded.add(osId);
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(
+            EXPANDED_STORAGE_KEY,
+            osId.toString()
+          );
+        }
+      } else if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem(EXPANDED_STORAGE_KEY);
       }
       return newExpanded;
     });
@@ -251,7 +290,7 @@ const TelaOSAbertas: React.FC = () => {
     setSearchTerm("");
   }, []);
 
-  // Funções para lidar com a liberação financeira
+  // FunÃ§Ãµes para lidar com a liberaÃ§Ã£o financeira
   const handleOpenLiberacaoModal = useCallback((osId: number) => {
     setModalLiberacao({
       isOpen: true,
@@ -271,21 +310,21 @@ const TelaOSAbertas: React.FC = () => {
       try {
         await ordensServicoService.liberarFinanceiramente(osId);
 
-        // Atualiza os dados após a liberação
+        // Atualiza os dados apÃ³s a liberaÃ§Ã£o
         await fetchData();
-        feedback.toast("OS liberada com sucesso", "success");
+        showSuccess("OS liberada com sucesso");
         handleCloseLiberacaoModal();
         return Promise.resolve();
       } catch (error) {
         console.error("Erro ao liberar OS:", error);
-        feedback.toast("Erro ao liberar OS", "error");
+        showError("Erro ao liberar OS");
         return Promise.reject(error);
       }
     },
-    [fetchData, handleCloseLiberacaoModal]
+    [fetchData, handleCloseLiberacaoModal, showError, showSuccess]
   );
 
-  // Funções para lidar com a alteração de pendência
+  // FunÃ§Ãµes para lidar com a alteraÃ§Ã£o de pendÃªncia
   const handleOpenPendenciaModal = useCallback(
     (osId: number, currentMotivoId?: number, currentMotivoText?: string) => {
       setModalPendencia({
@@ -312,27 +351,27 @@ const TelaOSAbertas: React.FC = () => {
       try {
         await ordensServicoService.alterarMotivoPendencia(osId, motivoId);
 
-        // Atualiza os dados após a alteração
+        // Atualiza os dados apÃ³s a alteraÃ§Ã£o
         await fetchData();
 
         if (motivoId === null) {
-          feedback.toast("Pendência removida com sucesso", "success");
+          showSuccess("PendÃªncia removida com sucesso");
         } else {
-          feedback.toast("Pendência alterada com sucesso", "success");
+          showSuccess("PendÃªncia alterada com sucesso");
         }
 
         handleClosePendenciaModal();
         return Promise.resolve();
       } catch (error) {
-        console.error("Erro ao alterar pendência:", error);
-        feedback.toast("Erro ao alterar pendência", "error");
+        console.error("Erro ao alterar pendÃªncia:", error);
+        showError("Erro ao alterar pendÃªncia");
         return Promise.reject(error);
       }
     },
-    [fetchData, handleClosePendenciaModal]
+    [fetchData, handleClosePendenciaModal, showError, showSuccess]
   );
 
-  // Funções para lidar com o gerenciamento de técnicos
+  // FunÃ§Ãµes para lidar com o gerenciamento de tÃ©cnicos
   const handleOpenAdicionarTecnicoModal = useCallback(
     (osId: number, idRegiao: number, nomeRegiao?: string) => {
       setModalTecnico({
@@ -352,7 +391,7 @@ const TelaOSAbertas: React.FC = () => {
     (
       osId: number,
       idRegiao: number,
-      nomeRegiao?: string, // Adicionar este parâmetro
+      nomeRegiao?: string, // Adicionar este parÃ¢metro
       currentTecnicoId?: number,
       currentTecnicoNome?: string
     ) => {
@@ -385,10 +424,10 @@ const TelaOSAbertas: React.FC = () => {
     if ("nome_regiao" in os.cliente && os.cliente.nome_regiao) {
       return os.cliente.nome_regiao as string;
     }
-    return os.cliente.cidade || "Região não informada";
+    return os.cliente.cidade || "RegiÃ£o nÃ£o informada";
   }, []);
 
-  // Depois atualize as funções wrapper:
+  // Depois atualize as funÃ§Ãµes wrapper:
   const createAdicionarTecnicoHandler = useCallback(
     (os: OrdemServico) => {
       return () =>
@@ -415,15 +454,19 @@ const TelaOSAbertas: React.FC = () => {
     [handleOpenAlterarTecnicoModal, getNomeRegiao]
   );
 
-  // Função para navegar para a tela de edição da OS
+  // FunÃ§Ã£o para navegar para a tela de ediÃ§Ã£o da OS
   const handleEditarOS = useCallback(
     (osId: number) => {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(EXPANDED_STORAGE_KEY, osId.toString());
+        window.sessionStorage.setItem(EXPANDED_RESTORE_FLAG_KEY, "true");
+      }
       router.push(`/admin/os_aberto/editar/${osId}`);
     },
     [router]
   );
 
-  // Funções para lidar com o cancelamento de OS
+  // FunÃ§Ãµes para lidar com o cancelamento de OS
   const handleOpenCancelamentoModal = useCallback((osId: number) => {
     setModalCancelamento({
       isOpen: true,
@@ -445,56 +488,56 @@ const TelaOSAbertas: React.FC = () => {
       tipoCancelamento: "cliente" | "empresa"
     ) => {
       try {
-        // Enviar dados de cancelamento através do serviço
+        // Enviar dados de cancelamento atravÃ©s do serviÃ§o
         await ordensServicoService.cancel(osId, {
           tipo_cancelamento: tipoCancelamento,
           descricao: descricao,
         });
 
-        // Atualiza os dados após o cancelamento
+        // Atualiza os dados apÃ³s o cancelamento
         await fetchData();
-        feedback.toast("OS cancelada com sucesso", "success");
+        showSuccess("OS cancelada com sucesso");
         handleCloseCancelamentoModal();
         return Promise.resolve();
       } catch (error) {
         console.error("Erro ao cancelar OS:", error);
-        feedback.toast("Erro ao cancelar OS", "error");
+        showError("Erro ao cancelar OS");
         return Promise.reject(error);
       }
     },
-    [fetchData, handleCloseCancelamentoModal]
+    [fetchData, handleCloseCancelamentoModal, showError, showSuccess]
   );
 
   const handleConfirmTecnico = useCallback(
     async (osId: number, tecnicoId: number, tecnicoNome: string) => {
       try {
-        // Aqui você faria a chamada para a API para definir/alterar o técnico
+        // Aqui vocÃª faria a chamada para a API para definir/alterar o tÃ©cnico
         // await ordensServicoService.definirTecnico(osId, tecnicoId);
-        console.log("Definir técnico:", { osId, tecnicoId, tecnicoNome });
+        console.log("Definir tÃ©cnico:", { osId, tecnicoId, tecnicoNome });
 
-        // Atualiza os dados após a alteração
+        // Atualiza os dados apÃ³s a alteraÃ§Ã£o
         await fetchData();
 
         if (modalTecnico.mode === "add") {
-          feedback.toast("Técnico adicionado com sucesso", "success");
+          showSuccess("TÃ©cnico adicionado com sucesso");
         } else {
-          feedback.toast("Técnico alterado com sucesso", "success");
+          showSuccess("TÃ©cnico alterado com sucesso");
         }
 
         handleCloseTecnicoModal();
         return Promise.resolve();
       } catch (error) {
-        console.error("Erro ao definir técnico:", error);
-        feedback.toast("Erro ao definir técnico", "error");
+        console.error("Erro ao definir tÃ©cnico:", error);
+        showError("Erro ao definir tÃ©cnico");
         return Promise.reject(error);
       }
     },
-    [fetchData, handleCloseTecnicoModal, modalTecnico.mode]
+    [fetchData, handleCloseTecnicoModal, modalTecnico.mode, showError, showSuccess]
   );
 
   const filteredOrdens = useMemo(() => {
     return ordensServico.filter((os) => {
-      // Verifica se a busca é específica por ID (quando começa com #)
+      // Verifica se a busca Ã© especÃ­fica por ID (quando comeÃ§a com #)
       if (searchTerm.startsWith("#")) {
         const idSearch = searchTerm.substring(1);
         return os.id_os.toString() === idSearch;
@@ -510,18 +553,36 @@ const TelaOSAbertas: React.FC = () => {
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
 
-      // Filtro por tipo de técnico
+      // Filtro por tipo de tÃ©cnico
       const matchTecnicoTipo =
-        // Técnicos internos
+        // TÃ©cnicos internos
         (os.tecnico.tipo === "interno" && tecnicoFiltros.interno) ||
-        // Técnicos terceirizados
+        // TÃ©cnicos terceirizados
         (os.tecnico.tipo === "terceiro" && tecnicoFiltros.terceiro) ||
-        // Técnicos indefinidos (sem tipo ou sem nome)
+        // TÃ©cnicos indefinidos (sem tipo ou sem nome)
         ((!os.tecnico.tipo || !os.tecnico.nome) && tecnicoFiltros.indefinido);
 
       return matchSearch && matchTecnicoTipo;
     });
   }, [ordensServico, searchTerm, tecnicoFiltros]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || expandedCards.size === 0) {
+      return;
+    }
+
+    const [expandedId] = Array.from(expandedCards);
+    const cardElement = cardRefs.current.get(expandedId);
+
+    if (cardElement) {
+      window.requestAnimationFrame(() => {
+        cardElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
+    }
+  }, [expandedCards, filteredOrdens]);
 
   // Renderiza o loading
   if (loading) {
@@ -565,7 +626,7 @@ const TelaOSAbertas: React.FC = () => {
           </div>
         </div>
 
-        {/* Skeleton cards para as ordens de serviço */}
+        {/* Skeleton cards para as ordens de serviÃ§o */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full overflow-y-auto custom-scrollbar scroll-smooth px-1 pr-2">
             <div className="space-y-4 pb-6">
@@ -616,22 +677,32 @@ const TelaOSAbertas: React.FC = () => {
         <div className="h-full overflow-y-auto custom-scrollbar scroll-smooth px-1 pr-2">
           <div className="space-y-4 pb-6">
             {filteredOrdens.map((os) => (
-              <OSCard
+              <div
                 key={os.id_os}
-                os={os}
-                isExpanded={expandedCards.has(os.id_os)}
-                toggleCardExpansion={toggleCardExpansion}
-                getFormaAberturaTexto={getFormaAberturaTexto}
-                formatWhatsAppUrl={formatWhatsAppUrl}
-                formatEmailUrl={formatEmailUrl}
-                formatGoogleMapsUrl={formatGoogleMapsUrl}
-                onLiberarFinanceiramente={handleOpenLiberacaoModal}
-                onAlterarPendencia={handleOpenPendenciaModal}
-                onAdicionarTecnico={createAdicionarTecnicoHandler(os)}
-                onAlterarTecnico={createAlterarTecnicoHandler(os)}
-                onEditarOS={handleEditarOS}
-                onCancelarOS={handleOpenCancelamentoModal}
-              />
+                ref={(element) => {
+                  if (!element) {
+                    cardRefs.current.delete(os.id_os);
+                  } else {
+                    cardRefs.current.set(os.id_os, element);
+                  }
+                }}
+              >
+                <OSCard
+                  os={os}
+                  isExpanded={expandedCards.has(os.id_os)}
+                  toggleCardExpansion={toggleCardExpansion}
+                  getFormaAberturaTexto={getFormaAberturaTexto}
+                  formatWhatsAppUrl={formatWhatsAppUrl}
+                  formatEmailUrl={formatEmailUrl}
+                  formatGoogleMapsUrl={formatGoogleMapsUrl}
+                  onLiberarFinanceiramente={handleOpenLiberacaoModal}
+                  onAlterarPendencia={handleOpenPendenciaModal}
+                  onAdicionarTecnico={createAdicionarTecnicoHandler(os)}
+                  onAlterarTecnico={createAlterarTecnicoHandler(os)}
+                  onEditarOS={handleEditarOS}
+                  onCancelarOS={handleOpenCancelamentoModal}
+                />
+              </div>
             ))}
           </div>
 
@@ -641,7 +712,7 @@ const TelaOSAbertas: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal de Liberação Financeira */}
+      {/* Modal de LiberaÃ§Ã£o Financeira */}
       <LiberacaoFinanceiraModal
         isOpen={modalLiberacao.isOpen}
         osId={modalLiberacao.osId}
@@ -649,7 +720,7 @@ const TelaOSAbertas: React.FC = () => {
         onConfirm={handleConfirmLiberacaoFinanceira}
       />
 
-      {/* Modal de Alteração de Pendência */}
+      {/* Modal de AlteraÃ§Ã£o de PendÃªncia */}
       <AlterarPendenciaModal
         isOpen={modalPendencia.isOpen}
         osId={modalPendencia.osId}
@@ -659,7 +730,7 @@ const TelaOSAbertas: React.FC = () => {
         onConfirm={handleConfirmAlterarPendencia}
       />
 
-      {/* Modal de Gerenciamento de Técnico */}
+      {/* Modal de Gerenciamento de TÃ©cnico */}
       <TecnicoModal
         isOpen={modalTecnico.isOpen}
         osId={modalTecnico.osId}
@@ -684,3 +755,8 @@ const TelaOSAbertas: React.FC = () => {
 };
 
 export default TelaOSAbertas;
+
+
+
+
+
