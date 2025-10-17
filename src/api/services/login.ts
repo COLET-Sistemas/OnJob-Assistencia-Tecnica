@@ -6,6 +6,7 @@ export interface Empresa {
   razao_social: string;
   cnpj: string;
   nome_bd: string;
+  nome: string;
   endereco: string;
   numero: string;
   bairro: string;
@@ -47,9 +48,6 @@ export interface LoginRequest {
 export class LoginService {
   private static readonly API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  /**
-   * Realiza a autenticaÃ§Ã£o do usuÃ¡rio
-   */
   static async authenticate(
     login: string,
     senha: string
@@ -74,7 +72,7 @@ export class LoginService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(loginData),
-        credentials: "same-origin", // usar same-origin para o proxy interno
+        credentials: "same-origin", 
       });
 
       if (!response.ok) {
@@ -105,16 +103,12 @@ export class LoginService {
     }
   }
 
-  /**
-   * Verifica se o usuÃ¡rio tem acesso administrativo
-   */
+
   static hasAdminAccess(perfil: LoginResponse["perfil"]): boolean {
     return perfil.interno || perfil.gestor || perfil.admin;
   }
 
-  /**
-   * Verifica se o usuÃ¡rio tem acesso tÃ©cnico
-   */
+
   static hasTechAccess(perfil: LoginResponse["perfil"]): boolean {
     return perfil.tecnico_proprio || perfil.tecnico_terceirizado;
   }
@@ -150,6 +144,7 @@ export class LoginService {
       if (authData.empresa) {
         const empresaObj = {
           nome_bd: authData.empresa.nome_bd || "",
+          nome: authData.empresa.nome || "",
           razao_social: authData.empresa.razao_social || "",
           id_empresa: authData.empresa.id_empresa,
           cnpj: authData.empresa.cnpj || "",
