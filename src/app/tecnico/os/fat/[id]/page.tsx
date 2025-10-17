@@ -558,7 +558,7 @@ export default function FATDetalheMobile() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-50">
+    <main className="min-h-screen bg-slate-50 pb-45">
       <MobileHeader
         title={fat.id_fat ? `FAT #${fat.id_fat}` : "Detalhes da FAT"}
         onAddClick={handleNavigateToOS}
