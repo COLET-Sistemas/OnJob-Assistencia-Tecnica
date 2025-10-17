@@ -512,12 +512,12 @@ export default function FATDetalheMobile() {
               {error}
             </p>
             <div className="flex gap-3">
-            <button
-              onClick={handleNavigateToOS}
-              className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors"
-            >
-              Voltar
-            </button>
+              <button
+                onClick={handleNavigateToOS}
+                className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors"
+              >
+                Voltar
+              </button>
               <button
                 onClick={() => fetchFAT(true)}
                 className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-colors"
@@ -558,7 +558,7 @@ export default function FATDetalheMobile() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-25">
+    <main className="min-h-screen bg-slate-50 pb-50">
       <MobileHeader
         title={fat.id_fat ? `FAT #${fat.id_fat}` : "Detalhes da FAT"}
         onAddClick={handleNavigateToOS}
