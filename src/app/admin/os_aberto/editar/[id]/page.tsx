@@ -251,15 +251,11 @@ const EditarOrdemServico = () => {
         // Usando a API diretamente para obter os dados da OS pelo ID na rota
         const response = await api.get(`/ordens_servico?id=${osId}`);
 
-        // A API retorna um array, verificamos se existe e pegamos o primeiro elemento
-        // Tratando diferentes formatos possíveis da resposta
         let osArray;
         if (response && typeof response === "object") {
-          // Se a resposta tem uma propriedade data (estrutura comum em axios)
           if ("data" in response) {
             osArray = response.data;
           } else {
-            // Se a resposta não tem data, talvez seja o array diretamente
             osArray = response;
           }
         }
@@ -287,7 +283,6 @@ const EditarOrdemServico = () => {
           setTecnicosLoaded(false);
           setTecnicoError(null);
 
-          // Pre-load machine options for the selected client to ensure machine selection works
           if (os.cliente.id) {
             setLoadingMaquinas(true);
             maquinasService
@@ -327,19 +322,18 @@ const EditarOrdemServico = () => {
               os.maquina.numero_serie
             })`,
             isInWarranty: os.em_garantia,
-            data_final_garantia: "", // Informação não presente na resposta
+            data_final_garantia: "", 
           };
           setSelectedMaquina(maquinaOption);
 
           // Contato
           if (os.contato) {
-            // Adicionando campos necessários ao contato conforme a interface ClienteContato
             const contatoCompleto = {
               ...os.contato,
               situacao: "A",
-              recebe_aviso_os: false, // Valor padrão pois não vem na resposta
-              cargo: "", // Valor padrão pois não vem na resposta
-              nome_completo: os.contato.nome, // Usando nome como nome_completo
+              recebe_aviso_os: false, 
+              cargo: "", 
+              nome_completo: os.contato.nome, 
             };
 
             const contatoOption = {
@@ -365,7 +359,7 @@ const EditarOrdemServico = () => {
                           label: contato.nome,
                           contato: {
                             ...contato,
-                            situacao: "A", // Garantir que tenha o campo situacao
+                            situacao: "A",
                           },
                         }))
                       : [];
@@ -391,7 +385,7 @@ const EditarOrdemServico = () => {
                 )
                 .finally(() => setLoadingContatos(false));
             }
-          } // Motivo de Pendência
+          } 
           if (os.situacao_os && os.situacao_os.id_motivo_pendencia) {
             const motivoPendenciaOption = {
               value: os.situacao_os.id_motivo_pendencia,
@@ -414,29 +408,24 @@ const EditarOrdemServico = () => {
 
           // Forma de abertura - convertendo para o formato correto para corresponder às opções do select
           if (os.abertura && os.abertura.forma_abertura) {
-            // Converter para capitalizado (primeira letra maiúscula, resto minúscula)
             const formaCapitalizada =
               os.abertura.forma_abertura.charAt(0).toUpperCase() +
               os.abertura.forma_abertura.slice(1).toLowerCase();
 
-            // Definir as opções disponíveis de forma interna para não depender do estado
             const availableOptions = [
               { value: "Email", label: "Email" },
               { value: "Telefone", label: "Telefone" },
               { value: "WhatsApp", label: "WhatsApp" },
             ];
 
-            // Verificar se a forma de abertura está nas opções disponíveis
             const formaExistente = availableOptions.find(
               (option) =>
                 option.value.toLowerCase() === formaCapitalizada.toLowerCase()
             );
 
-            // Se encontrou uma opção correspondente, use-a para garantir compatibilidade
             if (formaExistente) {
               setFormaAbertura(formaExistente);
             } else {
-              // Se não encontrou, use o valor capitalizado
               setFormaAbertura({
                 value: formaCapitalizada,
                 label: formaCapitalizada,
@@ -446,7 +435,6 @@ const EditarOrdemServico = () => {
 
           // Data agendada
           if (os.data_agendada) {
-            // Converter formato de data DD/MM/YYYY HH:mm para YYYY-MM-DDThh:mm
             try {
               const parts = os.data_agendada.split(" ");
               if (parts.length === 2) {
@@ -457,7 +445,6 @@ const EditarOrdemServico = () => {
                   const year = dateParts[2];
                   const time = parts[1];
 
-                  // Formato YYYY-MM-DDThh:mm (formato aceito pelo input datetime-local)
                   const formattedDate = `${year}-${month.padStart(
                     2,
                     "0"
@@ -494,12 +481,10 @@ const EditarOrdemServico = () => {
       } catch (error) {
         console.error("Erro ao carregar dados da OS:", error);
 
-        // Log additional response information for debugging
         try {
           const testResponse = await api.get(`/ordens_servico?id=${osId}`);
 
           if (testResponse) {
-            // Check for data property using type assertion
             const responseObj = testResponse as Record<string, unknown>;
             const hasDataProp =
               responseObj &&
@@ -615,11 +600,8 @@ const EditarOrdemServico = () => {
   const handleClienteChange = useCallback(
     async (selectedOption: ClienteOption | null) => {
       setSelectedCliente(selectedOption);
-      // Limpar o input de cliente quando um cliente for selecionado
       setClienteInput("");
-      // Limpar o contato selecionado quando o cliente for alterado
       setSelectedContato(null);
-      // Limpar a flag de contato customizado
       setUseCustomContato(false);
 
       if (selectedOption) {
@@ -721,13 +703,11 @@ const EditarOrdemServico = () => {
             selectedOption.value
           );
 
-          // Verificar se temos contatos na resposta
           const contatos =
             contatosResponse && contatosResponse.contatos
               ? contatosResponse.contatos
               : [];
 
-          // Formatar opções para o select
           const options =
             contatos.length > 0
               ? contatos.map((contato: ClienteContato) => ({
@@ -737,7 +717,6 @@ const EditarOrdemServico = () => {
                 }))
               : [];
 
-          // Adicionar opção para usar contato personalizado
           options.push({
             value: -1,
             label: "Adicionar novo contato...",
@@ -752,8 +731,6 @@ const EditarOrdemServico = () => {
             } as ClienteContato,
           });
 
-          // Ensure no undefined labels and add required situacao field
-          // Converter as opções para garantir que todos os campos necessários estejam presentes
           const validOptions = options.map((option) => {
             return {
               ...option,
@@ -796,7 +773,6 @@ const EditarOrdemServico = () => {
       // Limpar o input quando um cliente for selecionado
       if (option) {
         setClienteInput("");
-        // Limpar também os campos de contato personalizado
         setCustomContatoNome("");
         setCustomContatoNomeCompleto("");
         setCustomContatoCargo("");
@@ -815,7 +791,6 @@ const EditarOrdemServico = () => {
     setSelectedContato(contatoOption);
     setUseCustomContato(contatoOption?.contato.id === -1 || false);
 
-    // Limpar erros de validação quando um contato é selecionado
     if (option) {
       setErrors((prev) => ({
         ...prev,
@@ -829,11 +804,9 @@ const EditarOrdemServico = () => {
   const handleMaquinaSelectChange = useCallback((option: OptionType | null) => {
     const maquinaOption = option as MaquinaOption | null;
     if (maquinaOption && maquinaOption.value === -1) {
-      // Usuário selecionou "Buscar outra máquina..."
       setSelectedMaquina(null);
     } else {
       setSelectedMaquina(maquinaOption);
-      // Limpar o input quando uma máquina for selecionada
       setMaquinaInput("");
     }
   }, []);
@@ -869,11 +842,9 @@ const EditarOrdemServico = () => {
     setTecnicosLoaded(false);
   }, []);
 
-  // Carregar dados iniciais (motivos de pendência, técnicos e motivos de atendimento)
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        // Carregar motivos de pendência
         if (!motivosPendenciaLoaded.current) {
           const motivosResponse = await motivosPendenciaService.getAll();
           const motivos = motivosResponse.map((motivo: MotivoPendencia) => ({
@@ -1007,9 +978,7 @@ const EditarOrdemServico = () => {
       const response = await maquinasService.searchByNumeroSerie(term);
 
       const machineOptions = response.dados.map((maquina: Maquina) => {
-        // Usar diretamente o campo garantia da API se disponível
         const dataFinalGarantia = maquina.data_final_garantia || "";
-        // Se o campo garantia estiver presente na resposta, usá-lo diretamente
         const isInWarranty =
           maquina.garantia !== undefined
             ? maquina.garantia
@@ -1027,7 +996,6 @@ const EditarOrdemServico = () => {
         };
       });
 
-      // Adicionar a opção de buscar outra máquina
       machineOptions.push({
         value: -1,
         label: "Buscar outra máquina...",
@@ -1050,7 +1018,6 @@ const EditarOrdemServico = () => {
     }
   }, 500);
 
-  // Handler para o input de máquina com debounce otimizado
   const handleMaquinaInputChange = useCallback(
     (inputValue: string) => {
       setMaquinaInput(inputValue);
@@ -1140,7 +1107,6 @@ const EditarOrdemServico = () => {
         forma_abertura: string;
         em_garantia: boolean;
         data_agendada?: string;
-        // Removido id_tecnico, apenas usando id_usuario_tecnico conforme esperado pela API
         id_usuario_tecnico?: number;
         id_contato_abertura?: number;
         nome_contato_abertura?: string;
@@ -1171,13 +1137,11 @@ const EditarOrdemServico = () => {
       // Adicionar informações de contato com os novos campos
       if (selectedContato) {
         if (selectedContato.contato.id === -1) {
-          // É um contato personalizado
           osData.nome_contato_abertura = customContatoNome;
           osData.telefone_contato_abertura = customContatoTelefone;
           osData.whatsapp_contato_abertura = customContatoWhatsapp || "";
           osData.email_contato_abertura = customContatoEmail;
 
-          // Se escolheu salvar como contato do cliente
           if (saveToClient && selectedCliente) {
             const novoContato = {
               id_cliente: selectedCliente.value,
@@ -1205,15 +1169,13 @@ const EditarOrdemServico = () => {
               }
             } catch (error) {
               console.error("Erro ao salvar contato:", error);
-              // Verificar se a mensagem de erro contém informação sobre um contato cadastrado com sucesso
-              // Verificar se o erro contém um objeto com um ID
               if (error && typeof error === "object" && "id" in error) {
                 // Se o erro contém um ID, usar esse ID diretamente
                 const errorWithId = error as { id?: number };
                 if (errorWithId.id) {
                   osData.id_contato_abertura = errorWithId.id;
                   console.log(`Usando ID ${errorWithId.id} do erro da API`);
-                  return; // Continue com a submissão usando o ID obtido
+                  return; 
                 }
               }
 
@@ -1227,8 +1189,6 @@ const EditarOrdemServico = () => {
                 errorMessage.includes("sucesso") ||
                 errorMessage.toLowerCase().includes("contato criado")
               ) {
-                // É uma mensagem de sucesso que foi tratada como erro
-                // Tenta obter os dados do contato salvo
                 if (selectedCliente) {
                   try {
                     const contactsResponse = await clientesService.getContacts(
@@ -1252,7 +1212,6 @@ const EditarOrdemServico = () => {
             }
           }
         } else {
-          // É um contato existente
           osData.id_contato_abertura = selectedContato.contato.id;
         }
       }
@@ -1264,7 +1223,6 @@ const EditarOrdemServico = () => {
 
       // Adicionar técnico, se selecionado
       if (selectedTecnico) {
-        // A API espera o ID do técnico apenas como id_usuario_tecnico
         osData.id_usuario_tecnico = selectedTecnico.value;
         console.log(
           `Técnico selecionado: ID ${selectedTecnico.value}, Nome: ${selectedTecnico.label}`
@@ -1273,30 +1231,17 @@ const EditarOrdemServico = () => {
         console.log("Nenhum técnico selecionado");
       }
 
-      // Atualizar a OS existente
       try {
-        // Log dos dados sendo enviados para a API para depuração
-        console.log(
-          "Enviando dados para API:",
-          JSON.stringify(osData, null, 2)
-        );
-
-        // Enviando requisição para a API
         const response = await api.put(
           `/ordens_servico?id=${parseInt(osId)}`,
           osData
         );
 
-        console.log("Resposta da API completa:", response);
-        // Adicionar log específico para entender melhor o formato da resposta
-        console.log("Tipo da resposta:", typeof response);
         if (response && typeof response === "object") {
           console.log("Chaves na resposta:", Object.keys(response));
         }
 
-        // Extrair a mensagem de sucesso da resposta da API
-        // Verificar os diferentes formatos possíveis da resposta
-        let apiMessage = "Ordem de serviço atualizada com sucesso!"; // Mensagem padrão
+        let apiMessage = "Ordem de serviço atualizada com sucesso!";
 
         // Definir tipos para evitar erros de compilação
         type ApiResponseType = {
@@ -1312,10 +1257,8 @@ const EditarOrdemServico = () => {
 
         if (response) {
           if (typeof response === "object") {
-            // Converter para o tipo definido
             const responseObj = response as ApiResponseType;
 
-            // Tentar encontrar a mensagem em diferentes propriedades comuns
             if (responseObj.message) {
               apiMessage = responseObj.message;
             } else if (responseObj.mensagem) {
@@ -1323,7 +1266,6 @@ const EditarOrdemServico = () => {
             } else if (responseObj.msg) {
               apiMessage = responseObj.msg;
             } else if (responseObj.data) {
-              // Verificar dentro do objeto data também
               const dataObj = responseObj.data;
 
               if (dataObj.message) {
@@ -1335,7 +1277,6 @@ const EditarOrdemServico = () => {
               }
             }
           } else if (typeof response === "string") {
-            // Se a resposta for uma string direta
             apiMessage = response;
           }
         }
@@ -1381,7 +1322,6 @@ const EditarOrdemServico = () => {
                 ? errorObj.error
                 : "Erro na atualização";
           } else if (errorObj.response && errorObj.response.data) {
-            // Axios error format
             const responseData = errorObj.response.data;
             if (typeof responseData === "string") {
               errorMessage = responseData;
@@ -1528,7 +1468,7 @@ const EditarOrdemServico = () => {
                 onContactSaved={(contact) => {
                   // Adicionar o novo contato às opções
                   const newContactOption = {
-                    value: contact.id || 0, // Garantir que o value seja um número, usando 0 como fallback
+                    value: contact.id || 0, 
                     label: contact.nome || contact.nome_completo || "Contato",
                     contato: contact,
                   };
@@ -1556,11 +1496,8 @@ const EditarOrdemServico = () => {
                   ];
 
                   setContatoOptions(newOptions);
-
                   setSelectedContato(newContactOption);
-
                   setUseCustomContato(false);
-
                   setCustomContatoNome("");
                   setCustomContatoNomeCompleto("");
                   setCustomContatoCargo("");
@@ -1694,7 +1631,7 @@ const EditarOrdemServico = () => {
                   value={selectedTecnico}
                   onChange={handleTecnicoSelectChange}
                   options={tecnicosOptions}
-                  isSearchable // Manter busca habilitada mas mostrar todas as opções
+                  isSearchable 
                   isLoading={loadingTecnicos}
                   isClearable
                   noOptionsMessageFn={() =>

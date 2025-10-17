@@ -7,13 +7,8 @@ interface MaquinaItemProps {
   isSelected: boolean;
 }
 
-/**
- * Componente memoizado para renderizar cada item na lista de máquinas
- * com informações adicionais como status de garantia
- */
 const MaquinaItem: React.FC<MaquinaItemProps> = memo(
   ({ option, isFocused, isSelected }) => {
-    // Se for a opção especial "Buscar outra máquina..."
     if (option.value === -1) {
       return (
         <div
@@ -79,8 +74,8 @@ const MaquinaItem: React.FC<MaquinaItemProps> = memo(
               backgroundColor: isSelected
                 ? "rgba(255, 255, 255, 0.2)"
                 : option.isInWarranty
-                ? "#10b981" // verde para garantia
-                : "#f59e0b", // laranja para fora da garantia
+                ? "#10b981" 
+                : "#f59e0b", 
               color: "white",
               borderRadius: "9999px",
               fontSize: "0.7rem",
