@@ -126,18 +126,13 @@ export default function OSAbertoMobile() {
     fetchOS();
   }, [fetchOS]);
 
-  const handleAddClick = useCallback(() => {
-    console.log("Adicionar clicado");
-  }, []);
-
-  // Estados de carregamento, erro e vazio
   if (loading)
     return (
       <>
         <MobileHeader
           title="OSs a Atender"
-          onAddClick={handleAddClick}
-          leftVariant="plus"
+          showNotifications
+          notificationsPlacement="left"
         />
         <Loading
           fullScreen
@@ -153,8 +148,8 @@ export default function OSAbertoMobile() {
       <>
         <MobileHeader
           title="OSs a Atender"
-          onAddClick={handleAddClick}
-          leftVariant="plus"
+          showNotifications
+          notificationsPlacement="left"
         />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white border border-red-200 rounded-xl p-6 max-w-md w-full text-center shadow-md">
@@ -177,8 +172,8 @@ export default function OSAbertoMobile() {
       <>
         <MobileHeader
           title="OSs a Atender"
-          onAddClick={handleAddClick}
-          leftVariant="plus"
+          showNotifications
+          notificationsPlacement="left"
         />
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6 animate-fadeIn">
           <div className="bg-white border border-gray-200 rounded-xl p-8 max-w-md w-full text-center shadow-sm">
@@ -199,8 +194,8 @@ export default function OSAbertoMobile() {
     <main className="min-h-screen bg-gray-50">
       <MobileHeader
         title="OSs a Atender"
-        onAddClick={handleAddClick}
-        leftVariant="plus"
+        showNotifications
+        notificationsPlacement="left"
       />
 
       <div className="p-4 pb-10">

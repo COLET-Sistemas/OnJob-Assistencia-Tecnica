@@ -1,49 +1,88 @@
 "use client";
-type MenuOption = {
-  label: string;
-  onClick: () => void;
-};
+
 import React, { useState, useRef, useEffect } from "react";
 import { Menu, Plus, Bell, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useNotificacoes } from "@/hooks";
 
+type MenuOption = {
+  label: string;
+  onClick: () => void;
+};
+
 interface MobileHeaderProps {
   title: string;
   onAddClick?: () => void;
   leftVariant?: "plus" | "back";
+  showNotifications?: boolean;
+  notificationsPlacement?: "left" | "right";
 }
+
+const NotificationButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
+  const { totalNotificacoes, fetchNotificacoesCount } = useNotificacoes();
+
+  useEffect(() => {
+    fetchNotificacoesCount();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      style={{ width: 40 }}
+    >
+      <button
+        className="relative p-2 hover:bg-[#6A47A8] rounded-lg transition-colors"
+        onClick={onClick}
+        aria-label="Notificacoes"
+      >
+        <Bell className="w-6 h-6" />
+        {totalNotificacoes > 0 && (
+          <span className="absolute -top-1 -right-1 bg-white text-[#7B54BE] font-bold text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+            {totalNotificacoes > 99 ? "99+" : totalNotificacoes}
+          </span>
+        )}
+      </button>
+    </div>
+  );
+};
 
 const MobileHeader: React.FC<MobileHeaderProps> = ({
   title,
   onAddClick,
   leftVariant = "plus",
+  showNotifications = false,
+  notificationsPlacement = "right",
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Fecha o menu ao clicar fora
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setMenuOpen(false);
       }
     }
+
     if (menuOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
     }
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [menuOpen]);
 
-  // Funções de ação do menu
   const handleInicial = () => {
     setMenuOpen(false);
     router.push("/tecnico/dashboard");
+  };
+  const handleNovaOS = () => {
+    setMenuOpen(false);
+    // router.push("/tecnico/dashboard");
   };
 
   const handleSobre = () => {
@@ -60,93 +99,87 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   };
 
   const menuOptions: MenuOption[] = [
+    { label: "Nova OS", onClick: handleNovaOS },
     { label: "Lista de OS's", onClick: handleInicial },
     { label: "Sobre", onClick: handleSobre },
     { label: "Sair", onClick: handleSair },
   ];
 
-  // Use o hook de notificações
-  const { totalNotificacoes } = useNotificacoes();
+  const renderNotificationButton = () => (
+    <NotificationButton onClick={() => router.push("/tecnico/notificacoes")} />
+  );
+
+  const leftSlot =
+    showNotifications && notificationsPlacement === "left" ? (
+      renderNotificationButton()
+    ) : onAddClick ? (
+      <button
+        onClick={onAddClick}
+        className="p-2 hover:bg-[#6A47A8] rounded-lg transition-colors"
+        aria-label={leftVariant === "back" ? "Voltar" : "Adicionar"}
+      >
+        {leftVariant === "back" ? (
+          <ArrowLeft className="w-6 h-6" />
+        ) : (
+          <Plus className="w-6 h-6" />
+        )}
+      </button>
+    ) : (
+      <div style={{ width: 40 }} />
+    );
 
   return (
     <header className="bg-[#7B54BE] text-white relative">
       <div className="flex items-center justify-between px-4 py-3">
-        {/* Esquerda: botão de adicionar (dashboard) ou voltar (outras telas) */}
-        {onAddClick ? (
-          <button
-            onClick={onAddClick}
-            className="relative p-2 hover:bg-[#6A47A8] rounded-lg transition-colors"
-            aria-label={leftVariant === "back" ? "Voltar" : "Adicionar"}
-          >
-            {leftVariant === "back" ? (
-              <ArrowLeft className="w-6 h-6" />
-            ) : (
-              <Plus className="w-6 h-6" />
-            )}
-          </button>
-        ) : (
-          <div style={{ width: 40 }} />
-        )}
+        {leftSlot}
 
         <h1 className="text-lg font-medium text-center flex-1 px-4">{title}</h1>
 
-        {/* Botão de Notificações */}
-        <div className="relative">
-          <button
-            className="p-2 hover:bg-[#6A47A8] rounded-lg transition-colors"
-            onClick={() => router.push("/tecnico/notificacoes")}
-            aria-label="Notificações"
-          >
-            <Bell className="w-6 h-6" />
-            {totalNotificacoes > 0 && (
-              <span className="absolute -top-1 -right-1 bg-white text-[#7B54BE] font-bold text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
-                {totalNotificacoes > 99 ? "99+" : totalNotificacoes}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Direita: botão de menu fixo */}
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setMenuOpen((open) => !open)}
-            className="p-2 hover:bg-[#6A47A8] rounded-lg transition-colors"
-            aria-label="Menu"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-          {menuOpen && (
-            <div
-              className="absolute right-2 top-10 min-w-[150px] bg-white text-[#22223b] rounded-xl shadow-xl z-50 border border-[#ece9f6] flex flex-col animate-fade-in"
-              style={{
-                boxShadow: "0 8px 24px 0 rgba(60, 60, 90, 0.10)",
-                padding: "0.5rem 0",
-              }}
+        <div className="flex items-center gap-2">
+          {showNotifications && notificationsPlacement === "right"
+            ? renderNotificationButton()
+            : null}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((open) => !open)}
+              className="p-2 hover:bg-[#6A47A8] rounded-lg transition-colors"
+              aria-label="Menu"
             >
-              {menuOptions.map((option, idx) => (
-                <button
-                  key={option.label}
-                  onClick={option.onClick}
-                  className={`w-full text-left px-5 py-3 text-base font-medium transition-colors focus:outline-none focus:bg-[#f3eaff] hover:bg-[#f3eaff] ${
-                    idx === menuOptions.length - 1
-                      ? ""
-                      : "border-b border-[#ece9f6]"
-                  }`}
-                  style={{
-                    borderRadius:
-                      idx === 0
-                        ? "12px 12px 0 0"
-                        : idx === menuOptions.length - 1
-                        ? "0 0 12px 12px"
-                        : "0",
-                    background: "none",
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          )}
+              <Menu className="w-6 h-6" />
+            </button>
+            {menuOpen && (
+              <div
+                className="absolute right-2 top-10 min-w-[150px] bg-white text-[#22223b] rounded-xl shadow-xl z-50 border border-[#ece9f6] flex flex-col animate-fade-in"
+                style={{
+                  boxShadow: "0 8px 24px 0 rgba(60, 60, 90, 0.10)",
+                  padding: "0.5rem 0",
+                }}
+              >
+                {menuOptions.map((option, idx) => (
+                  <button
+                    key={option.label}
+                    onClick={option.onClick}
+                    className={`w-full text-left px-5 py-3 text-base font-medium transition-colors focus:outline-none focus:bg-[#f3eaff] hover:bg-[#f3eaff] ${
+                      idx === menuOptions.length - 1
+                        ? ""
+                        : "border-b border-[#ece9f6]"
+                    }`}
+                    style={{
+                      borderRadius:
+                        idx === 0
+                          ? "12px 12px 0 0"
+                          : idx === menuOptions.length - 1
+                          ? "0 0 12px 12px"
+                          : "0",
+                      background: "none",
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
