@@ -57,26 +57,30 @@ const extractMessages = (
 export const notificacoesService = {
   /**
    * Obtem a quantidade de notificacoes nao lidas
+   * A API retorna apenas { total_notificacoes: number }
    */
   getNotificacoesCount: async (): Promise<NotificacoesCountResponse> => {
     try {
-      const response = await api.get<NotificacoesCountResponse>(
-        `/notificacoes?qtde=S&_t=${Date.now()}`
+      const response = await api.get<{ total_notificacoes?: number }>(
+        `/notificacoes?qtde=S`
       );
 
-      if (response && Object.keys(response).length === 0) {
+      // Se a resposta estiver vazia
+      if (!response || Object.keys(response).length === 0) {
         return { nao_lidas: 0, total_notificacoes: 0 };
       }
 
-      if (typeof response?.nao_lidas !== "number") {
-        return { nao_lidas: 0, total_notificacoes: 0 };
-      }
+      // A API retorna apenas total_notificacoes
+      const totalNotificacoes = typeof response.total_notificacoes === "number" 
+        ? response.total_notificacoes 
+        : 0;
 
-      if (typeof response.total_notificacoes !== "number") {
-        response.total_notificacoes = response.nao_lidas;
-      }
-
-      return response;
+      // Como a API não retorna nao_lidas, consideramos que total_notificacoes 
+      // já representa as notificações não lidas
+      return {
+        nao_lidas: totalNotificacoes,
+        total_notificacoes: totalNotificacoes,
+      };
     } catch (error) {
       console.error("Erro ao buscar contagem de notificacoes:", error);
       return { nao_lidas: 0, total_notificacoes: 0 };
@@ -140,9 +144,7 @@ export const notificacoesService = {
   /**
    * Marca uma notificacao especifica como lida
    */
-  marcarComoLida: async (
-    id: number
-  ): Promise<NotificacaoUpdateResponse> => {
+  marcarComoLida: async (id: number): Promise<NotificacaoUpdateResponse> => {
     try {
       const patchResponse = await api.patch<Partial<NotificacaoUpdateResponse>>(
         `/notificacoes?id=${id}`,

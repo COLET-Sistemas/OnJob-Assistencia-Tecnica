@@ -3,28 +3,23 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Menu, Plus, Bell, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useNotificacoes } from "@/hooks";
 
 type MenuOption = {
   label: string;
   onClick: () => void;
 };
 
-interface MobileHeaderProps {
-  title: string;
-  onAddClick?: () => void;
-  leftVariant?: "plus" | "back";
-  showNotifications?: boolean;
-  notificationsPlacement?: "left" | "right";
+interface NotificationButtonProps {
+  onClick: () => void;
+  totalNotificacoes?: number;
 }
 
-const NotificationButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
-  const { totalNotificacoes, fetchNotificacoesCount } = useNotificacoes();
-
-  useEffect(() => {
-    fetchNotificacoesCount();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+const NotificationButton: React.FC<NotificationButtonProps> = ({
+  onClick,
+  totalNotificacoes = 0,
+}) => {
+  // Garante que o valor é um número válido
+  const count = typeof totalNotificacoes === "number" ? totalNotificacoes : 0;
 
   return (
     <div
@@ -37,9 +32,9 @@ const NotificationButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
         aria-label="Notificacoes"
       >
         <Bell className="w-6 h-6" />
-        {totalNotificacoes > 0 && (
+        {count > 0 && (
           <span className="absolute -top-1 -right-1 bg-white text-[#7B54BE] font-bold text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
-            {totalNotificacoes > 99 ? "99+" : totalNotificacoes}
+            {count > 99 ? "99+" : count}
           </span>
         )}
       </button>
@@ -47,12 +42,22 @@ const NotificationButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   );
 };
 
+interface MobileHeaderProps {
+  title: string;
+  onAddClick?: () => void;
+  leftVariant?: "plus" | "back";
+  showNotifications?: boolean;
+  notificationsPlacement?: "left" | "right";
+  totalNotificacoes?: number;
+}
+
 const MobileHeader: React.FC<MobileHeaderProps> = ({
   title,
   onAddClick,
   leftVariant = "plus",
   showNotifications = false,
   notificationsPlacement = "right",
+  totalNotificacoes = 0,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -80,6 +85,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
     setMenuOpen(false);
     router.push("/tecnico/dashboard");
   };
+
   const handleNovaOS = () => {
     setMenuOpen(false);
     // router.push("/tecnico/dashboard");
@@ -106,7 +112,10 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   ];
 
   const renderNotificationButton = () => (
-    <NotificationButton onClick={() => router.push("/tecnico/notificacoes")} />
+    <NotificationButton
+      onClick={() => router.push("/tecnico/notificacoes")}
+      totalNotificacoes={totalNotificacoes}
+    />
   );
 
   const leftSlot =

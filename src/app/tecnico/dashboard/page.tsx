@@ -16,6 +16,7 @@ import {
 } from "@/api/services/ordensServicoService";
 import { Loading } from "@/components/LoadingPersonalizado";
 import MobileHeader from "@/components/tecnico/MobileHeader";
+import { notificacoesService } from "@/api/services/notificacoesService";
 import StatusBadge from "@/components/tecnico/StatusBadge";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -105,6 +106,26 @@ const OSCard = memo(({ os }: { os: OSItem }) => {
 OSCard.displayName = "OSCard";
 
 export default function OSAbertoMobile() {
+  // Notificações: busca apenas ao montar
+  const [totalNotificacoes, setTotalNotificacoes] = useState<number>(0);
+  useEffect(() => {
+    async function fetchTotal() {
+      try {
+        const resp = await notificacoesService.getNotificacoesCount();
+        console.log("Resposta da API:", resp); // DEBUG
+        if (resp && typeof resp.total_notificacoes === "number") {
+          console.log("Total notificações:", resp.total_notificacoes); // DEBUG
+          setTotalNotificacoes(resp.total_notificacoes);
+        } else {
+          setTotalNotificacoes(0);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar notificações:", error); 
+        setTotalNotificacoes(0);
+      }
+    }
+    fetchTotal();
+  }, []);
   const [osList, setOsList] = useState<OSItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -133,6 +154,7 @@ export default function OSAbertoMobile() {
           title="OSs a Atender"
           showNotifications
           notificationsPlacement="left"
+          totalNotificacoes={totalNotificacoes}
         />
         <Loading
           fullScreen
@@ -150,6 +172,7 @@ export default function OSAbertoMobile() {
           title="OSs a Atender"
           showNotifications
           notificationsPlacement="left"
+          totalNotificacoes={Number(totalNotificacoes) || 0}
         />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white border border-red-200 rounded-xl p-6 max-w-md w-full text-center shadow-md">
@@ -174,6 +197,7 @@ export default function OSAbertoMobile() {
           title="OSs a Atender"
           showNotifications
           notificationsPlacement="left"
+          totalNotificacoes={Number(totalNotificacoes) || 0}
         />
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6 animate-fadeIn">
           <div className="bg-white border border-gray-200 rounded-xl p-8 max-w-md w-full text-center shadow-sm">
@@ -196,6 +220,7 @@ export default function OSAbertoMobile() {
         title="OSs a Atender"
         showNotifications
         notificationsPlacement="left"
+        totalNotificacoes={totalNotificacoes}
       />
 
       <div className="p-4 pb-10">
