@@ -344,7 +344,6 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
-  // Verificar se o conteudo precisa de rolagem
   useEffect(() => {
     const checkScrollable = () => {
       if (scrollRef.current) {
@@ -358,8 +357,6 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
     return () => window.removeEventListener("resize", checkScrollable);
   }, [actions.length]);
 
-  // Manipuladores de eventos de arraste
-  // Referencia para armazenar o temporizador
   const dragTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -372,7 +369,7 @@ export default function QuickActions({ os }: { os: OSDetalhadaV2 }) {
     // Usar um pequeno atraso para distinguir entre clique e arrasto
     dragTimeoutRef.current = setTimeout(() => {
       setIsDragging(true);
-    }, 100); // 100ms de atraso
+    }, 100); 
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {

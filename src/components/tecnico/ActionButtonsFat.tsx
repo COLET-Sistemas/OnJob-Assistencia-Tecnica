@@ -27,6 +27,7 @@ interface ActionButtonsFatProps {
 }
 
 const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
+  fat,
   id_os,
   onActionSuccess,
   onIniciarAtendimento,
@@ -67,178 +68,88 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
   };
 
   const sanitizeMessage = (message?: string | null): string | undefined => {
-    if (!message) {
-      return undefined;
-    }
-
+    if (!message) return undefined;
     const trimmed = message.trim();
-
-    if (trimmed.length >= 2) {
-      const startsWithSingle = trimmed.startsWith("'");
-      const endsWithSingle = trimmed.endsWith("'");
-      const startsWithDouble = trimmed.startsWith('"');
-      const endsWithDouble = trimmed.endsWith('"');
-
-      if (startsWithSingle && endsWithSingle) {
-        return trimmed.slice(1, -1).trim() || undefined;
-      }
-
-      if (startsWithDouble && endsWithDouble) {
-        return trimmed.slice(1, -1).trim() || undefined;
-      }
-    }
-
+    if (trimmed.startsWith("'") && trimmed.endsWith("'"))
+      return trimmed.slice(1, -1).trim() || undefined;
+    if (trimmed.startsWith('"') && trimmed.endsWith('"'))
+      return trimmed.slice(1, -1).trim() || undefined;
     return trimmed || undefined;
   };
 
   const extractErroValue = (value: unknown): string | undefined => {
-    if (value === null || value === undefined) {
-      return undefined;
-    }
+    const visited = new WeakSet<object>();
+    const candidateKeys = [
+      "erro",
+      "mensagem",
+      "message",
+      "error",
+      "detail",
+      "detalhe",
+      "descricao",
+      "descricao_ocorrencia",
+      "data",
+    ];
 
-    if (typeof value === "string") {
-      const trimmed = value.trim();
-      if (!trimmed) {
-        return undefined;
-      }
+    const handle = (input: unknown): string | undefined => {
+      if (typeof input === "string") {
+        const trimmed = input.trim();
+        if (!trimmed) return undefined;
 
-      try {
-        const parsed = JSON.parse(trimmed);
-        const parsedErro = extractErroValue(parsed);
-        if (parsedErro) {
-          return parsedErro;
+        const regexMatch = trimmed.match(
+          /["']erro["']\s*:\s*["']([^"']*)["']/i
+        );
+        if (regexMatch?.[1]) {
+          return sanitizeMessage(regexMatch[1]) || regexMatch[1].trim();
         }
-      } catch {
-        
+
+        try {
+          const parsed = JSON.parse(trimmed);
+          const fromParsed = handle(parsed);
+          if (fromParsed) return fromParsed;
+        } catch {
+          /* ignore json parse errors */
+        }
+
+        return sanitizeMessage(trimmed) || trimmed;
       }
 
-      const regexMatch = trimmed.match(/"erro"\s*:\s*"([^"]*)"/i);
-      if (regexMatch && regexMatch[1]) {
-        return sanitizeMessage(regexMatch[1]) || regexMatch[1].trim();
-      }
+      if (typeof input === "object" && input !== null) {
+        if (visited.has(input)) return undefined;
+        visited.add(input);
 
-      return sanitizeMessage(trimmed) || trimmed;
-    }
+        if (Array.isArray(input)) {
+          for (const item of input) {
+            const result = handle(item);
+            if (result) return result;
+          }
+          return undefined;
+        }
 
-    if (typeof value === "object") {
-      const record = value as Record<string, unknown>;
+        const record = input as Record<string, unknown>;
 
-      const directErro = record.erro;
-      if (typeof directErro === "string" && directErro.trim() !== "") {
-        return sanitizeMessage(directErro) || directErro.trim();
-      }
+        for (const key of candidateKeys) {
+          if (key in record) {
+            const result = handle(record[key]);
+            if (result) return result;
+          }
+        }
 
-      const nestedCandidates: unknown[] = [
-        record.mensagem,
-        record.message,
-        record.error,
-        record.detail,
-        record.detalhe,
-        record.data,
-      ];
-
-      for (const candidate of nestedCandidates) {
-        const extracted = extractErroValue(candidate);
-        if (extracted) {
-          return extracted;
+        for (const content of Object.values(record)) {
+          const result = handle(content);
+          if (result) return result;
         }
       }
-    }
 
-    return undefined;
-  };
-
-  const resolveStringCandidate = (value: string): string | undefined => {
-    const trimmed = value.trim();
-    if (!trimmed) {
       return undefined;
-    }
+    };
 
-    // Avoid returning raw JSON strings when we fail to parse
-    const looksLikeJson =
-      (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
-      (trimmed.startsWith("[") && trimmed.endsWith("]"));
-
-    if (looksLikeJson) {
-      return undefined;
-    }
-
-    return sanitizeMessage(trimmed) || trimmed;
+    return handle(value);
   };
 
   const getErrorMessage = (error: unknown): string => {
-    if (!error) {
-      return "Erro ao processar a solicitacao";
-    }
-
-    const candidates: unknown[] = [];
-
-    const pushCandidate = (value: unknown) => {
-      if (value !== undefined && value !== null) {
-        candidates.push(value);
-      }
-    };
-
-    pushCandidate(error);
-
-    if (typeof error === "string") {
-      const extracted = extractErroValue(error);
-      if (extracted) {
-        return extracted;
-      }
-      const fallback = resolveStringCandidate(error);
-      if (fallback) {
-        return fallback;
-      }
-    }
-
-    if (error instanceof Error) {
-      const anyError = error as Error & {
-        data?: unknown;
-        erro?: unknown;
-        mensagem?: unknown;
-        message?: unknown;
-        error?: unknown;
-        detail?: unknown;
-        detalhe?: unknown;
-      };
-
-      pushCandidate(anyError.data);
-      pushCandidate(anyError.erro);
-      pushCandidate(anyError.mensagem);
-      pushCandidate(anyError.error);
-      pushCandidate(anyError.detail);
-      pushCandidate(anyError.detalhe);
-      pushCandidate(anyError.message);
-      pushCandidate(error.message);
-    } else if (typeof error === "object" && error !== null) {
-      const record = error as Record<string, unknown>;
-      pushCandidate(record.erro);
-      pushCandidate(record.mensagem);
-      pushCandidate(record.message);
-      pushCandidate(record.error);
-      pushCandidate(record.detail);
-      pushCandidate(record.detalhe);
-      pushCandidate(record.data);
-    }
-
-    for (const candidate of candidates) {
-      const extracted = extractErroValue(candidate);
-      if (extracted) {
-        return extracted;
-      }
-    }
-
-    for (const candidate of candidates) {
-      if (typeof candidate === "string") {
-        const fallback = resolveStringCandidate(candidate);
-        if (fallback) {
-          return fallback;
-        }
-      }
-    }
-
-    return "Erro ao processar a solicitacao";
+    const extracted = extractErroValue(error);
+    return extracted || "Erro ao processar a solicitação";
   };
 
   const handleSaveOcorrencia = async (descricao: string) => {
@@ -273,7 +184,20 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
         descricao_ocorrencia: descricao,
       };
 
-      const response = await ocorrenciasOSService.registrarOcorrencia(payload);
+      let response;
+
+      if (modalOpen === "concluir") {
+        const interromperPayload = {
+          id_os,
+          ocorrencia: ocorrenciaMap["interromper"],
+          descricao_ocorrencia: descricao,
+        };
+
+        await ocorrenciasOSService.registrarOcorrencia(interromperPayload);
+        response = await ocorrenciasOSService.registrarOcorrencia(payload);
+      } else {
+        response = await ocorrenciasOSService.registrarOcorrencia(payload);
+      }
 
       switch (modalOpen) {
         case "iniciar":
@@ -299,53 +223,22 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
       const successMessage =
         sanitizeMessage(response?.mensagem) ||
         mensagensMap[modalOpen] ||
-        "Operacao realizada com sucesso!";
+        "Operação realizada com sucesso!";
 
       showToast(successMessage, "success");
       setModalOpen(null);
       onActionSuccess?.();
     } catch (error) {
       console.error(error);
-      const errorMessage = getErrorMessage(error);
-      showToast(errorMessage, "error");
+      showToast(getErrorMessage(error), "error");
       setModalOpen(null);
     } finally {
       setModalLoading(false);
     }
   };
 
-  const getModalConfig = () => {
-    const configs: Record<string, { title: string; label: string }> = {
-      iniciar: {
-        title: "Iniciar Atendimento",
-        label: "Descrição da ocorrência (opcional)",
-      },
-      pausar: {
-        title: "Pausar Atendimento",
-        label: "Descrição da ocorrência (opcional)",
-      },
-      retomar: {
-        title: "Retomar Atendimento",
-        label: "Descrição da ocorrência (opcional)",
-      },
-      interromper: {
-        title: "Concluir FAT",
-        label: "Descrição da ocorrência (opcional)",
-      },
-      cancelar: {
-        title: "Cancelar OS",
-        label: "Descrição da ocorrência (opcional)",
-      },
-      concluir: {
-        title: "Concluir OS",
-        label: "Descrição da ocorrência (opcional)",
-      },
-    };
-    return modalOpen ? configs[modalOpen] : null;
-  };
-
   const baseBtn =
-    "group relative flex items-center gap-2 p-3 rounded-xl text-xs font-medium transition-all duration-200 active:scale-[0.98] shadow-sm flex-1 justify-center min-w-[120px] ";
+    "group relative flex items-center gap-2 p-3 rounded-xl text-xs font-medium transition-all duration-200 active:scale-[0.98] shadow-sm flex-1 justify-center min-w-[120px] text-center whitespace-normal leading-tight";
   const purpleBtn =
     "bg-gray-50 border border-[#7B54BE] text-[#7B54BE] hover:bg-gray-100";
   const redBtn =
@@ -355,7 +248,183 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
   const gradientOverlay =
     "absolute inset-0 rounded-xl bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300";
 
-  const modalConfig = getModalConfig();
+  // 🔹 Lógica de exibição conforme fat.situacao.codigo
+  const situacao = fat?.situacao?.codigo;
+
+  const botoes = (() => {
+    switch (situacao) {
+      // 3 → Em deslocamento
+      case 3:
+        return (
+          <>
+            <button
+              className={`${baseBtn} ${purpleBtn}`}
+              onClick={() => setModalOpen("iniciar")}
+            >
+              {modalOpen === "iniciar" && modalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Play className="w-3.5 h-3.5" />
+              )}
+              <span className="font-medium">Iniciar Atendimento</span>
+              <div className={gradientOverlay}></div>
+            </button>
+
+            <button
+              className={`${baseBtn} ${redBtn}`}
+              onClick={() => setModalOpen("cancelar")}
+            >
+              {modalOpen === "cancelar" && modalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <X className="w-3.5 h-3.5" />
+              )}
+              <span className="font-medium">Cancelar FAT</span>
+              <div className={gradientOverlay}></div>
+            </button>
+          </>
+        );
+
+      // 4 → Em atendimento
+      case 4:
+        return (
+          <>
+            <button
+              className={`${baseBtn} ${purpleBtn}`}
+              onClick={() => setModalOpen("pausar")}
+            >
+              {modalOpen === "pausar" && modalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Pause className="w-3.5 h-3.5" />
+              )}
+              <span className="font-medium">Pausar Atendimento</span>
+              <div className={gradientOverlay}></div>
+            </button>
+
+            <button
+              className={`${baseBtn} ${redBtn}`}
+              onClick={() => setModalOpen("cancelar")}
+            >
+              {modalOpen === "cancelar" && modalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <X className="w-3.5 h-3.5" />
+              )}
+              <span className="font-medium">Cancelar FAT</span>
+              <div className={gradientOverlay}></div>
+            </button>
+
+            <button
+              className={`${baseBtn} ${purpleBtn}`}
+              onClick={() => setModalOpen("interromper")}
+            >
+              {modalOpen === "interromper" && modalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Square className="w-3.5 h-3.5" />
+              )}
+              <span className="font-medium">Concluir FAT</span>
+              <div className={gradientOverlay}></div>
+            </button>
+
+            <button
+              className={`${baseBtn} ${greenBtn}`}
+              onClick={() => setModalOpen("concluir")}
+            >
+              {modalOpen === "concluir" && modalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CheckCircle className="w-3.5 h-3.5" />
+              )}
+              <span className="font-medium">Concluir OS</span>
+              <div className={gradientOverlay}></div>
+            </button>
+          </>
+        );
+
+      // 5 → Atendimento pausado
+      case 5:
+        return (
+          <>
+            <button
+              className={`${baseBtn} ${purpleBtn}`}
+              onClick={() => setModalOpen("retomar")}
+            >
+              {modalOpen === "retomar" && modalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <RotateCcw className="w-3.5 h-3.5" />
+              )}
+              <span className="font-medium">Retomar Atendimento</span>
+              <div className={gradientOverlay}></div>
+            </button>
+
+            <button
+              className={`${baseBtn} ${redBtn}`}
+              onClick={() => setModalOpen("cancelar")}
+            >
+              {modalOpen === "cancelar" && modalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <X className="w-3.5 h-3.5" />
+              )}
+              <span className="font-medium">Cancelar FAT</span>
+              <div className={gradientOverlay}></div>
+            </button>
+
+            <button
+              className={`${baseBtn} ${purpleBtn}`}
+              onClick={() => setModalOpen("interromper")}
+            >
+              {modalOpen === "interromper" && modalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Square className="w-3.5 h-3.5" />
+              )}
+              <span className="font-medium">Concluir FAT</span>
+              <div className={gradientOverlay}></div>
+            </button>
+
+            <button
+              className={`${baseBtn} ${greenBtn}`}
+              onClick={() => setModalOpen("concluir")}
+            >
+              {modalOpen === "concluir" && modalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CheckCircle className="w-3.5 h-3.5" />
+              )}
+              <span className="font-medium">Concluir OS</span>
+              <div className={gradientOverlay}></div>
+            </button>
+          </>
+        );
+
+      case 7:
+      case 8:
+      case 9:
+        return null;
+
+      default:
+        return null;
+    }
+  })();
+
+  const modalConfig = modalOpen
+    ? {
+        title:
+          {
+            iniciar: "Iniciar Atendimento",
+            pausar: "Pausar Atendimento",
+            retomar: "Retomar Atendimento",
+            interromper: "Concluir FAT",
+            cancelar: "Cancelar FAT",
+            concluir: "Concluir OS",
+          }[modalOpen] || "",
+        label: "Descrição da ocorrência (opcional)",
+      }
+    : null;
 
   return (
     <>
@@ -367,91 +436,8 @@ const ActionButtonsFat: React.FC<ActionButtonsFatProps> = ({
         />
       )}
 
-      {/* Ajuste no padding inferior ↓ */}
-      <div className="bg-white  px-3 pt-1 pb-1 flex flex-wrap gap-3 justify-center">
-        {/* INICIAR */}
-        <button
-          className={`${baseBtn} ${purpleBtn}`}
-          onClick={() => setModalOpen("iniciar")}
-        >
-          {modalOpen === "iniciar" && modalLoading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Play className="w-3.5 h-3.5" />
-          )}
-          <span className="font-medium">Iniciar Atendimento</span>
-          <div className={gradientOverlay}></div>
-        </button>
-
-        {/* PAUSAR */}
-        <button
-          className={`${baseBtn} ${purpleBtn}`}
-          onClick={() => setModalOpen("pausar")}
-        >
-          {modalOpen === "pausar" && modalLoading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Pause className="w-3.5 h-3.5" />
-          )}
-          <span className="font-medium">Pausar Atendimento</span>
-          <div className={gradientOverlay}></div>
-        </button>
-
-        {/* RETOMAR */}
-        <button
-          className={`${baseBtn} ${purpleBtn}`}
-          onClick={() => setModalOpen("retomar")}
-        >
-          {modalOpen === "retomar" && modalLoading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <RotateCcw className="w-3.5 h-3.5" />
-          )}
-          <span className="font-medium">Retomar Atendimento</span>
-          <div className={gradientOverlay}></div>
-        </button>
-
-        {/* CONCLUIR FAT */}
-        <button
-          className={`${baseBtn} ${purpleBtn}`}
-          onClick={() => setModalOpen("interromper")}
-        >
-          {modalOpen === "interromper" && modalLoading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Square className="w-3.5 h-3.5" />
-          )}
-          <span className="font-medium">Concluir FAT</span>
-          <div className={gradientOverlay}></div>
-        </button>
-
-        {/* CANCELAR */}
-        <button
-          className={`${baseBtn} ${redBtn}`}
-          onClick={() => setModalOpen("cancelar")}
-        >
-          {modalOpen === "cancelar" && modalLoading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <X className="w-3.5 h-3.5" />
-          )}
-          <span className="font-medium">Cancelar OS</span>
-          <div className={gradientOverlay}></div>
-        </button>
-
-        {/* CONCLUIR */}
-        <button
-          className={`${baseBtn} ${greenBtn}`}
-          onClick={() => setModalOpen("concluir")}
-        >
-          {modalOpen === "concluir" && modalLoading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <CheckCircle className="w-3.5 h-3.5" />
-          )}
-          <span className="font-medium">Concluir OS</span>
-          <div className={gradientOverlay}></div>
-        </button>
+      <div className="bg-white px-3 pt-1 pb-1 flex flex-wrap gap-3 justify-center">
+        {botoes}
       </div>
 
       <OcorrenciaModal

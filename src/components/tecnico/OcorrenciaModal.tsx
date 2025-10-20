@@ -8,7 +8,7 @@ interface OcorrenciaModalProps {
   title?: string;
   label?: string;
   id_os?: number;
-  required?: boolean; // Nova prop para indicar se o campo é obrigatório
+  required?: boolean; 
 }
 
 const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
@@ -18,8 +18,7 @@ const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
   loading = false,
   title = "Registrar Ocorrência",
   label = "Descrição da ocorrência (opcional)",
-  id_os,
-  required = false, // Por padrão, o campo não é obrigatório
+  required = false, 
 }) => {
   const [descricao, setDescricao] = useState("");
 
@@ -31,12 +30,11 @@ const OcorrenciaModal: React.FC<OcorrenciaModalProps> = ({
   }, [open]);
 
   const handleClose = () => {
-    setDescricao(""); // Limpa o input ao fechar
+    setDescricao("");
     onClose();
   };
 
   const handleSave = () => {
-    console.log("Modal handleSave called with:", { descricao, id_os });
     onSave(descricao);
   };
 

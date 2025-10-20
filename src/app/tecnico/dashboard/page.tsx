@@ -24,7 +24,7 @@ const OSCard = memo(({ os }: { os: OSItem }) => {
   const router = useRouter();
 
   const formatDate = useCallback((dateStr: string | null) => {
-    if (!dateStr || dateStr.trim() === "") return "Não definida";
+    if (!dateStr || dateStr.trim() === "") return "Não";
     try {
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return dateStr;
@@ -66,7 +66,6 @@ const OSCard = memo(({ os }: { os: OSItem }) => {
       onClick={() => router.push(`/tecnico/os/${os.id_os}`)}
       className={`bg-white rounded-xl cursor-pointer shadow-sm border ${borderColor} border-l-4 p-4 mb-3 transition-all duration-200 hover:shadow-md active:shadow-lg`}
     >
-      {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-gray-900 leading-tight">
@@ -79,15 +78,15 @@ const OSCard = memo(({ os }: { os: OSItem }) => {
             </span>
           </div>
         </div>
-        <StatusBadge status={os.situacao_os?.descricao || ""} />
+        <StatusBadge
+          status={String(os.situacao_os?.codigo)}
+          descricao={os.situacao_os?.descricao}
+        />
       </div>
 
-      {/* Máquina + Garantia */}
       <div className="flex items-center gap-2 text-sm text-gray-700 mb-3">
         <Settings className="w-3 h-3 text-gray-500 flex-shrink-0" />
         <span className="font-medium truncate">{os.maquina?.modelo}</span>
-
-        {/* Ícone de garantia logo ao lado */}
         {os.em_garantia ? (
           <CircleCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
         ) : (
@@ -95,7 +94,6 @@ const OSCard = memo(({ os }: { os: OSItem }) => {
         )}
       </div>
 
-      {/* Data */}
       <div className="pt-2 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-600">
         <Clock className="w-3 h-3 text-gray-500" />
         <span>Agendado: {formatDate(os.data_agendada)}</span>
@@ -106,24 +104,34 @@ const OSCard = memo(({ os }: { os: OSItem }) => {
 OSCard.displayName = "OSCard";
 
 export default function OSAbertoMobile() {
-  // Notificações: busca apenas ao montar
   const [totalNotificacoes, setTotalNotificacoes] = useState<number>(0);
+  const [empresaNome, setEmpresaNome] = useState<string>("");
+
+  useEffect(() => {
+    // 🔹 Recupera o nome da empresa do localStorage
+    try {
+      const stored = localStorage.getItem("empresa");
+      if (stored) {
+        const empresa = JSON.parse(stored);
+        setEmpresaNome(empresa?.nome || "");
+      }
+    } catch (e) {
+      console.error("Erro ao obter empresa do localStorage:", e);
+    }
+  }, []);
+
   useEffect(() => {
     async function fetchTotal() {
       try {
         const resp = await notificacoesService.getNotificacoesCount();
-        if (resp && typeof resp.total_notificacoes === "number") {
-          setTotalNotificacoes(resp.total_notificacoes);
-        } else {
-          setTotalNotificacoes(0);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar notificações:", error); 
+        setTotalNotificacoes(resp?.total_notificacoes || 0);
+      } catch {
         setTotalNotificacoes(0);
       }
     }
     fetchTotal();
   }, []);
+
   const [osList, setOsList] = useState<OSItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -170,7 +178,7 @@ export default function OSAbertoMobile() {
           title="OSs a Atender"
           showNotifications
           notificationsPlacement="left"
-          totalNotificacoes={Number(totalNotificacoes) || 0}
+          totalNotificacoes={totalNotificacoes}
         />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white border border-red-200 rounded-xl p-6 max-w-md w-full text-center shadow-md">
@@ -195,7 +203,7 @@ export default function OSAbertoMobile() {
           title="OSs a Atender"
           showNotifications
           notificationsPlacement="left"
-          totalNotificacoes={Number(totalNotificacoes) || 0}
+          totalNotificacoes={totalNotificacoes}
         />
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6 animate-fadeIn">
           <div className="bg-white border border-gray-200 rounded-xl p-8 max-w-md w-full text-center shadow-sm">
@@ -211,7 +219,6 @@ export default function OSAbertoMobile() {
       </>
     );
 
-  // Lista principal
   return (
     <main className="min-h-screen bg-gray-50">
       <MobileHeader
@@ -220,6 +227,12 @@ export default function OSAbertoMobile() {
         notificationsPlacement="left"
         totalNotificacoes={totalNotificacoes}
       />
+
+      {empresaNome && (
+        <div className="px-4 py-2 text-sm text-gray-800 font-semibold bg-gray-100 border-b border-gray-200 text-center">
+          {empresaNome}
+        </div>
+      )}
 
       <div className="p-4 pb-10">
         <AnimatePresence mode="popLayout">

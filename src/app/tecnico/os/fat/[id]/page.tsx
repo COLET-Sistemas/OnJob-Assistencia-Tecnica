@@ -160,6 +160,11 @@ export default function FATDetalheMobile() {
     type: "success",
   });
 
+  const situacoesComBotoes = ["3", "4", "5"];
+
+  const deveMostrarBotoes = situacoesComBotoes.includes(
+    String(fat?.situacao?.codigo)
+  );
   // Função auxiliar para mostrar toast com auto-hide
   const showToast = useCallback(
     (message: string, type: "success" | "error" = "success") => {
@@ -558,7 +563,7 @@ export default function FATDetalheMobile() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-45">
+    <main className="min-h-screen bg-slate-50 pb-25">
       <MobileHeader
         title={fat.id_fat ? `FAT #${fat.id_fat}` : "Detalhes da FAT"}
         onAddClick={handleNavigateToOS}
@@ -597,7 +602,10 @@ export default function FATDetalheMobile() {
 
         {/* Status e Data */}
         <div className="px-4 pb-4 flex items-center justify-between">
-          <StatusBadge status={String(fat.situacao.codigo)} />
+          <StatusBadge
+            status={String(fat.situacao.codigo)}
+            descricao={fat.situacao.descricao}
+          />
 
           {fat.data_atendimento && (
             <div className="flex items-center gap-1 text-sm text-gray-600">
@@ -928,19 +936,21 @@ export default function FATDetalheMobile() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 p-3 safe-area-bottom">
-        <ActionButtonsFat
-          fat={fat}
-          id_os={fat.id_os}
-          onIniciarAtendimento={handleIniciarAtendimento}
-          onPausarAtendimento={handlePausarAtendimento}
-          onRetomarAtendimento={handleRetomarAtendimento}
-          onInterromperAtendimento={handleInterromperAtendimento}
-          onCancelarAtendimento={handleCancelarAtendimento}
-          onConcluirAtendimento={handleConcluirAtendimento}
-          onActionSuccess={() => fetchFAT(true)}
-        />
-      </div>
+      {deveMostrarBotoes && (
+        <div className="bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 p-3 safe-area-bottom">
+          <ActionButtonsFat
+            fat={fat}
+            id_os={fat.id_os}
+            onIniciarAtendimento={handleIniciarAtendimento}
+            onPausarAtendimento={handlePausarAtendimento}
+            onRetomarAtendimento={handleRetomarAtendimento}
+            onInterromperAtendimento={handleInterromperAtendimento}
+            onCancelarAtendimento={handleCancelarAtendimento}
+            onConcluirAtendimento={handleConcluirAtendimento}
+            onActionSuccess={() => fetchFAT(true)}
+          />
+        </div>
+      )}
     </main>
   );
 }

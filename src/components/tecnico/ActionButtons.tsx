@@ -1,6 +1,7 @@
+"use client";
 import Toast from "@/components/tecnico/Toast";
 import React, { useState } from "react";
-import { Car, Play, Loader2 } from "lucide-react";
+import { Car, Play, Loader2, XCircle, CheckCircle } from "lucide-react";
 import OcorrenciaModal from "./OcorrenciaModal";
 import { ocorrenciasOSService } from "@/api/services/ocorrenciaOSService";
 
@@ -13,7 +14,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   id_os,
   onActionSuccess,
 }) => {
-  // const [loading, setLoading] = useState<"deslocamento" | "atendimento" | null>(null);
   const [modalOpen, setModalOpen] = useState<
     null | "deslocamento" | "atendimento"
   >(null);
@@ -22,19 +22,17 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   const [messageType, setMessageType] = useState<"success" | "error" | null>(
     null
   );
+  const [concluirLoading, setConcluirLoading] = useState(false);
 
-  // Removido: validação para habilitar/desabilitar botões
-
-  // Abre modal ao clicar
   const handleDeslocamento = () => setModalOpen("deslocamento");
   const handleAtendimento = () => setModalOpen("atendimento");
 
-  // Salva ocorrência
   const handleSaveOcorrencia = async (descricao: string) => {
     if (!id_os || !modalOpen) return;
     setModalLoading(true);
     setMessage(null);
     setMessageType(null);
+
     try {
       const response = await ocorrenciasOSService.registrarOcorrencia({
         id_os,
@@ -46,74 +44,19 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       });
 
       setModalOpen(null);
-      // Usar a mensagem de retorno da API
       setMessage(response.mensagem || "Ação realizada com sucesso!");
       setMessageType("success");
 
-      console.log("🎯 Ocorrência registrada com sucesso, iniciando reload...");
-
-      // Aguardar um pequeno delay para garantir que o servidor processou a ocorrência
-      // antes de recarregar os dados da OS
       setTimeout(() => {
-        if (onActionSuccess) {
-          console.log(
-            "🔄 Chamando callback onActionSuccess para atualizar a OS"
-          );
-          try {
-            onActionSuccess();
-            console.log("✅ Callback onActionSuccess executado com sucesso");
-          } catch (error) {
-            console.error(
-              "❌ Erro ao executar callback onActionSuccess:",
-              error
-            );
-          }
-        } else {
-          console.warn("⚠️ onActionSuccess não foi fornecido");
-        }
+        if (onActionSuccess) onActionSuccess();
       }, 1000);
     } catch (error: unknown) {
       console.error("Erro ao registrar ocorrência:", error);
-
-      // A função apiRequest já processa os erros e retorna a mensagem da API
-      // Vamos extrair a mensagem do Error que foi criado
       let errorMessage = "Erro ao registrar ocorrência";
 
       if (error instanceof Error) {
-        // A função apiRequest já extraiu a mensagem da API e colocou no Error.message
-        const rawMessage = error.message;
-    
-
-        // Verificar se a mensagem contém o padrão {"erro":"..."}
-        const erroMatch = rawMessage.match(/\{"erro":"([^"]+)"\}/);
-        if (erroMatch && erroMatch[1]) {
-          errorMessage = erroMatch[1];
-      
-        } else {
-          // Se não encontrar o padrão, usar a mensagem completa
-          errorMessage = rawMessage;
- 
-        }
-      } else if (
-        error &&
-        typeof error === "object" &&
-        "message" in error &&
-        typeof error.message === "string"
-      ) {
-        const rawMessage = error.message;
-       
-
-        // Verificar se a mensagem contém o padrão {"erro":"..."}
-        const erroMatch = rawMessage.match(/\{"erro":"([^"]+)"\}/);
-        if (erroMatch && erroMatch[1]) {
-          errorMessage = erroMatch[1];
-         
-        } else {
-          errorMessage = rawMessage;
-
-        }
-      } else {
-   
+        const match = error.message.match(/\{"erro":"([^"]+)"\}/);
+        errorMessage = match ? match[1] : error.message;
       }
 
       setMessage(errorMessage);
@@ -123,13 +66,144 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     }
   };
 
+  const sanitizeMessage = (value?: string | null) => {
+    if (!value) return undefined;
+    const trimmed = value.trim();
+    if (trimmed.startsWith("'") && trimmed.endsWith("'"))
+      return trimmed.slice(1, -1).trim() || undefined;
+    if (trimmed.startsWith('"') && trimmed.endsWith('"'))
+      return trimmed.slice(1, -1).trim() || undefined;
+    return trimmed || undefined;
+  };
+
+  const extractErroValue = (value: unknown): string | undefined => {
+    const visited = new WeakSet<object>();
+    const candidateKeys = [
+      "erro",
+      "mensagem",
+      "message",
+      "error",
+      "detail",
+      "detalhe",
+      "descricao",
+      "descricao_ocorrencia",
+      "data",
+    ];
+
+    const handle = (input: unknown): string | undefined => {
+      if (typeof input === "string") {
+        const trimmed = input.trim();
+        if (!trimmed) return undefined;
+
+        const erroMatch = trimmed.match(
+          /["']erro["']\s*:\s*["']([^"']*)["']/i
+        );
+        if (erroMatch?.[1]) {
+          return sanitizeMessage(erroMatch[1]) || erroMatch[1].trim();
+        }
+
+        try {
+          const parsed = JSON.parse(trimmed);
+          const fromParsed = handle(parsed);
+          if (fromParsed) return fromParsed;
+        } catch {
+          /* ignore json parse errors */
+        }
+
+        return sanitizeMessage(trimmed) || trimmed;
+      }
+
+      if (typeof input === "object" && input !== null) {
+        if (visited.has(input)) return undefined;
+        visited.add(input);
+
+        if (Array.isArray(input)) {
+          for (const item of input) {
+            const result = handle(item);
+            if (result) return result;
+          }
+          return undefined;
+        }
+
+        const record = input as Record<string, unknown>;
+
+        for (const key of candidateKeys) {
+          if (key in record) {
+            const result = handle(record[key]);
+            if (result) return result;
+          }
+        }
+
+        for (const content of Object.values(record)) {
+          const result = handle(content);
+          if (result) return result;
+        }
+      }
+
+      return undefined;
+    };
+
+    return handle(value);
+  };
+
+  const getErrorMessage = (error: unknown) => {
+    const extracted = extractErroValue(error);
+    if (extracted) return extracted;
+    if (error instanceof Error) return error.message;
+    return "Erro ao processar a solicitacao";
+  };
+
   const baseBtn =
     "group relative flex items-center gap-2 p-3 rounded-xl text-xs font-medium transition-all duration-200 active:scale-[0.98] shadow-sm flex-1 justify-center min-w-[120px]";
   const purpleBtn =
     "bg-gray-50 border border-[#7B54BE] text-[#7B54BE] hover:bg-gray-100";
+  const redBtn =
+    "bg-gray-50 border border-red-500 text-red-600 hover:bg-red-50";
+  const greenBtn =
+    "bg-gray-50 border border-green-500 text-green-600 hover:bg-green-50";
   const disabledBtn = "opacity-50 cursor-not-allowed";
   const gradientOverlay =
     "absolute inset-0 rounded-xl bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300";
+
+  const handleCancelarOS = () => {
+    setMessage("OS cancelada com sucesso!");
+    setMessageType("success");
+  };
+
+  const handleConcluirOS = async () => {
+    if (!id_os) {
+      setMessage("Dados incompletos para concluir a OS.");
+      setMessageType("error");
+      return;
+    }
+
+    setConcluirLoading(true);
+    setMessage(null);
+    setMessageType(null);
+
+    try {
+      const response = await ocorrenciasOSService.registrarOcorrencia({
+        id_os,
+        ocorrencia: "concluir os",
+      });
+
+      const successMessage =
+        sanitizeMessage(response?.mensagem) || "OS concluída com sucesso!";
+
+      setMessage(successMessage);
+      setMessageType("success");
+
+      setTimeout(() => {
+        onActionSuccess?.();
+      }, 1000);
+    } catch (error) {
+      console.error("Erro ao concluir OS:", error);
+      setMessage(getErrorMessage(error));
+      setMessageType("error");
+    } finally {
+      setConcluirLoading(false);
+    }
+  };
 
   return (
     <>
@@ -140,46 +214,73 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           onClose={() => setMessage(null)}
         />
       )}
-      <div className="flex flex-wrap gap-3 justify-center">
-        <button
-          disabled={modalOpen !== null}
-          className={`${baseBtn} ${purpleBtn} ${
-            modalOpen !== null ? disabledBtn : ""
-          }`}
-          onClick={handleDeslocamento}
-        >
-          <span className="relative flex items-center">
-            {modalOpen === "deslocamento" && modalLoading ? (
+
+      <div className="flex flex-col gap-3 justify-center">
+        {/* Primeira linha: Iniciar deslocamento e atendimento */}
+        <div className="flex flex-wrap gap-3 justify-center">
+          <button
+            disabled={modalOpen !== null}
+            className={`${baseBtn} ${purpleBtn} ${
+              modalOpen !== null ? disabledBtn : ""
+            }`}
+            onClick={handleDeslocamento}
+          >
+            <span className="relative flex items-center">
+              {modalOpen === "deslocamento" && modalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Car className="w-3.5 h-3.5 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3" />
+              )}
+            </span>
+            <span className="font-medium">Iniciar Deslocamento</span>
+            <div className={gradientOverlay}></div>
+          </button>
+
+          <button
+            disabled={modalOpen !== null}
+            className={`${baseBtn} ${purpleBtn} ${
+              modalOpen !== null ? disabledBtn : ""
+            }`}
+            onClick={handleAtendimento}
+          >
+            <span className="relative flex items-center">
+              {modalOpen === "atendimento" && modalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Play className="w-3.5 h-3.5 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3" />
+              )}
+            </span>
+            <span className="font-medium">Iniciar Atendimento</span>
+            <div className={gradientOverlay}></div>
+          </button>
+        </div>
+
+        {/* Segunda linha: Cancelar e Concluir OS */}
+        <div className="flex flex-wrap gap-3 justify-center">
+          <button className={`${baseBtn} ${redBtn}`} onClick={handleCancelarOS}>
+            <XCircle className="w-3.5 h-3.5" />
+            <span className="font-medium">Cancelar OS</span>
+            <div className={gradientOverlay}></div>
+          </button>
+
+          <button
+            className={`${baseBtn} ${greenBtn} ${
+              concluirLoading || modalOpen !== null ? disabledBtn : ""
+            }`}
+            onClick={handleConcluirOS}
+            disabled={concluirLoading || modalOpen !== null}
+          >
+            {concluirLoading ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Car className="w-3.5 h-3.5 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3" />
+              <CheckCircle className="w-3.5 h-3.5" />
             )}
-          </span>
-          <span className="font-medium">
-            Iniciar Deslocamento
-          </span>
-          <div className={gradientOverlay}></div>
-        </button>
-        <button
-          disabled={modalOpen !== null}
-          className={`${baseBtn} ${purpleBtn} ${
-            modalOpen !== null ? disabledBtn : ""
-          }`}
-          onClick={handleAtendimento}
-        >
-          <span className="relative flex items-center">
-            {modalOpen === "atendimento" && modalLoading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Play className="w-3.5 h-3.5 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3" />
-            )}
-          </span>
-          <span className="font-medium">
-            Iniciar Atendimento
-          </span>
-          <div className={gradientOverlay}></div>
-        </button>
+            <span className="font-medium">Concluir OS</span>
+            <div className={gradientOverlay}></div>
+          </button>
+        </div>
       </div>
+
       <OcorrenciaModal
         open={modalOpen !== null}
         onClose={() => setModalOpen(null)}

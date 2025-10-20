@@ -4,7 +4,7 @@ interface ToastProps {
   message: string;
   type?: "success" | "error";
   onClose?: () => void;
-  duration?: number; // ms
+  duration?: number; 
 }
 
 const Toast: React.FC<ToastProps> = ({
