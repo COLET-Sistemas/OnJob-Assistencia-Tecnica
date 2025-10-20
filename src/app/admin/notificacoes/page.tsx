@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   CheckSquare,
-  ExternalLink,
+  Eye,
   Loader2,
   RefreshCcw,
 } from "lucide-react";
@@ -288,7 +288,7 @@ export default function NotificacoesPage() {
       <button
         type="button"
         onClick={() => carregarPagina(1, true)}
-        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-600 shadow-sm transition-colors hover:border-[#7B54BE] hover:text-[#7B54BE]"
+        className="inline-flex items-center cursor-pointer gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-600 shadow-sm transition-colors hover:border-[#7B54BE] hover:text-[#7B54BE]"
         disabled={carregandoLista}
       >
         {carregandoLista ? (
@@ -341,7 +341,7 @@ export default function NotificacoesPage() {
           <button
             type="button"
             onClick={marcarTodasComoLidas}
-            className="inline-flex items-center gap-2 rounded-md bg-[#7B54BE] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#6a45a7] disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="inline-flex items-center cursor-pointer gap-2 rounded-md bg-[#7B54BE] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#6a45a7] disabled:cursor-not-allowed disabled:bg-gray-300"
             disabled={marcandoTodas || notificacoesCount === 0}
           >
             {marcandoTodas ? (
@@ -420,7 +420,7 @@ export default function NotificacoesPage() {
                           onClick={() =>
                             marcarNotificacaoComoLida(notificacao.id)
                           }
-                          className="inline-flex items-center gap-1 rounded-md border border-transparent bg-white px-2 py-1 text-xs font-medium text-[#7B54BE] shadow-sm transition-colors hover:border-[#7B54BE] disabled:cursor-not-allowed disabled:opacity-70"
+                          className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-transparent bg-white px-2 py-1 text-xs font-medium text-[#7B54BE] shadow-sm transition-colors hover:border-[#7B54BE] disabled:cursor-not-allowed disabled:opacity-70"
                           disabled={emMarcacao}
                         >
                           {emMarcacao ? (
@@ -436,9 +436,9 @@ export default function NotificacoesPage() {
                         <button
                           type="button"
                           onClick={() => abrirNotificacao(notificacao)}
-                          className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 shadow-sm transition-colors hover:border-[#7B54BE] hover:text-[#7B54BE]"
+                          className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium cursor-pointer text-gray-600 shadow-sm transition-colors hover:border-[#7B54BE] hover:text-[#7B54BE]"
                         >
-                          <ExternalLink className="h-3 w-3" />
+                          <Eye className="h-3 w-3" />
                           Abrir
                         </button>
                       )}

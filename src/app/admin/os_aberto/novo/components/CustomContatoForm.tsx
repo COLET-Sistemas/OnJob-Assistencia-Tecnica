@@ -139,20 +139,21 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nome do Contato <span className="text-red-500">*</span>
+              Nome ou Apelido <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={customContatoNome}
               onChange={(e) => setCustomContatoNome(e.target.value)}
+              maxLength={20}
               className={`w-full px-3 py-2 border text-gray-900 rounded-md shadow-sm
-              focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]
-              transition-all duration-200
-              ${
-                showNameError && !customContatoNome.trim()
-                  ? "border-red-300"
-                  : "border-gray-300"
-              }`}
+    focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]
+    transition-all duration-200
+    ${
+      showNameError && !customContatoNome.trim()
+        ? "border-red-300"
+        : "border-gray-300"
+    }`}
               placeholder="Nome do contato"
               required
             />
@@ -166,7 +167,7 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
           {saveToClient && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nome Completo
+                Nome Completo <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -176,7 +177,13 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
                 focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]
                 transition-all duration-200"
                 placeholder="Nome completo do contato"
+                required
               />
+              {showNameError && !customContatoNomeCompleto.trim() && (
+                <p className="text-red-500 text-sm mt-1">
+                  Nome Completo é obrigatório
+                </p>
+              )}
             </div>
           )}
 
@@ -276,7 +283,10 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
           <button
             type="button"
             onClick={async () => {
-              if (!customContatoNome.trim()) {
+              if (
+                !customContatoNome.trim() ||
+                (saveToClient && !customContatoNomeCompleto.trim())
+              ) {
                 return;
               }
 
@@ -299,14 +309,12 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
                   contatoData
                 );
 
-                // Mostrar mensagem de sucesso com toast usando a mensagem exata da API
                 showSuccess(
                   "Contato salvo com sucesso",
                   result.mensagem ||
                     "O contato foi adicionado à lista de contatos do cliente."
                 );
 
-                // Marcar o contato como salvo para esconder o formulário
                 setContactSaved(true);
 
                 if (onContactSaved) {
@@ -315,8 +323,6 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
               } catch (error) {
                 console.error("Erro ao salvar contato:", error);
 
-                // Verificar se a mensagem de erro contém informação sobre um contato cadastrado com sucesso
-                // Isso pode acontecer se o status HTTP for 400/500 mas a operação foi bem-sucedida
                 const errorMessage =
                   error instanceof Error
                     ? error.message
@@ -327,13 +333,10 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
                   errorMessage.includes("sucesso") ||
                   errorMessage.toLowerCase().includes("contato criado")
                 ) {
-                  // É uma mensagem de sucesso que foi tratada como erro
                   showSuccess("Contato salvo com sucesso", errorMessage);
 
-                  // Marcar o contato como salvo para esconder o formulário
                   setContactSaved(true);
 
-                  // Tenta obter os dados do contato salvo
                   if (clienteId) {
                     try {
                       const contactsResponse =
@@ -353,16 +356,21 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
                     }
                   }
                 } else {
-                  // É realmente um erro
                   showError("Erro ao salvar contato", errorMessage);
                 }
               } finally {
                 setIsSavingContact(false);
               }
             }}
-            disabled={isSavingContact || !customContatoNome.trim()}
+            disabled={
+              isSavingContact ||
+              !customContatoNome.trim() ||
+              (saveToClient && !customContatoNomeCompleto.trim())
+            }
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              isSavingContact || !customContatoNome.trim()
+              isSavingContact ||
+              !customContatoNome.trim() ||
+              (saveToClient && !customContatoNomeCompleto.trim())
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-[var(--primary)] text-white hover:bg-violet-700"
             }`}

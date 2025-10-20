@@ -35,14 +35,13 @@ import { useRouter } from "next/navigation";
 
 // Interface estendida para suportar os campos adicionais do exemplo da API
 interface OSItemExtended {
-  // Make id_os required since it's used throughout
   id_os: number;
-  id?: number; // Add this for compatibility with keyField
-  numero_os?: string; // Add this since it's referenced in the code
+  id?: number;
+  numero_os?: string; 
   descricao_problema?: string;
   em_garantia?: boolean;
-  status?: number; // Add this since it's used in fallbacks
-  data_abertura?: string; // Add this since it's used as fallback
+  status?: number; 
+  data_abertura?: string; 
   abertura?: {
     data_abertura: string;
     forma_abertura: string;
@@ -126,7 +125,6 @@ const fadeInAnimation = `
 
 const ConsultaOSPage: React.FC = () => {
   const router = useRouter();
-  // showFilters is now provided by useFilters hook
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<{
@@ -172,7 +170,6 @@ const ConsultaOSPage: React.FC = () => {
     tipo_tecnico: "",
   };
 
-  // Setup filters with localStorage persistence
   const {
     filtrosPainel,
     filtrosAplicados,
@@ -193,7 +190,6 @@ const ConsultaOSPage: React.FC = () => {
 
   // Abre os filtros por padrão ao carregar a página
   useEffect(() => {
-    // Pequeno delay para garantir que o componente já esteja renderizado
     const timer = setTimeout(() => {
       setShowFilters(true);
     }, 100);
@@ -205,33 +201,28 @@ const ConsultaOSPage: React.FC = () => {
   const [disableDateFields, setDisableDateFields] = useState<boolean>(false);
   const [fixedDateType, setFixedDateType] = useState<string | null>(null);
 
-  // Função para obter a data de hoje no formato YYYY-MM-DD
   const getToday = () => {
     const today = new Date();
     return today.toISOString().split("T")[0];
   };
 
-  // Função para obter a data de 30 dias atrás no formato YYYY-MM-DD
   const get30DaysAgo = () => {
     const date = new Date();
     date.setDate(date.getDate() - 30);
     return date.toISOString().split("T")[0];
   };
 
-  // Buscar técnicos ao carregar o componente
   useEffect(() => {
     const fetchTecnicos = async () => {
       try {
         setLoadingTecnicos(true);
         const response = await usuariosService.getAll({ apenas_tecnicos: "S" });
 
-        // Normalize the response to ensure we always work with an array
         let tecnicosData: TecnicoType[] = [];
 
         if (response) {
           try {
             if (Array.isArray(response)) {
-              // Direct array response
               tecnicosData = response.map((user) => ({
                 id: Number(user.id) || 0,
                 nome: String(user.nome) || "",
@@ -257,7 +248,6 @@ const ConsultaOSPage: React.FC = () => {
                   | undefined,
               }));
             } else if (typeof response === "object") {
-              // Cast to unknown first, then to our desired record type
               const obj = response as unknown as Record<string, unknown>;
               if (obj.id && obj.nome) {
                 tecnicosData = [
@@ -285,7 +275,6 @@ const ConsultaOSPage: React.FC = () => {
             user &&
             (user.perfil_tecnico_proprio ||
               user.perfil_tecnico_terceirizado ||
-              // Also consider users with 'tecnico' in their attributes as valid
               user.tipo === "interno" ||
               user.tipo === "terceiro")
         );
@@ -302,8 +291,6 @@ const ConsultaOSPage: React.FC = () => {
     fetchTecnicos();
   }, []);
 
-  // Definir status mapping para as ordens de serviço
-  // Memoize status mapping to avoid rebuilding on each render
   const statusMapping: Record<
     string,
     { label: string; className: string; icon: React.ReactNode }
@@ -398,12 +385,10 @@ const ConsultaOSPage: React.FC = () => {
   const handleFilterChange = useCallback(
     (key: string, value: string) => {
       if (key === "status") {
-        // Configurar os campos de data baseados no status selecionado
         const pendingStatuses = ["1", "1,2,3,4,5", "6"];
         const finishedStatuses = ["6,7", "8,9"];
 
         if (pendingStatuses.includes(value)) {
-          // Para Pendente, Em aberto e Aguardando Revisão
           setDisableDateFields(true);
           setFixedDateType(null);
           handleFiltroChange("status", value);
@@ -411,7 +396,6 @@ const ConsultaOSPage: React.FC = () => {
           handleFiltroChange("data_ini", "");
           handleFiltroChange("data_fim", "");
         } else if (finishedStatuses.includes(value)) {
-          // Para Concluídas e Canceladas
           setDisableDateFields(false);
           setFixedDateType("fechamento");
           handleFiltroChange("status", value);
@@ -423,7 +407,7 @@ const ConsultaOSPage: React.FC = () => {
           setDisableDateFields(false);
           setFixedDateType(null);
           handleFiltroChange("status", value);
-          handleFiltroChange("campo_data", "abertura"); // Por padrão, usar data de abertura
+          handleFiltroChange("campo_data", "abertura"); 
           handleFiltroChange("data_ini", get30DaysAgo());
           handleFiltroChange("data_fim", getToday());
         }
@@ -439,20 +423,16 @@ const ConsultaOSPage: React.FC = () => {
     (key: string) => {
       // Verificar se o campo é dependente de outro
       if (key === "data_ini" || key === "data_fim") {
-        // Limpar apenas o campo específico
         handleFiltroChange(key, "");
       } else if (key === "campo_data") {
-        // Limpar campo de data e campos dependentes
         handleFiltroChange("campo_data", "");
         handleFiltroChange("data_ini", "");
         handleFiltroChange("data_fim", "");
         setDisableDateFields(false);
       } else if (key === "id_tecnico" || key === "tipo_tecnico") {
-        // Limpar ambos os campos relacionados a técnicos
         handleFiltroChange("id_tecnico", "");
         handleFiltroChange("tipo_tecnico", "");
       } else {
-        // Limpar o campo normalmente
         handleFiltroChange(key, "");
       }
     },

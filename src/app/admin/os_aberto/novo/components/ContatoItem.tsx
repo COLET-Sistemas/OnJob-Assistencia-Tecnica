@@ -4,10 +4,9 @@ import { OptionProps } from "react-select";
 import { GroupBase } from "react-select";
 import { OptionType } from "@/components/admin/form/CustomSelect";
 
-// Define a custom option type that extends the base OptionType
 export interface ContatoOptionType extends OptionType {
   contato: ClienteContato;
-  value: number; // Override value to be specifically number for this type
+  value: number; 
 }
 
 interface ContatoItemProps {
@@ -16,13 +15,8 @@ interface ContatoItemProps {
   isSelected: boolean;
 }
 
-/**
- * Componente memoizado para renderizar cada item na lista de contatos
- * com informações adicionais como telefone e email
- */
 const ContatoItem: React.FC<ContatoItemProps> = memo(
   ({ option, isFocused, isSelected }) => {
-    // Se for a opção personalizada (ID -1), renderiza normalmente
     if (option.contato.id === -1) {
       return (
         <div

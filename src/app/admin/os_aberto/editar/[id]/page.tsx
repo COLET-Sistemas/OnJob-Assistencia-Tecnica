@@ -15,7 +15,6 @@ import { clientesService } from "@/api/services/clientesService";
 import { maquinasService } from "@/api/services/maquinasService";
 import { motivosPendenciaService } from "@/api/services/motivosPendenciaService";
 import { motivosAtendimentoService } from "@/api/services/motivosAtendimentoService";
-// Removed ordensServicoService import as we're using API directly
 import { Cliente, ClienteContato } from "@/types/admin/cadastro/clientes";
 import { MotivoPendencia } from "@/types/admin/cadastro/motivos_pendencia";
 import { Maquina } from "@/types/admin/cadastro/maquinas";
@@ -322,7 +321,7 @@ const EditarOrdemServico = () => {
               os.maquina.numero_serie
             })`,
             isInWarranty: os.em_garantia,
-            data_final_garantia: "", 
+            data_final_garantia: "",
           };
           setSelectedMaquina(maquinaOption);
 
@@ -331,9 +330,9 @@ const EditarOrdemServico = () => {
             const contatoCompleto = {
               ...os.contato,
               situacao: "A",
-              recebe_aviso_os: false, 
-              cargo: "", 
-              nome_completo: os.contato.nome, 
+              recebe_aviso_os: false,
+              cargo: "",
+              nome_completo: os.contato.nome,
             };
 
             const contatoOption = {
@@ -385,7 +384,7 @@ const EditarOrdemServico = () => {
                 )
                 .finally(() => setLoadingContatos(false));
             }
-          } 
+          }
           if (os.situacao_os && os.situacao_os.id_motivo_pendencia) {
             const motivoPendenciaOption = {
               value: os.situacao_os.id_motivo_pendencia,
@@ -1175,7 +1174,7 @@ const EditarOrdemServico = () => {
                 if (errorWithId.id) {
                   osData.id_contato_abertura = errorWithId.id;
                   console.log(`Usando ID ${errorWithId.id} do erro da API`);
-                  return; 
+                  return;
                 }
               }
 
@@ -1367,10 +1366,7 @@ const EditarOrdemServico = () => {
       />
 
       <FormContainer onSubmit={handleSubmit}>
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            Informações do Cliente e Contato
-          </h2>
+        <div className="mb-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Cliente */}
             <div className="col-span-2 md:col-span-1">
@@ -1468,7 +1464,7 @@ const EditarOrdemServico = () => {
                 onContactSaved={(contact) => {
                   // Adicionar o novo contato às opções
                   const newContactOption = {
-                    value: contact.id || 0, 
+                    value: contact.id || 0,
                     label: contact.nome || contact.nome_completo || "Contato",
                     contato: contact,
                   };
@@ -1512,85 +1508,46 @@ const EditarOrdemServico = () => {
           )}
         </div>
 
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            Informações da Ordem de Serviço
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Máquina */}
-            <div className="col-span-2 md:col-span-1">
-              <div className="mb-6">
-                <CustomSelect
-                  id="maquina"
-                  label="Máquina"
-                  placeholder={
-                    selectedCliente
-                      ? "Selecione ou busque por número de série..."
-                      : "Selecione um cliente primeiro..."
-                  }
-                  value={selectedMaquina}
-                  onChange={handleMaquinaSelectChange}
-                  onInputChange={handleMaquinaInputChange}
-                  options={maquinaOptions}
-                  isSearchable={true}
-                  inputValue={maquinaInput}
-                  isLoading={loadingMaquinas || isSearchingMaquinas}
-                  isDisabled={!selectedCliente}
-                  className={errors.maquina ? "campo-erro" : ""}
-                  components={
-                    maquinaSelectComponents as unknown as React.ComponentProps<
-                      typeof CustomSelect
-                    >["components"]
-                  }
-                />
-                {errors.maquina && (
-                  <div className="text-red-500 text-sm mt-1">
-                    Selecione uma máquina
-                  </div>
-                )}
-              </div>
-            </div>
-            {/* Motivo de Pendência */}
-            <div className="col-span-2 md:col-span-1">
-              <div className="mb-6">
-                <CustomSelect
-                  id="motivoPendencia"
-                  label="Motivo de Pendência (opcional)"
-                  placeholder="Selecione um motivo de pendência..."
-                  value={selectedMotivoPendencia}
-                  onChange={handleMotivoPendenciaSelectChange}
-                  options={motivosPendenciaOptions}
-                  isSearchable
-                  className={errors.motivoPendencia ? "campo-erro" : ""}
-                  isClearable
-                />
-                {errors.motivoPendencia && (
-                  <div className="text-red-500 text-sm mt-1">
-                    Selecione um motivo de pendência
-                  </div>
-                )}
-              </div>
+        <div className="mb-2">
+          {/* Segunda linha: Forma de Abertura / Motivo de Pendência / Data Agendada */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            {/* Forma de Abertura */}
+            <div>
+              <CustomSelect
+                id="formaAbertura"
+                label="Forma de Abertura"
+                placeholder="Selecione a forma de abertura..."
+                value={formaAbertura}
+                onChange={(option) =>
+                  setFormaAbertura(option as FormaAberturaOption)
+                }
+                options={formaAberturaOptions}
+                className={errors.formaAbertura ? "campo-erro" : ""}
+              />
+              {errors.formaAbertura && (
+                <div className="text-red-500 text-sm mt-1">
+                  Selecione a forma de abertura
+                </div>
+              )}
             </div>
 
-            {/* Motivo de Atendimento */}
-            <div className="col-span-2 md:col-span-1">
-              <div className="mb-6">
-                <CustomSelect
-                  id="motivoAtendimento"
-                  label="Motivo de Atendimento (opcional)"
-                  placeholder="Selecione um motivo de atendimento..."
-                  value={selectedMotivoAtendimento}
-                  onChange={handleMotivoAtendimentoSelectChange}
-                  options={motivosAtendimentoOptions}
-                  isSearchable
-                  className={errors.motivoAtendimento ? "campo-erro" : ""}
-                  isClearable
-                />
-              </div>
+            {/* Motivo de Pendência */}
+            <div>
+              <CustomSelect
+                id="motivoPendencia"
+                label="Motivo de Pendência (opcional)"
+                placeholder="Selecione um motivo de pendência..."
+                value={selectedMotivoPendencia}
+                onChange={handleMotivoPendenciaSelectChange}
+                options={motivosPendenciaOptions}
+                isSearchable
+                className={errors.motivoPendencia ? "campo-erro" : ""}
+                isClearable
+              />
             </div>
 
             {/* Data Agendada */}
-            <div className="col-span-2 md:col-span-1">
+            <div>
               <DateTimeField
                 id="dataAgendada"
                 label="Data Agendada (opcional)"
@@ -1598,83 +1555,108 @@ const EditarOrdemServico = () => {
                 onChange={(e) => setDataAgendada(e.target.value)}
               />
             </div>
+          </div>
 
-            {/* Forma de Abertura */}
-            <div className="col-span-2 md:col-span-1">
-              <div className="mb-6">
-                <CustomSelect
-                  id="formaAbertura"
-                  label="Forma de Abertura"
-                  placeholder="Selecione a forma de abertura..."
-                  value={formaAbertura}
-                  onChange={(option) =>
-                    setFormaAbertura(option as FormaAberturaOption)
-                  }
-                  options={formaAberturaOptions}
-                  className={errors.formaAbertura ? "campo-erro" : ""}
-                />
-                {errors.formaAbertura && (
-                  <div className="text-red-500 text-sm mt-1">
-                    Selecione a forma de abertura
-                  </div>
-                )}
-              </div>
+          {/* Terceira linha: Máquina / Motivo de Atendimento / Técnico */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            {/* Máquina */}
+            <div>
+              <CustomSelect
+                id="maquina"
+                label="Máquina"
+                placeholder={
+                  selectedCliente
+                    ? "Selecione ou busque por número de série..."
+                    : "Selecione um cliente primeiro..."
+                }
+                value={selectedMaquina}
+                onChange={handleMaquinaSelectChange}
+                onInputChange={handleMaquinaInputChange}
+                options={maquinaOptions}
+                isSearchable={true}
+                inputValue={maquinaInput}
+                isLoading={loadingMaquinas || isSearchingMaquinas}
+                isDisabled={!selectedCliente}
+                className={errors.maquina ? "campo-erro" : ""}
+                components={
+                  maquinaSelectComponents as unknown as React.ComponentProps<
+                    typeof CustomSelect
+                  >["components"]
+                }
+              />
+              {errors.maquina && (
+                <div className="text-red-500 text-sm mt-1">
+                  Selecione uma máquina
+                </div>
+              )}
             </div>
 
-            {/* Técnico */}
-            <div className="col-span-2 md:col-span-1">
-              <div className="mb-6">
-                <CustomSelect
-                  id="tecnico"
-                  label="Técnico (opcional)"
-                  placeholder="Selecione um técnico..."
-                  value={selectedTecnico}
-                  onChange={handleTecnicoSelectChange}
-                  options={tecnicosOptions}
-                  isSearchable 
-                  isLoading={loadingTecnicos}
-                  isClearable
-                  noOptionsMessageFn={() =>
-                    tecnicosOptions.length > 0
-                      ? "Digite para filtrar técnicos"
-                      : "Nenhum técnico disponível"
-                  }
-                />
-                <div className="mt-2 flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">
-                      {showAllTecnicos
-                        ? "Exibindo todos os tecnicos"
-                        : clienteRegiaoNome
-                        ? `Regiao: ${clienteRegiaoNome}`
-                        : "Selecione um cliente para filtrar por regiao"}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={
-                        showAllTecnicos
-                          ? handleFiltrarTecnicosPorRegiao
-                          : handleMostrarTodosTecnicos
-                      }
-                      className={
-                        showAllTecnicos
-                          ? "text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-1 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          : "text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md px-3 py-1 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      }
-                      disabled={
-                        loadingTecnicos ||
-                        (!clienteRegiaoId && !showAllTecnicos)
-                      }
-                    >
-                      {showAllTecnicos
-                        ? "Filtrar por regiao"
-                        : "Ver todos os tecnicos"}
-                    </button>
-                  </div>
-                  {tecnicoError && (
-                    <span className="text-xs text-red-600">{tecnicoError}</span>
-                  )}
+            {/* Motivo de Atendimento */}
+            <div>
+              <CustomSelect
+                id="motivoAtendimento"
+                label="Motivo de Atendimento (opcional)"
+                placeholder="Selecione um motivo de atendimento..."
+                value={selectedMotivoAtendimento}
+                onChange={handleMotivoAtendimentoSelectChange}
+                options={motivosAtendimentoOptions}
+                isSearchable
+                className={errors.motivoAtendimento ? "campo-erro" : ""}
+                isClearable
+              />
+            </div>
+
+            {/* Técnico Designado */}
+            <div>
+              <CustomSelect
+                id="tecnico"
+                label="Técnico Designado (opcional)"
+                placeholder="Selecione um técnico..."
+                value={selectedTecnico}
+                onChange={handleTecnicoSelectChange}
+                options={tecnicosOptions}
+                isSearchable
+                isLoading={loadingTecnicos}
+                isClearable
+                noOptionsMessageFn={() =>
+                  tecnicosOptions.length > 0
+                    ? "Digite para filtrar técnicos"
+                    : "Nenhum técnico disponível"
+                }
+              />
+              <div className="mt-2 flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">
+                    {showAllTecnicos
+                      ? "Exibindo todos os técnicos"
+                      : clienteRegiaoNome
+                      ? `Região: ${clienteRegiaoNome}`
+                      : "Selecione um cliente para filtrar por região"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={
+                      showAllTecnicos
+                        ? handleFiltrarTecnicosPorRegiao
+                        : handleMostrarTodosTecnicos
+                    }
+                    className={
+                      showAllTecnicos
+                        ? "text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-1 hover:bg-gray-100 transition-colors"
+                        : "text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md px-3 py-1 hover:bg-blue-100 transition-colors"
+                    }
+                    disabled={
+                      loadingTecnicos || (!clienteRegiaoId && !showAllTecnicos)
+                    }
+                  >
+                    {showAllTecnicos
+                      ? "Filtrar por região"
+                      : "Ver todos os técnicos"}
+                  </button>
                 </div>
+                {tecnicoError && (
+                  <span className="text-xs text-red-600">{tecnicoError}</span>
+                )}
               </div>
             </div>
           </div>

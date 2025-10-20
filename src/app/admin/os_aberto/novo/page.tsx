@@ -53,7 +53,7 @@ interface TecnicoOption extends OptionType {
 
 // Defining our option type for this component
 interface ContatoOption {
-  value: number; 
+  value: number;
   label: string;
   contato: ClienteContato;
 }
@@ -860,7 +860,7 @@ const NovaOrdemServico = () => {
           />
         )}
 
-        {/* Segunda linha: Máquina e Técnico */}
+        {/* Segunda linha: Forma de Abertura, Motivo de Pendência e Data Agendada */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -870,7 +870,69 @@ const NovaOrdemServico = () => {
             type: "spring",
             stiffness: 100,
           }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          {/* Forma de Abertura */}
+          <motion.div>
+            <CustomSelect
+              id="forma_abertura"
+              label="Forma de Abertura"
+              required
+              placeholder="Selecione a forma de abertura"
+              options={formaAberturaOptions}
+              value={formaAbertura}
+              onChange={(option) => {
+                setFormaAbertura(option as FormaAberturaOption);
+                setErrors((prev) => ({ ...prev, formaAbertura: false }));
+              }}
+              inputValue=""
+              onInputChange={() => {}}
+              isLoading={false}
+              error={
+                errors.formaAbertura ? "Forma de abertura é obrigatória" : ""
+              }
+              noOptionsMessageFn={() => "Nenhuma forma encontrada"}
+            />
+          </motion.div>
+
+          {/* Motivo de Pendência */}
+          <motion.div>
+            <CustomSelect
+              id="motivo-pendencia"
+              label="Motivo de Pendência"
+              placeholder="Caso a OS deva ficar pendente, informe o motivo"
+              options={motivosPendenciaOptions}
+              value={selectedMotivoPendencia}
+              onChange={handleMotivoPendenciaSelectChange}
+              inputValue=""
+              onInputChange={() => {}}
+              isLoading={false}
+              noOptionsMessageFn={() => "Nenhum motivo de pendência cadastrado"}
+            />
+          </motion.div>
+
+          {/* Data Agendada */}
+          <motion.div>
+            <DateTimeField
+              id="data-agendada"
+              label="Data Agendada (opcional)"
+              value={dataAgendada}
+              onChange={(e) => setDataAgendada(e.target.value)}
+            />
+          </motion.div>
+        </motion.div>
+
+        {/* Terceira linha: Máquina, Motivo de Atendimento e Técnico Designado */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.3,
+            delay: 0.1,
+            type: "spring",
+            stiffness: 100,
+          }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
         >
           {/* Máquina */}
           <motion.div>
@@ -931,25 +993,12 @@ const NovaOrdemServico = () => {
               }
             />
           </motion.div>
-        </motion.div>
 
-        {/* Terceira linha: Motivo de Pendência, Forma de Abertura e Data Agendada */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: 0.3,
-            delay: 0.1,
-            type: "spring",
-            stiffness: 100,
-          }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-6"
-        >
-          {/* Técnico */}
+          {/* Técnico Designado */}
           <motion.div>
             <CustomSelect
               id="tecnico"
-              label="Técnico"
+              label="Técnico Designado"
               placeholder="Selecione o técnico"
               options={tecnicosOptions}
               value={selectedTecnico}
@@ -958,55 +1007,6 @@ const NovaOrdemServico = () => {
               onInputChange={() => {}}
               isLoading={loadingTecnicos}
               noOptionsMessageFn={() => "Nenhum técnico encontrado"}
-            />
-          </motion.div>
-
-          {/* Motivo de Pendência */}
-          <motion.div>
-            <CustomSelect
-              id="motivo-pendencia"
-              label="Motivo de Pendência"
-              placeholder="Selecione o motivo de pendência"
-              options={motivosPendenciaOptions}
-              value={selectedMotivoPendencia}
-              onChange={handleMotivoPendenciaSelectChange}
-              inputValue=""
-              onInputChange={() => {}}
-              isLoading={false}
-              noOptionsMessageFn={() => "Nenhum motivo de pendência cadastrado"}
-            />
-          </motion.div>
-
-          {/* Forma de Abertura */}
-          <motion.div>
-            <CustomSelect
-              id="forma_abertura"
-              label="Forma de Abertura"
-              required
-              placeholder="Selecione a forma de abertura"
-              options={formaAberturaOptions}
-              value={formaAbertura}
-              onChange={(option) => {
-                setFormaAbertura(option as FormaAberturaOption);
-                setErrors((prev) => ({ ...prev, formaAbertura: false }));
-              }}
-              inputValue=""
-              onInputChange={() => {}}
-              isLoading={false}
-              error={
-                errors.formaAbertura ? "Forma de abertura é obrigatória" : ""
-              }
-              noOptionsMessageFn={() => "Nenhuma forma encontrada"}
-            />
-          </motion.div>
-
-          {/* Data Agendada */}
-          <motion.div>
-            <DateTimeField
-              id="data-agendada"
-              label="Data Agendada (opcional)"
-              value={dataAgendada}
-              onChange={(e) => setDataAgendada(e.target.value)}
             />
           </motion.div>
         </motion.div>
