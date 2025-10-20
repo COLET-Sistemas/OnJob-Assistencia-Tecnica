@@ -27,6 +27,7 @@ export interface Cliente {
   complemento?: string;
   cidade: string;
   uf: string;
+  id_regiao?: number;
   latitude?: number;
   longitude?: number;
   situacao: string;
@@ -49,6 +50,7 @@ export interface FormData {
   cep: string;
   cidade: string;
   uf: string;
+  id_regiao?: number;
   latitude?: number;
   longitude?: number;
   situacao: string;

@@ -9,6 +9,31 @@ import api from "../api";
 class ClientesService {
   private baseUrl = "/clientes";
 
+  private buildPayload(
+    data: Partial<ClienteFormData>
+  ): Record<string, unknown> {
+    const payload: Record<string, unknown> = { ...data };
+
+    if (payload["id_regiao"] === undefined && data.regiao) {
+      const regiao = data.regiao as {
+        id?: number;
+        id_regiao?: number;
+      };
+      const regiaoId = regiao?.id ?? regiao?.id_regiao;
+      if (regiaoId !== undefined) {
+        payload["id_regiao"] = regiaoId;
+      }
+    }
+
+    delete payload["regiao"];
+
+    if (payload["id_regiao"] === undefined) {
+      delete payload["id_regiao"];
+    }
+
+    return payload;
+  }
+
   async getAll(params?: Record<string, string | number | boolean>): Promise<{
     total_registros: number;
     total_paginas: number;
@@ -44,14 +69,16 @@ class ClientesService {
   }
 
   async create(data: ClienteFormData): Promise<Cliente> {
-    return await api.post<Cliente>(this.baseUrl, data);
+    const payload = this.buildPayload(data);
+    return await api.post<Cliente>(this.baseUrl, payload);
   }
 
   async update(
     id: number | string,
     data: Partial<ClienteFormData>
   ): Promise<Cliente> {
-    return await api.put<Cliente>(`${this.baseUrl}?id=${id}`, data);
+    const payload = this.buildPayload(data);
+    return await api.put<Cliente>(`${this.baseUrl}?id=${id}`, payload);
   }
 
   async delete(id: number | string): Promise<void> {
@@ -102,7 +129,7 @@ class ClientesService {
         // Resposta de sucesso alternativa (incluindo o caso de apenas ter mensagem)
         // Criamos um objeto contato com os dados disponíveis
         const createdContact: ClienteContato = {
-          id: response.id || Date.now(), // Usamos timestamp como fallback para ID temporário
+          id: response.id || Date.now(), // fallback temporario para ID
           telefone: data.telefone || "",
           email: data.email || "",
           situacao: data.situacao || "A",

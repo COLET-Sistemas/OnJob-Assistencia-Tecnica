@@ -76,7 +76,9 @@ const useFormValidation = () => {
     if (!formData.uf) errors.uf = MESSAGES.required;
 
     // Validação para região
-    if (!formData.regiao || !formData.regiao.id) {
+    const selectedRegionId =
+      formData.id_regiao ?? formData.regiao?.id ?? undefined;
+    if (!selectedRegionId) {
       errors.id_regiao = MESSAGES.invalidRegion;
     }
 
@@ -123,6 +125,7 @@ const EditarCliente: React.FC = () => {
     latitude: undefined,
     longitude: undefined,
     situacao: "A",
+    id_regiao: undefined,
     regiao: undefined,
   });
 
@@ -187,16 +190,17 @@ const EditarCliente: React.FC = () => {
             endereco: cliente.endereco || "",
             numero: cliente.numero || "",
             complemento: cliente.complemento || "",
-            bairro: cliente.bairro || "",
-            cep: cliente.cep || "",
-            cidade: cliente.cidade || "",
-            uf: cliente.uf || "RS",
-            latitude: cliente.latitude,
-            longitude: cliente.longitude,
-            situacao: cliente.situacao || "A",
-            regiao: regiaoFormatada,
-            contatos: cliente.contatos,
-          });
+          bairro: cliente.bairro || "",
+          cep: cliente.cep || "",
+          cidade: cliente.cidade || "",
+          uf: cliente.uf || "RS",
+          latitude: cliente.latitude,
+          longitude: cliente.longitude,
+          situacao: cliente.situacao || "A",
+          id_regiao: cliente.id_regiao ?? regiaoFormatada?.id,
+          regiao: regiaoFormatada,
+          contatos: cliente.contatos,
+        });
 
           // Se tiver coordenadas, mostrar o mapa
           if (cliente.latitude && cliente.longitude) {
@@ -433,11 +437,19 @@ const EditarCliente: React.FC = () => {
       } else if (name === "id_regiao") {
         // Atualiza o campo regiao com o objeto Regiao correspondente
         if (value === "" || value === "0") {
-          setFormData((prev) => ({ ...prev, regiao: undefined }));
+          setFormData((prev) => ({
+            ...prev,
+            id_regiao: undefined,
+            regiao: undefined,
+          }));
         } else {
           const regiaoId = parseInt(value, 10);
           const regiaoSelecionada = regioes.find((r) => r.id === regiaoId);
-          setFormData((prev) => ({ ...prev, regiao: regiaoSelecionada }));
+          setFormData((prev) => ({
+            ...prev,
+            id_regiao: regiaoId,
+            regiao: regiaoSelecionada,
+          }));
         }
       } else if (name === "numero") {
         setFormData((prev) => ({ ...prev, [name]: value }));
@@ -490,7 +502,7 @@ const EditarCliente: React.FC = () => {
           cep: formData.cep,
           cidade: formData.cidade,
           uf: formData.uf,
-          id_regiao: formData.regiao?.id,
+          id_regiao: formData.id_regiao ?? formData.regiao?.id,
           latitude:
             typeof formData.latitude === "string"
               ? parseFloat(formData.latitude)
@@ -642,7 +654,7 @@ const EditarCliente: React.FC = () => {
                 <SelectField
                   label="Região"
                   name="id_regiao"
-                  value={formData.regiao?.id || ""}
+                  value={formData.id_regiao ?? ""}
                   error={formErrors.id_regiao}
                   required
                   onChange={handleInputChange}

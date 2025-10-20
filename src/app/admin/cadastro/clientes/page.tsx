@@ -378,16 +378,23 @@ const CadastroClientes = () => {
         return (
           <div>
             {hasValidCoordinates ? (
-              <a
-                href={`https://www.google.com/maps/place/${cliente.latitude},${cliente.longitude}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-[var(--primary)] flex items-center gap-1.5 hover:underline"
-              >
-                <MapPin size={16} className="text-[var(--primary)]" />
-                {cliente.endereco}, {cliente.numero}
-                {cliente.complemento && ` - ${cliente.complemento}`}
-              </a>
+              <div className="text-sm text-[var(--primary)] flex items-center gap-1.5">
+                <a
+                  href={`https://www.google.com/maps/place/${cliente.latitude},${cliente.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Ver no Google Maps"
+                >
+                  <MapPin
+                    size={16}
+                    className="text-[var(--primary)] hover:opacity-80"
+                  />
+                </a>
+                <span>
+                  {cliente.endereco}, {cliente.numero}
+                  {cliente.complemento && ` - ${cliente.complemento}`}
+                </span>
+              </div>
             ) : (
               <div className="text-sm text-[var(--neutral-graphite)] flex items-center gap-1.5">
                 <MapPin size={16} className="text-gray-400" />

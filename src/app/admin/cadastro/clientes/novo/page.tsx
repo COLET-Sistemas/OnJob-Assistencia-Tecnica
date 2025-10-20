@@ -72,7 +72,9 @@ const useFormValidation = () => {
       if (!formData.uf) errors.uf = MESSAGES.required;
 
       // Validação para região
-      if (!formData.regiao || !formData.regiao.id) {
+      const selectedRegionId =
+        formData.id_regiao ?? formData.regiao?.id ?? undefined;
+      if (!selectedRegionId) {
         errors.id_regiao = MESSAGES.invalidRegion;
       }
 
@@ -121,6 +123,7 @@ const CadastrarCliente: React.FC = () => {
     latitude: undefined,
     longitude: undefined,
     situacao: "A",
+    id_regiao: undefined,
     regiao: undefined,
   });
 
@@ -318,11 +321,19 @@ const CadastrarCliente: React.FC = () => {
       } else if (name === "id_regiao") {
         // Atualiza o campo regiao com o objeto Regiao correspondente
         if (value === "" || value === "0") {
-          setFormData((prev) => ({ ...prev, regiao: undefined }));
+          setFormData((prev) => ({
+            ...prev,
+            id_regiao: undefined,
+            regiao: undefined,
+          }));
         } else {
           const regiaoId = parseInt(value, 10);
           const regiaoSelecionada = regioes.find((r) => r.id === regiaoId);
-          setFormData((prev) => ({ ...prev, regiao: regiaoSelecionada }));
+          setFormData((prev) => ({
+            ...prev,
+            id_regiao: regiaoId,
+            regiao: regiaoSelecionada,
+          }));
         }
       } else if (name === "numero") {
         setFormData((prev) => ({ ...prev, [name]: value }));
@@ -376,7 +387,7 @@ const CadastrarCliente: React.FC = () => {
           cep: formData.cep,
           cidade: formData.cidade,
           uf: formData.uf,
-          regiao: formData.regiao,
+          id_regiao: formData.id_regiao ?? formData.regiao?.id,
           latitude:
             typeof formData.latitude === "string"
               ? parseFloat(formData.latitude)
@@ -519,7 +530,7 @@ const CadastrarCliente: React.FC = () => {
                 <SelectField
                   label="Região"
                   name="id_regiao"
-                  value={formData.regiao?.id || ""}
+                  value={formData.id_regiao ?? ""}
                   error={formErrors.id_regiao}
                   required
                   onChange={handleInputChange}
