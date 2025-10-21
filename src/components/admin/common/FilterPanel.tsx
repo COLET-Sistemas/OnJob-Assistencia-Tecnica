@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { CheckCircle, Filter, Search, X } from "lucide-react";
 import React, { KeyboardEvent, useEffect, useState, useCallback } from "react";
@@ -42,14 +42,14 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     (value) => value !== ""
   );
 
-  // Controla a animação de entrada
+  // Controla a animaÃ§Ã£o de entrada
   useEffect(() => {
     if (isOpen) {
       setIsVisible(true);
     }
   }, [isOpen]);
 
-  // Função para fechar com animação
+  // FunÃ§Ã£o para fechar com animaÃ§Ã£o
   const handleClose = useCallback(() => {
     setIsClosing(true);
     setTimeout(() => {
@@ -59,7 +59,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     }, 300);
   }, [onClose]);
 
-  // Função para aplicar filtros com animação de fechamento
+  // FunÃ§Ã£o para aplicar filtros com animaÃ§Ã£o de fechamento
   const handleApplyFilters = useCallback(() => {
     if (onApplyFilters) {
       onApplyFilters();
@@ -67,7 +67,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     handleClose();
   }, [onApplyFilters, handleClose]);
 
-  // Função para limpar filtros com animação de fechamento
+  // FunÃ§Ã£o para limpar filtros com animaÃ§Ã£o de fechamento
   const handleClearFilters = useCallback(() => {
     onClearFilters();
     handleClose();
@@ -109,7 +109,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
   return (
     <>
-      {/* Overlay de fundo escuro com animação */}
+      {/* Overlay de fundo escuro com animaÃ§Ã£o */}
       <div
         className={`fixed inset-0 bg-black/10 backdrop-blur-[1px] z-40 transition-all duration-300 ${
           isClosing ? "opacity-0" : "opacity-100"
@@ -118,7 +118,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         aria-hidden="true"
       />
 
-      {/* Painel de filtros com animação aprimorada */}
+      {/* Painel de filtros com animaÃ§Ã£o aprimorada */}
       <div
         className={`fixed inset-y-0 right-0 z-50 w-80 lg:w-96 bg-white shadow-2xl h-screen overflow-hidden border-l border-gray-200/80 transition-all duration-300 ease-out ${
           isClosing
@@ -129,7 +129,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           animation: isClosing ? undefined : "slideInRight 0.3s ease-out",
         }}
       >
-        {/* Header com animação sutil */}
+        {/* Header com animaÃ§Ã£o sutil */}
         <div
           className={`bg-gradient-to-r from-[var(--primary)]/5 to-[var(--secondary-green)]/5 px-6 py-4 border-b border-gray-100 sticky top-0 z-10 transition-all duration-300 ${
             isClosing
@@ -147,7 +147,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                   {pageName ? `${pageName} - ${title}` : title}
                 </h3>
                 <p className="text-xs text-gray-500">
-                  Refine sua busca pelos critérios abaixo
+                  Refine sua busca pelos critÃ©rios abaixo
                 </p>
               </div>
             </div>
@@ -219,9 +219,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                           onKeyDown={handleKeyDown}
                           placeholder={
                             option.placeholder ||
-                            "Digite o nome ou razão social"
+                            "Digite o nome ou razÃ£o social"
                           }
-                          className={`w-full px-4 py-3 pl-11 bg-white border-2 ${
+                          className={`w-full px-4 pr-10 py-3 pl-11 bg-white border-2 ${
                             filterValues[option.id] &&
                             filterValues[option.id].length > 0 &&
                             filterValues[option.id].length < 3
@@ -240,6 +240,16 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                           size={16}
                           className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 transition-all duration-200 group-focus-within:text-[var(--primary)] group-focus-within:scale-110"
                         />
+                        {filterValues[option.id] && (
+                          <button
+                            type="button"
+                            onClick={() => onFilterChange(option.id, "")}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:text-[var(--primary)] transition-colors duration-150 focus:outline-none"
+                            aria-label={`Limpar ${option.label}`}
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
                       </div>
                       {filterValues[option.id] &&
                         filterValues[option.id].length > 0 &&
@@ -258,7 +268,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                           onFilterChange(option.id, e.target.value)
                         }
                         onKeyDown={handleKeyDown}
-                        className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-800 appearance-none cursor-pointer transition-all duration-200 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/10 focus:outline-none group-hover:border-gray-300 focus:scale-[1.01]"
+                        className="w-full px-4 pr-16 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm text-gray-800 appearance-none cursor-pointer transition-all duration-200 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/10 focus:outline-none group-hover:border-gray-300 focus:scale-[1.01]"
                       >
                         {option.options?.map((opt) => (
                           <option
@@ -274,7 +284,17 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                           </option>
                         ))}
                       </select>
-                      <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      {filterValues[option.id] && (
+                        <button
+                          type="button"
+                          onClick={() => onFilterChange(option.id, "")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:text-[var(--primary)] transition-colors duration-150 focus:outline-none"
+                          aria-label={`Limpar ${option.label}`}
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                      <div className="absolute right-9 top-1/2 transform -translate-y-1/2 pointer-events-none">
                         <svg
                           className="w-4 h-4 text-gray-400 transition-all duration-200 group-focus-within:text-[var(--primary)] group-focus-within:rotate-180"
                           fill="none"
@@ -357,11 +377,11 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             ))}
           </form>
 
-          {/* Espaçador para separar o conteúdo dos botões de ação */}
+          {/* EspaÃ§ador para separar o conteÃºdo dos botÃµes de aÃ§Ã£o */}
           <div className="mt-6"></div>
         </div>
 
-        {/* Seção de Ações - Fixa na parte inferior com animação */}
+        {/* SeÃ§Ã£o de AÃ§Ãµes - Fixa na parte inferior com animaÃ§Ã£o */}
         <div
           className={`border-t border-gray-200 bg-gray-50/80 p-4 sticky bottom-0 w-full flex flex-col gap-3 transition-all duration-300 ${
             isClosing
@@ -422,7 +442,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         </div>
       </div>
 
-      {/* Estilos CSS personalizados para animações */}
+      {/* Estilos CSS personalizados para animaÃ§Ãµes */}
       <style jsx>{`
         @keyframes slideInRight {
           from {
@@ -481,3 +501,4 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 };
 
 export default FilterPanel;
+
