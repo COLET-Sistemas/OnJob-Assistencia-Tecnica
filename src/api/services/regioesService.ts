@@ -23,8 +23,6 @@ class RegioesService implements BaseService<Regiao> {
     try {
       // Use the standard API module for consistency
       const result = await api.get<Regiao[]>(this.baseUrl, { params });
-      console.log("Direct fetch succeeded with API module");
-      // API module already handles proper response parsing
       return result;
     } catch (error) {
       console.error("Error in getAllWithDirectFetch:", error);
@@ -49,11 +47,11 @@ class RegioesService implements BaseService<Regiao> {
   }
 
   async update(id: number | string, data: Partial<Regiao>): Promise<Regiao> {
-    return await api.put<Regiao>(`${this.baseUrl}/${id}`, data);
+    return await api.put<Regiao>(`${this.baseUrl}?id=${id}`, data);
   }
 
   async delete(id: number | string): Promise<void> {
-    await api.delete<void>(`${this.baseUrl}/${id}`);
+    await api.delete<void>(`${this.baseUrl}?id=${id}`);
   }
 }
 

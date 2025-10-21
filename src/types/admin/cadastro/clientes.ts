@@ -13,6 +13,18 @@ export type ClienteContato = {
   recebe_aviso_os?: boolean;
 };
 
+export interface ClienteMaquina {
+  id?: number;
+  id_maquina?: number;
+  numero_serie: string;
+  descricao: string;
+  modelo: string;
+  data_1a_venda?: string;
+  nota_fiscal_venda?: string;
+  data_final_garantia?: string;
+  situacao?: string;
+}
+
 export interface Cliente {
   id?: number;
   id_cliente?: number;
@@ -34,6 +46,8 @@ export interface Cliente {
   regiao?: Regiao;
   qtd_contatos?: number;
   contatos?: ClienteContato[];
+  qtd_maquinas?: number;
+  maquinas?: ClienteMaquina[];
 }
 
 export interface FormData {
@@ -57,6 +71,8 @@ export interface FormData {
   regiao?: Regiao;
   qtd_contatos?: number;
   contatos?: ClienteContato[];
+  qtd_maquinas?: number;
+  maquinas?: ClienteMaquina[];
 }
 export interface ClienteApiResponse {
   total_registros: number;

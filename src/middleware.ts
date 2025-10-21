@@ -88,6 +88,10 @@ const adminRoutePermissions: AdminRoutePermission[] = [
     allowedRoles: ["administrador"],
   },
   {
+    pattern: /^\/admin\/administracao\/empresa(?:\/|$)/,
+    allowedRoles: ["administrador"],
+  },
+  {
     pattern: /^\/admin\/administracao\/usuarios\/novo(?:\/|$)/,
     allowedRoles: ["administrador"],
   },
