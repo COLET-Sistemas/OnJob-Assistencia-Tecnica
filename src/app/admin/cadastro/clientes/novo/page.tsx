@@ -551,7 +551,7 @@ const CadastrarCliente: React.FC = () => {
                 Endereço
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <InputField
                   label="CEP"
                   name="cep"
@@ -573,6 +573,16 @@ const CadastrarCliente: React.FC = () => {
                     onChange={handleInputChange}
                   />
                 </div>
+
+                <InputField
+                  label="Número"
+                  name="numero"
+                  value={formData.numero}
+                  error={formErrors.numero}
+                  placeholder="Nº"
+                  required
+                  onChange={handleInputChange}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
@@ -613,26 +623,14 @@ const CadastrarCliente: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 <InputField
-                  label="Número"
-                  name="numero"
-                  value={formData.numero}
-                  error={formErrors.numero}
-                  placeholder="Nº"
-                  required
+                  label="Complemento"
+                  name="complemento"
+                  value={formData.complemento || ""}
+                  placeholder="Apto, Bloco, Sala, etc."
                   onChange={handleInputChange}
                 />
-
-                <div className="md:col-span-3">
-                  <InputField
-                    label="Complemento"
-                    name="complemento"
-                    value={formData.complemento || ""}
-                    placeholder="Apto, Bloco, Sala, etc."
-                    onChange={handleInputChange}
-                  />
-                </div>
               </div>
             </section>
 

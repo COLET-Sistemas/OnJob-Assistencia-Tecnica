@@ -88,7 +88,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
 
   const handleNovaOS = () => {
     setMenuOpen(false);
-    // router.push("/tecnico/dashboard");
+    router.push("/tecnico/os/novo");
   };
 
   const handleSobre = () => {

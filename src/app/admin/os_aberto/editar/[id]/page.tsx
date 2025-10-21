@@ -1536,7 +1536,7 @@ const EditarOrdemServico = () => {
               <CustomSelect
                 id="motivoPendencia"
                 label="Motivo de Pendência (opcional)"
-                placeholder="Selecione um motivo de pendência..."
+                placeholder="Caso a OS deva ficar pendente, informe o motivo"
                 value={selectedMotivoPendencia}
                 onChange={handleMotivoPendenciaSelectChange}
                 options={motivosPendenciaOptions}

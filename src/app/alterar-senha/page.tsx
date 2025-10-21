@@ -52,12 +52,12 @@ export default function AlterarSenhaPage() {
       };
     }
 
-    const specialChars = /[@#$%?!*&-_]/;
+    const specialChars = /[@#$%?!*&]/;
     if (!specialChars.test(password)) {
       return {
         valid: false,
         message:
-          "A senha deve conter pelo menos um caractere especial: @, #, $, %, ?, !, *, _, &, -",
+          "A senha deve conter pelo menos um caractere especial: @, #, $, %, ?, !, *, _, &",
       };
     }
 
@@ -247,7 +247,7 @@ export default function AlterarSenhaPage() {
             </div>
             <p className="text-xs text-gray-600 mt-2">
               A senha deve conter pelo menos 8 caracteres e incluir pelo menos
-              um caractere especial: @, #, $, %, ?, !, *, &, -
+              um caractere especial: @, #, $, %, ?, !, *, &
             </p>
           </div>
 
