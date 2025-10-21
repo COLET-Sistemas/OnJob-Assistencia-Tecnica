@@ -288,13 +288,13 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                         <button
                           type="button"
                           onClick={() => onFilterChange(option.id, "")}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:text-[var(--primary)] transition-colors duration-150 focus:outline-none"
+                          className="absolute right-9 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:text-[var(--primary)] transition-colors duration-150 focus:outline-none"
                           aria-label={`Limpar ${option.label}`}
                         >
                           <X size={14} />
                         </button>
                       )}
-                      <div className="absolute right-9 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                         <svg
                           className="w-4 h-4 text-gray-400 transition-all duration-200 group-focus-within:text-[var(--primary)] group-focus-within:rotate-180"
                           fill="none"

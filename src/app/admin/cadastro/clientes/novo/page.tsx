@@ -61,6 +61,7 @@ const useFormValidation = () => {
         errors.nome_fantasia = MESSAGES.required;
       if (!formData.razao_social.trim())
         errors.razao_social = MESSAGES.required;
+      if (!formData.codigo_erp?.trim()) errors.codigo_erp = MESSAGES.required;
       if (!formData.cnpj || !validarDocumento(formData.cnpj))
         errors.cnpj = MESSAGES.invalidCNPJ;
       if (!formData.endereco.trim()) errors.endereco = MESSAGES.required;
@@ -523,7 +524,9 @@ const CadastrarCliente: React.FC = () => {
                   label="Código no ERP"
                   name="codigo_erp"
                   value={formData.codigo_erp || ""}
+                  error={formErrors.codigo_erp}
                   placeholder="Código interno do sistema ERP"
+                  required
                   onChange={handleInputChange}
                 />
 

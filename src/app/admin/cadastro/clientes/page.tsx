@@ -19,7 +19,7 @@ import { useToast } from "@/components/admin/ui/ToastContainer";
 import { useDataFetch } from "@/hooks";
 import type { Cliente, ClienteMaquina } from "@/types/admin/cadastro/clientes";
 import type { Regiao } from "@/types/admin/cadastro/regioes";
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import Pagination from "@/components/admin/ui/Pagination";
@@ -31,14 +31,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "@/components/admin/ui/ConfirmModal";
 
-const { clientesService, maquinasService, regioesService } = services;
+const { clientesService, maquinasService } = services;
 
 // Interface dos filtros especÃ­ficos para clientes
 interface ClientesFilters {
   nome: string;
   uf: string;
   incluir_inativos: string;
-   id_regiao: string;
+  id_regiao: string;
   [key: string]: string;
 }
 
@@ -77,12 +77,12 @@ const CadastroClientes = () => {
   });
   const expandedClienteId = expandedState.id;
   const expandedSection = expandedState.section;
-  // Estados para o modal de localizaÃ§Ã£o
+  // Estados para o modal de localização
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [regioes, setRegioes] = useState<Regiao[]>([]);
 
-  // Estados para o modal de confirmaÃ§Ã£o de inativaÃ§Ã£o de contato
+  // Estados para o modal de confirmação de inativação de contato
   const [showInactivateModal, setShowInactivateModal] = useState(false);
   const [selectedContactId, setSelectedContactId] = useState<number | null>(
     null
@@ -128,12 +128,12 @@ const CadastroClientes = () => {
   useEffect(() => {
     setTitle("Clientes");
 
-    // Verificar se hÃ¡ um cliente para verificar automaticamente
+    // Verificar se há um cliente para verificar automaticamente
     if (typeof window !== "undefined") {
       try {
         const clienteIdToExpand = sessionStorage.getItem("expandClienteId");
         if (clienteIdToExpand) {
-          // Remover o item da sessionStorage para nÃ£o expandir novamente em futuras visitas
+          // Remover o item da sessionStorage para não expandir novamente em futuras visitas
           sessionStorage.removeItem("expandClienteId");
           // Armazenar o ID para uso posterior quando os clientes forem carregados
           clienteIdToExpandRef.current = Number(clienteIdToExpand);
@@ -147,19 +147,19 @@ const CadastroClientes = () => {
   useEffect(() => {
     const carregarRegioes = async () => {
       try {
-        const listaRegioes = await regioesService.getAll();
+        const listaRegioes = await services.regioesService.getAll();
         setRegioes(listaRegioes);
       } catch (error) {
         console.error("Erro ao carregar regiÃµes:", error);
         showError(
           "Erro ao carregar regiÃµes",
-          "NÃ£o foi possÃ­vel carregar a lista de regiÃµes para o filtro."
+          "Não foi possÃ­vel carregar a lista de regiÃµes para o filtro."
         );
       }
     };
 
     carregarRegioes();
-  }, [showError, regioesService]);
+  }, [showError]);
 
   const {
     filtrosPainel,
@@ -254,7 +254,7 @@ const CadastroClientes = () => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [filtrosAplicados]);
 
-  // Effect para garantir que o menu permaneÃ§a fechado durante o recarregamento
+  // Effect para garantir que o menu permaneça fechado durante o recarregamento
   useEffect(() => {
     if (isReloadingRef.current) {
       setLocalShowFilters(false);
@@ -316,7 +316,7 @@ const CadastroClientes = () => {
         return;
       }
 
-      // Verifica se o cliente jÃ¡ tem contatos carregados
+      // Verifica se o cliente já tem contatos carregados
       const clienteAtual = clientes.find((c) => getClienteId(c) === clientId);
       if (clienteAtual?.contatos?.length) {
         return;
@@ -338,7 +338,7 @@ const CadastroClientes = () => {
             return c;
           });
 
-          // Usando a funÃ§Ã£o updateData em vez de refetch
+          // Usando a função updateData em vez de refetch
           if (updateData) {
             updateData(updatedClientes);
           }
@@ -361,7 +361,7 @@ const CadastroClientes = () => {
         console.error("Erro ao carregar contatos:", error);
         showError(
           "Erro ao carregar contatos",
-          "NÃ£o foi possÃ­vel carregar os contatos deste cliente."
+          "Não foi possÃ­vel carregar os contatos deste cliente."
         );
       }
     };
@@ -434,10 +434,10 @@ const CadastroClientes = () => {
           }, 300);
         }
       } catch (error) {
-        console.error("Erro ao carregar mÃ¡quinas:", error);
+        console.error("Erro ao carregar máquinas:", error);
         showError(
-          "Erro ao carregar mÃ¡quinas",
-          "NÃ£o foi possÃ­vel carregar as mÃ¡quinas deste cliente."
+          "Erro ao carregar máquinas",
+          "Não foi possÃ­vel carregar as máquinas deste cliente."
         );
       }
     };
@@ -474,11 +474,11 @@ const CadastroClientes = () => {
 
         setShowLocationModal(false);
         await refetch();
-        showSuccess("Sucesso", "LocalizaÃ§Ã£o atualizada com sucesso");
+        showSuccess("Sucesso", "Localização atualizada com sucesso");
       } catch (error) {
         console.error("Error updating location:", error);
         showError(
-          "Erro ao atualizar localizaÃ§Ã£o",
+          "Erro ao atualizar localização",
           error as Record<string, unknown>
         );
       }
@@ -486,7 +486,7 @@ const CadastroClientes = () => {
     [selectedCliente, refetch, showSuccess, showError, getClienteId]
   );
 
-  // Recupera o endereÃ§o da empresa do localStorage
+  // Recupera o endereço da empresa do localStorage
   const getEnderecoEmpresa = () => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("endereco_empresa") || "";
@@ -521,7 +521,7 @@ const CadastroClientes = () => {
       ),
     },
     {
-      header: "EndereÃ§o",
+      header: "Endereço",
       accessor: "cidade" as keyof Cliente,
       render: (cliente: Cliente) => {
         const hasValidCoordinates =
@@ -647,7 +647,7 @@ const CadastroClientes = () => {
                   isExpanded ? "text-[var(--primary)]" : "text-gray-500"
                 }
               >
-                {isExpanded ? "â–²" : "â–¼"}
+                {isExpanded ? "▲" : "▼"}
               </span>
             )}
           </button>
@@ -655,7 +655,7 @@ const CadastroClientes = () => {
       },
     },
     {
-      header: "MÃ¡quinas",
+      header: "Máquinas",
       accessor: "qtd_maquinas" as keyof Cliente,
       render: (cliente: Cliente) => {
         const maquinasCount =
@@ -685,7 +685,7 @@ const CadastroClientes = () => {
             disabled={!hasMaquinas}
             aria-expanded={isExpanded}
             aria-controls={getSectionDomId(clientId, "maquinas")}
-            title={hasMaquinas ? "Clique para ver as mÃ¡quinas" : "Sem mÃ¡quinas"}
+            title={hasMaquinas ? "Clique para ver as máquinas" : "Sem máquinas"}
           >
             <Settings
               size={16}
@@ -714,14 +714,14 @@ const CadastroClientes = () => {
                   isExpanded ? "text-[var(--primary)]" : "text-gray-500"
                 }
               >
-                {isExpanded ? "â–²" : "â–¼"}
+                {isExpanded ? "▲" : "▼"}
               </span>
             )}
           </button>
         );
       },
     },
-  ], []);
+  ];
 
   const handleDelete = async (id: number) => {
     try {
@@ -741,12 +741,12 @@ const CadastroClientes = () => {
     }
   };
 
-  // FunÃ§Ã£o para mostrar o modal de confirmaÃ§Ã£o de inativaÃ§Ã£o
+  // Função para mostrar o modal de confirmação de inativação
   const openInactivateModal = (id: number, name: string) => {
-    // Garantir que o ID seja um nÃºmero vÃ¡lido
+    // Garantir que o ID seja um número válido
     if (!id || isNaN(Number(id))) {
-      console.error("ID do contato invÃ¡lido:", id);
-      showError("Erro", "ID do contato invÃ¡lido ou nÃ£o encontrado.");
+      console.error("ID do contato inválido:", id);
+      showError("Erro", "ID do contato inválido ou não encontrado.");
       return;
     }
 
@@ -755,27 +755,27 @@ const CadastroClientes = () => {
     setShowInactivateModal(true);
   };
 
-  // FunÃ§Ã£o para inativar contato
+  // Função para inativar contato
   const handleInativarContato = async () => {
     if (!selectedContactId) {
-      console.error("ID do contato nÃ£o definido");
-      showError("Erro", "ID do contato nÃ£o definido ou invÃ¡lido.");
+      console.error("ID do contato não definido");
+      showError("Erro", "ID do contato não definido ou inválido.");
       return;
     }
 
     try {
       setIsInactivating(true);
 
-      // Garantir que o ID seja um nÃºmero vÃ¡lido
+      // Garantir que o ID seja um número válido
       const contactId = Number(selectedContactId);
       if (isNaN(contactId)) {
-        throw new Error("ID do contato invÃ¡lido");
+        throw new Error("ID do contato inválido");
       }
 
       const resultado = await clientesService.deleteContact(contactId);
-      console.log("Resposta da API de inativaÃ§Ã£o:", resultado);
+      console.log("Resposta da API de inativação:", resultado);
 
-      showSuccess("Sucesso", "Contato excluÃ­do com sucesso.");
+      showSuccess("Sucesso", "Contato excluí­do com sucesso.");
 
       // Atualizar os dados localmente em vez de fazer refetch completo
       if (expandedClienteId && clientes) {
@@ -792,7 +792,7 @@ const CadastroClientes = () => {
           return cliente;
         });
 
-        // Atualizar os dados sem fazer nova requisiÃ§Ã£o
+        // Atualizar os dados sem fazer nova requisição
         updateData(updatedClientes);
       }
 
@@ -822,7 +822,7 @@ const CadastroClientes = () => {
           id={clientId}
           onDelete={handleDelete}
           confirmText="Deseja realmente inativar este cliente?"
-          confirmTitle="InativaÃ§Ã£o de Cliente"
+          confirmTitle="Inativação de Cliente"
           itemName={`${cliente.nome_fantasia || cliente.razao_social}`}
         />
       </div>
@@ -837,72 +837,53 @@ const CadastroClientes = () => {
     handleFiltroChange(campo, valor);
   };
 
-  const ufOptions = useMemo(
-    () => [
-      { value: "", label: "Todas" },
-      { value: "AC", label: "AC" },
-      { value: "AL", label: "AL" },
-      { value: "AP", label: "AP" },
-      { value: "AM", label: "AM" },
-      { value: "BA", label: "BA" },
-      { value: "CE", label: "CE" },
-      { value: "DF", label: "DF" },
-      { value: "ES", label: "ES" },
-      { value: "GO", label: "GO" },
-      { value: "MA", label: "MA" },
-      { value: "MT", label: "MT" },
-      { value: "MS", label: "MS" },
-      { value: "MG", label: "MG" },
-      { value: "PA", label: "PA" },
-      { value: "PB", label: "PB" },
-      { value: "PR", label: "PR" },
-      { value: "PE", label: "PE" },
-      { value: "PI", label: "PI" },
-      { value: "RJ", label: "RJ" },
-      { value: "RN", label: "RN" },
-      { value: "RS", label: "RS" },
-      { value: "RO", label: "RO" },
-      { value: "RR", label: "RR" },
-      { value: "SC", label: "SC" },
-      { value: "SP", label: "SP" },
-      { value: "SE", label: "SE" },
-      { value: "TO", label: "TO" },
-    ],
-    []
-  );
+  const ufOptions = [
+    { value: "", label: "Todas" },
+    { value: "AC", label: "AC" },
+    { value: "AL", label: "AL" },
+    { value: "AP", label: "AP" },
+    { value: "AM", label: "AM" },
+    { value: "BA", label: "BA" },
+    { value: "CE", label: "CE" },
+    { value: "DF", label: "DF" },
+    { value: "ES", label: "ES" },
+    { value: "GO", label: "GO" },
+    { value: "MA", label: "MA" },
+    { value: "MT", label: "MT" },
+    { value: "MS", label: "MS" },
+    { value: "MG", label: "MG" },
+    { value: "PA", label: "PA" },
+    { value: "PB", label: "PB" },
+    { value: "PR", label: "PR" },
+    { value: "PE", label: "PE" },
+    { value: "PI", label: "PI" },
+    { value: "RJ", label: "RJ" },
+    { value: "RN", label: "RN" },
+    { value: "RS", label: "RS" },
+    { value: "RO", label: "RO" },
+    { value: "RR", label: "RR" },
+    { value: "SC", label: "SC" },
+    { value: "SP", label: "SP" },
+    { value: "SE", label: "SE" },
+    { value: "TO", label: "TO" },
+  ];
 
-  const regiaoOptions = useMemo(() => {
-    const options =
-      regioes
-        ?.map((regiao) => {
-          const regiaoId = regiao.id ?? regiao.id_regiao;
-          if (!regiaoId) {
-            return null;
-          }
-
-          const label =
-            regiao.nome?.trim() ||
-            regiao.nome_regiao?.trim() ||
-            `Região ${regiaoId}`;
-
-          return {
-            value: String(regiaoId),
-            label,
-          };
-        })
-        .filter(
-          (
-            option
-          ): option is {
-            value: string;
-            label: string;
-          } => option !== null
-        ) ?? [];
-
+  const regiaoOptions = (() => {
     const uniqueOptions = new Map<string, string>();
-    options.forEach((option) => {
-      if (!uniqueOptions.has(option.value)) {
-        uniqueOptions.set(option.value, option.label);
+
+    (regioes || []).forEach((regiao) => {
+      const regiaoId = regiao.id ?? regiao.id_regiao;
+      if (!regiaoId) {
+        return;
+      }
+
+      const label =
+        regiao.nome?.trim() ||
+        regiao.nome_regiao?.trim() ||
+        `Região ${regiaoId}`;
+
+      if (!uniqueOptions.has(String(regiaoId))) {
+        uniqueOptions.set(String(regiaoId), label);
       }
     });
 
@@ -913,37 +894,34 @@ const CadastroClientes = () => {
         label,
       })),
     ];
-  }, [regioes]);
+  })();
 
-  const filterOptions = useMemo(
-    () => [
-      {
-        id: "nome",
-        label: "Nome/Razão Social",
-        type: "text" as const,
-        placeholder: "Digite o nome ou razão social...",
-      },
-      {
-        id: "uf",
-        label: "UF",
-        type: "select" as const,
-        options: ufOptions,
-      },
-      {
-        id: "id_regiao",
-        label: "Região",
-        type: "select" as const,
-        options: regiaoOptions,
-      },
-      {
-        id: "incluir_inativos",
-        label: "Exibir Inativos",
-        type: "checkbox" as const,
-        placeholder: "Exibir clientes inativos",
-      },
-    ],
-    [regiaoOptions, ufOptions]
-  );
+  const filterOptions = [
+    {
+      id: "nome",
+      label: "Nome/Razão Social",
+      type: "text" as const,
+      placeholder: "Digite o nome ou razão social...",
+    },
+    {
+      id: "uf",
+      label: "UF",
+      type: "select" as const,
+      options: ufOptions,
+    },
+    {
+      id: "id_regiao",
+      label: "Região",
+      type: "select" as const,
+      options: regiaoOptions,
+    },
+    {
+      id: "incluir_inativos",
+      label: "Exibir Inativos",
+      type: "checkbox" as const,
+      placeholder: "Exibir clientes inativos",
+    },
+  ];
 
   return (
     <>
@@ -959,7 +937,7 @@ const CadastroClientes = () => {
             </h2>
 
             <div className="flex items-center gap-3">
-              {/* BotÃ£o de filtro */}
+              {/* Botão de filtro */}
               <div className="relative">
                 <button
                   onClick={handleToggleFilters}
@@ -981,7 +959,7 @@ const CadastroClientes = () => {
                 </button>
               </div>
 
-              {/* BotÃ£o de novo contato */}
+              {/* Botão de novo contato */}
               <Link
                 href="/admin/cadastro/clientes/contato/novo"
                 className="bg-[var(--secondary-yellow)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--secondary-yellow)] hover:bg-[var(--secondary-yellow)]/90 hover:border-[var(--secondary-yellow)]/90"
@@ -990,7 +968,7 @@ const CadastroClientes = () => {
                 Novo Contato
               </Link>
 
-              {/* BotÃ£o de novo cliente */}
+              {/* Botão de novo cliente */}
               <Link
                 href="/admin/cadastro/clientes/novo"
                 className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
@@ -1042,10 +1020,10 @@ const CadastroClientes = () => {
               >
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm font-bold text-gray-700">
-                    MÃ¡quinas do Cliente
+                    Máquinas do Cliente
                   </h3>
                   <span className="text-xs text-gray-500">
-                    {maquinasCount} mÃ¡quina(s)
+                    {maquinasCount} máquina(s)
                   </span>
                 </div>
                 {!cliente.maquinas || cliente.maquinas.length === 0 ? (
@@ -1075,10 +1053,10 @@ const CadastroClientes = () => {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           ></path>
                         </svg>
-                        <p>Carregando mÃ¡quinas...</p>
+                        <p>Carregando máquinas...</p>
                       </div>
                     ) : (
-                      <p>Este cliente nÃ£o possui mÃ¡quinas registradas.</p>
+                      <p>Este cliente não possui máquinas registradas.</p>
                     )}
                   </div>
                 ) : (
@@ -1197,7 +1175,7 @@ const CadastroClientes = () => {
                       <p>Carregando contatos...</p>
                     </div>
                   ) : (
-                    <p>Este cliente nÃ£o possui contatos registrados.</p>
+                    <p>Este cliente não possui contatos registrados.</p>
                   )}
                 </div>
               ) : (
@@ -1382,7 +1360,7 @@ const CadastroClientes = () => {
         />
       )}
 
-      {/* Modal de LocalizaÃ§Ã£o */}
+      {/* Modal de Localização */}
       {selectedCliente && (
         <LocationPicker
           isOpen={showLocationModal}
@@ -1399,12 +1377,12 @@ const CadastroClientes = () => {
         />
       )}
 
-      {/* Modal de confirmaÃ§Ã£o de inativaÃ§Ã£o de contato */}
+      {/* Modal de confirmação de inativação de contato */}
       <ConfirmModal
         isOpen={showInactivateModal}
         onClose={() => setShowInactivateModal(false)}
         onConfirm={handleInativarContato}
-        title="ExclusÃ£o do Contato"
+        title="Exclusão do Contato"
         message="Tem certeza que deseja excluir este contato?"
         confirmLabel="Excluir Contato"
         isLoading={isInactivating}
@@ -1415,5 +1393,3 @@ const CadastroClientes = () => {
 };
 
 export default CadastroClientes;
-
-

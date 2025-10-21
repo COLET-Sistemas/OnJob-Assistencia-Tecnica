@@ -14,8 +14,6 @@ const ignoredRoutes = [
   "/api-proxy",
 ];
 
-// Comentamos esta linha para evitar o erro de lint, já que estamos usando uma verificação direta
-// const publicApiRoutes = ["/api/auth/login", "/login"];
 
 type AdminRoleKey = "administrador" | "gestor" | "interno";
 

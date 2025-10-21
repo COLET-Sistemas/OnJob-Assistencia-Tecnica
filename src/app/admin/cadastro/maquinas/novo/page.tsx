@@ -25,16 +25,42 @@ interface FormData {
   modelo: string;
   id_cliente_atual: number | null;
   situacao: string;
-  data_1a_venda: Date | null;
+  data_1a_venda: string | null;
   nota_fiscal_venda: string;
-  data_final_garantia: Date | null;
+  data_final_garantia: string | null;
 }
 
 // Define ClienteOption to ensure type compatibility with CustomSelect's OptionType
 interface ClienteOption extends Omit<OptionType, "value"> {
   value: number;
   razao_social?: string;
+  codigo_erp?: string;
 }
+
+const addDaysToDateString = (dateString: string, days: number) => {
+  const [year, month, day] = dateString.split("-").map(Number);
+
+  if (
+    Number.isNaN(year) ||
+    Number.isNaN(month) ||
+    Number.isNaN(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    return "";
+  }
+
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + days);
+
+  const newYear = date.getFullYear();
+  const newMonth = String(date.getMonth() + 1).padStart(2, "0");
+  const newDay = String(date.getDate()).padStart(2, "0");
+
+  return `${newYear}-${newMonth}-${newDay}`;
+};
 
 const CadastrarMaquina = () => {
   const router = useRouter();
@@ -75,15 +101,13 @@ const CadastrarMaquina = () => {
   ) => {
     const { name, value } = e.target;
 
-    // Tratar campos de data como Date
-    if (name === "data_1a_venda" || name === "data_final_garantia") {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value ? new Date(value) : null,
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        name === "data_1a_venda" || name === "data_final_garantia"
+          ? value || null
+          : value,
+    }));
 
     // Limpar erro do campo quando usuário digitar
     if (formErrors[name]) {
@@ -94,6 +118,56 @@ const CadastrarMaquina = () => {
       });
     }
   };
+
+  const handleDataPrimeiraVendaBlur = useCallback(
+    (event: React.FocusEvent<HTMLInputElement>) => {
+      const { value } = event.target;
+
+      if (!value) {
+        return;
+      }
+
+      let garantiaGerada = false;
+      const garantiaCalculada = addDaysToDateString(value, 365);
+
+      setFormData((prev) => {
+        if (prev.data_final_garantia) {
+          return {
+            ...prev,
+            data_1a_venda: value,
+          };
+        }
+
+        if (!garantiaCalculada) {
+          return {
+            ...prev,
+            data_1a_venda: value,
+          };
+        }
+
+        garantiaGerada = true;
+
+        return {
+          ...prev,
+          data_1a_venda: value,
+          data_final_garantia: garantiaCalculada,
+        };
+      });
+
+      if (garantiaGerada) {
+        setFormErrors((prev) => {
+          if (!prev.data_final_garantia) {
+            return prev;
+          }
+
+          const updated = { ...prev };
+          delete updated.data_final_garantia;
+          return updated;
+        });
+      }
+    },
+    []
+  );
 
   // Função para buscar clientes
   const searchClientes = useCallback(
@@ -113,8 +187,11 @@ const CadastrarMaquina = () => {
         const options = Array.isArray(data?.dados)
           ? (data.dados as ClienteAPIResult[]).map((c) => ({
               value: c.id_cliente,
-              label: c.nome_fantasia,
+              label: c.codigo_erp
+                ? `${c.razao_social} - ${c.codigo_erp}`
+                : c.razao_social,
               razao_social: c.razao_social,
+              codigo_erp: c.codigo_erp,
             }))
           : [];
 
@@ -206,15 +283,24 @@ const CadastrarMaquina = () => {
 
     try {
       // Convert form data to match expected API format
-      // Função para formatar Date para dd/mm/yyyy
-      const formatDateBR = (date: Date | null) => {
+      // Função para formatar Date para dd.mm.yyyy
+      const formatDateBR = (date: Date | string | null) => {
         if (!date) return "";
-        if (typeof date === "string") return date; // fallback
-        const d = date;
-        const day = String(d.getDate()).padStart(2, "0");
-        const month = String(d.getMonth() + 1).padStart(2, "0");
-        const year = d.getFullYear();
-        return `${day}/${month}/${year}`;
+
+        if (typeof date === "string") {
+          const [year, month, day] = date.split("-");
+          if (!year || !month || !day) {
+            return "";
+          }
+          const safeDay = day.padStart(2, "0");
+          const safeMonth = month.padStart(2, "0");
+          return `${safeDay}.${safeMonth}.${year}`;
+        }
+
+        const day = String(date.getUTCDate()).padStart(2, "0");
+        const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+        const year = date.getUTCFullYear();
+        return `${day}.${month}.${year}`;
       };
 
       const maquinaData = {
@@ -303,42 +389,37 @@ const CadastrarMaquina = () => {
                   />
                 </div>
 
-                {/* Cliente Atual */}
-                <div>
-                  <CustomSelect
-                    id="cliente_atual"
-                    label="Cliente Atual"
-                    placeholder="Digite pelo menos 3 caracteres para buscar o cliente..."
-                    inputValue={clienteInput}
-                    onInputChange={handleClienteInputChange}
-                    onChange={handleClienteChange}
-                    options={clienteOptions}
-                    value={selectedCliente}
-                    isLoading={isSearchingCliente}
-                    error={formErrors.id_cliente_atual}
-                    minCharsToSearch={3}
-                    noOptionsMessageFn={({ inputValue }) =>
-                      inputValue.length < 3
-                        ? "Digite pelo menos 3 caracteres para buscar..."
-                        : "Nenhum cliente encontrado"
-                    }
-                  />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  {/* Cliente Atual */}
+                  <div className="md:col-span-2">
+                    <CustomSelect
+                      id="cliente_atual"
+                      label="Cliente Atual"
+                      placeholder="Digite pelo menos 3 caracteres para buscar o cliente..."
+                      inputValue={clienteInput}
+                      onInputChange={handleClienteInputChange}
+                      onChange={handleClienteChange}
+                      options={clienteOptions}
+                      value={selectedCliente}
+                      isLoading={isSearchingCliente}
+                      error={formErrors.id_cliente_atual}
+                      minCharsToSearch={3}
+                      noOptionsMessageFn={({ inputValue }) =>
+                        inputValue.length < 3
+                          ? "Digite pelo menos 3 caracteres para buscar..."
+                          : "Nenhum cliente encontrado"
+                      }
+                    />
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <InputField
                       type="date"
                       label="Data 1ª Venda"
                       name="data_1a_venda"
-                      value={
-                        formData.data_1a_venda
-                          ? typeof formData.data_1a_venda === "string"
-                            ? formData.data_1a_venda
-                            : formData.data_1a_venda.toISOString().split("T")[0]
-                          : ""
-                      }
+                      value={formData.data_1a_venda ?? ""}
                       onChange={handleInputChange}
+                      onBlur={handleDataPrimeiraVendaBlur}
                     />
                   </div>
 
@@ -359,15 +440,7 @@ const CadastrarMaquina = () => {
                       type="date"
                       label="Data Final Garantia"
                       name="data_final_garantia"
-                      value={
-                        formData.data_final_garantia
-                          ? typeof formData.data_final_garantia === "string"
-                            ? formData.data_final_garantia
-                            : formData.data_final_garantia
-                                .toISOString()
-                                .split("T")[0]
-                          : ""
-                      }
+                      value={formData.data_final_garantia ?? ""}
                       onChange={handleInputChange}
                     />
                   </div>

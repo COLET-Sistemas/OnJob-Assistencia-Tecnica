@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
 import { clientesService } from "@/api/services/clientesService";
@@ -51,6 +51,8 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
   const { showSuccess, showError } = useToast();
   const [isSavingContact, setIsSavingContact] = React.useState(false);
   const [contactSaved, setContactSaved] = React.useState(false);
+  const lastMirroredNomeRef = useRef<string | null>(null);
+  const lastMirroredTelefoneRef = useRef<string | null>(null);
   // Função para aplicar máscara de telefone/celular brasileiro
   const applyPhoneMask = (value: string): string => {
     // Remove tudo que não é número
@@ -100,6 +102,59 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
+
+  useEffect(() => {
+    if (!saveToClient) {
+      lastMirroredNomeRef.current = null;
+      return;
+    }
+
+    const nomeTrimmed = customContatoNome.trim();
+    const nomeCompletoTrimmed = customContatoNomeCompleto.trim();
+    const mirroredPreviously =
+      lastMirroredNomeRef.current !== null &&
+      customContatoNomeCompleto === lastMirroredNomeRef.current;
+
+    if (
+      nomeTrimmed &&
+      (!nomeCompletoTrimmed || mirroredPreviously)
+    ) {
+      setCustomContatoNomeCompleto?.(nomeTrimmed);
+      lastMirroredNomeRef.current = nomeTrimmed;
+    }
+  }, [
+    saveToClient,
+    customContatoNome,
+    customContatoNomeCompleto,
+    setCustomContatoNomeCompleto,
+  ]);
+
+  useEffect(() => {
+    if (!saveToClient) {
+      lastMirroredTelefoneRef.current = null;
+      return;
+    }
+
+    const telefoneTrimmed = customContatoTelefone.trim();
+    const whatsappTrimmed = customContatoWhatsapp.trim();
+    const telefoneMaskRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
+    const mirroredPreviously =
+      lastMirroredTelefoneRef.current !== null &&
+      customContatoWhatsapp === lastMirroredTelefoneRef.current;
+
+    if (
+      telefoneMaskRegex.test(telefoneTrimmed) &&
+      (!whatsappTrimmed || mirroredPreviously)
+    ) {
+      setCustomContatoWhatsapp(telefoneTrimmed);
+      lastMirroredTelefoneRef.current = telefoneTrimmed;
+    }
+  }, [
+    saveToClient,
+    customContatoTelefone,
+    customContatoWhatsapp,
+    setCustomContatoWhatsapp,
+  ]);
 
   return (
     <motion.div
