@@ -37,11 +37,11 @@ import { useRouter } from "next/navigation";
 interface OSItemExtended {
   id_os: number;
   id?: number;
-  numero_os?: string; 
+  numero_os?: string;
   descricao_problema?: string;
   em_garantia?: boolean;
-  status?: number; 
-  data_abertura?: string; 
+  status?: number;
+  data_abertura?: string;
   abertura?: {
     data_abertura: string;
     forma_abertura: string;
@@ -94,7 +94,6 @@ interface OSItemExtended {
     data_liberacao?: string;
   };
 }
-
 
 const fadeInAnimation = `
 @keyframes fadeIn {
@@ -156,6 +155,9 @@ const ConsultaOSPage: React.FC = () => {
 
   const [tecnicos, setTecnicos] = useState<TecnicoType[]>([]);
   const [loadingTecnicos, setLoadingTecnicos] = useState<boolean>(false);
+  const [hasSearch, setHasSearch] = useState<boolean>(false);
+  const hasSearchRef = useRef<boolean>(false);
+  const [hasRestoredState, setHasRestoredState] = useState<boolean>(false);
 
   // Define initial filters
   const INITIAL_OS_FILTERS: Record<string, string> = {
@@ -187,6 +189,59 @@ const ConsultaOSPage: React.FC = () => {
   useEffect(() => {
     handleFiltroChangeRef.current = handleFiltroChange;
   }, [handleFiltroChange]);
+
+  const clearPersistedState = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.removeItem("os_consulta_saved_filters");
+      localStorage.removeItem("os_consulta_saved_pagination");
+      localStorage.removeItem("os_consulta_has_search");
+      localStorage.removeItem("os_consulta_state_timestamp");
+    } catch (error) {
+      console.error("Erro ao limpar estado dos filtros:", error);
+    }
+  }, []);
+
+  const persistState = useCallback(
+    (
+      filters?: Record<string, string>,
+      pagination?: {
+        paginaAtual: number;
+        totalPaginas: number;
+        totalRegistros: number;
+        registrosPorPagina: number;
+      },
+      hasSearchValue?: boolean
+    ) => {
+      if (typeof window === "undefined") return;
+
+      const filtersToPersist = filters ?? filtrosAplicados;
+      const paginationToPersist = pagination ?? paginacao;
+      const hasSearchFlag = hasSearchValue ?? hasSearch;
+
+      try {
+        localStorage.setItem(
+          "os_consulta_saved_filters",
+          JSON.stringify(filtersToPersist)
+        );
+        localStorage.setItem(
+          "os_consulta_saved_pagination",
+          JSON.stringify(paginationToPersist)
+        );
+        localStorage.setItem(
+          "os_consulta_has_search",
+          JSON.stringify(hasSearchFlag)
+        );
+        localStorage.setItem(
+          "os_consulta_state_timestamp",
+          Date.now().toString()
+        );
+      } catch (error) {
+        console.error("Erro ao salvar estado dos filtros:", error);
+      }
+    },
+    [filtrosAplicados, paginacao, hasSearch]
+  );
 
   // Abre os filtros por padrão ao carregar a página
   useEffect(() => {
@@ -407,7 +462,7 @@ const ConsultaOSPage: React.FC = () => {
           setDisableDateFields(false);
           setFixedDateType(null);
           handleFiltroChange("status", value);
-          handleFiltroChange("campo_data", "abertura"); 
+          handleFiltroChange("campo_data", "abertura");
           handleFiltroChange("data_ini", get30DaysAgo());
           handleFiltroChange("data_fim", getToday());
         }
@@ -442,6 +497,9 @@ const ConsultaOSPage: React.FC = () => {
   const handleClearFiltersCustom = useCallback(() => {
     // First, use limparFiltros to reset all filter values
     limparFiltros();
+    hasSearchRef.current = false;
+    setHasSearch(false);
+    clearPersistedState();
 
     // Then immediately ensure the panel stays open
     setTimeout(() => {
@@ -468,7 +526,7 @@ const ConsultaOSPage: React.FC = () => {
 
     // Reset pagination to first page
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
-  }, [limparFiltros, setShowFilters]);
+  }, [limparFiltros, setShowFilters, clearPersistedState]);
 
   // Função para buscar dados com filtros
   const handleSearch = useCallback(async () => {
@@ -598,6 +656,8 @@ const ConsultaOSPage: React.FC = () => {
       }));
 
       setData(mappedData);
+      hasSearchRef.current = true;
+      setHasSearch(true);
     } catch (err) {
       setError("Refaça o filtro e tente novamente.");
       console.error(err);
@@ -781,6 +841,8 @@ const ConsultaOSPage: React.FC = () => {
             };
 
             setData(mappedData);
+            hasSearchRef.current = true;
+            setHasSearch(true);
 
             setPaginacao((prev) => ({
               ...prev,
@@ -916,6 +978,8 @@ const ConsultaOSPage: React.FC = () => {
           };
 
           setData(mappedData);
+          hasSearchRef.current = true;
+          setHasSearch(true);
 
           setPaginacao((prev) => ({
             ...prev,
@@ -951,7 +1015,7 @@ const ConsultaOSPage: React.FC = () => {
       const timestamp = localStorage.getItem("os_consulta_state_timestamp");
       if (!timestamp) return false;
 
-      const savedTime = parseInt(timestamp);
+      const savedTime = parseInt(timestamp, 10);
       const currentTime = Date.now();
       const MAX_AGE = 30 * 60 * 1000; // 30 minutos
 
@@ -964,7 +1028,7 @@ const ConsultaOSPage: React.FC = () => {
         const savedPagination = localStorage.getItem(
           "os_consulta_saved_pagination"
         );
-        const hasSearch = localStorage.getItem("os_consulta_has_search");
+        const storedHasSearch = localStorage.getItem("os_consulta_has_search");
 
         if (savedFilters) {
           const parsedFilters = JSON.parse(savedFilters);
@@ -978,45 +1042,49 @@ const ConsultaOSPage: React.FC = () => {
           setPaginacao(parsedPagination);
         }
 
-        if (hasSearch && JSON.parse(hasSearch)) {
+        let parsedHasSearch = false;
+        if (storedHasSearch !== null) {
+          parsedHasSearch = Boolean(JSON.parse(storedHasSearch));
+        }
+
+        hasSearchRef.current = parsedHasSearch;
+        setHasSearch(parsedHasSearch);
+
+        if (parsedHasSearch) {
           searchTimeout = setTimeout(() => {
             handleSearchRef.current?.();
           }, 200);
         }
       } catch (error) {
         console.error("Erro ao restaurar estado dos filtros:", error);
+        clearPersistedState();
+        hasSearchRef.current = false;
+        setHasSearch(false);
       }
+    } else {
+      clearPersistedState();
+      hasSearchRef.current = false;
+      setHasSearch(false);
     }
 
-    // Limpa o estado somente ao sair da tela
+    setHasRestoredState(true);
+
     return () => {
       if (searchTimeout) {
         clearTimeout(searchTimeout);
       }
-      localStorage.removeItem("os_consulta_saved_filters");
-      localStorage.removeItem("os_consulta_saved_pagination");
-      localStorage.removeItem("os_consulta_has_search");
-      localStorage.removeItem("os_consulta_state_timestamp");
     };
-  }, []);
+  }, [clearPersistedState]);
+
+  useEffect(() => {
+    if (!hasRestoredState) return;
+    persistState();
+  }, [persistState, hasRestoredState]);
 
   // Função para salvar o estado atual dos filtros e paginação
   const saveCurrentState = useCallback(() => {
-    localStorage.setItem(
-      "os_consulta_saved_filters",
-      JSON.stringify(filtrosAplicados)
-    );
-    localStorage.setItem(
-      "os_consulta_saved_pagination",
-      JSON.stringify(paginacao)
-    );
-    localStorage.setItem(
-      "os_consulta_has_search",
-      JSON.stringify(data.dados.length > 0)
-    );
-    // Timestamp para controlar a validade do estado salvo
-    localStorage.setItem("os_consulta_state_timestamp", Date.now().toString());
-  }, [filtrosAplicados, paginacao, data.dados.length]);
+    persistState(undefined, undefined, hasSearchRef.current);
+  }, [persistState]);
 
   // Função para navegar para a página de detalhes da OS
   const handleRowNavigate = useCallback(

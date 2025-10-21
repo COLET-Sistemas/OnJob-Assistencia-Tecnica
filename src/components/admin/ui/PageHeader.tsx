@@ -32,6 +32,8 @@ interface PageHeaderProps {
 const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
   // Renderizar header para listas
   if (config.type === "list") {
+    const filterToggleActive = Boolean(config.showFilters);
+
     const renderDefaultActions = () => {
       const actionElements: React.ReactNode[] = [];
 
@@ -41,7 +43,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
             <button
               onClick={config.onFilterToggle}
               className={`relative px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border cursor-pointer ${
-                config.showFilters
+                filterToggleActive
                   ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/25"
                   : "bg-white hover:bg-gray-50 text-[var(--neutral-graphite)] border-gray-200 hover:border-gray-300 hover:shadow-md"
               }`}
@@ -97,11 +99,32 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
       <header className="mb-5">
         <div className="p-5 rounded-xl shadow-sm border border-slate-200 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/20 min-h-[88px]">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center">
-              <span className="bg-[var(--primary)] h-6 w-1 rounded-full mr-3"></span>
-              {title}
-              <span className="ml-2 bg-[var(--primary)]/10 text-[var(--primary)] text-sm px-3 py-0.5 rounded-full font-medium">
-                {config.itemCount}
+            <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center gap-3">
+              {config.onFilterToggle && (
+                <button
+                  type="button"
+                  onClick={config.onFilterToggle}
+                  aria-label={
+                    filterToggleActive
+                      ? "Ocultar filtros de pesquisa"
+                      : "Exibir filtros de pesquisa"
+                  }
+                  aria-pressed={filterToggleActive}
+                  className={`flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200 ${
+                    filterToggleActive
+                      ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-md shadow-[var(--primary)]/30"
+                      : "bg-white text-[var(--neutral-graphite)] border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                  }`}
+                >
+                  <ArrowLeft size={16} />
+                </button>
+              )}
+              <span className="bg-[var(--primary)] h-6 w-1 rounded-full"></span>
+              <span className="flex items-center">
+                {title}
+                <span className="ml-2 bg-[var(--primary)]/10 text-[var(--primary)] text-sm px-3 py-0.5 rounded-full font-medium">
+                  {config.itemCount}
+                </span>
               </span>
             </h2>
 
