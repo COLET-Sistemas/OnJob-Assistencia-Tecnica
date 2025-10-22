@@ -521,7 +521,7 @@ const OSCard: React.FC<OSCardProps> = ({
                     </h4>
                   </div>
                   <a
-                    href="/admin/cadastro/clientes"
+                    href={`/admin/cadastro/clientes?focusClienteId=${os.cliente.id}`}
                     rel="noopener noreferrer"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -533,10 +533,12 @@ const OSCard: React.FC<OSCardProps> = ({
                             nome: os.cliente.nome || "",
                             uf: "",
                             incluir_inativos: "",
+                            id_regiao: "",
                           };
 
                           // Salvar o filtro na sessão para que seja aplicado quando a página de clientes carregar
-                          const filterKey = "filters_incluir_inativos_nome_uf";
+                          const filterKey =
+                            "filters_id_regiao_incluir_inativos_nome_uf";
                           const filterStateKey = `${filterKey}_state`;
 
                           const filterState = {

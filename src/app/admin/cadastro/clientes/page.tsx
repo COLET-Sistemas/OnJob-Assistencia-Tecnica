@@ -28,7 +28,7 @@ import { services } from "@/api";
 import LocationButton from "@/components/admin/ui/LocationButton";
 import api from "@/api/api";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ConfirmModal from "@/components/admin/ui/ConfirmModal";
 
 const { clientesService, maquinasService } = services;
@@ -68,6 +68,7 @@ const CadastroClientes = () => {
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [expandedState, setExpandedState] = useState<{
     id: number | null;
     section: ExpandedSection | null;
@@ -124,6 +125,8 @@ const CadastroClientes = () => {
 
   // Armazenar o ID do cliente que deve ser expandido
   const clienteIdToExpandRef = useRef<number | null>(null);
+  const [focusedClienteId, setFocusedClienteId] = useState<number | null>(null);
+  const focusClienteIdParam = searchParams.get("focusClienteId");
 
   useEffect(() => {
     setTitle("Clientes");
@@ -143,6 +146,30 @@ const CadastroClientes = () => {
       }
     }
   }, [setTitle]);
+
+  useEffect(() => {
+    if (!focusClienteIdParam) {
+      return;
+    }
+
+    const parsedId = Number(focusClienteIdParam);
+    if (Number.isNaN(parsedId)) {
+      return;
+    }
+
+    setFocusedClienteId(parsedId);
+    clienteIdToExpandRef.current = parsedId;
+
+    if (typeof window !== "undefined") {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.delete("focusClienteId");
+      const nextSearch = currentUrl.searchParams.toString();
+      const nextPath = nextSearch
+        ? `${currentUrl.pathname}?${nextSearch}`
+        : currentUrl.pathname;
+      router.replace(nextPath, { scroll: false });
+    }
+  }, [focusClienteIdParam, router]);
 
   useEffect(() => {
     const carregarRegioes = async () => {
@@ -181,12 +208,18 @@ const CadastroClientes = () => {
   const handleApplyFilters = () => {
     setLocalShowFilters(false);
     isReloadingRef.current = true;
+    setFocusedClienteId(null);
+    clienteIdToExpandRef.current = null;
+    setExpandedState({ id: null, section: null });
     aplicarFiltros();
   };
 
   const handleClearFilters = () => {
     setLocalShowFilters(false);
     isReloadingRef.current = true;
+    setFocusedClienteId(null);
+    clienteIdToExpandRef.current = null;
+    setExpandedState({ id: null, section: null });
     limparFiltros();
   };
 
@@ -201,20 +234,35 @@ const CadastroClientes = () => {
     // Marcar que estamos recarregando
     isReloadingRef.current = true;
 
-    const params: Record<string, string | number> = {
-      nro_pagina: paginacao.paginaAtual,
-      qtde_registros: paginacao.registrosPorPagina,
-    };
-
-    if (filtrosAplicados.nome) params.nome = filtrosAplicados.nome;
-    if (filtrosAplicados.uf) params.uf = filtrosAplicados.uf;
-    if (filtrosAplicados.id_regiao) {
-      params.id_regiao = filtrosAplicados.id_regiao;
-    }
-    if (filtrosAplicados.incluir_inativos === "true")
-      params.incluir_inativos = "S";
-
     try {
+      if (focusedClienteId !== null) {
+        const response = await clientesService.getById(focusedClienteId);
+        const clientesEncontrados = response?.dados ?? [];
+
+        setPaginacao((prev) => ({
+          ...prev,
+          paginaAtual: 1,
+          totalPaginas: clientesEncontrados.length > 0 ? 1 : 0,
+          totalRegistros: clientesEncontrados.length,
+        }));
+
+        return clientesEncontrados;
+      }
+
+      const params: Record<string, string | number> = {
+        nro_pagina: paginacao.paginaAtual,
+        qtde_registros: paginacao.registrosPorPagina,
+      };
+
+      if (filtrosAplicados.nome) params.nome = filtrosAplicados.nome;
+      if (filtrosAplicados.uf) params.uf = filtrosAplicados.uf;
+      if (filtrosAplicados.id_regiao) {
+        params.id_regiao = filtrosAplicados.id_regiao;
+      }
+      if (filtrosAplicados.incluir_inativos === "true") {
+        params.incluir_inativos = "S";
+      }
+
       const response: ClientesResponse = await clientesService.getAll(params);
 
       setPaginacao((prev) => ({
@@ -229,7 +277,12 @@ const CadastroClientes = () => {
         isReloadingRef.current = false;
       }, 500);
     }
-  }, [filtrosAplicados, paginacao.paginaAtual, paginacao.registrosPorPagina]);
+  }, [
+    focusedClienteId,
+    filtrosAplicados,
+    paginacao.paginaAtual,
+    paginacao.registrosPorPagina,
+  ]);
 
   const {
     data: clientes,
@@ -265,12 +318,7 @@ const CadastroClientes = () => {
       const clienteId = clienteIdToExpandRef.current;
       const cliente = clientes.find((c) => getClienteId(c) === clienteId);
 
-      // Verificar se o cliente tem contatos antes de expandir
-      if (
-        cliente &&
-        ((cliente.qtd_contatos && cliente.qtd_contatos > 0) ||
-          (cliente.contatos && cliente.contatos.length > 0))
-      ) {
+      if (cliente) {
         setExpandedState({ id: clienteId, section: "contatos" });
 
         // Pequeno delay para garantir que a interface foi atualizada
