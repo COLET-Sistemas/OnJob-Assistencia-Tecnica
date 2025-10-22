@@ -35,10 +35,12 @@ export interface Usuario {
   perfil_tecnico_proprio: boolean;
   perfil_tecnico_terceirizado: boolean;
   administrador: boolean;
-  situacao: string; 
+  situacao: string;
   data_situacao: string;
-  empresa?: Empresa; 
-  id_empresa?: number; 
+  empresa?: Empresa;
+  id_empresa?: number;
+  qtd_logins?: number;
+  ultimo_login?: string;
 }
 
 // Mantendo a interface original para compatibilidade com código existente

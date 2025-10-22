@@ -175,6 +175,24 @@ const CadastroUsuario = () => {
       ),
     },
     {
+      header: "Qtd. Logins",
+      accessor: "qtd_logins" as keyof Usuario,
+      render: (usuario: Usuario) => (
+        <div className="text-sm text-gray-700 text-center">
+          {usuario.qtd_logins ?? "-"}
+        </div>
+      ),
+    },
+    {
+      header: "Último Login",
+      accessor: "ultimo_login" as keyof Usuario,
+      render: (usuario: Usuario) => (
+        <div className="text-sm text-gray-700 text-center">
+          {usuario.ultimo_login ?? "-"}
+        </div>
+      ),
+    },
+    {
       header: "Status",
       accessor: "situacao" as keyof Usuario,
       render: (usuario: Usuario) => (

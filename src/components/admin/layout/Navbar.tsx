@@ -132,13 +132,9 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
 
     document.addEventListener("fullscreenchange", handleFullScreenChange);
     return () => {
-      document.removeEventListener(
-        "fullscreenchange",
-        handleFullScreenChange
-      );
+      document.removeEventListener("fullscreenchange", handleFullScreenChange);
     };
   }, []);
-
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
@@ -292,34 +288,36 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
                   <span className="font-medium">Perfil</span>
                 </button>
 
-                <button
-                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    router.push("/admin/administracao/empresa");
-                  }}
-                >
-                  <ScrollText
-                    size={18}
-                    className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
-                  />
-                  <span className="font-medium">Licença de Uso</span>
-                </button>
-
                 {isAdmin && (
-                  <button
-                    className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
-                    onClick={() => {
-                      setDropdownOpen(false);
-                      router.push("/admin/administracao/usuarios");
-                    }}
-                  >
-                    <UsersRound
-                      size={18}
-                      className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
-                    />
-                    <span className="font-medium">Gestão de Usuários</span>
-                  </button>
+                  <>
+                    <button
+                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        router.push("/admin/administracao/empresa");
+                      }}
+                    >
+                      <ScrollText
+                        size={18}
+                        className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
+                      />
+                      <span className="font-medium">Licença de Uso</span>
+                    </button>
+
+                    <button
+                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        router.push("/admin/administracao/usuarios");
+                      }}
+                    >
+                      <UsersRound
+                        size={18}
+                        className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
+                      />
+                      <span className="font-medium">Gestão de Usuários</span>
+                    </button>
+                  </>
                 )}
 
                 <button

@@ -57,7 +57,7 @@ export default function AlterarSenhaPage() {
       return {
         valid: false,
         message:
-          "A senha deve conter pelo menos um caractere especial: @, #, $, %, ?, !, *, _, &",
+          "A senha deve conter pelo menos um caractere especial: @, #, $, %, ?, !, *, &",
       };
     }
 

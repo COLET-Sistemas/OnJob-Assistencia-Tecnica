@@ -107,13 +107,12 @@ const PerfilPage = () => {
         message: "A senha deve conter pelo menos 8 caracteres.",
       };
     }
-    // Verificar caractere especial
-    const specialChars = /[@#$%?!*&\-_]/;
+    const specialChars = /[@#$%?!*&]/;
     if (!specialChars.test(password)) {
       return {
         isValid: false,
         message:
-          "A senha deve conter pelo menos um caractere especial: @, #, $, %, ?, !, *, _, &, -",
+          "A senha deve conter pelo menos um caractere especial: @, #, $, %, ?, !, *, &",
       };
     }
     return { isValid: true };
