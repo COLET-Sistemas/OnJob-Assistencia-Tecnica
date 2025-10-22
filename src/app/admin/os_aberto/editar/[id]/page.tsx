@@ -37,6 +37,7 @@ interface OrdemServicoResponse {
   cliente: {
     id: number;
     codigo_erp: string;
+    razao_social: string;
     nome: string;
     endereco: string;
     numero: string;
@@ -269,7 +270,7 @@ const EditarOrdemServico = () => {
         if (os) {
           const clienteOption = {
             value: os.cliente.id || 0,
-            label: `${os.cliente.nome} (${os.cliente.codigo_erp})`,
+            label: `${os.cliente.razao_social} (${os.cliente.codigo_erp})`,
             cidade: os.cliente.cidade,
             uf: os.cliente.uf,
             regiaoId: os.cliente.id_regiao ?? null,
