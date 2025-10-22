@@ -9,6 +9,7 @@ interface ListConfig {
   itemCount: number;
   onFilterToggle?: () => void;
   showFilters?: boolean;
+  showFilterToggleShortcut?: boolean;
   activeFiltersCount?: number;
   newButton?: {
     label: string;
@@ -100,7 +101,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
         <div className="p-5 rounded-xl shadow-sm border border-slate-200 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/20 min-h-[88px]">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center gap-3">
-              {config.onFilterToggle && (
+              {config.showFilterToggleShortcut && config.onFilterToggle && (
                 <button
                   type="button"
                   onClick={config.onFilterToggle}

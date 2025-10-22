@@ -1108,6 +1108,7 @@ const ConsultaOSPage: React.FC = () => {
             type: "list",
             itemCount: data?.total_registros ?? 0,
             showFilters: showFilters,
+            showFilterToggleShortcut: true,
             onFilterToggle: () => {
               toggleFilters();
               if (!showFilters) {
