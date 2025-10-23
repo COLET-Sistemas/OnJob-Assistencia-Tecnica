@@ -389,9 +389,9 @@ const CadastrarMaquina = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
                   {/* Cliente Atual */}
-                  <div className="md:col-span-2">
+                  <div className="md:col-span-3">
                     <CustomSelect
                       id="cliente_atual"
                       label="Cliente Atual"

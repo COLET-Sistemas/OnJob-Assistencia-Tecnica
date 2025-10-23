@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import { Filter, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import React from "react";
+import { useCadastroPermission } from "@/hooks/useCadastroPermission";
 
 interface ListConfig {
   type: "list";
@@ -15,6 +16,8 @@ interface ListConfig {
     label: string;
     link?: string;
     onClick?: () => void;
+    disabled?: boolean;
+    tooltip?: string;
   };
   actions?: React.ReactNode;
 }
@@ -31,7 +34,8 @@ interface PageHeaderProps {
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
-  // Renderizar header para listas
+  const { hasPermission } = useCadastroPermission();
+
   if (config.type === "list") {
     const filterToggleActive = Boolean(config.showFilters);
 
@@ -64,23 +68,73 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
       }
 
       if (config.newButton?.label) {
-        const newButton = config.newButton.onClick ? (
-          <button
-            onClick={config.newButton.onClick}
-            className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
-          >
-            <Plus size={18} />
-            {config.newButton.label}
-          </button>
-        ) : (
-          <Link
-            href={config.newButton.link || "#"}
-            className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
-          >
-            <Plus size={18} />
-            {config.newButton.label}
-          </Link>
+        const isDisabled = Boolean(
+          config.newButton.disabled ?? !hasPermission
         );
+        const commonClasses =
+          "px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border";
+        const enabledClasses =
+          "bg-[var(--primary)] text-white border-[var(--primary)] hover:shadow-lg hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90";
+        const disabledClasses =
+          "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed shadow-none";
+        const buttonContent = (
+          <>
+            <Plus size={18} />
+            {config.newButton.label}
+          </>
+        );
+
+        const tooltip =
+          config.newButton.tooltip ||
+          (isDisabled
+            ? "Seu perfil nÃ£o permite criar novos registros."
+            : undefined);
+
+        let newButton: React.ReactNode;
+
+        if (config.newButton.onClick && !isDisabled) {
+          newButton = (
+            <button
+              onClick={config.newButton.onClick}
+              className={`${commonClasses} ${enabledClasses}`}
+              title={tooltip}
+            >
+              {buttonContent}
+            </button>
+          );
+        } else if (config.newButton.onClick && isDisabled) {
+          newButton = (
+            <button
+              type="button"
+              disabled
+              className={`${commonClasses} ${disabledClasses}`}
+              title={tooltip}
+              aria-disabled="true"
+            >
+              {buttonContent}
+            </button>
+          );
+        } else if (!isDisabled) {
+          newButton = (
+            <Link
+              href={config.newButton.link || "#"}
+              className={`${commonClasses} ${enabledClasses}`}
+              title={tooltip}
+            >
+              {buttonContent}
+            </Link>
+          );
+        } else {
+          newButton = (
+            <span
+              className={`${commonClasses} ${disabledClasses}`}
+              title={tooltip}
+              aria-disabled="true"
+            >
+              {buttonContent}
+            </span>
+          );
+        }
 
         actionElements.push(
           <React.Fragment key="new-button">{newButton}</React.Fragment>
@@ -136,7 +190,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
     );
   }
 
-  // Renderizar header para formulários (cadastro/edição)
   return (
     <header className="mb-5">
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--primary)]/20 p-5 min-h-[88px] flex items-center">
@@ -161,3 +214,5 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
 };
 
 export default PageHeader;
+
+

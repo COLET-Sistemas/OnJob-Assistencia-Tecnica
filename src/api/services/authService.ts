@@ -1,9 +1,10 @@
 import api from "../api";
 import { empresaService } from "./empresaService";
+import { clearStoredRoles, setStoredRoles } from "@/utils/userRoles";
 import {
-  clearStoredRoles,
-  setStoredRoles,
-} from "@/utils/userRoles";
+  clearCadastroPermission,
+  setCadastroPermission,
+} from "@/utils/cadastroPermission";
 
 type ModuleType = "admin" | "tecnico";
 
@@ -30,6 +31,7 @@ interface AuthResponse {
     perfil_tecnico_proprio: boolean;
     perfil_tecnico_terceirizado: boolean;
     administrador: boolean;
+    permite_cadastros?: boolean;
   };
 }
 
@@ -51,6 +53,7 @@ class AuthService {
         this.clearActiveModule();
         this.clearRolesCookie();
         clearStoredRoles();
+        clearCadastroPermission();
 
         // Remove cookie do token
         const secure = window.location.protocol === "https:" ? "; secure" : "";
@@ -69,6 +72,11 @@ class AuthService {
     if (typeof window !== "undefined") {
       localStorage.setItem("token", authData.token);
       localStorage.setItem("user", JSON.stringify(authData.user));
+      const permiteCadastros =
+        typeof authData.user.permite_cadastros === "boolean"
+          ? authData.user.permite_cadastros
+          : true;
+      setCadastroPermission(permiteCadastros);
 
       const expirationDate = new Date();
       expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000);

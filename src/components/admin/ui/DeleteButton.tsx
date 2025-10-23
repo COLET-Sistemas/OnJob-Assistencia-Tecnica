@@ -1,5 +1,8 @@
-import { useState } from "react";
+﻿"use client";
+
+import { useState, useMemo } from "react";
 import { Ban, X } from "lucide-react";
+import { useCadastroPermission } from "@/hooks/useCadastroPermission";
 
 type DeleteButtonProps = {
   id: number;
@@ -9,6 +12,8 @@ type DeleteButtonProps = {
   confirmTitle?: string;
   className?: string;
   itemName?: string;
+  disabled?: boolean;
+  disabledTooltip?: string;
 };
 
 export const DeleteButton = ({
@@ -19,11 +24,30 @@ export const DeleteButton = ({
   confirmTitle = "Confirmar Inativação",
   className = "",
   itemName = "",
+  disabled = false,
+  disabledTooltip,
 }: DeleteButtonProps) => {
+  const { hasPermission } = useCadastroPermission();
   const [localLoading, setLocalLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const handleClick = () => setShowModal(true);
+  const computedDisabled = disabled || !hasPermission;
+  const buttonTitle = useMemo(() => {
+    if (!computedDisabled) {
+      return "Inativar";
+    }
+    if (disabledTooltip) {
+      return disabledTooltip;
+    }
+    return "Você não possui permissão para inativar este item.";
+  }, [computedDisabled, disabledTooltip]);
+
+  const handleClick = () => {
+    if (computedDisabled || isLoading) {
+      return;
+    }
+    setShowModal(true);
+  };
 
   const handleConfirm = async () => {
     setLocalLoading(true);
@@ -39,13 +63,14 @@ export const DeleteButton = ({
 
   const handleCancel = () => setShowModal(false);
   const isLoading = loading || localLoading;
+  const isButtonDisabled = computedDisabled || isLoading;
 
   return (
     <>
       <button
         onClick={handleClick}
-        disabled={isLoading}
-        title="Inativar"
+        disabled={isButtonDisabled}
+        title={buttonTitle}
         className={`
           inline-flex items-center justify-center p-2 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20
           text-[var(--primary)] rounded-lg transition-colors cursor-pointer
@@ -60,7 +85,7 @@ export const DeleteButton = ({
         )}
       </button>
 
-      {showModal && (
+      {showModal && !computedDisabled && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -122,3 +147,5 @@ export const DeleteButton = ({
     </>
   );
 };
+
+

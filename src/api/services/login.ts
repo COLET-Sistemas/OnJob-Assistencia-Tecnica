@@ -1,5 +1,9 @@
 ﻿// /api/services/login.ts
 import { criptografarSenha } from "@/utils/cryptoPassword";
+import {
+  clearCadastroPermission,
+  setCadastroPermission,
+} from "@/utils/cadastroPermission";
 
 export interface Empresa {
   id_empresa: number;
@@ -34,6 +38,7 @@ export interface LoginResponse {
     tecnico_proprio: boolean;
     tecnico_terceirizado: boolean;
     admin: boolean;
+    permite_cadastros?: boolean;
   };
   empresa?: Empresa;
   versao_api?: string | number;
@@ -126,6 +131,12 @@ export class LoginService {
       localStorage.setItem("nome_usuario", authData.nome_usuario);
       localStorage.setItem("token", authData.token);
       localStorage.setItem("perfil", JSON.stringify(authData.perfil));
+
+      const permiteCadastros =
+        typeof authData.perfil.permite_cadastros === "boolean"
+          ? authData.perfil.permite_cadastros
+          : true;
+      setCadastroPermission(permiteCadastros);
       localStorage.setItem("versao_api", String(authData.versao_api || ""));
 
       // Definir cookie para o middleware
@@ -190,6 +201,8 @@ export class LoginService {
     keysToRemove.forEach((key) => {
       localStorage.removeItem(key);
     });
+
+    clearCadastroPermission();
 
     const secure = window.location.protocol === "https:" ? "; Secure" : "";
     document.cookie = `active_module=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax${secure}`;

@@ -65,6 +65,7 @@ const useFormValidation = () => {
     if (!formData.nome_fantasia.trim())
       errors.nome_fantasia = MESSAGES.required;
     if (!formData.razao_social.trim()) errors.razao_social = MESSAGES.required;
+    if (!formData.codigo_erp?.trim()) errors.codigo_erp = MESSAGES.required;
     if (!formData.cnpj || !validarDocumento(formData.cnpj))
       errors.cnpj = MESSAGES.invalidCNPJ;
     if (!formData.endereco.trim()) errors.endereco = MESSAGES.required;
@@ -101,6 +102,8 @@ const EditarCliente: React.FC = () => {
 
   // Estados
   const [loading, setLoading] = useState(true);
+  const [regioesLoading, setRegioesLoading] = useState(false);
+  const [regioesInitialized, setRegioesInitialized] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [regioes, setRegioes] = useState<Regiao[]>([]);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
@@ -231,20 +234,80 @@ const EditarCliente: React.FC = () => {
   }, [clienteId, router, showError, getErrorMessage]);
 
   // Carregar as regiões disponíveis
-  const carregouRegioes = useRef(false);
-  useEffect(() => {
-    if (carregouRegioes.current) return;
-    carregouRegioes.current = true;
-    const carregarRegioes = async () => {
+  const regioesCache = useRef<Record<string, Regiao[]>>({});
+
+  const aplicarRegioes = useCallback((listaRegioes: Regiao[]) => {
+    setRegioes(listaRegioes);
+
+    setFormData((prev) => {
+      const regiaoAtual = listaRegioes.find(
+        (regiao) => regiao.id === prev.id_regiao
+      );
+
+      if (listaRegioes.length === 1) {
+        const unicaRegiao = listaRegioes[0];
+
+        if (prev.id_regiao === unicaRegiao.id) {
+          return prev.regiao?.id === unicaRegiao.id
+            ? prev
+            : { ...prev, regiao: unicaRegiao };
+        }
+
+        return {
+          ...prev,
+          id_regiao: unicaRegiao.id,
+          regiao: unicaRegiao,
+        };
+      }
+
+      if (regiaoAtual) {
+        return prev.regiao?.id === regiaoAtual.id
+          ? prev
+          : { ...prev, regiao: regiaoAtual };
+      }
+
+      if (prev.id_regiao || prev.regiao) {
+        return { ...prev, id_regiao: undefined, regiao: undefined };
+      }
+
+      return prev;
+    });
+
+    if (listaRegioes.length === 1) {
+      setFormErrors((prev) => {
+        if (!prev.id_regiao) return prev;
+        const updated = { ...prev };
+        delete updated.id_regiao;
+        return updated;
+      });
+    }
+  }, []);
+
+  const carregarRegioesPorUF = useCallback(
+    async (uf: string) => {
+      if (!uf) {
+        aplicarRegioes([]);
+        setRegioesInitialized(true);
+        return;
+      }
+
+      const cache = regioesCache.current[uf];
+      if (cache) {
+        aplicarRegioes(cache);
+        setRegioesInitialized(true);
+        return;
+      }
+
+      setRegioesLoading(true);
+
       try {
-        const response = await regioesService.getAll();
-        const regioesAtivas = (response || []).filter(
-          (regiao: Regiao) => regiao.situacao === "A"
-        );
-        regioesAtivas.sort((a: Regiao, b: Regiao) =>
-          a.nome.localeCompare(b.nome)
-        );
-        setRegioes(regioesAtivas);
+        const response = await regioesService.getAll({ uf });
+        const regioesAtivas = (response || [])
+          .filter((regiao: Regiao) => regiao.situacao === "A")
+          .sort((a: Regiao, b: Regiao) => a.nome.localeCompare(b.nome));
+
+        regioesCache.current[uf] = regioesAtivas;
+        aplicarRegioes(regioesAtivas);
       } catch (error) {
         console.error("Erro ao carregar regiões:", error);
         const errorMessage = getErrorMessage(
@@ -252,12 +315,19 @@ const EditarCliente: React.FC = () => {
           "Não foi possível carregar as regiões. Tente novamente mais tarde."
         );
         showError("Erro ao carregar regiões", errorMessage);
+        aplicarRegioes([]);
       } finally {
-        setLoading(false);
+        setRegioesLoading(false);
+        setRegioesInitialized(true);
       }
-    };
-    carregarRegioes();
-  }, [showError, getErrorMessage]);
+    },
+    [aplicarRegioes, showError, getErrorMessage]
+  );
+
+  useEffect(() => {
+    if (!clienteCarregado) return;
+    carregarRegioesPorUF(formData.uf);
+  }, [clienteCarregado, formData.uf, carregarRegioesPorUF]);
 
   // Foca no primeiro campo quando o cliente for carregado
   useEffect(() => {
@@ -319,14 +389,23 @@ const EditarCliente: React.FC = () => {
         const dadosEndereco = await buscarCEP(cep);
 
         if (dadosEndereco) {
-          setFormData((prev) => ({
-            ...prev,
-            endereco: dadosEndereco.logradouro,
-            bairro: dadosEndereco.bairro,
-            cidade: dadosEndereco.localidade,
-            uf: dadosEndereco.uf,
-            complemento: dadosEndereco.complemento,
-          }));
+          setFormData((prev) => {
+            const ufEncontrada = dadosEndereco.uf || prev.uf;
+            const ufAlterada =
+              ufEncontrada && ufEncontrada !== prev.uf ? ufEncontrada : null;
+
+            return {
+              ...prev,
+              endereco: dadosEndereco.logradouro,
+              bairro: dadosEndereco.bairro,
+              cidade: dadosEndereco.localidade,
+              uf: ufEncontrada,
+              complemento: dadosEndereco.complemento,
+              ...(ufAlterada
+                ? { id_regiao: undefined, regiao: undefined }
+                : {}),
+            };
+          });
 
           // Foca no campo de número após encontrar o CEP
           setTimeout(() => {
@@ -429,6 +508,19 @@ const EditarCliente: React.FC = () => {
         }
       } else if (name === "cnpj") {
         setFormData((prev) => ({ ...prev, [name]: formatarCNPJ(value) }));
+      } else if (name === "uf") {
+        setFormData((prev) => ({
+          ...prev,
+          uf: value,
+          id_regiao: undefined,
+          regiao: undefined,
+        }));
+        setFormErrors((prev) => {
+          if (!prev.id_regiao) return prev;
+          const updated = { ...prev };
+          delete updated.id_regiao;
+          return updated;
+        });
       } else if (name === "id_regiao") {
         // Atualiza o campo regiao com o objeto Regiao correspondente
         if (value === "" || value === "0") {
@@ -486,7 +578,7 @@ const EditarCliente: React.FC = () => {
 
       try {
         const clienteData = {
-          codigo_erp: formData.codigo_erp || undefined,
+          codigo_erp: formData.codigo_erp,
           nome_fantasia: formData.nome_fantasia,
           razao_social: formData.razao_social,
           cnpj: formData.cnpj,
@@ -547,6 +639,17 @@ const EditarCliente: React.FC = () => {
     );
   }
 
+  if (!regioesInitialized && regioesLoading) {
+    return (
+      <Loading
+        fullScreen={true}
+        preventScroll={false}
+        text="Carregando dados do cliente..."
+        size="large"
+      />
+    );
+  }
+
   const clientDisplayName =
     [formData.nome_fantasia, formData.razao_social].find(
       (value) => value && value.trim()
@@ -565,6 +668,23 @@ const EditarCliente: React.FC = () => {
   const fullAddress = addressParts.length
     ? `${addressParts.join(", ")}, Brasil`
     : "";
+
+  const regiaoPlaceholder = regioesLoading
+    ? "Carregando regiões..."
+    : regioes.length > 0
+    ? "Selecione uma região..."
+    : "Nenhuma região encontrada para a UF selecionada";
+
+  const regiaoOptions =
+    regioes.length > 0
+      ? [
+          { value: "", label: regiaoPlaceholder },
+          ...regioes.map((regiao) => ({
+            value: regiao.id,
+            label: `${regiao.nome} - ${regiao.uf}`,
+          })),
+        ]
+      : [{ value: "", label: regiaoPlaceholder }];
 
   return (
     <>
@@ -642,24 +762,10 @@ const EditarCliente: React.FC = () => {
                   label="Código no ERP"
                   name="codigo_erp"
                   value={formData.codigo_erp || ""}
+                  error={formErrors.codigo_erp}
                   placeholder="Código interno do sistema ERP"
-                  onChange={handleInputChange}
-                />
-
-                <SelectField
-                  label="Região"
-                  name="id_regiao"
-                  value={formData.id_regiao ?? ""}
-                  error={formErrors.id_regiao}
                   required
                   onChange={handleInputChange}
-                  options={[
-                    { value: "", label: "Selecione uma região..." },
-                    ...regioes.map((regiao) => ({
-                      value: regiao.id,
-                      label: `${regiao.nome} - ${regiao.uf}`,
-                    })),
-                  ]}
                 />
               </div>
             </section>
@@ -742,14 +848,28 @@ const EditarCliente: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-6">
-                <InputField
-                  label="Complemento"
-                  name="complemento"
-                  value={formData.complemento || ""}
-                  placeholder="Apto, Bloco, Sala, etc."
-                  onChange={handleInputChange}
-                />
+              <div className="grid grid-cols-3 gap-6">
+                <div className="col-span-2">
+                  <InputField
+                    label="Complemento"
+                    name="complemento"
+                    value={formData.complemento || ""}
+                    placeholder="Apto, Bloco, Sala, etc."
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="col-span-1">
+                  <SelectField
+                    label="Região"
+                    name="id_regiao"
+                    value={formData.id_regiao ?? ""}
+                    error={formErrors.id_regiao}
+                    required
+                    onChange={handleInputChange}
+                    options={regiaoOptions}
+                  />
+                </div>
               </div>
             </section>
 

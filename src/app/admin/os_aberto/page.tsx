@@ -18,7 +18,7 @@ import AlterarPendenciaModal from "@/app/admin/os_aberto/components/AlterarPende
 import TecnicoModal from "@/app/admin/os_aberto/components/TecnicoModal";
 import CancelarOSModal from "@/app/admin/os_aberto/components/CancelarOSModal";
 import { OrdemServico } from "@/types/OrdemServico";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const CODIGO_SITUACAO = {
   PENDENTE: 1,
@@ -38,6 +38,8 @@ const TelaOSAbertas: React.FC = () => {
   const [allOrdensServico, setAllOrdensServico] = useState<OrdemServico[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const searchParams = useSearchParams();
+  const osParam = searchParams.get("os");
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const [tecnicoFiltros, setTecnicoFiltros] = useState({
@@ -169,6 +171,16 @@ const TelaOSAbertas: React.FC = () => {
   }, [fetchData]);
 
   useEffect(() => {
+    if (osParam) {
+      const id = Number(osParam);
+      if (!Number.isNaN(id)) {
+        setExpandedCards(new Set([id]));
+        window.sessionStorage.setItem(EXPANDED_STORAGE_KEY, id.toString());
+      }
+    }
+  }, [osParam]);
+
+  useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
@@ -176,9 +188,8 @@ const TelaOSAbertas: React.FC = () => {
     const shouldRestore = window.sessionStorage.getItem(
       EXPANDED_RESTORE_FLAG_KEY
     );
-    const storedExpandedId = window.sessionStorage.getItem(
-      EXPANDED_STORAGE_KEY
-    );
+    const storedExpandedId =
+      window.sessionStorage.getItem(EXPANDED_STORAGE_KEY);
 
     if (shouldRestore === "true" && storedExpandedId) {
       const parsedId = Number(storedExpandedId);
@@ -221,10 +232,7 @@ const TelaOSAbertas: React.FC = () => {
       if (!prev.has(osId)) {
         newExpanded.add(osId);
         if (typeof window !== "undefined") {
-          window.sessionStorage.setItem(
-            EXPANDED_STORAGE_KEY,
-            osId.toString()
-          );
+          window.sessionStorage.setItem(EXPANDED_STORAGE_KEY, osId.toString());
         }
       } else if (typeof window !== "undefined") {
         window.sessionStorage.removeItem(EXPANDED_STORAGE_KEY);
@@ -532,7 +540,13 @@ const TelaOSAbertas: React.FC = () => {
         return Promise.reject(error);
       }
     },
-    [fetchData, handleCloseTecnicoModal, modalTecnico.mode, showError, showSuccess]
+    [
+      fetchData,
+      handleCloseTecnicoModal,
+      modalTecnico.mode,
+      showError,
+      showSuccess,
+    ]
   );
 
   const filteredOrdens = useMemo(() => {
@@ -755,8 +769,3 @@ const TelaOSAbertas: React.FC = () => {
 };
 
 export default TelaOSAbertas;
-
-
-
-
-

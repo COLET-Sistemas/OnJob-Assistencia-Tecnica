@@ -73,6 +73,7 @@ class UsuariosService {
       administrador: usuarioAPI.administrador || false,
       senha_provisoria: usuarioAPI.senha_provisoria || false,
       empresa: usuarioAPI.empresa,
+      permite_cadastro: usuarioAPI.permite_cadastro ?? false,
     };
 
     return usuarioFormatado;

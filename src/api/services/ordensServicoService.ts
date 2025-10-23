@@ -431,6 +431,33 @@ interface OSFinalizadaForm {
   comentarios_finalizacao: string;
 }
 
+export interface OSRetroativaPayload {
+  id_cliente: number;
+  id_maquina: number;
+  id_contato_abertura?: number;
+  nome_contato_abertura: string;
+  telefone_contato_abertura?: string;
+  whatsapp_contato_abertura?: string;
+  email_contato_abertura?: string;
+  forma_abertura: string;
+  origem_abertura: string;
+  data_abertura: string;
+  id_usuario_abertura: number;
+  id_usuario_tecnico: number;
+  em_garantia: boolean;
+  id_motivo_atendimento: number;
+  descricao_problema: string;
+  observacoes_tecnico?: string;
+  solucao_encontrada?: string;
+  testes_realizados?: string;
+  sugestoes?: string;
+  observacoes?: string;
+  numero_ciclos?: number;
+  data_conclusao: string;
+  id_usuario_revisao: number;
+  emissao_retroativa: boolean;
+}
+
 class OrdensServicoService {
   private baseUrl = "/ordens_servico";
   private cache = new Map<string, { data: unknown; timestamp: number }>();
@@ -604,6 +631,17 @@ class OrdensServicoService {
   async create(data: OSForm): Promise<OSDetalhada> {
     const result = await api.post<OSDetalhada>(this.baseUrl, data);
     // Limpar caches relacionados
+    this.cache.clear();
+    return result;
+  }
+
+  async createRetroativa(
+    data: OSRetroativaPayload
+  ): Promise<{ mensagem?: string; sucesso?: boolean }> {
+    const result = await api.post<{ mensagem?: string; sucesso?: boolean }>(
+      `${this.baseUrl}/retroativa`,
+      data
+    );
     this.cache.clear();
     return result;
   }

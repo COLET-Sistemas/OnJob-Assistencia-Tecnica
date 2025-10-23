@@ -1,14 +1,6 @@
 ﻿"use client";
 import { Loading } from "@/components/LoadingPersonalizado";
-import {
-  User,
-  Plus,
-  MapPin,
-  Filter,
-  Settings,
-  Trash2,
-  Pencil,
-} from "lucide-react";
+import { User, Plus, MapPin, Settings, Trash2, Pencil } from "lucide-react";
 import {
   TableList,
   TableStatusColumn,
@@ -25,6 +17,7 @@ import { EditButton } from "@/components/admin/ui/EditButton";
 import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
 import { services } from "@/api";
+import { useCadastroPermission } from "@/hooks/useCadastroPermission";
 import LocationButton from "@/components/admin/ui/LocationButton";
 import api from "@/api/api";
 import Link from "next/link";
@@ -33,7 +26,6 @@ import ConfirmModal from "@/components/admin/ui/ConfirmModal";
 
 const { clientesService, maquinasService } = services;
 
-// Interface dos filtros especÃ­ficos para clientes
 interface ClientesFilters {
   nome: string;
   uf: string;
@@ -67,6 +59,8 @@ type ExpandedSection = "contatos" | "maquinas";
 const CadastroClientes = () => {
   const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
+  const { hasPermission: canManageCadastros } = useCadastroPermission();
+  const cadastroDeniedMessage = "Restrito ao seu perfil.";
   const router = useRouter();
   const searchParams = useSearchParams();
   const [expandedState, setExpandedState] = useState<{
@@ -177,10 +171,10 @@ const CadastroClientes = () => {
         const listaRegioes = await services.regioesService.getAll();
         setRegioes(listaRegioes);
       } catch (error) {
-        console.error("Erro ao carregar regiÃµes:", error);
+        console.error("Erro ao carregar regiões:", error);
         showError(
-          "Erro ao carregar regiÃµes",
-          "Não foi possÃ­vel carregar a lista de regiÃµes para o filtro."
+          "Erro ao carregar regiões",
+          "Não foi possí­vel carregar a lista de regiões para o filtro."
         );
       }
     };
@@ -191,7 +185,6 @@ const CadastroClientes = () => {
   const {
     filtrosPainel,
     filtrosAplicados,
-    activeFiltersCount,
     handleFiltroChange,
     limparFiltros,
     aplicarFiltros,
@@ -409,7 +402,7 @@ const CadastroClientes = () => {
         console.error("Erro ao carregar contatos:", error);
         showError(
           "Erro ao carregar contatos",
-          "Não foi possÃ­vel carregar os contatos deste cliente."
+          "Não foi possível carregar os contatos deste cliente."
         );
       }
     };
@@ -485,7 +478,7 @@ const CadastroClientes = () => {
         console.error("Erro ao carregar máquinas:", error);
         showError(
           "Erro ao carregar máquinas",
-          "Não foi possÃ­vel carregar as máquinas deste cliente."
+          "Não foi possível carregar as máquinas deste cliente."
         );
       }
     };
@@ -503,15 +496,26 @@ const CadastroClientes = () => {
     getSectionDomId,
   ]);
 
-  const openLocationModal = useCallback((cliente: Cliente) => {
-    setSelectedCliente(cliente);
-    setShowLocationModal(true);
-  }, []);
+  const openLocationModal = useCallback(
+    (cliente: Cliente) => {
+      if (!canManageCadastros) {
+        showError("Acesso negado", cadastroDeniedMessage);
+        return;
+      }
+
+      setSelectedCliente(cliente);
+      setShowLocationModal(true);
+    },
+    [canManageCadastros, showError, cadastroDeniedMessage]
+  );
 
   const saveClienteLocation = useCallback(
     async (latitude: number, longitude: number) => {
       if (!selectedCliente) return;
-
+      if (!canManageCadastros) {
+        showError("Acesso negado", cadastroDeniedMessage);
+        return;
+      }
       try {
         const clientId = getClienteId(selectedCliente);
 
@@ -531,7 +535,15 @@ const CadastroClientes = () => {
         );
       }
     },
-    [selectedCliente, refetch, showSuccess, showError, getClienteId]
+    [
+      selectedCliente,
+      refetch,
+      showSuccess,
+      showError,
+      getClienteId,
+      canManageCadastros,
+      cadastroDeniedMessage,
+    ]
   );
 
   // Recupera o endereço da empresa do localStorage
@@ -772,6 +784,11 @@ const CadastroClientes = () => {
   ];
 
   const handleDelete = async (id: number) => {
+    if (!canManageCadastros) {
+      showError("Acesso negado", cadastroDeniedMessage);
+      return;
+    }
+
     try {
       await clientesService.delete(id);
       setLocalShowFilters(false);
@@ -791,6 +808,10 @@ const CadastroClientes = () => {
 
   // Função para mostrar o modal de confirmação de inativação
   const openInactivateModal = (id: number, name: string) => {
+    if (!canManageCadastros) {
+      showError("Acesso negado", cadastroDeniedMessage);
+      return;
+    }
     // Garantir que o ID seja um número válido
     if (!id || isNaN(Number(id))) {
       console.error("ID do contato inválido:", id);
@@ -805,6 +826,11 @@ const CadastroClientes = () => {
 
   // Função para inativar contato
   const handleInativarContato = async () => {
+    if (!canManageCadastros) {
+      showError("Acesso negado", cadastroDeniedMessage);
+      return;
+    }
+
     if (!selectedContactId) {
       console.error("ID do contato não definido");
       showError("Erro", "ID do contato não definido ou inválido.");
@@ -863,15 +889,24 @@ const CadastroClientes = () => {
           cliente={cliente}
           onDefineLocation={openLocationModal}
           enderecoEmpresa={getEnderecoEmpresa()}
+          canDefine={canManageCadastros}
+          disabledTooltip={cadastroDeniedMessage}
         />
 
-        <EditButton id={clientId} editRoute="/admin/cadastro/clientes/editar" />
+        <EditButton
+          id={clientId}
+          editRoute="/admin/cadastro/clientes/editar"
+          disabled={!canManageCadastros}
+          disabledTooltip={cadastroDeniedMessage}
+        />
         <DeleteButton
           id={clientId}
           onDelete={handleDelete}
           confirmText="Deseja realmente inativar este cliente?"
           confirmTitle="Inativação de Cliente"
           itemName={`${cliente.nome_fantasia || cliente.razao_social}`}
+          disabled={!canManageCadastros}
+          disabledTooltip={cadastroDeniedMessage}
         />
       </div>
     );
@@ -985,45 +1020,44 @@ const CadastroClientes = () => {
             </h2>
 
             <div className="flex items-center gap-3">
-              {/* Botão de filtro */}
-              <div className="relative">
-                <button
-                  onClick={handleToggleFilters}
-                  className={`relative px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border cursor-pointer ${
-                    localShowFilters
-                      ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/25"
-                      : "bg-white hover:bg-gray-50 text-[var(--neutral-graphite)] border-gray-200 hover:border-gray-300 hover:shadow-md"
-                  }`}
+              {/* Bot�o de novo contato */}
+              {/* Botao de novo contato */}
+              {canManageCadastros ? (
+                <Link
+                  href="/admin/cadastro/clientes/contato/novo"
+                  className="bg-[var(--secondary-yellow)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--secondary-yellow)] hover:bg-[var(--secondary-yellow)]/90 hover:border-[var(--secondary-yellow)]/90"
                 >
-                  <Filter size={18} />
-                  <span className="font-medium">Filtros</span>
-                  {(activeFiltersCount ?? 0) > 0 && (
-                    <div className="absolute -top-1 -right-1 flex items-center justify-center">
-                      <span className="w-5 h-5 bg-[#FDAD15] text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg">
-                        {activeFiltersCount}
-                      </span>
-                    </div>
-                  )}
-                </button>
-              </div>
+                  <Plus size={18} />
+                  Novo Contato
+                </Link>
+              ) : (
+                <span
+                  className="px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed"
+                  title={cadastroDeniedMessage}
+                >
+                  <Plus size={18} />
+                  Novo Contato
+                </span>
+              )}
 
-              {/* Botão de novo contato */}
-              <Link
-                href="/admin/cadastro/clientes/contato/novo"
-                className="bg-[var(--secondary-yellow)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--secondary-yellow)] hover:bg-[var(--secondary-yellow)]/90 hover:border-[var(--secondary-yellow)]/90"
-              >
-                <Plus size={18} />
-                Novo Contato
-              </Link>
-
-              {/* Botão de novo cliente */}
-              <Link
-                href="/admin/cadastro/clientes/novo"
-                className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
-              >
-                <Plus size={18} />
-                Novo Cliente
-              </Link>
+              {/* Botao de novo cliente */}
+              {canManageCadastros ? (
+                <Link
+                  href="/admin/cadastro/clientes/novo"
+                  className="bg-[var(--primary)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--primary)] hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
+                >
+                  <Plus size={18} />
+                  Novo Cliente
+                </Link>
+              ) : (
+                <span
+                  className="px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed"
+                  title={cadastroDeniedMessage}
+                >
+                  <Plus size={18} />
+                  Novo Cliente
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -1239,7 +1273,7 @@ const CadastroClientes = () => {
                           {contato.cargo && ` (${contato.cargo})`}
                         </div>
                         <div className="flex items-center gap-2">
-                          {contato.situacao === "A" && (
+                          {contato.situacao === "A" && canManageCadastros && (
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={(e) => {

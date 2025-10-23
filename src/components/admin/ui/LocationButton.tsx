@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import { MapPinCheck, MapPinned } from "lucide-react";
 import type { Cliente } from "@/types/admin/cadastro/clientes";
+import { useCadastroPermission } from "@/hooks/useCadastroPermission";
 
 interface LocationButtonProps {
   cliente: Cliente;
@@ -11,6 +12,8 @@ interface LocationButtonProps {
   enderecoEmpresa?: string;
   className?: string;
   iconOnly?: boolean;
+  canDefine?: boolean;
+  disabledTooltip?: string;
 }
 
 const LocationButton = ({
@@ -19,9 +22,16 @@ const LocationButton = ({
   onViewRoute,
   enderecoEmpresa = "",
   className = "",
+  canDefine,
+  disabledTooltip,
 }: LocationButtonProps) => {
   const linkRef = useRef<HTMLAnchorElement>(null);
   const [origin, setOrigin] = useState<string>("");
+  const { hasPermission } = useCadastroPermission();
+
+  const effectiveCanDefine = canDefine ?? hasPermission;
+  const deniedTooltip =
+    disabledTooltip || "Você não possui permissão para definir localização.";
 
   const needsLocationDefinition =
     !cliente.latitude ||
@@ -66,11 +76,32 @@ const LocationButton = ({
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (needsLocationDefinition && onDefineLocation) onDefineLocation(cliente);
-    else if (hasValidLocation && onViewRoute) onViewRoute(cliente);
+    if (needsLocationDefinition) {
+      if (effectiveCanDefine && onDefineLocation) {
+        onDefineLocation(cliente);
+      }
+      return;
+    }
+
+    if (hasValidLocation && onViewRoute) {
+      onViewRoute(cliente);
+    }
   };
 
   const baseClasses = `inline-flex items-center justify-center rounded-lg transition-colors cursor-pointer p-2 ${className}`;
+
+  if (needsLocationDefinition && !effectiveCanDefine) {
+    return (
+      <button
+        type="button"
+        className={`${baseClasses} bg-gray-200 text-gray-500 cursor-not-allowed`}
+        title={deniedTooltip}
+        disabled
+      >
+        <MapPinCheck size={20} strokeWidth={1.8} />
+      </button>
+    );
+  }
 
   if (needsLocationDefinition) {
     return (

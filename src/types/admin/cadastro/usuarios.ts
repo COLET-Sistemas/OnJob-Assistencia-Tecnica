@@ -16,6 +16,7 @@ export interface UsuarioAPIResponse {
   perfil_tecnico_proprio?: boolean;
   perfil_tecnico_terceirizado?: boolean;
   administrador?: boolean;
+  permite_cadastro?: boolean;
   situacao: "A" | "I";
   data_situacao: string;
   empresa?: Empresa;
@@ -35,6 +36,7 @@ export interface Usuario {
   perfil_tecnico_proprio: boolean;
   perfil_tecnico_terceirizado: boolean;
   administrador: boolean;
+  permite_cadastro: boolean;
   situacao: string;
   data_situacao: string;
   empresa?: Empresa;

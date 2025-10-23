@@ -328,6 +328,10 @@ export default function LoginPage() {
               perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
               perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
               administrador: authData.perfil.admin,
+              permite_cadastros:
+                typeof authData.perfil.permite_cadastros === "boolean"
+                  ? authData.perfil.permite_cadastros
+                  : true,
             },
           },
           module

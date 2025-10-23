@@ -46,6 +46,17 @@ type MaquinaOption = {
   maquina: Maquina;
 };
 
+const applyPhoneMask = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  return digits
+    .replace(/^(\d{2})(\d)/g, "($1) $2")
+    .replace(/(\d{5})(\d)/, "$1-$2")
+    .replace(/(-\d{4})\d+$/, "$1");
+};
+
+const isValidEmail = (value: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
 const manualContatoOption: ContatoOption = {
   id: -1,
   label: "Adicionar novo contato",
@@ -395,11 +406,20 @@ export default function NovaOrdemServicoMobile() {
     const nome = newContact.nome.trim();
     const telefone = newContact.telefone.trim();
     const email = newContact.email.trim();
+    const whatsapp = newContact.whatsapp.trim();
 
-    if (!nome || !telefone || !email) {
+    if (!nome) {
       setErrors((prev) => ({
         ...prev,
-        novoContato: "Informe nome, telefone e e-mail para salvar o contato.",
+        novoContato: "Informe o nome completo do contato para salvar.",
+      }));
+      return;
+    }
+
+    if (email && !isValidEmail(email)) {
+      setErrors((prev) => ({
+        ...prev,
+        novoContato: "Informe um e-mail valido para o contato.",
       }));
       return;
     }
@@ -413,7 +433,7 @@ export default function NovaOrdemServicoMobile() {
         nome_completo: nome,
         cargo: newContact.cargo.trim(),
         telefone,
-        whatsapp: newContact.whatsapp.trim() || telefone,
+        whatsapp: whatsapp || telefone,
         email,
         situacao: "A",
         recebe_aviso_os: true,
@@ -495,7 +515,7 @@ export default function NovaOrdemServicoMobile() {
       const validationErrors: Partial<typeof errors> = {};
       const manualContactSelected = selectedContato?.id === -1;
       const manualNome = newContact.nome.trim();
-      const manualTelefone = newContact.telefone.trim();
+      const manualEmail = newContact.email.trim();
 
       if (!selectedCliente) {
         validationErrors.cliente = "Selecione um cliente.";
@@ -517,9 +537,10 @@ export default function NovaOrdemServicoMobile() {
       if (!selectedContato) {
         validationErrors.contato = "Selecione um contato.";
       } else if (manualContactSelected) {
-        if (!manualNome || !manualTelefone) {
-          validationErrors.novoContato =
-            "Informe nome e telefone para o contato.";
+        if (!manualNome) {
+          validationErrors.novoContato = "Informe o nome completo do contato.";
+        } else if (manualEmail && !isValidEmail(manualEmail)) {
+          validationErrors.novoContato = "Informe um e-mail valido para o contato.";
         }
       }
 
@@ -562,13 +583,20 @@ export default function NovaOrdemServicoMobile() {
           contato.whatsapp || contato.telefone || "";
         payload.email_contato_abertura = contato.email || "";
       } else if (manualContactSelected && manualContato) {
-        payload.nome_contato_abertura = manualContato.nome.trim();
-        payload.telefone_contato_abertura = manualContato.telefone.trim();
-        if (manualContato.whatsapp.trim()) {
-          payload.whatsapp_contato_abertura = manualContato.whatsapp.trim();
+        const nomeManual = manualContato.nome.trim();
+        const telefoneManual = manualContato.telefone.trim();
+        const whatsappManual = manualContato.whatsapp.trim();
+        const emailManual = manualContato.email.trim();
+
+        payload.nome_contato_abertura = nomeManual;
+        if (telefoneManual) {
+          payload.telefone_contato_abertura = telefoneManual;
         }
-        if (manualContato.email.trim()) {
-          payload.email_contato_abertura = manualContato.email.trim();
+        if (whatsappManual) {
+          payload.whatsapp_contato_abertura = whatsappManual;
+        }
+        if (emailManual) {
+          payload.email_contato_abertura = emailManual;
         }
       }
 
@@ -617,7 +645,7 @@ export default function NovaOrdemServicoMobile() {
         leftVariant="back"
         onAddClick={() => router.back()}
       />
-      <main className="min-h-screen bg-slate-50 pb-28">
+      <main className="min-h-screen bg-slate-50 ">
         <form
           onSubmit={handleSubmit}
           className="px-4 py-6 space-y-6 max-w-3xl mx-auto"
@@ -794,12 +822,12 @@ export default function NovaOrdemServicoMobile() {
                           nome: event.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#7B54BE] focus:outline-none"
+                      className="w-full rounded-lg placeholder-slate-400 text-slate-500 border border-slate-200 px-3 py-2 text-sm focus:border-[#7B54BE] focus:outline-none"
                       placeholder="Nome do contato"
                     />
                   </label>
                   <label className="space-y-1">
-                    <span className="text-xs font-medium text-slate-600">
+                    <span className="text-xs font-medium text-slate-600 ">
                       Cargo (opcional)
                     </span>
                     <input
@@ -811,14 +839,14 @@ export default function NovaOrdemServicoMobile() {
                           cargo: event.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#7B54BE] focus:outline-none"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-500 placeholder-slate-400 text-sm focus:border-[#7B54BE] focus:outline-none"
                       placeholder="Cargo na empresa"
                     />
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="space-y-1">
                       <span className="text-xs font-medium text-slate-600">
-                        Telefone
+                        Telefone (opcional)
                       </span>
                       <input
                         type="tel"
@@ -826,10 +854,11 @@ export default function NovaOrdemServicoMobile() {
                         onChange={(event) =>
                           setNewContact((prev) => ({
                             ...prev,
-                            telefone: event.target.value,
+                            telefone: applyPhoneMask(event.target.value),
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#7B54BE] focus:outline-none"
+                        maxLength={15}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-500 placeholder-slate-400 focus:border-[#7B54BE] focus:outline-none"
                         placeholder="(00) 00000-0000"
                       />
                     </label>
@@ -843,17 +872,18 @@ export default function NovaOrdemServicoMobile() {
                         onChange={(event) =>
                           setNewContact((prev) => ({
                             ...prev,
-                            whatsapp: event.target.value,
+                            whatsapp: applyPhoneMask(event.target.value),
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#7B54BE] focus:outline-none"
+                        maxLength={15}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-500 placeholder-slate-400 focus:border-[#7B54BE] focus:outline-none"
                         placeholder="(00) 00000-0000"
                       />
                     </label>
                   </div>
                   <label className="space-y-1">
                     <span className="text-xs font-medium text-slate-600">
-                      E-mail
+                      E-mail (opcional)
                     </span>
                     <input
                       type="email"
@@ -864,7 +894,7 @@ export default function NovaOrdemServicoMobile() {
                           email: event.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#7B54BE] focus:outline-none"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm placeholder-slate-400 text-slate-500 focus:border-[#7B54BE] focus:outline-none"
                       placeholder="contato@empresa.com"
                     />
                   </label>

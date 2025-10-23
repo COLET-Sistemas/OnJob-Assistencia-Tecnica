@@ -35,6 +35,7 @@ interface FormData {
   perfil_tecnico_proprio: boolean;
   perfil_tecnico_terceirizado: boolean;
   administrador: boolean;
+  permite_cadastro: boolean;
   [key: string]: string | boolean;
 }
 
@@ -59,6 +60,7 @@ const EditarUsuario = (props: PageProps) => {
     perfil_tecnico_proprio: false,
     perfil_tecnico_terceirizado: false,
     administrador: false,
+    permite_cadastro: false,
   });
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
@@ -121,6 +123,7 @@ const EditarUsuario = (props: PageProps) => {
               perfil_tecnico_proprio: usuario.perfil_tecnico_proprio,
               perfil_tecnico_terceirizado: usuario.perfil_tecnico_terceirizado,
               administrador: usuario.administrador,
+              permite_cadastro: usuario.permite_cadastro ?? false,
             };
 
             userCache.set(id, userData);
@@ -229,6 +232,7 @@ const EditarUsuario = (props: PageProps) => {
         perfil_tecnico_proprio: formData.perfil_tecnico_proprio,
         perfil_tecnico_terceirizado: formData.perfil_tecnico_terceirizado,
         administrador: formData.administrador,
+        permite_cadastro: formData.permite_cadastro,
       });
 
       userCache.delete(id);
@@ -346,6 +350,25 @@ const EditarUsuario = (props: PageProps) => {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Permite cadastro */}
+                <div className="space-y-2">
+                  <label className="block text-md font-medium text-slate-700">
+                    Permite Cadastro
+                  </label>
+                  <label className="inline-flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      name="permite_cadastro"
+                      checked={Boolean(formData.permite_cadastro)}
+                      onChange={handleInputChange}
+                      className="h-5 w-5 rounded border-slate-300 text-[var(--primary)] focus:ring-violet-500"
+                    />
+                    <span className="text-gray-700">
+                      Usuário pode cadastrar
+                    </span>
+                  </label>
                 </div>
 
                 {/* Situação */}
