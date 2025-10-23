@@ -2,7 +2,6 @@
 
 import {
   AlertTriangle,
-  BarChart3,
   Check,
   ChevronRight,
   Eye,
@@ -839,17 +838,6 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-            {!isMobile && (
-              <div className="mb-4">
-                <a
-                  href="/dashboard-panel"
-                  className="inline-flex items-center text-sm text-[#7B54BE] hover:text-[#553499] font-medium transition-colors focus:outline-none focus:underline"
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Acessar Painel de Monitoramento
-                </a>
-              </div>
-            )}
             <p className="text-gray-500 text-xs">
               © 2025 OnJob Sistemas. Todos os direitos reservados - Versão{" "}
               {packageInfo.version}

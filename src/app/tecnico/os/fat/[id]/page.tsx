@@ -929,7 +929,11 @@ export default function FATDetalheMobile() {
             <ActionButtonFat
               label="Fotos"
               icon={<Camera className="w-5 h-5 text-purple-600" />}
-              onClick={() => {}}
+              onClick={() => {
+                if (params?.id) {
+                  router.push(`/tecnico/os/fat/${params.id}/fotos`);
+                }
+              }}
               color="hover:border-purple-300"
             />
           </div>

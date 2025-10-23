@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 // import Image from "next/image";
 import { fatService, FATDetalhada } from "@/api/services/fatService";
+import { fatFotosService } from "@/api/services/fatFotosService";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { StatusBadge } from "@/components/admin/common";
 import { LoadingSpinner } from "@/components/LoadingPersonalizado";
@@ -26,7 +27,8 @@ import {
   ArrowLeft,
   ArrowUp,
   Package,
-  // Image as ImageIcon,
+  Image as ImageIcon,
+  ImageOff,
   Truck,
   // ExternalLink,
 } from "lucide-react";
@@ -39,6 +41,17 @@ const FATDetalhesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [fatData, setFatData] = useState<FATDetalhada | null>(null);
   const [showScrollToTop, setShowScrollToTop] = useState<boolean>(false);
+  const [loadingFotos, setLoadingFotos] = useState<boolean>(false);
+  const [fotosErro, setFotosErro] = useState<string | null>(null);
+  const [fotoPreviews, setFotoPreviews] = useState<Record<number, string>>({});
+  const fotoUrlsRef = useRef<Map<number, string>>(new Map());
+
+  useEffect(() => {
+    return () => {
+      fotoUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      fotoUrlsRef.current.clear();
+    };
+  }, []);
 
   // Memoizado para evitar re-renderizações desnecessárias
   const memoizedFatId = useMemo(() => fatId, [fatId]);
@@ -165,6 +178,83 @@ const FATDetalhesPage: React.FC = () => {
     fetchFATData();
   }, [memoizedFatId]);
 
+  useEffect(() => {
+    const fotos = fatData?.fotos;
+    let isCancelled = false;
+
+    fotoUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    fotoUrlsRef.current.clear();
+    fotoUrlsRef.current = new Map();
+
+    if (!fotos || fotos.length === 0) {
+      setFotoPreviews({});
+      setFotosErro(null);
+      setLoadingFotos(false);
+      return;
+    }
+
+    const loadFotos = async () => {
+      setLoadingFotos(true);
+      setFotosErro(null);
+
+      try {
+        const results = await Promise.allSettled(
+          fotos.map(async (foto) => {
+            const blob = await fatFotosService.visualizar(foto.id_fat_foto);
+            const url = URL.createObjectURL(blob);
+            return [foto.id_fat_foto, url] as const;
+          })
+        );
+
+        if (isCancelled) {
+          results.forEach((result) => {
+            if (result.status === "fulfilled") {
+              URL.revokeObjectURL(result.value[1]);
+            }
+          });
+          return;
+        }
+
+        const previews: Record<number, string> = {};
+        const urlsMap = new Map<number, string>();
+        let hadErrors = false;
+
+        results.forEach((result) => {
+          if (result.status === "fulfilled") {
+            const [id, url] = result.value;
+            previews[id] = url;
+            urlsMap.set(id, url);
+          } else {
+            hadErrors = true;
+          }
+        });
+
+        fotoUrlsRef.current = urlsMap;
+        setFotoPreviews(previews);
+
+        if (hadErrors) {
+          setFotosErro("Algumas imagens não puderam ser carregadas.");
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          console.error("Erro ao carregar imagens da FAT:", err);
+          setFotoPreviews({});
+          setFotosErro("Não foi possível carregar as imagens.");
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoadingFotos(false);
+        }
+      }
+    };
+
+    loadFotos();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [fatData?.fotos]);
+
   const handleVoltar = () => {
     window.history.back();
   };
@@ -255,6 +345,9 @@ const FATDetalhesPage: React.FC = () => {
       </div>
     );
   }
+
+  const fotosFAT = fatData.fotos ?? [];
+  const possuiFotos = fotosFAT.length > 0;
 
   return (
     <>
@@ -539,11 +632,96 @@ const FATDetalhesPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-              </div>
             </div>
+          </div>
 
-            {/* Card Deslocamentos */}
-            {fatData.deslocamentos && fatData.deslocamentos.length > 0 && (
+          {/* Card Imagens */}
+          <div
+            className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
+            style={{ animationDelay: "0.35s" }}
+          >
+            <div className="py-3 px-6 border-b border-gray-100 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <ImageIcon
+                  className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
+                  style={{ animationDelay: "0.45s" }}
+                />
+                <h3 className="text-base font-semibold text-gray-800">
+                  Imagens do Atendimento
+                </h3>
+              </div>
+              {possuiFotos && (
+                <span className="text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
+                  {fotosFAT.length}{" "}
+                  {fotosFAT.length === 1 ? "foto" : "fotos"}
+                </span>
+              )}
+            </div>
+            <div className="p-6">
+              {fotosErro && (
+                <div className="mb-4 text-sm text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                  {fotosErro}
+                </div>
+              )}
+
+              {loadingFotos ? (
+                <div className="flex items-center justify-center py-10">
+                  <div className="w-8 h-8 border-2 border-gray-200 border-t-[var(--primary)] rounded-full animate-spin" />
+                </div>
+              ) : possuiFotos ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {fotosFAT.map((foto) => {
+                    const previewUrl = fotoPreviews[foto.id_fat_foto];
+                    return (
+                      <div
+                        key={foto.id_fat_foto}
+                        className="group bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow transition-shadow duration-200"
+                      >
+                        <div className="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
+                          {previewUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={previewUrl}
+                              alt={foto.descricao || foto.nome_arquivo}
+                              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center gap-2 text-gray-400 text-xs text-center px-4">
+                              <ImageOff className="w-6 h-6" />
+                              <span>Pré-visualização indisponível</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="px-4 py-3 space-y-1">
+                          <p className="text-sm font-semibold text-gray-700 line-clamp-2">
+                            {foto.descricao?.trim() || foto.nome_arquivo}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {foto.data_cadastro}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="border border-dashed border-gray-200 rounded-lg px-6 py-10 text-center bg-gray-50">
+                  <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
+                    <ImageIcon className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-700">
+                    Nenhuma imagem cadastrada para esta FAT.
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    As fotos enviadas pelo técnico ficam disponíveis aqui.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Card Deslocamentos */}
+          {fatData.deslocamentos && fatData.deslocamentos.length > 0 && (
               <div
                 className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
                 style={{ animationDelay: "0.4s" }}
