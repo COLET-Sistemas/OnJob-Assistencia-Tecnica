@@ -68,9 +68,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
       }
 
       if (config.newButton?.label) {
-        const isDisabled = Boolean(
-          config.newButton.disabled ?? !hasPermission
-        );
+        const isDisabled = Boolean(config.newButton.disabled ?? !hasPermission);
         const commonClasses =
           "px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border";
         const enabledClasses =
@@ -165,11 +163,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
                       : "Exibir filtros de pesquisa"
                   }
                   aria-pressed={filterToggleActive}
-                  className={`flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200 ${
-                    filterToggleActive
-                      ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-md shadow-[var(--primary)]/30"
-                      : "bg-white text-[var(--neutral-graphite)] border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                  }`}
+                  className={`p-2 text-slate-600 hover:text-[var(--primary)] hover:bg-violet-50 rounded-lg transition-colors`}
                 >
                   <ArrowLeft size={16} />
                 </button>
@@ -214,5 +208,3 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
 };
 
 export default PageHeader;
-
-

@@ -122,27 +122,44 @@ const fadeInAnimation = `
 }
 `;
 
+const RESET_FLAG_KEY = "os_consulta_reset_from_sidebar";
+const INITIAL_DATA_STATE: { dados: OSItemExtended[]; total_registros: number } = {
+  dados: [],
+  total_registros: 0,
+};
+
+const INITIAL_OS_FILTERS: Record<string, string> = {
+  status: "",
+  campo_data: "",
+  data_ini: "",
+  data_fim: "",
+  numero_os: "",
+  nome_cliente: "",
+  numero_serie: "",
+  id_tecnico: "",
+  tipo_tecnico: "",
+};
+
+const INITIAL_PAGINATION_STATE: {
+  paginaAtual: number;
+  totalPaginas: number;
+  totalRegistros: number;
+  registrosPorPagina: number;
+} = {
+  paginaAtual: 1,
+  totalPaginas: 1,
+  totalRegistros: 0,
+  registrosPorPagina: 25,
+};
+
 const ConsultaOSPage: React.FC = () => {
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<{
-    dados: OSItemExtended[];
-    total_registros: number;
-  }>({ dados: [], total_registros: 0 });
+  const [data, setData] = useState(INITIAL_DATA_STATE);
 
   // Pagination state
-  const [paginacao, setPaginacao] = useState<{
-    paginaAtual: number;
-    totalPaginas: number;
-    totalRegistros: number;
-    registrosPorPagina: number;
-  }>({
-    paginaAtual: 1,
-    totalPaginas: 1,
-    totalRegistros: 0,
-    registrosPorPagina: 25,
-  });
+  const [paginacao, setPaginacao] = useState(INITIAL_PAGINATION_STATE);
   // Define a more flexible type for technicians
   type TecnicoType = {
     id: number;
@@ -159,18 +176,17 @@ const ConsultaOSPage: React.FC = () => {
   const hasSearchRef = useRef<boolean>(false);
   const [hasRestoredState, setHasRestoredState] = useState<boolean>(false);
 
-  // Define initial filters
-  const INITIAL_OS_FILTERS: Record<string, string> = {
-    status: "",
-    campo_data: "",
-    data_ini: "",
-    data_fim: "",
-    numero_os: "",
-    nome_cliente: "",
-    numero_serie: "",
-    id_tecnico: "",
-    tipo_tecnico: "",
-  };
+  if (
+    typeof window !== "undefined" &&
+    sessionStorage.getItem(RESET_FLAG_KEY) === "true"
+  ) {
+    try {
+      sessionStorage.removeItem("os_consulta_filters");
+      sessionStorage.removeItem("os_consulta_filters_state");
+    } catch (error) {
+      console.error("Erro ao limpar filtros da sessão:", error);
+    }
+  }
 
   const {
     filtrosPainel,
@@ -1007,9 +1023,31 @@ const ConsultaOSPage: React.FC = () => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [filtrosPainel]);
 
-  // Check for saved state on component mount and restore if needed
   useEffect(() => {
+    // Restore saved filters unless a sidebar navigation demanded a clean slate
     let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const shouldResetFromSidebar =
+      typeof window !== "undefined" &&
+      sessionStorage.getItem(RESET_FLAG_KEY) === "true";
+
+    if (shouldResetFromSidebar) {
+      sessionStorage.removeItem(RESET_FLAG_KEY);
+      clearPersistedState();
+      limparFiltros();
+      setPaginacao(() => ({ ...INITIAL_PAGINATION_STATE }));
+      setData(() => ({ ...INITIAL_DATA_STATE }));
+      setError(null);
+      hasSearchRef.current = false;
+      setHasSearch(false);
+      setHasRestoredState(true);
+
+      return () => {
+        if (searchTimeout) {
+          clearTimeout(searchTimeout);
+        }
+      };
+    }
 
     const isSavedStateValid = () => {
       const timestamp = localStorage.getItem("os_consulta_state_timestamp");
@@ -1017,7 +1055,7 @@ const ConsultaOSPage: React.FC = () => {
 
       const savedTime = parseInt(timestamp, 10);
       const currentTime = Date.now();
-      const MAX_AGE = 30 * 60 * 1000; // 30 minutos
+      const MAX_AGE = 30 * 60 * 1000; 
 
       return currentTime - savedTime < MAX_AGE;
     };
@@ -1074,7 +1112,7 @@ const ConsultaOSPage: React.FC = () => {
         clearTimeout(searchTimeout);
       }
     };
-  }, [clearPersistedState]);
+  }, [clearPersistedState, limparFiltros]);
 
   useEffect(() => {
     if (!hasRestoredState) return;

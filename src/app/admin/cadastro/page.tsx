@@ -8,6 +8,7 @@ import {
   Search,
   Settings,
   Tag,
+  FileClock,
   AlertTriangle,
   ClipboardList,
   UsersRound,
@@ -79,6 +80,14 @@ const cards = [
     description: "Categorias para pendências",
     icon: <AlertTriangle size={32} strokeWidth={1.5} />,
     path: "/admin/cadastro/motivos_pendencias",
+    category: "Configurações",
+  },
+  {
+    key: "os_retroativas",
+    label: "OSs Retroativas",
+    description: "Cadastro de OSs retroativas",
+    icon: <FileClock size={32} strokeWidth={1.5} />,
+    path: "/admin/cadastro/os_retroativas",
     category: "Configurações",
   },
 ];

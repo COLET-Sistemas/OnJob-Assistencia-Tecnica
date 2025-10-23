@@ -284,6 +284,13 @@ export default function Sidebar({ isOpen }: SidebarProps) {
       toggleSubmenu(item.key);
     } else if (item.path) {
       setActiveMenu(item.key);
+      if (typeof window !== "undefined" && item.path === "/admin/os_consulta") {
+        try {
+          sessionStorage.setItem("os_consulta_reset_from_sidebar", "true");
+        } catch (error) {
+          console.error("Erro ao definir reset de filtros:", error);
+        }
+      }
       router.push(item.path);
     }
   };
@@ -432,3 +439,4 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     </div>
   );
 }
+

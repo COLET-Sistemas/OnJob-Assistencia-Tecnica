@@ -15,7 +15,7 @@ interface CadastroPermissionGuardProps {
 const CadastroPermissionGuard = ({
   children,
   redirectTo,
-  message = "VocÃª nÃ£o possui permissÃ£o para acessar esta Ã¡rea.",
+  message = "Você não possui permissão para acessar esta página.",
 }: CadastroPermissionGuardProps) => {
   const router = useRouter();
   const { showError } = useToast();
@@ -39,7 +39,7 @@ const CadastroPermissionGuard = ({
           fullScreen={false}
           preventScroll={false}
           size="medium"
-          text="Verificando permissÃµes..."
+          text="Verificando permissões..."
         />
       </div>
     );
@@ -53,5 +53,3 @@ const CadastroPermissionGuard = ({
 };
 
 export default CadastroPermissionGuard;
-
-
