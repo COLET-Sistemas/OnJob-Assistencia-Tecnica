@@ -310,12 +310,14 @@ const EditarOrdemServico = () => {
                         };
                       })
                     : [];
-
                 machineOptions.push({
                   value: -1,
                   label: "Buscar outra máquina...",
                   isInWarranty: false,
                   data_final_garantia: "",
+                  numero_serie: "",
+                  descricao: "",
+                  clienteNomeFantasia: "",
                 });
 
                 setMaquinaOptions(machineOptions as MaquinaOption[]);
@@ -327,8 +329,7 @@ const EditarOrdemServico = () => {
           }
 
           // Máquina
-          const baseDescricao =
-            os.maquina.descricao || os.maquina.modelo || "";
+          const baseDescricao = os.maquina.descricao || os.maquina.modelo || "";
           const labelDescricao = baseDescricao ? ` - ${baseDescricao}` : "";
           const maquinaOption = {
             value: os.maquina.id || 0,
@@ -1020,6 +1021,9 @@ const EditarOrdemServico = () => {
         label: "Buscar outra máquina...",
         isInWarranty: false,
         data_final_garantia: "",
+        numero_serie: "",
+        descricao: "",
+        clienteNomeFantasia: "",
       });
 
       setMaquinaOptions(machineOptions as MaquinaOption[]);
