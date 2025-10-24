@@ -14,6 +14,7 @@ type DeleteButtonProps = {
   itemName?: string;
   disabled?: boolean;
   disabledTooltip?: string;
+  requiresPermission?: boolean;
 };
 
 export const DeleteButton = ({
@@ -26,12 +27,14 @@ export const DeleteButton = ({
   itemName = "",
   disabled = false,
   disabledTooltip,
+  requiresPermission = true,
 }: DeleteButtonProps) => {
   const { hasPermission } = useCadastroPermission();
   const [localLoading, setLocalLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const computedDisabled = disabled || !hasPermission;
+  const permissionBlocked = requiresPermission && !hasPermission;
+  const computedDisabled = disabled || permissionBlocked;
   const buttonTitle = useMemo(() => {
     if (!computedDisabled) {
       return "Inativar";
@@ -39,8 +42,10 @@ export const DeleteButton = ({
     if (disabledTooltip) {
       return disabledTooltip;
     }
-    return "Você não possui permissão para inativar este item.";
-  }, [computedDisabled, disabledTooltip]);
+    return permissionBlocked
+      ? "Voce nao possui permissao para inativar este item."
+      : "Esta acao esta desabilitada.";
+  }, [computedDisabled, disabledTooltip, permissionBlocked]);
 
   const handleClick = () => {
     if (computedDisabled || isLoading) {

@@ -290,14 +290,25 @@ const EditarOrdemServico = () => {
               .then((response) => {
                 const machineOptions =
                   response && response.dados
-                    ? response.dados.map((maquina: Maquina) => ({
-                        value: maquina.id,
-                        label: `${maquina.modelo || maquina.descricao} (${
-                          maquina.numero_serie
-                        })`,
-                        isInWarranty: maquina.situacao === "G",
-                        data_final_garantia: maquina.data_final_garantia || "",
-                      }))
+                    ? response.dados.map((maquina: Maquina) => {
+                        const baseDescricao =
+                          maquina.descricao || maquina.modelo || "";
+                        const labelDescricao = baseDescricao
+                          ? ` - ${baseDescricao}`
+                          : "";
+
+                        return {
+                          value: maquina.id,
+                          label: `${maquina.numero_serie}${labelDescricao}`,
+                          isInWarranty: maquina.situacao === "G",
+                          data_final_garantia:
+                            maquina.data_final_garantia || "",
+                          numero_serie: maquina.numero_serie || "",
+                          descricao: baseDescricao,
+                          clienteNomeFantasia:
+                            maquina.cliente_atual?.nome_fantasia || "",
+                        };
+                      })
                     : [];
 
                 machineOptions.push({
@@ -316,13 +327,18 @@ const EditarOrdemServico = () => {
           }
 
           // Máquina
+          const baseDescricao =
+            os.maquina.descricao || os.maquina.modelo || "";
+          const labelDescricao = baseDescricao ? ` - ${baseDescricao}` : "";
           const maquinaOption = {
             value: os.maquina.id || 0,
-            label: `${os.maquina.modelo || os.maquina.descricao} (${
-              os.maquina.numero_serie
-            })`,
+            label: `${os.maquina.numero_serie}${labelDescricao}`,
             isInWarranty: os.em_garantia,
             data_final_garantia: "",
+            numero_serie: os.maquina.numero_serie || "",
+            descricao: baseDescricao,
+            clienteNomeFantasia:
+              os.cliente?.nome || os.cliente?.razao_social || "",
           };
           setSelectedMaquina(maquinaOption);
 
@@ -985,14 +1001,17 @@ const EditarOrdemServico = () => {
             : dataFinalGarantia
             ? new Date(dataFinalGarantia) > new Date()
             : maquina.situacao === "G";
+        const baseDescricao = maquina.descricao || maquina.modelo || "";
+        const labelDescricao = baseDescricao ? ` - ${baseDescricao}` : "";
 
         return {
           value: maquina.id,
-          label: `${maquina.modelo || maquina.descricao} (${
-            maquina.numero_serie
-          })`,
+          label: `${maquina.numero_serie}${labelDescricao}`,
           isInWarranty,
           data_final_garantia: dataFinalGarantia,
+          numero_serie: maquina.numero_serie || "",
+          descricao: baseDescricao,
+          clienteNomeFantasia: maquina.cliente_atual?.nome_fantasia || "",
         };
       });
 

@@ -388,7 +388,7 @@ export default function FATFotosPage() {
 
           {pendingPreview ? (
             <div className="space-y-4">
-              <div className="flex items-start gap-4">
+              <div className="flex justify-center sm:justify-start">
                 <div className="w-28 h-28 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center">
                   {pendingPreview ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -401,43 +401,41 @@ export default function FATFotosPage() {
                     <ImageOff className="w-6 h-6 text-slate-400" />
                   )}
                 </div>
-                <div className="flex-1 space-y-3">
-                  {pendingFile && (
-                    <p className="text-xs font-medium text-slate-500 break-words">
-                      {pendingFile.name}
-                    </p>
-                  )}
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                      Descrição da foto*
-                    </label>
-                    <input
-                      type="text"
-                      value={descricao}
-                      onChange={(event) => setDescricao(event.target.value)}
-                      placeholder="Descreva o que a imagem exibe..."
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-[#7B54BE] focus:outline-none transition-all text-sm text-slate-700 placeholder-slate-400"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={handleUploadPhoto}
-                      disabled={uploading || !descricaoValida || !pendingFile}
-                      className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg shadow-sm hover:bg-emerald-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {uploading ? "Salvando..." : "Salvar foto"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleClearSelection}
-                      disabled={uploading}
-                      className="px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
+              </div>
+              {pendingFile && (
+                <p className="text-xs font-medium text-slate-500 break-words text-center sm:text-left">
+                  {pendingFile.name}
+                </p>
+              )}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                  Descrição da foto*
+                </label>
+                <input
+                  type="text"
+                  value={descricao}
+                  onChange={(event) => setDescricao(event.target.value)}
+                  placeholder="Descreva o que a imagem exibe..."
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-[#7B54BE] focus:outline-none transition-all text-sm text-slate-700 placeholder-slate-400"
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={handleUploadPhoto}
+                  disabled={uploading || !descricaoValida || !pendingFile}
+                  className="w-full sm:flex-1 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg shadow-sm hover:bg-emerald-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {uploading ? "Salvando..." : "Salvar foto"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearSelection}
+                  disabled={uploading}
+                  className="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Cancelar
+                </button>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Confirme se a imagem e a descrição correspondem antes de salvar.

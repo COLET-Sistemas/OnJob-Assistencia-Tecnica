@@ -7,6 +7,9 @@ import { OptionType } from "./CustomSelect";
 export interface MachineOptionType extends OptionType {
   isInWarranty?: boolean;
   data_final_garantia?: string;
+  numero_serie?: string;
+  descricao?: string;
+  clienteNomeFantasia?: string;
 }
 
 // Custom Option component that includes a warranty badge with Lucide icons

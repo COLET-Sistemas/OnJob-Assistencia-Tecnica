@@ -176,12 +176,18 @@ const NovaOrdemServico = () => {
               const isInWarranty =
                 maquina.data_final_garantia &&
                 new Date(maquina.data_final_garantia) > new Date();
+              const baseDescricao = maquina.descricao || maquina.modelo || "";
+              const labelDescricao = baseDescricao ? ` - ${baseDescricao}` : "";
 
               return {
                 value: maquina.id || 0,
-                label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
+                label: `${maquina.numero_serie}${labelDescricao}`,
                 isInWarranty,
                 data_final_garantia: maquina.data_final_garantia || "",
+                numero_serie: maquina.numero_serie || "",
+                descricao: baseDescricao,
+                clienteNomeFantasia:
+                  maquina.cliente_atual?.nome_fantasia || "",
               } as MaquinaOption;
             }
           );
@@ -421,12 +427,18 @@ const NovaOrdemServico = () => {
                   : dataFinalGarantia
                   ? new Date(dataFinalGarantia) > new Date()
                   : maquina.situacao === "G";
+              const baseDescricao = maquina.descricao || maquina.modelo || "";
+              const labelDescricao = baseDescricao ? ` - ${baseDescricao}` : "";
 
               return {
                 value: maquina.id || 0,
-                label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
+                label: `${maquina.numero_serie}${labelDescricao}`,
                 isInWarranty,
                 data_final_garantia: dataFinalGarantia,
+                numero_serie: maquina.numero_serie || "",
+                descricao: baseDescricao,
+                clienteNomeFantasia:
+                  maquina.cliente_atual?.nome_fantasia || "",
               } as MaquinaOption;
             })
           : [];
@@ -932,10 +944,10 @@ const NovaOrdemServico = () => {
             type: "spring",
             stiffness: 100,
           }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-4 gap-6"
         >
           {/* Máquina */}
-          <motion.div>
+          <motion.div className="md:col-span-2">
             <CustomSelect
               id="maquina"
               label="Máquina"

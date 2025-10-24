@@ -249,6 +249,7 @@ const CadastroUsuario = () => {
       <EditButton
         id={usuario.id}
         editRoute="/admin/administracao/usuarios/editar"
+        requiresPermission={false}
       />
 
       {/* Renderizar botão de inativar/ativar baseado no status do usuário */}
@@ -260,6 +261,7 @@ const CadastroUsuario = () => {
           confirmText="Deseja realmente inativar este usuário?"
           confirmTitle="Inativação de Usuário"
           itemName={`${usuario.nome} (${usuario.login})`}
+          requiresPermission={false}
         />
       ) : (
         // Usuário inativo - mostrar botão de ativar
@@ -310,6 +312,7 @@ const CadastroUsuario = () => {
           newButton: {
             label: "Novo Usuário",
             link: "/admin/administracao/usuarios/novo",
+            requiresPermission: false,
           },
         }}
       />

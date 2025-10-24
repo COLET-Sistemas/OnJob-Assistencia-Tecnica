@@ -1,4 +1,5 @@
 import React, { memo } from "react";
+import { CheckCircle, XCircle } from "lucide-react";
 import { MachineOptionType } from "@/components/admin/form/MachineOption";
 
 interface MaquinaItemProps {
@@ -7,13 +8,8 @@ interface MaquinaItemProps {
   isSelected: boolean;
 }
 
-/**
- * Componente memoizado para renderizar cada item na lista de máquinas
- * com informações adicionais como status de garantia
- */
 const MaquinaItem: React.FC<MaquinaItemProps> = memo(
   ({ option, isFocused, isSelected }) => {
-    // Se for a opção especial "Buscar outra máquina..."
     if (option.value === -1) {
       return (
         <div
@@ -51,7 +47,28 @@ const MaquinaItem: React.FC<MaquinaItemProps> = memo(
       );
     }
 
-    // Renderiza máquina com informações adicionais
+    const numeroSerie =
+      option.numero_serie ||
+      option.label?.split(" - ")[0]?.trim() ||
+      option.label ||
+      "";
+    const descricao =
+      option.descricao || option.label?.split(" - ")[1]?.trim() || "";
+    const clienteNome = option.clienteNomeFantasia || "";
+    const inWarranty = option.isInWarranty ?? false;
+    const showWarrantyBadge =
+      option.isInWarranty !== undefined && option.value !== -1;
+
+    const numeroSerieClasses = `text-sm ${
+      isSelected ? "text-slate-50" : "text-slate-900"
+    } font-semibold`;
+    const descricaoClasses = `text-sm ${
+      isSelected ? "text-slate-100" : "text-slate-600"
+    } font-normal`;
+    const clienteClasses = `flex items-center gap-2 text-xs ${
+      isSelected ? "text-slate-200" : "text-slate-500"
+    }`;
+
     return (
       <div
         style={{
@@ -66,89 +83,52 @@ const MaquinaItem: React.FC<MaquinaItemProps> = memo(
           borderRadius: "4px",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <span style={{ fontWeight: 500 }}>{option.label}</span>
-          <span
-            style={{
-              backgroundColor: isSelected
-                ? "rgba(255, 255, 255, 0.2)"
-                : option.isInWarranty
-                ? "#10b981" // verde para garantia
-                : "#f59e0b", // laranja para fora da garantia
-              color: "white",
-              borderRadius: "9999px",
-              fontSize: "0.7rem",
-              padding: "2px 8px",
-              fontWeight: 500,
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-            }}
-          >
-            {option.isInWarranty ? (
-              <>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                <span>Em Garantia</span>
-              </>
-            ) : (
-              <>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="15" y1="9" x2="9" y2="15"></line>
-                  <line x1="9" y1="9" x2="15" y2="15"></line>
-                </svg>
-                <span>Fora da Garantia</span>
-              </>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={numeroSerieClasses}>{numeroSerie} - </span>
+              {descricao && (
+                <span className={descricaoClasses}>{descricao}</span>
+              )}
+            </div>
+            {showWarrantyBadge && (
+              <div
+                title={inWarranty ? "Na Garantia" : "Fora da Garantia"}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md ${
+                  inWarranty ? "text-green-700" : "text-orange-700"
+                }`}
+              >
+                {inWarranty ? (
+                  <CheckCircle className="w-5 h-5" />
+                ) : (
+                  <XCircle className="w-5 h-5" />
+                )}
+              </div>
             )}
-          </span>
-        </div>
-        {option.data_final_garantia && (
-          <div
-            style={{
-              fontSize: "0.8rem",
-              marginTop: "2px",
-              opacity: 0.8,
-              color: isSelected ? "white" : "#4b5563",
-            }}
-          >
-            {option.isInWarranty
-              ? `Garantia até: ${new Date(
-                  option.data_final_garantia
-                ).toLocaleDateString("pt-BR")}`
-              : `Garantia expirada: ${new Date(
-                  option.data_final_garantia
-                ).toLocaleDateString("pt-BR")}`}
           </div>
-        )}
+          {clienteNome && (
+            <div className={clienteClasses}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={isSelected ? "text-slate-200" : "text-slate-400"}
+              >
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <span>{clienteNome}</span>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -157,7 +137,7 @@ const MaquinaItem: React.FC<MaquinaItemProps> = memo(
 MaquinaItem.displayName = "MaquinaItem";
 
 /**
- * Componentes personalizados para o select de máquinas
+ * Componentes personalizados para o select de maquinas
  */
 export const maquinaSelectComponents = {
   Option: ({
@@ -179,7 +159,6 @@ export const maquinaSelectComponents = {
       />
     </div>
   ),
-  // Add a custom NoOptionsMessage component to prevent the error message
   NoOptionsMessage: ({ children }: { children: React.ReactNode }) => (
     <div style={{ padding: "8px 12px", textAlign: "center", color: "#6b7280" }}>
       {children}

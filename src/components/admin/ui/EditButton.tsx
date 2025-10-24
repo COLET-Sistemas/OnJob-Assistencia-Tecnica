@@ -13,6 +13,7 @@ interface EditButtonProps {
   disabled?: boolean;
   disabledTooltip?: string;
   title?: string;
+  requiresPermission?: boolean;
 }
 
 export const EditButton = ({
@@ -23,9 +24,11 @@ export const EditButton = ({
   disabled = false,
   disabledTooltip,
   title = "Editar",
+  requiresPermission = true,
 }: EditButtonProps) => {
   const { hasPermission } = useCadastroPermission();
-  const computedDisabled = disabled || !hasPermission;
+  const permissionBlocked = requiresPermission && !hasPermission;
+  const computedDisabled = disabled || permissionBlocked;
   const computedTooltip = useMemo(() => {
     if (!computedDisabled) {
       return title;
@@ -33,8 +36,10 @@ export const EditButton = ({
     if (disabledTooltip) {
       return disabledTooltip;
     }
-    return "Seu perfil não permite editar este registro.";
-  }, [computedDisabled, disabledTooltip, title]);
+    return permissionBlocked
+      ? "Seu perfil nao permite editar este registro."
+      : "Esta acao esta desabilitada.";
+  }, [computedDisabled, disabledTooltip, permissionBlocked, title]);
 
   const cleanRoute = editRoute.endsWith("/")
     ? editRoute.slice(0, -1)

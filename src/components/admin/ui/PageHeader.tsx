@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Filter, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -18,6 +18,7 @@ interface ListConfig {
     onClick?: () => void;
     disabled?: boolean;
     tooltip?: string;
+    requiresPermission?: boolean;
   };
   actions?: React.ReactNode;
 }
@@ -68,7 +69,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
       }
 
       if (config.newButton?.label) {
-        const isDisabled = Boolean(config.newButton.disabled ?? !hasPermission);
+        const requiresPermission =
+          config.newButton.requiresPermission !== false;
+        const permissionBlocked = requiresPermission && !hasPermission;
+        const isDisabled = Boolean(config.newButton.disabled ?? permissionBlocked);
         const commonClasses =
           "px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border";
         const enabledClasses =
@@ -84,10 +88,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
 
         const tooltip =
           config.newButton.tooltip ||
-          (isDisabled
-            ? "Seu perfil nÃ£o permite criar novos registros."
+          (permissionBlocked
+            ? "Seu perfil nao permite criar novos registros."
             : undefined);
-
         let newButton: React.ReactNode;
 
         if (config.newButton.onClick && !isDisabled) {
@@ -208,3 +211,4 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
 };
 
 export default PageHeader;
+
