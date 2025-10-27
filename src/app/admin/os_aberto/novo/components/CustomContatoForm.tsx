@@ -51,9 +51,21 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
   const { showSuccess, showError } = useToast();
   const [isSavingContact, setIsSavingContact] = React.useState(false);
   const [contactSaved, setContactSaved] = React.useState(false);
+  const [nomeCompletoLocal, setNomeCompletoLocal] = React.useState(
+    customContatoNomeCompleto || ""
+  );
+  const [cargoLocal, setCargoLocal] = React.useState(customContatoCargo || "");
   const lastMirroredNomeRef = useRef<string | null>(null);
   const lastMirroredTelefoneRef = useRef<string | null>(null);
-  // Função para aplicar máscara de telefone/celular brasileiro
+
+  useEffect(() => {
+    setNomeCompletoLocal(customContatoNomeCompleto || "");
+  }, [customContatoNomeCompleto]);
+
+  useEffect(() => {
+    setCargoLocal(customContatoCargo || "");
+  }, [customContatoCargo]);
+
   const applyPhoneMask = (value: string): string => {
     // Remove tudo que não é número
     const numbers = value.replace(/\D/g, "");
@@ -103,31 +115,32 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
     return emailRegex.test(email);
   };
 
+  const userEditedNomeCompletoRef = useRef(false);
+
   useEffect(() => {
-    if (!saveToClient) {
-      lastMirroredNomeRef.current = null;
-      return;
-    }
+    if (userEditedNomeCompletoRef.current) return;
 
     const nomeTrimmed = customContatoNome.trim();
-    const nomeCompletoTrimmed = customContatoNomeCompleto.trim();
-    const mirroredPreviously =
-      lastMirroredNomeRef.current !== null &&
-      customContatoNomeCompleto === lastMirroredNomeRef.current;
+    const nomeCompletoTrimmed = nomeCompletoLocal.trim();
 
     if (
       nomeTrimmed &&
-      (!nomeCompletoTrimmed || mirroredPreviously)
+      (!nomeCompletoTrimmed ||
+        nomeCompletoTrimmed === lastMirroredNomeRef.current)
     ) {
+      setNomeCompletoLocal(nomeTrimmed);
       setCustomContatoNomeCompleto?.(nomeTrimmed);
       lastMirroredNomeRef.current = nomeTrimmed;
     }
-  }, [
-    saveToClient,
-    customContatoNome,
-    customContatoNomeCompleto,
-    setCustomContatoNomeCompleto,
-  ]);
+  }, [customContatoNome, nomeCompletoLocal, setCustomContatoNomeCompleto]);
+
+  // quando o usuário editar o nome completo manualmente, desliga o espelhamento
+  const handleNomeCompletoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    userEditedNomeCompletoRef.current = true;
+    const v = e.target.value;
+    setNomeCompletoLocal(v);
+    setCustomContatoNomeCompleto?.(v);
+  };
 
   useEffect(() => {
     if (!saveToClient) {
@@ -226,15 +239,15 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
               </label>
               <input
                 type="text"
-                value={customContatoNomeCompleto}
-                onChange={(e) => setCustomContatoNomeCompleto?.(e.target.value)}
+                value={nomeCompletoLocal}
+                onChange={handleNomeCompletoChange}
                 className="w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-md shadow-sm
-                focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]
-                transition-all duration-200"
+        focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]
+        transition-all duration-200"
                 placeholder="Nome completo do contato"
                 required
               />
-              {showNameError && !customContatoNomeCompleto.trim() && (
+              {showNameError && !nomeCompletoLocal.trim() && (
                 <p className="text-red-500 text-sm mt-1">
                   Nome Completo é obrigatório
                 </p>
@@ -249,11 +262,15 @@ const CustomContatoForm: React.FC<CustomContatoFormProps> = ({
               </label>
               <input
                 type="text"
-                value={customContatoCargo}
-                onChange={(e) => setCustomContatoCargo?.(e.target.value)}
+                value={cargoLocal}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setCargoLocal(v);
+                  setCustomContatoCargo?.(v);
+                }}
                 className="w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-md shadow-sm
-                focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]
-                transition-all duration-200"
+        focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]
+        transition-all duration-200"
                 placeholder="Cargo do contato"
               />
             </div>

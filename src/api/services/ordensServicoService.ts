@@ -178,7 +178,7 @@ export interface OSDetalhada {
   status: number;
   status_descricao: string;
   cliente: {
-        codigo_erp: string;
+    codigo_erp: string;
     id: number;
     nome_fantasia: string;
     endereco?: string;
@@ -289,7 +289,7 @@ export interface OSDetalhadaV2 {
   // Informações do cliente expandidas
   cliente: {
     id: number;
-        codigo_erp: string;
+    codigo_erp: string;
     nome: string;
     nome_fantasia?: string;
     cnpj_cpf?: string;
@@ -453,7 +453,6 @@ export interface OSRetroativaPayload {
   sugestoes?: string;
   observacoes?: string;
   numero_ciclos?: number;
-  data_conclusao: string;
   id_usuario_revisao: number;
   emissao_retroativa: boolean;
 }

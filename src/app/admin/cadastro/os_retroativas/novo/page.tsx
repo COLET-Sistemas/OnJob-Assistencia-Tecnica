@@ -10,17 +10,16 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import PageHeader from "@/components/admin/ui/PageHeader";
-import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import {
   CustomSelect,
-  DateTimeField,
   InputField,
   LoadingButton,
   SelectField,
   TextAreaField,
   type MachineOptionType,
 } from "@/components/admin/form";
+import CustomContatoForm from "@/app/admin/os_aberto/novo/components/CustomContatoForm";
 import type { OptionType } from "@/components/admin/form/CustomSelect";
 import {
   clientesService,
@@ -61,7 +60,7 @@ interface MaquinaOption extends MachineOptionType {
 
 interface FormState {
   dataAbertura: string;
-  dataAtendimento: string;
+  dataConclusao: string; // NOVO
   descricaoProblema: string;
   observacoesTecnico: string;
   solucaoEncontrada: string;
@@ -70,6 +69,8 @@ interface FormState {
   observacoes: string;
   numeroCiclos: string;
   nomeContato: string;
+  nomeCompleto: string;
+  cargo: string;
   telefoneContato: string;
   whatsappContato: string;
   emailContato: string;
@@ -86,7 +87,7 @@ const DETAIL_FIELDS: Array<keyof FormState> = [
 
 const MANUAL_CONTACT_OPTION: ContatoOption = {
   value: -1,
-  label: "Preencher contato manualmente",
+  label: "Inserir contato não cadastrado",
   contato: {
     id: -1,
     nome: "",
@@ -103,8 +104,12 @@ const appendSecondsToDateTime = (value: string): string => {
   if (!value) {
     return "";
   }
-
-  return value.length === 16 ? `${value}:00` : value;
+  // Espera value no formato yyyy-MM-dd
+  const [year, month, day] = value.split("-");
+  if (!year || !month || !day) {
+    return value;
+  }
+  return `${day}.${month}.${year}`;
 };
 
 const formatTelefone = (telefone: string): string => telefone.trim();
@@ -136,15 +141,16 @@ const mapMaquinaToOption = (maquina: Maquina): MaquinaOption | null => {
 
 const NovaOSRetroativa = () => {
   const router = useRouter();
-  const { setTitle } = useTitle();
   const { showSuccess, showError } = useToast();
+  const [saveToClient, setSaveToClient] = useState(false);
+  const [recebeAvisoOS, setRecebeAvisoOS] = useState(false);
 
   const [usuarioId, setUsuarioId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formState, setFormState] = useState<FormState>({
     dataAbertura: "",
-    dataAtendimento: "",
+    dataConclusao: "",
     descricaoProblema: "",
     observacoesTecnico: "",
     solucaoEncontrada: "",
@@ -153,6 +159,8 @@ const NovaOSRetroativa = () => {
     observacoes: "",
     numeroCiclos: "",
     nomeContato: "",
+    nomeCompleto: "",
+    cargo: "",
     telefoneContato: "",
     whatsappContato: "",
     emailContato: "",
@@ -167,11 +175,9 @@ const NovaOSRetroativa = () => {
   );
   const [isSearchingClientes, setIsSearchingClientes] = useState(false);
 
-  const [contatoOptions, setContatoOptions] = useState<ContatoOption[]>([
-    MANUAL_CONTACT_OPTION,
-  ]);
-  const [selectedContato, setSelectedContato] = useState<ContatoOption>(
-    MANUAL_CONTACT_OPTION
+  const [contatoOptions, setContatoOptions] = useState<ContatoOption[]>([]);
+  const [selectedContato, setSelectedContato] = useState<ContatoOption | null>(
+    null
   );
   const [isLoadingContatos, setIsLoadingContatos] = useState(false);
 
@@ -192,10 +198,6 @@ const NovaOSRetroativa = () => {
     null
   );
   const [isLoadingTecnicos, setIsLoadingTecnicos] = useState(false);
-
-  useEffect(() => {
-    setTitle("Nova OS Retroativa");
-  }, [setTitle]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -389,7 +391,7 @@ const NovaOSRetroativa = () => {
     },
     [debouncedSearchClientes]
   );
-
+  // Em loadContatos(), padronize o mapeamento e injete a opção manual no TOPO
   const loadContatos = useCallback(
     async (clienteId: number) => {
       setIsLoadingContatos(true);
@@ -397,47 +399,40 @@ const NovaOSRetroativa = () => {
         const response = await clientesService.getContacts(clienteId);
         const contatos = response?.contatos ?? [];
 
-        const options =
-          contatos
-            .map((contato) => {
-              const id = Number(contato.id ?? contato.id_contato ?? 0);
-              if (!id) {
-                return null;
-              }
+        const options: ContatoOption[] = contatos
+          .map((contato) => {
+            const c = contato as ClienteContato;
+            const id = Number(
+              c.id ?? (c as { id_contato?: number }).id_contato ?? 0
+            );
+            if (!id) return null;
 
-              const dados: ClienteContato = {
-                id,
-                nome: contato.nome ?? contato.nome_completo ?? "",
-                nome_completo: contato.nome_completo ?? contato.nome ?? "",
-                cargo: contato.cargo,
-                telefone: contato.telefone ?? "",
-                whatsapp: contato.whatsapp ?? "",
-                email: contato.email ?? "",
-                situacao: contato.situacao ?? "A",
-                recebe_aviso_os: contato.recebe_aviso_os ?? false,
-              };
+            const dados: ClienteContato = {
+              id,
+              nome: c.nome ?? c.nome_completo ?? "",
+              nome_completo: c.nome_completo ?? c.nome ?? "",
+              cargo: c.cargo,
+              telefone: c.telefone ?? "",
+              whatsapp: c.whatsapp ?? "",
+              email: c.email ?? "",
+              situacao: c.situacao ?? "A",
+              recebe_aviso_os: c.recebe_aviso_os ?? false,
+            };
 
-              const baseLabel = dados.nome || dados.nome_completo || "Contato";
+            const base = dados.nome || dados.nome_completo || "Contato";
+            const label = dados.cargo ? `${base} - ${dados.cargo}` : base;
 
-              return {
-                value: id,
-                label: dados.cargo
-                  ? `${baseLabel} - ${dados.cargo}`
-                  : baseLabel,
-                contato: dados,
-              } as ContatoOption;
-            })
-            .filter(Boolean) ?? [];
+            return { value: id, label, contato: dados } as ContatoOption;
+          })
+          .filter(Boolean) as ContatoOption[];
 
-        setContatoOptions([
-          MANUAL_CONTACT_OPTION,
-          ...(options as ContatoOption[]),
-        ]);
-        setSelectedContato(MANUAL_CONTACT_OPTION);
+        setContatoOptions([MANUAL_CONTACT_OPTION, ...options]);
+        setSelectedContato(null);
         resetContatoFields();
       } catch (error) {
         console.error("Erro ao carregar contatos:", error);
         showError("Erro ao carregar contatos");
+        // ainda exibimos a opção manual para não travar o fluxo
         setContatoOptions([MANUAL_CONTACT_OPTION]);
         setSelectedContato(MANUAL_CONTACT_OPTION);
         resetContatoFields();
@@ -631,8 +626,32 @@ const NovaOSRetroativa = () => {
       validationErrors.dataAbertura = "Informe a data de abertura.";
     }
 
-    if (!formState.dataAtendimento) {
-      validationErrors.dataAtendimento = "Informe a data de atendimento.";
+    if (!formState.dataConclusao) {
+      validationErrors.dataConclusao = "Informe a data de conclusão.";
+    } else if (formState.dataAbertura && formState.dataConclusao) {
+      // Compare dates: yyyy-MM-dd
+      const aberturaDate = new Date(formState.dataAbertura);
+      const conclusaoDate = new Date(formState.dataConclusao);
+      if (conclusaoDate <= aberturaDate) {
+        validationErrors.dataConclusao =
+          "A data de conclusão deve ser maior que a data de abertura.";
+      }
+    }
+
+    if (
+      (!selectedContato || selectedContato.value === -1) &&
+      !formState.nomeContato.trim()
+    ) {
+      validationErrors.nomeContato = "Informe o nome do contato.";
+    }
+
+    if (
+      selectedContato?.value === -1 &&
+      saveToClient &&
+      !formState.nomeCompleto.trim()
+    ) {
+      validationErrors.nomeContato =
+        "Informe o nome e o nome completo do contato.";
     }
 
     if (!selectedCliente) {
@@ -702,10 +721,11 @@ const NovaOSRetroativa = () => {
     return validationErrors;
   }, [
     formState.dataAbertura,
-    formState.dataAtendimento,
+    formState.dataConclusao,
     formState.descricaoProblema,
     formState.emGarantia,
     formState.nomeContato,
+    formState.nomeCompleto,
     formState.numeroCiclos,
     formState.observacoes,
     formState.observacoesTecnico,
@@ -718,6 +738,7 @@ const NovaOSRetroativa = () => {
     selectedMaquina?.value,
     selectedMotivo,
     selectedTecnico,
+    saveToClient,
     usuarioId,
   ]);
 
@@ -731,10 +752,26 @@ const NovaOSRetroativa = () => {
 
       const validationErrors = validateForm();
       if (Object.keys(validationErrors).length > 0) {
-        showError(
-          "Revise os campos obrigatorios",
-          "Preencha ou corrija as informacoes destacadas."
-        );
+        if (
+          validationErrors.dataConclusao ===
+          "A data de conclusão deve ser maior que a data de abertura."
+        ) {
+          showError(
+            "A data de conclusão deve ser maior que a data de abertura."
+          );
+        } else if (
+          validationErrors.detalhesAtendimento ===
+          "Informe ao menos um dos campos de conclusão (Solução encontrada, Testes realizados, Sugestões ao cliente, Observações gerais ou Observações do técnico)."
+        ) {
+          showError(
+            "Informe ao menos um dos campos de conclusão (Solução encontrada, Testes realizados, Sugestões ao cliente, Observações gerais ou Observações do técnico)."
+          );
+        } else {
+          showError(
+            "Revise os campos obrigatorios",
+            "Preencha ou corrija as informacoes destacadas."
+          );
+        }
         return;
       }
 
@@ -757,6 +794,9 @@ const NovaOSRetroativa = () => {
         forma_abertura: "Retroativa" as const,
         origem_abertura: "I" as const,
         data_abertura: appendSecondsToDateTime(formState.dataAbertura),
+        data_conclusao: formState.dataConclusao
+          ? appendSecondsToDateTime(formState.dataConclusao)
+          : undefined,
         id_usuario_abertura: usuarioId!,
         id_usuario_tecnico: Number(selectedTecnico?.value),
         em_garantia: formState.emGarantia === "true",
@@ -770,7 +810,6 @@ const NovaOSRetroativa = () => {
         numero_ciclos: formState.numeroCiclos
           ? Number(formState.numeroCiclos)
           : undefined,
-        data_conclusao: appendSecondsToDateTime(formState.dataAtendimento),
         id_usuario_revisao: usuarioId!,
         emissao_retroativa: true,
       };
@@ -793,7 +832,7 @@ const NovaOSRetroativa = () => {
     },
     [
       formState.dataAbertura,
-      formState.dataAtendimento,
+      formState.dataConclusao,
       formState.descricaoProblema,
       formState.emailContato,
       formState.emGarantia,
@@ -851,13 +890,14 @@ const NovaOSRetroativa = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <DateTimeField
-                    id="dataAbertura"
+                  <InputField
+                    name="dataAbertura"
                     label="Data de abertura"
+                    type="date"
                     value={formState.dataAbertura}
-                    onChange={(event) => {
-                      setFormField("dataAbertura", event.target.value);
-                    }}
+                    onChange={(e) =>
+                      setFormField("dataAbertura", e.target.value)
+                    }
                     required
                   />
                   {errors.dataAbertura && (
@@ -866,7 +906,38 @@ const NovaOSRetroativa = () => {
                     </p>
                   )}
                 </div>
+                <div>
+                  <InputField
+                    name="dataConclusao"
+                    label="Data de conclusão"
+                    type="date"
+                    value={formState.dataConclusao}
+                    onChange={(e) =>
+                      setFormField("dataConclusao", e.target.value)
+                    }
+                    required
+                  />
+                  {errors.dataConclusao && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {errors.dataConclusao}
+                    </p>
+                  )}
+                </div>
+                <CustomSelect
+                  id="motivo"
+                  label="Motivo da abertura"
+                  required
+                  placeholder="Selecione o motivo..."
+                  onChange={handleMotivoChange}
+                  options={motivoOptions}
+                  value={selectedMotivo}
+                  isDisabled={motivoOptions.length === 0}
+                  error={errors.motivo}
+                />
+              </div>
 
+              {/* Linha 2: Cliente e Contato (mesma linha, metade cada) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <CustomSelect
                   id="cliente"
                   label="Cliente"
@@ -897,7 +968,7 @@ const NovaOSRetroativa = () => {
                     selectedCliente
                       ? isLoadingContatos
                         ? "Carregando contatos..."
-                        : "Selecione um contato ou preencha manualmente..."
+                        : "Selecione um contato"
                       : "Selecione um cliente primeiro"
                   }
                   onChange={handleContatoChange}
@@ -913,7 +984,64 @@ const NovaOSRetroativa = () => {
                   }
                   error={errors.contato}
                 />
+              </div>
 
+              {/* Form de contato manual, se necessário */}
+              {selectedContato?.value === -1 && (
+                <div className="col-span-full w-full mt-4 border rounded-lg p-4 bg-slate-50">
+                  <CustomContatoForm
+                    customContatoNome={formState.nomeContato}
+                    setCustomContatoNome={(v) => setFormField("nomeContato", v)}
+                    customContatoNomeCompleto={formState.nomeCompleto ?? ""}
+                    setCustomContatoNomeCompleto={(v) =>
+                      setFormField("nomeCompleto", v)
+                    }
+                    customContatoCargo={formState.cargo ?? ""}
+                    setCustomContatoCargo={(v) => setFormField("cargo", v)}
+                    customContatoEmail={formState.emailContato}
+                    setCustomContatoEmail={(v) =>
+                      setFormField("emailContato", v)
+                    }
+                    customContatoTelefone={formState.telefoneContato}
+                    setCustomContatoTelefone={(v) =>
+                      setFormField("telefoneContato", v)
+                    }
+                    customContatoWhatsapp={formState.whatsappContato}
+                    setCustomContatoWhatsapp={(v) =>
+                      setFormField("whatsappContato", v)
+                    }
+                    recebeAvisoOS={recebeAvisoOS}
+                    setRecebeAvisoOS={setRecebeAvisoOS}
+                    saveToClient={saveToClient}
+                    setSaveToClient={setSaveToClient}
+                    clienteId={
+                      typeof selectedCliente?.value === "number"
+                        ? selectedCliente.value
+                        : undefined
+                    }
+                    showNameError={
+                      !!errors.nomeContato && selectedContato?.value === -1
+                    }
+                    onContactSaved={(savedContact: ClienteContato) => {
+                      loadContatos(selectedCliente!.value);
+                      setSelectedContato({
+                        value: Number(savedContact.id) || 0,
+                        label:
+                          savedContact.nome ||
+                          savedContact.nome_completo ||
+                          "Contato",
+                        contato: savedContact,
+                      });
+                      showSuccess(
+                        "Contato salvo e selecionado automaticamente."
+                      );
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Linha 3: Máquina, Equipamento em garantia, Técnico (mesma linha, 1/3 cada) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <CustomSelect
                     id="maquina"
@@ -965,10 +1093,9 @@ const NovaOSRetroativa = () => {
                   required
                   error={errors.emGarantia}
                 />
-
                 <CustomSelect
                   id="tecnico"
-                  label="Técnico Designado"
+                  label="Técnico designado"
                   required
                   placeholder="Selecione o técnico..."
                   onChange={handleTecnicoChange}
@@ -976,18 +1103,6 @@ const NovaOSRetroativa = () => {
                   value={selectedTecnico}
                   isLoading={isLoadingTecnicos}
                   error={errors.tecnico}
-                />
-
-                <CustomSelect
-                  id="motivo"
-                  label="Motivo da abertura"
-                  required
-                  placeholder="Selecione o motivo..."
-                  onChange={handleMotivoChange}
-                  options={motivoOptions}
-                  value={selectedMotivo}
-                  isDisabled={motivoOptions.length === 0}
-                  error={errors.motivo}
                 />
               </div>
 
