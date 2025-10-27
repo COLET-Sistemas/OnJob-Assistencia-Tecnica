@@ -632,9 +632,9 @@ const NovaOSRetroativa = () => {
       // Compare dates: yyyy-MM-dd
       const aberturaDate = new Date(formState.dataAbertura);
       const conclusaoDate = new Date(formState.dataConclusao);
-      if (conclusaoDate <= aberturaDate) {
+      if (conclusaoDate < aberturaDate) {
         validationErrors.dataConclusao =
-          "A data de conclusão deve ser maior que a data de abertura.";
+          "A data de conclusão deve ser maior ou igual à data de abertura.";
       }
     }
 
