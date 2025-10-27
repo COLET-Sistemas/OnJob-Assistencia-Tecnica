@@ -170,14 +170,13 @@ const EditarMaquina = () => {
             clienteData.dados.length > 0
           ) {
             const cliente = clienteData.dados[0];
-            console.log("Cliente encontrado pela API:", cliente);
-            const clienteNome = cliente.nome_fantasia || "";
+            const clienteNome = cliente.razao_social || "";
 
             setClienteInput(clienteNome);
 
             // Criar o objeto do cliente, garantindo que o id_cliente nunca seja undefined
             const clienteOption: ClienteOption = {
-              value: cliente.id_cliente ?? 0, // Fallback para 0 caso seja undefined
+              value: cliente.id_cliente ?? 0,
               label: clienteNome,
               razao_social: cliente.razao_social || "",
             };
@@ -222,10 +221,43 @@ const EditarMaquina = () => {
   ) => {
     const { name, value } = e.target;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    // Se o campo alterado for data_1a_venda, calcular data_final_garantia mantendo dia e mês
+    if (name === "data_1a_venda") {
+      let dataFinalGarantia = "";
+      if (value) {
+        let dia, mes, ano;
+        if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+          // ISO: yyyy-mm-dd
+          [ano, mes, dia] = value.split("-");
+        } else if (/^\d{2}\/\d{2}\/\d{4}/.test(value)) {
+          // BR: dd/mm/yyyy
+          [dia, mes, ano] = value.split("/");
+        } else {
+          // Tenta extrair do Date
+          const d = new Date(value);
+          if (!isNaN(d.getTime())) {
+            dia = String(d.getDate()).padStart(2, "0");
+            mes = String(d.getMonth() + 1).padStart(2, "0");
+            ano = String(d.getFullYear());
+          }
+        }
+        if (dia && mes && ano) {
+          // Soma 1 ao ano
+          const anoGarantia = String(Number(ano) + 1);
+          dataFinalGarantia = `${anoGarantia}-${mes}-${dia}`;
+        }
+      }
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        data_final_garantia: dataFinalGarantia,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
 
     // Limpar erro do campo quando usuário digitar
     if (formErrors[name]) {
