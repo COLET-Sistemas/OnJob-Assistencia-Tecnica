@@ -31,7 +31,7 @@ export default function NovoUsuario() {
     perfil_tecnico_proprio: boolean;
     perfil_tecnico_terceirizado: boolean;
     administrador: boolean;
-    permite_cadastro: boolean;
+    permite_cadastros: boolean;
     [key: string]: string | boolean;
   };
   // Inicializa o formulário com id_empresa como string vazia, será atualizado no useEffect
@@ -45,7 +45,7 @@ export default function NovoUsuario() {
     perfil_tecnico_proprio: false,
     perfil_tecnico_terceirizado: false,
     administrador: false,
-    permite_cadastro: false,
+    permite_cadastros: false,
     situacao: "A",
   });
   const [savingData, setSavingData] = useState(false);
@@ -138,7 +138,7 @@ export default function NovoUsuario() {
         perfil_tecnico_proprio: form.perfil_tecnico_proprio,
         perfil_tecnico_terceirizado: form.perfil_tecnico_terceirizado,
         administrador: form.administrador,
-        permite_cadastro: form.permite_cadastro,
+        permite_cadastros: form.permite_cadastros,
       };
       const response = await usuariosAPI.create(payload);
 
@@ -326,8 +326,8 @@ export default function NovoUsuario() {
                   <label className="inline-flex items-center gap-3">
                     <input
                       type="checkbox"
-                      name="permite_cadastro"
-                      checked={Boolean(form.permite_cadastro)}
+                      name="permite_cadastros"
+                      checked={Boolean(form.permite_cadastros)}
                       onChange={handleChange}
                       className="h-5 w-5 rounded border-slate-300 text-[var(--primary)] focus:ring-violet-500"
                     />
