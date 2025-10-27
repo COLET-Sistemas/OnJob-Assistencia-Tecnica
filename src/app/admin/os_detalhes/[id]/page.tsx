@@ -38,6 +38,8 @@ import {
   ArrowLeft,
   ArrowUp,
   CalendarRange,
+  Camera,
+  CameraOff,
 } from "lucide-react";
 
 // Status mapping como constante fora do componente para máxima estabilidade
@@ -235,7 +237,6 @@ const OSDetalhesPage: React.FC = () => {
       setShowScrollToTop(window.scrollY > 300);
     };
 
-    window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -243,7 +244,19 @@ const OSDetalhesPage: React.FC = () => {
   const clienteData = useMemo(() => osData?.cliente, [osData]);
   const contatoData = useMemo(() => osData?.contato, [osData]);
   const maquinaData = useMemo(() => osData?.maquina, [osData]);
-  const fatsData = useMemo(() => osData?.fats || [], [osData]);
+  type FatType = {
+    id_fat: number;
+    situacao?: string | number;
+    descricao_situacao?: string;
+    data_atendimento?: string;
+    fotos?: unknown[];
+    tecnico: {
+      nome: string;
+      tipo?: string;
+    };
+    // ...other FAT properties as needed
+  };
+  const fatsData: FatType[] = useMemo(() => osData?.fats || [], [osData]);
 
   if (loading) {
     return (
@@ -398,8 +411,6 @@ const OSDetalhesPage: React.FC = () => {
                         <MapPinned className="h-5 w-5" />
                       </a>
                     )}
-
-             
                   </div>
                 </div>
               </div>
@@ -800,6 +811,9 @@ const OSDetalhesPage: React.FC = () => {
                             Data
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            FOTO
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Técnico
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -841,6 +855,9 @@ const OSDetalhesPage: React.FC = () => {
                                   },
                                 };
 
+                          const temFotos =
+                            Array.isArray(fat.fotos) && fat.fotos.length > 0;
+
                           return (
                             <tr
                               key={fat.id_fat}
@@ -869,6 +886,23 @@ const OSDetalhesPage: React.FC = () => {
                                   {fat.data_atendimento}
                                 </div>
                               </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-center">
+                                {temFotos ? (
+                                  <span
+                                    title={`Há ${fat.fotos?.length ?? 0} foto${
+                                      (fat.fotos?.length ?? 0) > 1 ? "s" : ""
+                                    }.`}
+                                    className="flex items-center justify-center gap-1 text-purple-600"
+                                  >
+                                    <Camera className="h-5 w-5" />
+                                  </span>
+                                ) : (
+                                  <span title="Não há fotos.">
+                                    <CameraOff className="h-5 w-5 text-gray-300 mx-auto" />
+                                  </span>
+                                )}
+                              </td>
+
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                 <div className="flex items-center">
                                   <User className="h-4 w-4 text-gray-400 mr-1" />
@@ -888,6 +922,7 @@ const OSDetalhesPage: React.FC = () => {
                                   )}
                                 </div>
                               </td>
+
                               <td className="px-4 py-3 whitespace-nowrap">
                                 <StatusBadge
                                   status={resolvedStatusKey}

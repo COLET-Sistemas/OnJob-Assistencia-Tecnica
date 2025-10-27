@@ -540,7 +540,8 @@ export default function NovaOrdemServicoMobile() {
         if (!manualNome) {
           validationErrors.novoContato = "Informe o nome completo do contato.";
         } else if (manualEmail && !isValidEmail(manualEmail)) {
-          validationErrors.novoContato = "Informe um e-mail valido para o contato.";
+          validationErrors.novoContato =
+            "Informe um e-mail valido para o contato.";
         }
       }
 
@@ -971,32 +972,60 @@ export default function NovaOrdemServicoMobile() {
                           : "Selecione um cliente para listar as maquinas."}
                       </p>
                     )}
-                  {maquinaFiltradas.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedMaquina(option);
-                        setErrors((prev) => ({ ...prev, maquina: undefined }));
-                      }}
-                      className={`w-full text-left px-4 py-3 text-sm transition-colors ${
-                        selectedMaquina?.id === option.id
-                          ? "bg-[#F3EAFF] text-[#2F2A4A]"
-                          : "hover:bg-slate-50 text-slate-700"
-                      }`}
-                    >
-                      <p className="font-semibold">{option.label}</p>
-                      <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                        <Settings className="w-3 h-3" />
-                        {option.maquina.modelo}
-                      </p>
-                      {option.maquina.garantia && (
-                        <p className="text-xs text-emerald-600 mt-1">
-                          Em garantia
+                  {selectedMaquina ? (
+                    <div className="px-4 py-3 text-sm bg-[#F3EAFF] rounded-lg border border-[#7B54BE]/30 flex flex-col gap-1">
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-[#2F2A4A]">
+                          {selectedMaquina.label}
                         </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedMaquina(null);
+                            setMaquinaSearch("");
+                          }}
+                          className="text-xs text-[#7B54BE] hover:underline"
+                        >
+                          Alterar
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-500 flex items-center gap-1">
+                        <Settings className="w-3 h-3" />
+                        {selectedMaquina.maquina.modelo}
+                      </p>
+                      {selectedMaquina.maquina.garantia && (
+                        <p className="text-xs text-emerald-600">Em garantia</p>
                       )}
-                    </button>
-                  ))}
+                    </div>
+                  ) : (
+                    // Caso nenhuma máquina esteja selecionada, exibe lista
+                    maquinaFiltradas.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedMaquina(option);
+                          setMaquinaSearch(""); // limpa o campo de busca
+                          setErrors((prev) => ({
+                            ...prev,
+                            maquina: undefined,
+                          }));
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm hover:bg-[#F3EAFF] transition-colors text-slate-700"
+                      >
+                        <p className="font-semibold">{option.label}</p>
+                        <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                          <Settings className="w-3 h-3" />
+                          {option.maquina.modelo}
+                        </p>
+                        {option.maquina.garantia && (
+                          <p className="text-xs text-emerald-600 mt-1">
+                            Em garantia
+                          </p>
+                        )}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
               {errors.maquina && (

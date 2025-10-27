@@ -1,6 +1,6 @@
 {
   "name": "colet_assist_tecnica",
-  "version": "0.20251024.1",
+  "version": "0.20251025.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/axios": "^0.9.36",
     "@types/jsonwebtoken": "^9.0.10",
+    "axios": "^1.12.2",
     "chart.js": "^4.5.1",
     "cookies-next": "^6.1.0",
     "date-fns": "^4.1.0",

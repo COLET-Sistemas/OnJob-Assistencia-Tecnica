@@ -437,7 +437,7 @@ export default function FATDetalheMobile() {
         showToast(responseMessage, "success");
 
         setTimeout(() => {
-          router.push("/tecnico/os");
+          handleNavigateToOS();
         }, 1500);
       } catch (error) {
         console.error("Erro ao cancelar atendimento:", error);
@@ -467,7 +467,7 @@ export default function FATDetalheMobile() {
         showToast(responseMessage, "success");
 
         setTimeout(() => {
-          router.push("/tecnico/os");
+          handleNavigateToOS();
         }, 1500);
       } catch (error) {
         console.error("Erro ao concluir atendimento:", error);

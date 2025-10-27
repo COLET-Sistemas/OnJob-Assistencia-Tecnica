@@ -77,17 +77,24 @@ export interface OSDetalhesResponse {
     observacoes: string;
   }>;
   fats: Array<{
-    id: number;
-    data: string;
+    id_fat: number;
+    data_atendimento: string;
+    situacao?: number | string;
+    descricao_situacao?: string;
     tecnico: {
       id: number;
       nome: string;
+      tipo?: "interno" | "terceiro" | string;
     };
-    observacoes: string;
-    pecas: Array<{
-      id: number;
-      nome: string;
-      quantidade: number;
+    observacoes?: string;
+    fotos?: Array<{
+      id_fat_foto: number;
+      nome_arquivo: string;
+      descricao: string;
+      data_cadastro: Date;
+      url_visualizacao?: string;
     }>;
+    
   }>;
 }
+

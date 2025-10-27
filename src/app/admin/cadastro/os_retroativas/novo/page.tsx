@@ -659,7 +659,7 @@ const NovaOSRetroativa = () => {
     }
 
     if (!selectedTecnico) {
-      validationErrors.tecnico = "Selecione o tecnico responsavel.";
+      validationErrors.tecnico = "Selecione o técnico responsavel.";
     }
 
     if (
@@ -690,12 +690,12 @@ const NovaOSRetroativa = () => {
 
     if (!hasDetailFieldFilled) {
       validationErrors.detalhesAtendimento =
-        "Informe ao menos um dos campos de conclusao (Solucao encontrada, Testes realizados, Sugestoes ao cliente, Observacoes gerais ou Observacoes do tecnico).";
+        "Informe ao menos um dos campos de conclusão (Solução encontrada, Testes realizados, Sugestões ao cliente, Observações gerais ou Observações do técnico).";
     }
 
     if (!usuarioId) {
       validationErrors.usuario =
-        "Nao foi possivel identificar o usuario logado.";
+        "Não foi possivel identificar o usuario logado.";
     }
 
     setErrors(validationErrors);
@@ -845,7 +845,7 @@ const NovaOSRetroativa = () => {
                   Abertura da OS
                 </h3>
                 <p className="text-sm text-slate-500">
-                  Informe os dados principais da ordem de servico retroativa.
+                  Informe os dados principais da ordem de serviço retroativa.
                 </p>
               </header>
 
@@ -917,7 +917,7 @@ const NovaOSRetroativa = () => {
                 <div>
                   <CustomSelect
                     id="maquina"
-                    label="Maquina"
+                    label="Máquina"
                     required
                     placeholder={
                       selectedCliente
@@ -959,7 +959,7 @@ const NovaOSRetroativa = () => {
                   onChange={handleInputChange}
                   options={[
                     { value: "", label: "Selecione..." },
-                    { value: "false", label: "Nao" },
+                    { value: "false", label: "Não" },
                     { value: "true", label: "Sim" },
                   ]}
                   required
@@ -993,7 +993,7 @@ const NovaOSRetroativa = () => {
 
               <TextAreaField
                 id="descricaoProblema"
-                label="Descricao do defeito"
+                label="Descricão do defeito"
                 value={formState.descricaoProblema}
                 onChange={(event) => {
                   setFormField("descricaoProblema", event.target.value);
@@ -1015,19 +1015,19 @@ const NovaOSRetroativa = () => {
                   Atendimento da OS (FAT)
                 </h3>
                 <p className="text-sm text-slate-500">
-                  Detalhe o atendimento realizado e as observacoes finais.
+                  Detalhe o atendimento realizado e as observações finais.
                 </p>
               </header>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <TextAreaField
                   id="solucaoEncontrada"
-                  label="Solucao encontrada"
+                  label="Solução encontrada"
                   value={formState.solucaoEncontrada}
                   onChange={(event) => {
                     setFormField("solucaoEncontrada", event.target.value);
                   }}
-                  placeholder="Descreva a solucao aplicada..."
+                  placeholder="Descreva a solução aplicada..."
                   rows={4}
                 />
 
@@ -1044,34 +1044,34 @@ const NovaOSRetroativa = () => {
 
                 <TextAreaField
                   id="sugestoes"
-                  label="Sugestoes ao cliente"
+                  label="Sugestões ao cliente"
                   value={formState.sugestoes}
                   onChange={(event) => {
                     setFormField("sugestoes", event.target.value);
                   }}
-                  placeholder="Recomendacoes ou cuidados futuros..."
+                  placeholder="Recomendações ou cuidados futuros..."
                   rows={3}
                 />
 
                 <TextAreaField
                   id="observacoes"
-                  label="Observacoes gerais"
+                  label="Observações gerais"
                   value={formState.observacoes}
                   onChange={(event) => {
                     setFormField("observacoes", event.target.value);
                   }}
-                  placeholder="Observacoes adicionais relevantes..."
+                  placeholder="Observações adicionais relevantes..."
                   rows={3}
                 />
 
                 <TextAreaField
                   id="observacoesTecnico"
-                  label="Observacoes do tecnico"
+                  label="Observações do técnico"
                   value={formState.observacoesTecnico}
                   onChange={(event) => {
                     setFormField("observacoesTecnico", event.target.value);
                   }}
-                  placeholder="Detalhes registrados pelo tecnico..."
+                  placeholder="Detalhes registrados pelo técnico..."
                   rows={3}
                 />
 
@@ -1082,7 +1082,7 @@ const NovaOSRetroativa = () => {
                 )}
 
                 <InputField
-                  label="Numero de ciclos"
+                  label="Número de ciclos"
                   name="numeroCiclos"
                   value={formState.numeroCiclos}
                   onChange={handleInputChange}

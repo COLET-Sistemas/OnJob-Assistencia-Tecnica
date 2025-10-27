@@ -371,18 +371,25 @@ export default function OSDetalheMobile() {
 
       {/* Content Sections */}
       <div className="px-4 pb-2 space-y-4 mt-2">
-        <div className="flex items-center justify-between">
-          <StatusBadge status={os.situacao_os?.codigo?.toString()} />
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <StatusBadge status={os.situacao_os?.codigo?.toString()} />
 
-          {os.data_agendada && (
-            <div className="flex items-center gap-1 text-sm text-gray-600">
-              <Calendar className="w-3 h-3" />
-              <span>Agendada:</span>
-              {formatDate(os.data_agendada)}
+            {os.data_agendada && (
+              <div className="flex items-center gap-1 text-sm text-gray-600">
+                <Calendar className="w-3 h-3" />
+                <span>Agendada:</span>
+                {formatDate(os.data_agendada)}
+              </div>
+            )}
+          </div>
+
+          {os.liberacao_financeira?.liberada === false && (
+            <div className="w-full bg-red-600 text-white text-sm font-medium text-center py-1.5 rounded-md">
+              Aguardando Liberação Financeira
             </div>
           )}
         </div>
-
         {/* Cliente */}
         <Section title="Cliente" icon={<Building className="w-4 h-4" />}>
           <Field
@@ -537,7 +544,7 @@ export default function OSDetalheMobile() {
       </div>
 
       {/* Quick Actions - Fixo na parte inferior */}
-       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 p-4 pb-[env(safe-area-inset-bottom)]">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 p-4 pb-[env(safe-area-inset-bottom)]">
         <QuickActions os={os} />
       </div>
     </main>

@@ -1,6 +1,12 @@
 "use client";
 import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useRouter, useParams } from "next/navigation";
+
+type ApiError = {
+  status?: number;
+  data?: unknown;
+  erro?: string;
+};
 import api from "@/api/api";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import {
@@ -238,6 +244,7 @@ export default function FATPecasPage() {
     codigo_peca: "",
     descricao_peca: "",
     quantidade: "" as number | "",
+    observacoes: "",
   });
   const [pecaEncontrada, setPecaEncontrada] = useState<PecaBusca | null>(null);
   const [buscando, setBuscando] = useState(false);
@@ -373,9 +380,12 @@ export default function FATPecasPage() {
         setPecaEncontrada(null);
         setError("Código de peça não encontrado");
       }
-    } catch {
+    } catch (error) {
       setPecaEncontrada(null);
-      setError("Erro ao buscar peça");
+
+      const apiError = error as ApiError;
+      const apiMessage = apiError?.erro?.trim() || "Erro ao buscar peça.";
+      setError(apiMessage);
     } finally {
       setBuscando(false);
     }
@@ -415,12 +425,21 @@ export default function FATPecasPage() {
       try {
         await api.post("/fats_pecas", {
           id_fat: Number(params.id),
-          codigo_peca: modoSemCodigo ? "SEM CÓDIGO" : form.codigo_peca.trim(),
+          codigo_peca: modoSemCodigo ? "" : form.codigo_peca.trim(),
           descricao_peca: form.descricao_peca.trim(),
           quantidade: Number(form.quantidade),
-          unidade_medida: pecaEncontrada?.unidade_medida || "UN",
+          unidade_medida: modoSemCodigo
+            ? ""
+            : pecaEncontrada?.unidade_medida || "",
+          observacoes: form.observacoes.trim(),
         });
-        setForm({ codigo_peca: "", descricao_peca: "", quantidade: "" });
+
+        setForm({
+          codigo_peca: "",
+          descricao_peca: "",
+          quantidade: "",
+          observacoes: "",
+        });
         setPecaEncontrada(null);
         setModoSemCodigo(false);
         fetchPecas();
@@ -455,7 +474,12 @@ export default function FATPecasPage() {
 
   const handleVoltarComCodigo = useCallback(() => {
     setModoSemCodigo(false);
-    setForm({ codigo_peca: "", descricao_peca: "", quantidade: "" });
+    setForm({
+      codigo_peca: "",
+      descricao_peca: "",
+      quantidade: "",
+      observacoes: "",
+    });
     setPecaEncontrada(null);
     setError("");
   }, []);
@@ -580,18 +604,39 @@ export default function FATPecasPage() {
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
                   Quantidade
                 </label>
-                <input
-                  ref={quantidadeInputRef}
-                  type="number"
-                  value={form.quantidade}
-                  onChange={handleQuantidadeChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
-                  placeholder="Ex: 2"
-                  min={1}
-                  required
-                />
+                <div className="relative">
+                  <input
+                    ref={quantidadeInputRef}
+                    type="number"
+                    value={form.quantidade}
+                    onChange={handleQuantidadeChange}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
+                    placeholder="Quantidade de peças"
+                    min={1}
+                    required
+                  />
+                  {!modoSemCodigo && pecaEncontrada?.unidade_medida && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">
+                      {pecaEncontrada.unidade_medida}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                Observações
+              </label>
+              <input
+                type="text"
+                value={form.observacoes}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, observacoes: e.target.value }))
+                }
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
+                placeholder="Observações sobre a peça (opcional)"
+              />
+            </div>
 
             {/* Botão submit - aparece quando tem peça encontrada ou está no modo sem código */}
             {(pecaEncontrada || modoSemCodigo) && (
