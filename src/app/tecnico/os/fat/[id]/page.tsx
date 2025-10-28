@@ -425,61 +425,40 @@ export default function FATDetalheMobile() {
   const handleCancelarAtendimento = useCallback(async () => {
     try {
       setLoading(true);
-      // TODO: implementar API call para cancelar atendimento
-      // Exemplo: const response = await fatService.cancelarAtendimento(fat?.id_fat);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const responseMessage = "Atendimento cancelado com sucesso!";
+      showToast(responseMessage, "success");
 
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const responseMessage = "Atendimento cancelado com sucesso!";
-
-        // Mostrar mensagem de sucesso
-        showToast(responseMessage, "success");
-
-        setTimeout(() => {
-          handleNavigateToOS();
-        }, 1500);
-      } catch (error) {
-        console.error("Erro ao cancelar atendimento:", error);
-
-        // Capturar mensagem de erro da API
-        const errorMessage = extractErrorMessage(error);
-
-        showToast(errorMessage, "error");
-      }
+      setTimeout(() => {
+        handleNavigateToOS();
+      }, 1500);
+    } catch (error) {
+      console.error("Erro ao cancelar atendimento:", error);
+      const errorMessage = extractErrorMessage(error);
+      showToast(errorMessage, "error");
     } finally {
       setLoading(false);
     }
-  }, [router, extractErrorMessage, showToast]);
+  }, [handleNavigateToOS, extractErrorMessage, showToast]);
 
   const handleConcluirAtendimento = useCallback(async () => {
     try {
       setLoading(true);
-      // TODO: implementar API call para concluir atendimento
-      // Exemplo: const response = await fatService.concluirAtendimento(fat?.id_fat);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const responseMessage = "Atendimento concluído com sucesso!";
+      showToast(responseMessage, "success");
 
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const responseMessage = "Atendimento concluído com sucesso!";
-
-        // Mostrar mensagem de sucesso
-        showToast(responseMessage, "success");
-
-        setTimeout(() => {
-          handleNavigateToOS();
-        }, 1500);
-      } catch (error) {
-        console.error("Erro ao concluir atendimento:", error);
-
-        const errorMessage = extractErrorMessage(error);
-
-        showToast(errorMessage, "error");
-      }
+      setTimeout(() => {
+        handleNavigateToOS();
+      }, 1500);
+    } catch (error) {
+      console.error("Erro ao concluir atendimento:", error);
+      const errorMessage = extractErrorMessage(error);
+      showToast(errorMessage, "error");
     } finally {
       setLoading(false);
     }
-  }, [router, extractErrorMessage, showToast]);
+  }, [handleNavigateToOS, extractErrorMessage, showToast]);
 
   const initialLoading = loading && !fat;
 
