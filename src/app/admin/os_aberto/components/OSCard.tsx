@@ -204,7 +204,7 @@ const OSCard: React.FC<OSCardProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="font-semibold text-gray-900 truncate text-base mt-1">
-                    {os.maquina.modelo || os.maquina.descricao}
+                    {os.maquina.descricao}
                   </div>
                   <div
                     className="w-4 h-4 flex items-center justify-center"

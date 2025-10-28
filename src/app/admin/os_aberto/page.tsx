@@ -298,7 +298,7 @@ const TelaOSAbertas: React.FC = () => {
     setSearchTerm("");
   }, []);
 
-  // FunÃ§Ãµes para lidar com a liberaÃ§Ã£o financeira
+  // Funções para lidar com a liberação financeira
   const handleOpenLiberacaoModal = useCallback((osId: number) => {
     setModalLiberacao({
       isOpen: true,
@@ -318,7 +318,7 @@ const TelaOSAbertas: React.FC = () => {
       try {
         await ordensServicoService.liberarFinanceiramente(osId);
 
-        // Atualiza os dados apÃ³s a liberaÃ§Ã£o
+        // Atualiza os dados apÃ³s a liberação
         await fetchData();
         showSuccess("OS liberada com sucesso");
         handleCloseLiberacaoModal();
@@ -332,7 +332,7 @@ const TelaOSAbertas: React.FC = () => {
     [fetchData, handleCloseLiberacaoModal, showError, showSuccess]
   );
 
-  // FunÃ§Ãµes para lidar com a alteraÃ§Ã£o de pendÃªncia
+  // Funções para lidar com a alteração de pendência
   const handleOpenPendenciaModal = useCallback(
     (osId: number, currentMotivoId?: number, currentMotivoText?: string) => {
       setModalPendencia({
@@ -359,27 +359,27 @@ const TelaOSAbertas: React.FC = () => {
       try {
         await ordensServicoService.alterarMotivoPendencia(osId, motivoId);
 
-        // Atualiza os dados apÃ³s a alteraÃ§Ã£o
+        // Atualiza os dados apÃ³s a alteração
         await fetchData();
 
         if (motivoId === null) {
-          showSuccess("PendÃªncia removida com sucesso");
+          showSuccess("Pendência removida com sucesso");
         } else {
-          showSuccess("PendÃªncia alterada com sucesso");
+          showSuccess("Pendência alterada com sucesso");
         }
 
         handleClosePendenciaModal();
         return Promise.resolve();
       } catch (error) {
-        console.error("Erro ao alterar pendÃªncia:", error);
-        showError("Erro ao alterar pendÃªncia");
+        console.error("Erro ao alterar pendência:", error);
+        showError("Erro ao alterar pendência");
         return Promise.reject(error);
       }
     },
     [fetchData, handleClosePendenciaModal, showError, showSuccess]
   );
 
-  // FunÃ§Ãµes para lidar com o gerenciamento de tÃ©cnicos
+  // Funções para lidar com o gerenciamento de técnicos
   const handleOpenAdicionarTecnicoModal = useCallback(
     (osId: number, idRegiao: number, nomeRegiao?: string) => {
       setModalTecnico({
@@ -432,10 +432,10 @@ const TelaOSAbertas: React.FC = () => {
     if ("nome_regiao" in os.cliente && os.cliente.nome_regiao) {
       return os.cliente.nome_regiao as string;
     }
-    return os.cliente.cidade || "RegiÃ£o nÃ£o informada";
+    return os.cliente.cidade || "Região não informada";
   }, []);
 
-  // Depois atualize as funÃ§Ãµes wrapper:
+  // Depois atualize as funções wrapper:
   const createAdicionarTecnicoHandler = useCallback(
     (os: OrdemServico) => {
       return () =>
@@ -462,7 +462,7 @@ const TelaOSAbertas: React.FC = () => {
     [handleOpenAlterarTecnicoModal, getNomeRegiao]
   );
 
-  // FunÃ§Ã£o para navegar para a tela de ediÃ§Ã£o da OS
+  // Função para navegar para a tela de edição da OS
   const handleEditarOS = useCallback(
     (osId: number) => {
       if (typeof window !== "undefined") {
@@ -474,7 +474,7 @@ const TelaOSAbertas: React.FC = () => {
     [router]
   );
 
-  // FunÃ§Ãµes para lidar com o cancelamento de OS
+  // Funções para lidar com o cancelamento de OS
   const handleOpenCancelamentoModal = useCallback((osId: number) => {
     setModalCancelamento({
       isOpen: true,
@@ -496,7 +496,7 @@ const TelaOSAbertas: React.FC = () => {
       tipoCancelamento: "cliente" | "empresa"
     ) => {
       try {
-        // Enviar dados de cancelamento atravÃ©s do serviÃ§o
+        // Enviar dados de cancelamento através do serviÃ§o
         await ordensServicoService.cancel(osId, {
           tipo_cancelamento: tipoCancelamento,
           descricao: descricao,
@@ -519,24 +519,24 @@ const TelaOSAbertas: React.FC = () => {
   const handleConfirmTecnico = useCallback(
     async (osId: number, tecnicoId: number, tecnicoNome: string) => {
       try {
-        // Aqui vocÃª faria a chamada para a API para definir/alterar o tÃ©cnico
+        // Aqui você faria a chamada para a API para definir/alterar o técnico
         // await ordensServicoService.definirTecnico(osId, tecnicoId);
-        console.log("Definir tÃ©cnico:", { osId, tecnicoId, tecnicoNome });
+        console.log("Definir técnico:", { osId, tecnicoId, tecnicoNome });
 
-        // Atualiza os dados apÃ³s a alteraÃ§Ã£o
+        // Atualiza os dados apÃ³s a alteração
         await fetchData();
 
         if (modalTecnico.mode === "add") {
-          showSuccess("TÃ©cnico adicionado com sucesso");
+          showSuccess("Técnico adicionado com sucesso");
         } else {
-          showSuccess("TÃ©cnico alterado com sucesso");
+          showSuccess("Técnico alterado com sucesso");
         }
 
         handleCloseTecnicoModal();
         return Promise.resolve();
       } catch (error) {
-        console.error("Erro ao definir tÃ©cnico:", error);
-        showError("Erro ao definir tÃ©cnico");
+        console.error("Erro ao definir técnico:", error);
+        showError("Erro ao definir técnico");
         return Promise.reject(error);
       }
     },
@@ -551,7 +551,7 @@ const TelaOSAbertas: React.FC = () => {
 
   const filteredOrdens = useMemo(() => {
     return ordensServico.filter((os) => {
-      // Verifica se a busca Ã© especÃ­fica por ID (quando comeÃ§a com #)
+      // Verifica se a busca é especÃ­fica por ID (quando comeÃ§a com #)
       if (searchTerm.startsWith("#")) {
         const idSearch = searchTerm.substring(1);
         return os.id_os.toString() === idSearch;
@@ -567,13 +567,13 @@ const TelaOSAbertas: React.FC = () => {
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
 
-      // Filtro por tipo de tÃ©cnico
+      // Filtro por tipo de técnico
       const matchTecnicoTipo =
-        // TÃ©cnicos internos
+        // Técnicos internos
         (os.tecnico.tipo === "interno" && tecnicoFiltros.interno) ||
-        // TÃ©cnicos terceirizados
+        // Técnicos terceirizados
         (os.tecnico.tipo === "terceiro" && tecnicoFiltros.terceiro) ||
-        // TÃ©cnicos indefinidos (sem tipo ou sem nome)
+        // Técnicos indefinidos (sem tipo ou sem nome)
         ((!os.tecnico.tipo || !os.tecnico.nome) && tecnicoFiltros.indefinido);
 
       return matchSearch && matchTecnicoTipo;
@@ -726,7 +726,7 @@ const TelaOSAbertas: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal de LiberaÃ§Ã£o Financeira */}
+      {/* Modal de Liberação Financeira */}
       <LiberacaoFinanceiraModal
         isOpen={modalLiberacao.isOpen}
         osId={modalLiberacao.osId}
@@ -734,7 +734,7 @@ const TelaOSAbertas: React.FC = () => {
         onConfirm={handleConfirmLiberacaoFinanceira}
       />
 
-      {/* Modal de AlteraÃ§Ã£o de PendÃªncia */}
+      {/* Modal de Alteração de Pendência */}
       <AlterarPendenciaModal
         isOpen={modalPendencia.isOpen}
         osId={modalPendencia.osId}
@@ -744,7 +744,7 @@ const TelaOSAbertas: React.FC = () => {
         onConfirm={handleConfirmAlterarPendencia}
       />
 
-      {/* Modal de Gerenciamento de TÃ©cnico */}
+      {/* Modal de Gerenciamento de Técnico */}
       <TecnicoModal
         isOpen={modalTecnico.isOpen}
         osId={modalTecnico.osId}
