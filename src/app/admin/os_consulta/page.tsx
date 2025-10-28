@@ -123,10 +123,11 @@ const fadeInAnimation = `
 `;
 
 const RESET_FLAG_KEY = "os_consulta_reset_from_sidebar";
-const INITIAL_DATA_STATE: { dados: OSItemExtended[]; total_registros: number } = {
-  dados: [],
-  total_registros: 0,
-};
+const INITIAL_DATA_STATE: { dados: OSItemExtended[]; total_registros: number } =
+  {
+    dados: [],
+    total_registros: 0,
+  };
 
 const INITIAL_OS_FILTERS: Record<string, string> = {
   status: "",
@@ -134,6 +135,7 @@ const INITIAL_OS_FILTERS: Record<string, string> = {
   data_ini: "",
   data_fim: "",
   numero_os: "",
+  numero_interno: "",
   nome_cliente: "",
   numero_serie: "",
   id_tecnico: "",
@@ -584,7 +586,10 @@ const ConsultaOSPage: React.FC = () => {
             params["id_tecnico"] = value.trim();
           } else if (key === "tipo_tecnico") {
             params["tipo_tecnico"] = value.trim();
+          } else if (key === "numero_interno") {
+            params["numero_interno"] = value.trim();
           }
+
           // Tratar o status selecionado
           else if (key === "status") {
             params["situacao"] = value.trim();
@@ -1055,7 +1060,7 @@ const ConsultaOSPage: React.FC = () => {
 
       const savedTime = parseInt(timestamp, 10);
       const currentTime = Date.now();
-      const MAX_AGE = 30 * 60 * 1000; 
+      const MAX_AGE = 30 * 60 * 1000;
 
       return currentTime - savedTime < MAX_AGE;
     };
@@ -1387,6 +1392,40 @@ const ConsultaOSPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Número Interno */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Número Interno
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Digite o número interno"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 placeholder:text-gray-400 transition-all duration-200"
+                    value={filtrosPainel.numero_interno || ""}
+                    onChange={(e) =>
+                      handleFilterChange("numero_interno", e.target.value)
+                    }
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    {filtrosPainel.numero_interno ? (
+                      <button
+                        type="button"
+                        onClick={() => handleClearField("numero_interno")}
+                        className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                        aria-label="Limpar número interno"
+                      >
+                        <X size={16} />
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 pointer-events-none">
+                        <Search size={16} />
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Tipo de Data, Data Inicial e Data Final em uma linha */}
               <div className="col-span-1 lg:col-span-3">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1546,14 +1585,21 @@ const ConsultaOSPage: React.FC = () => {
         </div>
       ) : data.dados && data.dados.length > 0 ? (
         <>
-          {/* Column headers */}
+          {/* Cabeçalhos */}
           <div className="grid grid-cols-12 gap-x-1 px-3 py-2 bg-gray-50 rounded-md text-xs font-semibold text-gray-600 mb-0 shadow-sm">
             <div className="col-span-1">OS</div>
-            <div className="col-span-3">Cliente / Cidade</div>
-            <div className="col-span-2">Série / Modelo</div>
-            <div className="col-span-2 text-center">Data Abertura</div>
+            <div className="col-span-3 md:col-span-2">Cliente / Cidade</div>
+            <div className="col-span-5 md:col-span-5 lg:col-span-4">
+              Série / Descrição
+            </div>
+            <div className="hidden md:block md:col-span-1 text-center">
+              Data
+            </div>
             <div className="col-span-2">Técnico</div>
-            <div className="col-span-2 text-right">Status</div>
+            {/* Base: 1 col; md+: 1 col; lg+: 2 cols (compensado reduzindo Série) */}
+            <div className="col-span-1 md:col-span-1 lg:col-span-2 text-right">
+              Status
+            </div>
           </div>
 
           <div className="space-y-1 mt-1 mb-4">
@@ -1565,28 +1611,27 @@ const ConsultaOSPage: React.FC = () => {
                 tabIndex={0}
                 role="button"
                 aria-label={`Ver detalhes da OS ${item.id_os}`}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ")
-                    handleRowNavigate(item);
-                }}
+                onKeyDown={(e) =>
+                  (e.key === "Enter" || e.key === " ") &&
+                  handleRowNavigate(item)
+                }
               >
                 <div className="grid grid-cols-12 gap-x-1 items-center">
-                  {/* OS Number */}
+                  {/* OS */}
                   <div className="col-span-1">
                     <span className="text-sm font-bold text-[var(--primary)]">
                       #{item.id_os}
                     </span>
                   </div>
 
-                  {/* Client Name */}
-                  <div className="col-span-3">
+                  {/* Cliente */}
+                  <div className="col-span-3 md:col-span-2">
                     <div className="flex flex-col">
                       <span className="text-xs font-medium text-gray-700 truncate">
                         {item.cliente?.nome ||
                           item.cliente?.nome_fantasia ||
                           "-"}
                       </span>
-                      {/* City/UF in the second row */}
                       <span className="text-xs text-gray-500 truncate">
                         {item.cliente?.cidade
                           ? `${item.cliente.cidade}/${item.cliente.uf || ""}`
@@ -1595,24 +1640,20 @@ const ConsultaOSPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Serial and Machine model */}
-                  <div className="col-span-2">
+                  {/* Série / Descrição */}
+                  <div className="col-span-5 md:col-span-5 lg:col-span-4">
                     <div className="flex flex-col">
                       <span className="text-xs font-medium text-gray-700 truncate">
                         {item.maquina?.numero_serie || "-"}
                       </span>
                       <span className="text-xs text-gray-500 truncate">
-                        {(
-                          item.maquina?.modelo ||
-                          item.maquina?.descricao ||
-                          "-"
-                        ).substring(0, 18)}
+                        {(item.maquina?.descricao || "-").substring(0, 80)}
                       </span>
                     </div>
                   </div>
 
-                  {/* Opening Date */}
-                  <div className="col-span-2 text-center">
+                  {/* Data (só md+) */}
+                  <div className="hidden md:block md:col-span-1 text-center">
                     <span className="text-xs text-gray-700 whitespace-nowrap">
                       {item.abertura?.data_abertura
                         ? formatarData(item.abertura.data_abertura)
@@ -1622,7 +1663,7 @@ const ConsultaOSPage: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Technician */}
+                  {/* Técnico */}
                   <div className="col-span-2">
                     <span className="text-xs text-gray-700 flex items-center gap-1 truncate">
                       {item.tecnico?.nome || "-"}
@@ -1632,8 +1673,8 @@ const ConsultaOSPage: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Status */}
-                  <div className="col-span-2 flex justify-end">
+                  {/* Status sempre na direita */}
+                  <div className="col-span-1 md:col-span-1 lg:col-span-2 flex justify-end">
                     <StatusBadge
                       status={String(item.situacao_os?.codigo || item.status)}
                       mapping={statusMapping}
@@ -1644,6 +1685,7 @@ const ConsultaOSPage: React.FC = () => {
             ))}
           </div>
 
+          {/* Paginação */}
           <div className="mt-4 mb-4">
             <Pagination
               currentPage={paginacao.paginaAtual}
@@ -1653,7 +1695,7 @@ const ConsultaOSPage: React.FC = () => {
               onPageChange={handlePageChange}
               onRecordsPerPageChange={handleRecordsPerPageChange}
               recordsPerPageOptions={[10, 25, 50, 100]}
-              showRecordsPerPage={true}
+              showRecordsPerPage
             />
           </div>
         </>

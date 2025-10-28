@@ -148,7 +148,7 @@ export default function RevisaoPage() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Data Situação
+                  Data da Conclusão
                 </th>
               </tr>
             </thead>
@@ -168,7 +168,7 @@ export default function RevisaoPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div className="flex items-center gap-2">
                       <span>
-                        {ordem.maquina.modelo} - {ordem.maquina.numero_serie}
+                        {ordem.maquina.numero_serie} - {ordem.maquina.descricao}
                       </span>
                       <WarrantyBadge inWarranty={ordem.em_garantia} />
                     </div>

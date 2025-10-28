@@ -17,7 +17,6 @@ import {
   Package,
   Car,
   Wrench,
-  User,
   FileText,
   Settings,
   Clock,
@@ -421,42 +420,75 @@ export default function OSRevisaoPage() {
       <div className="bg-white rounded-lg shadow mb-6">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            {/* Lado esquerdo: cliente e localização */}
+            <div className="flex items-center gap-6 flex-wrap">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
                   OS #{os.id_os}
                 </h3>
               </div>
+
               <div className="flex flex-col">
                 <span className="text-sm text-gray-700 font-medium">
                   {os.cliente.nome}
                 </span>
-                <span className="text-xs text-gray-500">
-                  {os.maquina.modelo} - {os.maquina.numero_serie}
-                </span>
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <button
+                    onClick={() => {
+                      const empresa = JSON.parse(
+                        localStorage.getItem("empresa") || "{}"
+                      );
+                      const lat = empresa.latitude;
+                      const lng = empresa.longitude;
+                      const destino = encodeURIComponent(
+                        `${os.cliente.cidade}, ${os.cliente.uf}`
+                      );
+                      const url =
+                        lat && lng
+                          ? `https://www.google.com/maps/dir/?api=1&origin=${lat},${lng}&destination=${destino}`
+                          : `https://www.google.com/maps/search/?api=1&query=${destino}`;
+                      window.open(url, "_blank");
+                    }}
+                    title="Ver rota no Google Maps"
+                    className="text-gray-500 cursor-pointer hover:text-purple-900 transition-colors"
+                  >
+                    <MapPin className="w-4 h-4" />
+                  </button>
+                  <span>
+                    {os.cliente.cidade} / {os.cliente.uf}
+                  </span>
+                </div>
+              </div>
+
+              {/* Bloco da máquina mais à direita */}
+              <div className="ml-8 flex flex-col text-sm text-gray-600 min-w-[180px]">
+                {os.maquina?.numero_serie && (
+                  <span className="font-medium text-gray-700 truncate">
+                    Número de Série: {os.maquina.numero_serie}
+                  </span>
+                )}
+                {os.maquina?.descricao && (
+                  <span className="text-xs text-gray-500 truncate">
+                    {os.maquina.descricao}
+                  </span>
+                )}
               </div>
             </div>
+
+            {/* Status à direita */}
             <StatusBadge status={os.situacao_os.codigo.toString()} />
           </div>
         </div>
 
-        <div className="px-6 py-3 grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-gray-500 shrink-0" />
-            <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">Cliente</p>
-              <p className="text-xs text-gray-600 truncate">
-                {os.cliente.nome}
-              </p>
-            </div>
-          </div>
-
+        <div className="px-6 py-3 grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-gray-500 shrink-0" />
             <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">Máquina</p>
+              <p className="font-medium text-gray-700 truncate">
+                Motivo Atendimento
+              </p>
               <p className="text-xs text-gray-600 truncate">
-                {os.maquina.modelo}
+                {os.abertura.motivo_atendimento}
               </p>
             </div>
           </div>
@@ -492,9 +524,9 @@ export default function OSRevisaoPage() {
           <div className="flex items-center gap-2">
             <Clipboard className="h-4 w-4 text-gray-500 shrink-0" />
             <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">FATs</p>
+              <p className="font-medium text-gray-700 truncate">Conclusão</p>
               <p className="text-xs text-gray-600">
-                {os.fats?.length || 0} FATs associadas
+                {os.data_fechamento || "-"}
               </p>
             </div>
           </div>

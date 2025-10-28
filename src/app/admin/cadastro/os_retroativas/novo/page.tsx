@@ -60,7 +60,7 @@ interface MaquinaOption extends MachineOptionType {
 
 interface FormState {
   dataAbertura: string;
-  dataConclusao: string; // NOVO
+  dataConclusao: string;
   descricaoProblema: string;
   observacoesTecnico: string;
   solucaoEncontrada: string;
@@ -75,6 +75,7 @@ interface FormState {
   whatsappContato: string;
   emailContato: string;
   emGarantia: "" | "true" | "false";
+  numeroInterno: string; // NOVO
 }
 
 const DETAIL_FIELDS: Array<keyof FormState> = [
@@ -101,14 +102,9 @@ const MANUAL_CONTACT_OPTION: ContatoOption = {
 };
 
 const appendSecondsToDateTime = (value: string): string => {
-  if (!value) {
-    return "";
-  }
-  // Espera value no formato yyyy-MM-dd
+  if (!value) return "";
   const [year, month, day] = value.split("-");
-  if (!year || !month || !day) {
-    return value;
-  }
+  if (!year || !month || !day) return value;
   return `${day}.${month}.${year}`;
 };
 
@@ -116,10 +112,7 @@ const formatTelefone = (telefone: string): string => telefone.trim();
 
 const mapMaquinaToOption = (maquina: Maquina): MaquinaOption | null => {
   const id = maquina.id ?? (maquina as { id_maquina?: number }).id_maquina ?? 0;
-
-  if (!id) {
-    return null;
-  }
+  if (!id) return null;
 
   const dataFinalGarantia =
     maquina.data_final_garantia ??
@@ -165,6 +158,7 @@ const NovaOSRetroativa = () => {
     whatsappContato: "",
     emailContato: "",
     emGarantia: "",
+    numeroInterno: "", // NOVO
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -200,16 +194,11 @@ const NovaOSRetroativa = () => {
   const [isLoadingTecnicos, setIsLoadingTecnicos] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
+    if (typeof window === "undefined") return;
     const stored = localStorage.getItem("id_usuario");
     if (stored) {
       const parsed = Number(stored);
-      if (!Number.isNaN(parsed)) {
-        setUsuarioId(parsed);
-      }
+      if (!Number.isNaN(parsed)) setUsuarioId(parsed);
     }
   }, []);
 
@@ -218,13 +207,8 @@ const NovaOSRetroativa = () => {
 
     const loadMotivos = async () => {
       try {
-        const lista = await motivosAtendimentoService.getAll({
-          situacao: "A",
-        });
-
-        if (!active) {
-          return;
-        }
+        const lista = await motivosAtendimentoService.getAll({ situacao: "A" });
+        if (!active) return;
 
         const options =
           lista
@@ -252,10 +236,7 @@ const NovaOSRetroativa = () => {
           situacao: "A",
           apenas_tecnicos: "S",
         });
-
-        if (!active) {
-          return;
-        }
+        if (!active) return;
 
         const usuarios = Array.isArray(response)
           ? response
@@ -265,16 +246,9 @@ const NovaOSRetroativa = () => {
 
         const options = usuarios.map((usuario: Usuario): OptionType => {
           let tipo = "";
-          if (usuario.perfil_tecnico_terceirizado) {
-            tipo = " (Terceiro)";
-          } else if (usuario.perfil_interno) {
-            tipo = " (Interno)";
-          }
-
-          return {
-            value: usuario.id,
-            label: `${usuario.nome}${tipo}`,
-          };
+          if (usuario.perfil_tecnico_terceirizado) tipo = " (Terceiro)";
+          else if (usuario.perfil_interno) tipo = " (Interno)";
+          return { value: usuario.id, label: `${usuario.nome}${tipo}` };
         });
 
         setTecnicoOptions(options);
@@ -282,47 +256,30 @@ const NovaOSRetroativa = () => {
         console.error("Erro ao carregar tecnicos:", error);
         showError("Erro ao carregar tecnicos");
       } finally {
-        if (active) {
-          setIsLoadingTecnicos(false);
-        }
+        if (active) setIsLoadingTecnicos(false);
       }
     };
 
     loadMotivos();
     loadTecnicos();
-
     return () => {
       active = false;
     };
   }, [showError]);
 
   const setFormField = useCallback((field: keyof FormState, value: string) => {
-    setFormState((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-
+    setFormState((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => {
       const fieldKey = field as string;
       const shouldClearFieldError = Boolean(prev[fieldKey]);
       const shouldClearDetailsError =
         DETAIL_FIELDS.includes(field) && Boolean(prev.detalhesAtendimento);
+      if (!shouldClearFieldError && !shouldClearDetailsError) return prev;
 
-      if (!shouldClearFieldError && !shouldClearDetailsError) {
-        return prev;
-      }
-
-      const nextErrors = { ...prev };
-
-      if (shouldClearFieldError) {
-        nextErrors[fieldKey] = "";
-      }
-
-      if (shouldClearDetailsError) {
-        nextErrors.detalhesAtendimento = "";
-      }
-
-      return nextErrors;
+      const next = { ...prev };
+      if (shouldClearFieldError) next[fieldKey] = "";
+      if (shouldClearDetailsError) next.detalhesAtendimento = "";
+      return next;
     });
   }, []);
 
@@ -340,15 +297,11 @@ const NovaOSRetroativa = () => {
     async (term: string) => {
       try {
         const response = await clientesService.search(term);
-
         const options =
           response?.dados
             ?.map((cliente: Cliente) => {
               const id = cliente.id_cliente ?? cliente.id;
-              if (!id) {
-                return null;
-              }
-
+              if (!id) return null;
               return {
                 value: id,
                 label: `${cliente.razao_social} (${cliente.codigo_erp || "-"})`,
@@ -358,7 +311,6 @@ const NovaOSRetroativa = () => {
               } as ClienteOption;
             })
             .filter(Boolean) ?? [];
-
         setClienteOptions(options as ClienteOption[]);
       } catch (error) {
         console.error("Erro ao buscar clientes:", error);
@@ -371,34 +323,30 @@ const NovaOSRetroativa = () => {
   );
 
   const debouncedSearchClientes = useDebouncedCallback((term: string) => {
-    if (term.length >= 3) {
-      void searchClientes(term);
-    }
+    if (term.length >= 3) void searchClientes(term);
   }, 500);
 
   const handleClienteInputChange = useCallback(
     (inputValue: string) => {
       setClienteInput(inputValue);
-
       if (inputValue.length < 3) {
         setIsSearchingClientes(false);
         setClienteOptions([]);
         return;
       }
-
       setIsSearchingClientes(true);
       debouncedSearchClientes(inputValue);
     },
     [debouncedSearchClientes]
   );
-  // Em loadContatos(), padronize o mapeamento e injete a opção manual no TOPO
+
+  // Carrega contatos do cliente
   const loadContatos = useCallback(
     async (clienteId: number) => {
       setIsLoadingContatos(true);
       try {
         const response = await clientesService.getContacts(clienteId);
         const contatos = response?.contatos ?? [];
-
         const options: ContatoOption[] = contatos
           .map((contato) => {
             const c = contato as ClienteContato;
@@ -432,7 +380,6 @@ const NovaOSRetroativa = () => {
       } catch (error) {
         console.error("Erro ao carregar contatos:", error);
         showError("Erro ao carregar contatos");
-        // ainda exibimos a opção manual para não travar o fluxo
         setContatoOptions([MANUAL_CONTACT_OPTION]);
         setSelectedContato(MANUAL_CONTACT_OPTION);
         resetContatoFields();
@@ -446,7 +393,6 @@ const NovaOSRetroativa = () => {
   const buildMaquinaOptions = useCallback((lista: Maquina[]) => {
     const options =
       lista.map((maquina) => mapMaquinaToOption(maquina)).filter(Boolean) ?? [];
-
     return [
       ...(options as MaquinaOption[]),
       {
@@ -455,6 +401,22 @@ const NovaOSRetroativa = () => {
         isInWarranty: false,
       } as MaquinaOption,
     ];
+  }, []);
+
+  const handleDataAberturaChange = useCallback((value: string) => {
+    // espelha a data de abertura para a data de conclusão
+    setFormState((prev) => ({
+      ...prev,
+      dataAbertura: value,
+      dataConclusao: value,
+    }));
+
+    // limpa erros desses campos, se houver
+    setErrors((prev) => ({
+      ...prev,
+      dataAbertura: "",
+      dataConclusao: "",
+    }));
   }, []);
 
   const loadMaquinas = useCallback(
@@ -478,10 +440,7 @@ const NovaOSRetroativa = () => {
 
   const searchMaquinas = useCallback(
     async (term: string) => {
-      if (term.length < 3) {
-        return;
-      }
-
+      if (term.length < 3) return;
       try {
         const response = await maquinasService.searchByNumeroSerie(term);
         const maquinas = response?.dados ?? [];
@@ -505,15 +464,12 @@ const NovaOSRetroativa = () => {
   );
 
   const debouncedSearchMaquinas = useDebouncedCallback((term: string) => {
-    if (term.length >= 3) {
-      void searchMaquinas(term);
-    }
+    if (term.length >= 3) void searchMaquinas(term);
   }, 500);
 
   const handleMaquinaInputChange = useCallback(
     (inputValue: string) => {
       setMaquinaInput(inputValue);
-
       if (inputValue.length >= 3) {
         setIsSearchingMaquinas(true);
         debouncedSearchMaquinas(inputValue);
@@ -565,7 +521,6 @@ const NovaOSRetroativa = () => {
           whatsappContato: contato.whatsapp || "",
           emailContato: contato.email || "",
         }));
-
         return;
       }
 
@@ -577,15 +532,12 @@ const NovaOSRetroativa = () => {
 
   const handleMaquinaChange = useCallback((option: OptionType | null) => {
     const maquinaOption = option as MaquinaOption | null;
-
     if (maquinaOption && maquinaOption.value === -1) {
       setSelectedMaquina(null);
       setErrors((prev) => ({ ...prev, maquina: "" }));
       return;
     }
-
     setSelectedMaquina(maquinaOption);
-
     if (maquinaOption) {
       setErrors((prev) => ({ ...prev, maquina: "" }));
       setManualMaquinaId("");
@@ -594,16 +546,12 @@ const NovaOSRetroativa = () => {
 
   const handleMotivoChange = useCallback((option: OptionType | null) => {
     setSelectedMotivo(option);
-    if (option) {
-      setErrors((prev) => ({ ...prev, motivo: "" }));
-    }
+    if (option) setErrors((prev) => ({ ...prev, motivo: "" }));
   }, []);
 
   const handleTecnicoChange = useCallback((option: OptionType | null) => {
     setSelectedTecnico(option);
-    if (option) {
-      setErrors((prev) => ({ ...prev, tecnico: "" }));
-    }
+    if (option) setErrors((prev) => ({ ...prev, tecnico: "" }));
   }, []);
 
   const handleInputChange = useCallback(
@@ -629,7 +577,6 @@ const NovaOSRetroativa = () => {
     if (!formState.dataConclusao) {
       validationErrors.dataConclusao = "Informe a data de conclusão.";
     } else if (formState.dataAbertura && formState.dataConclusao) {
-      // Compare dates: yyyy-MM-dd
       const aberturaDate = new Date(formState.dataAbertura);
       const conclusaoDate = new Date(formState.dataConclusao);
       if (conclusaoDate < aberturaDate) {
@@ -679,13 +626,6 @@ const NovaOSRetroativa = () => {
 
     if (!selectedTecnico) {
       validationErrors.tecnico = "Selecione o técnico responsavel.";
-    }
-
-    if (
-      (!selectedContato || selectedContato.value === -1) &&
-      !formState.nomeContato.trim()
-    ) {
-      validationErrors.nomeContato = "Informe o nome do contato.";
     }
 
     if (!formState.emGarantia) {
@@ -745,10 +685,7 @@ const NovaOSRetroativa = () => {
   const handleSubmit = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-
-      if (isSubmitting) {
-        return;
-      }
+      if (isSubmitting) return;
 
       const validationErrors = validateForm();
       if (Object.keys(validationErrors).length > 0) {
@@ -810,12 +747,12 @@ const NovaOSRetroativa = () => {
         numero_ciclos: formState.numeroCiclos
           ? Number(formState.numeroCiclos)
           : undefined,
+        numero_interno: formState.numeroInterno?.trim() || undefined, // NOVO no POST
         id_usuario_revisao: usuarioId!,
         emissao_retroativa: true,
       };
 
       setIsSubmitting(true);
-
       try {
         await ordensServicoService.createRetroativa(payload);
         showSuccess("OS retroativa registrada com sucesso!");
@@ -838,6 +775,7 @@ const NovaOSRetroativa = () => {
       formState.emGarantia,
       formState.nomeContato,
       formState.numeroCiclos,
+      formState.numeroInterno, // NOVO
       formState.observacoes,
       formState.observacoesTecnico,
       formState.solucaoEncontrada,
@@ -878,6 +816,7 @@ const NovaOSRetroativa = () => {
           noValidate
         >
           <div className="p-6 md:p-8 space-y-10">
+            {/* ABERTURA */}
             <section className="space-y-6">
               <header>
                 <h3 className="text-lg font-semibold text-slate-800">
@@ -895,9 +834,7 @@ const NovaOSRetroativa = () => {
                     label="Data de abertura"
                     type="date"
                     value={formState.dataAbertura}
-                    onChange={(e) =>
-                      setFormField("dataAbertura", e.target.value)
-                    }
+                    onChange={(e) => handleDataAberturaChange(e.target.value)}
                     required
                   />
                   {errors.dataAbertura && (
@@ -906,23 +843,19 @@ const NovaOSRetroativa = () => {
                     </p>
                   )}
                 </div>
+
+                {/* SUBSTITUI o antigo Data de conclusão */}
                 <div>
                   <InputField
-                    name="dataConclusao"
-                    label="Data de conclusão"
-                    type="date"
-                    value={formState.dataConclusao}
-                    onChange={(e) =>
-                      setFormField("dataConclusao", e.target.value)
-                    }
-                    required
+                    name="numeroInterno"
+                    label="Número interno"
+                    type="text"
+                    value={formState.numeroInterno}
+                    onChange={handleInputChange}
+                    placeholder="Digite o número interno"
                   />
-                  {errors.dataConclusao && (
-                    <p className="text-sm text-red-600 mt-1">
-                      {errors.dataConclusao}
-                    </p>
-                  )}
                 </div>
+
                 <CustomSelect
                   id="motivo"
                   label="Motivo da abertura"
@@ -936,7 +869,7 @@ const NovaOSRetroativa = () => {
                 />
               </div>
 
-              {/* Linha 2: Cliente e Contato (mesma linha, metade cada) */}
+              {/* Cliente e Contato */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <CustomSelect
                   id="cliente"
@@ -986,7 +919,7 @@ const NovaOSRetroativa = () => {
                 />
               </div>
 
-              {/* Form de contato manual, se necessário */}
+              {/* Contato manual */}
               {selectedContato?.value === -1 && (
                 <div className="col-span-full w-full mt-4 border rounded-lg p-4 bg-slate-50">
                   <CustomContatoForm
@@ -1040,7 +973,7 @@ const NovaOSRetroativa = () => {
                 </div>
               )}
 
-              {/* Linha 3: Máquina, Equipamento em garantia, Técnico (mesma linha, 1/3 cada) */}
+              {/* Máquina / Garantia / Técnico */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <CustomSelect
@@ -1080,6 +1013,7 @@ const NovaOSRetroativa = () => {
                     )}
                   </div>
                 </div>
+
                 <SelectField
                   label="Equipamento em garantia?"
                   name="emGarantia"
@@ -1093,6 +1027,7 @@ const NovaOSRetroativa = () => {
                   required
                   error={errors.emGarantia}
                 />
+
                 <CustomSelect
                   id="tecnico"
                   label="Técnico designado"
@@ -1124,6 +1059,7 @@ const NovaOSRetroativa = () => {
               )}
             </section>
 
+            {/* FAT */}
             <section className="space-y-6">
               <header>
                 <h3 className="text-lg font-semibold text-slate-800">
@@ -1134,18 +1070,23 @@ const NovaOSRetroativa = () => {
                 </p>
               </header>
 
+              {/* grid base: em telas md, 2 colunas; mobile, 1 coluna */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <TextAreaField
-                  id="solucaoEncontrada"
-                  label="Solução encontrada"
-                  value={formState.solucaoEncontrada}
-                  onChange={(event) => {
-                    setFormField("solucaoEncontrada", event.target.value);
-                  }}
-                  placeholder="Descreva a solução aplicada..."
-                  rows={4}
-                />
+                {/* 1ª linha: Solução encontrada (ocupa as 2 colunas) */}
+                <div className="md:col-span-2">
+                  <TextAreaField
+                    id="solucaoEncontrada"
+                    label="Solução encontrada"
+                    value={formState.solucaoEncontrada}
+                    onChange={(event) => {
+                      setFormField("solucaoEncontrada", event.target.value);
+                    }}
+                    placeholder="Descreva a solução aplicada..."
+                    rows={4}
+                  />
+                </div>
 
+                {/* 2ª linha: Testes realizados | Sugestões ao cliente */}
                 <TextAreaField
                   id="testesRealizados"
                   label="Testes realizados"
@@ -1165,9 +1106,10 @@ const NovaOSRetroativa = () => {
                     setFormField("sugestoes", event.target.value);
                   }}
                   placeholder="Recomendações ou cuidados futuros..."
-                  rows={3}
+                  rows={4}
                 />
 
+                {/* 3ª linha: Observações gerais | Observações do técnico */}
                 <TextAreaField
                   id="observacoes"
                   label="Observações gerais"
@@ -1190,12 +1132,14 @@ const NovaOSRetroativa = () => {
                   rows={3}
                 />
 
+                {/* mensagem de erro de detalhes (se existir) ocupando linha toda */}
                 {errors.detalhesAtendimento && (
-                  <p className="text-sm text-red-600 mt-1">
+                  <p className="text-sm text-red-600 mt-1 md:col-span-2">
                     {errors.detalhesAtendimento}
                   </p>
                 )}
 
+                {/* 4ª linha: Número de ciclos | Data de conclusão */}
                 <InputField
                   label="Número de ciclos"
                   name="numeroCiclos"
@@ -1206,6 +1150,24 @@ const NovaOSRetroativa = () => {
                   required
                   error={errors.numeroCiclos}
                 />
+
+                <div>
+                  <InputField
+                    name="dataConclusao"
+                    label="Data de conclusão"
+                    type="date"
+                    value={formState.dataConclusao}
+                    onChange={(e) =>
+                      setFormField("dataConclusao", e.target.value)
+                    }
+                    required
+                  />
+                  {errors.dataConclusao && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {errors.dataConclusao}
+                    </p>
+                  )}
+                </div>
               </div>
             </section>
           </div>
