@@ -133,7 +133,7 @@ const EditarMaquina = () => {
         console.log("Configurando cliente a partir do objeto cliente_atual");
         // O cliente está no objeto cliente_atual
         const clienteId = maquinaData.cliente_atual.id_cliente;
-        const clienteNome = maquinaData.cliente_atual.nome_fantasia || "";
+        const clienteNome = maquinaData.cliente_atual.razao_social || "";
 
         setClienteInput(clienteNome);
 
@@ -287,7 +287,7 @@ const EditarMaquina = () => {
         const options = Array.isArray(data?.dados)
           ? (data.dados as ClienteAPIResult[]).map((c) => ({
               value: c.id_cliente,
-              label: c.nome_fantasia,
+              label: c.razao_social,
               razao_social: c.razao_social,
             }))
           : [];

@@ -810,7 +810,7 @@ const OSDetalhesPage: React.FC = () => {
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Data
                           </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             FOTO
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -886,19 +886,22 @@ const OSDetalhesPage: React.FC = () => {
                                   {fat.data_atendimento}
                                 </div>
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center">
+                              <td className="px-4 py-3 text-center align-middle">
                                 {temFotos ? (
                                   <span
                                     title={`Há ${fat.fotos?.length ?? 0} foto${
                                       (fat.fotos?.length ?? 0) > 1 ? "s" : ""
                                     }.`}
-                                    className="flex items-center justify-center gap-1 text-purple-600"
+                                    className="flex items-center justify-center text-purple-600"
                                   >
                                     <Camera className="h-5 w-5" />
                                   </span>
                                 ) : (
-                                  <span title="Não há fotos.">
-                                    <CameraOff className="h-5 w-5 text-gray-300 mx-auto" />
+                                  <span
+                                    title="Não há fotos."
+                                    className="flex items-center justify-center"
+                                  >
+                                    <CameraOff className="h-5 w-5 text-gray-300" />
                                   </span>
                                 )}
                               </td>
