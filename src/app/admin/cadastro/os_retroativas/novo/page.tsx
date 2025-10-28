@@ -77,6 +77,20 @@ interface FormState {
   emGarantia: "" | "true" | "false";
   numeroInterno: string; // NOVO
 }
+interface CreateOSResponse {
+  id_os: number;
+  id_fat: number;
+  mensagem: string;
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      mensagem?: string;
+    };
+  };
+  message?: string;
+}
 
 const DETAIL_FIELDS: Array<keyof FormState> = [
   "solucaoEncontrada",
@@ -689,26 +703,10 @@ const NovaOSRetroativa = () => {
 
       const validationErrors = validateForm();
       if (Object.keys(validationErrors).length > 0) {
-        if (
-          validationErrors.dataConclusao ===
-          "A data de conclusão deve ser maior que a data de abertura."
-        ) {
-          showError(
-            "A data de conclusão deve ser maior que a data de abertura."
-          );
-        } else if (
-          validationErrors.detalhesAtendimento ===
-          "Informe ao menos um dos campos de conclusão (Solução encontrada, Testes realizados, Sugestões ao cliente, Observações gerais ou Observações do técnico)."
-        ) {
-          showError(
-            "Informe ao menos um dos campos de conclusão (Solução encontrada, Testes realizados, Sugestões ao cliente, Observações gerais ou Observações do técnico)."
-          );
-        } else {
-          showError(
-            "Revise os campos obrigatorios",
-            "Preencha ou corrija as informacoes destacadas."
-          );
-        }
+        showError(
+          "Revise os campos obrigatórios",
+          "Preencha ou corrija as informações destacadas."
+        );
         return;
       }
 
@@ -747,54 +745,47 @@ const NovaOSRetroativa = () => {
         numero_ciclos: formState.numeroCiclos
           ? Number(formState.numeroCiclos)
           : undefined,
-        numero_interno: formState.numeroInterno?.trim() || undefined, // NOVO no POST
+        numero_interno: formState.numeroInterno?.trim() || undefined,
         id_usuario_revisao: usuarioId!,
         emissao_retroativa: true,
       };
 
       setIsSubmitting(true);
       try {
-        await ordensServicoService.createRetroativa(payload);
-        showSuccess("OS retroativa registrada com sucesso!");
+        const response: CreateOSResponse =
+          await ordensServicoService.createRetroativa(payload);
+
+        // ✅ Exibe a mensagem retornada
+        showSuccess(response.mensagem);
         router.push("/admin/cadastro/os_retroativas");
-      } catch (error) {
+      } catch (err) {
+        const error = err as ApiError;
         console.error("Erro ao cadastrar OS retroativa:", error);
-        showError(
-          "Erro ao cadastrar OS retroativa",
-          error as Record<string, unknown>
-        );
+
+        const mensagemErro =
+          error.response?.data?.mensagem ||
+          error.message ||
+          "Erro ao cadastrar OS retroativa.";
+
+        showError("Falha no cadastro da OS retroativa", mensagemErro);
       } finally {
         setIsSubmitting(false);
       }
     },
     [
-      formState.dataAbertura,
-      formState.dataConclusao,
-      formState.descricaoProblema,
-      formState.emailContato,
-      formState.emGarantia,
-      formState.nomeContato,
-      formState.numeroCiclos,
-      formState.numeroInterno, // NOVO
-      formState.observacoes,
-      formState.observacoesTecnico,
-      formState.solucaoEncontrada,
-      formState.sugestoes,
-      formState.telefoneContato,
-      formState.testesRealizados,
-      formState.whatsappContato,
-      isSubmitting,
-      manualMaquinaId,
-      router,
-      selectedCliente?.value,
+      formState,
+      selectedCliente,
       selectedContato,
-      selectedMaquina?.value,
-      selectedMotivo?.value,
-      selectedTecnico?.value,
-      showError,
-      showSuccess,
+      selectedMaquina,
+      selectedMotivo,
+      selectedTecnico,
+      manualMaquinaId,
       usuarioId,
       validateForm,
+      router,
+      showError,
+      showSuccess,
+      isSubmitting,
     ]
   );
 

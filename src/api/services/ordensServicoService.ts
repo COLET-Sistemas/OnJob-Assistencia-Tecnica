@@ -8,6 +8,11 @@ export interface OSStatusCount {
   pendentes: number;
   total: number;
 }
+export interface CreateOSResponse {
+  id_os: number;
+  id_fat: number;
+  mensagem: string;
+}
 
 export interface OSItem {
   id_os: number;
@@ -634,13 +639,12 @@ class OrdensServicoService {
     return result;
   }
 
-  async createRetroativa(
-    data: OSRetroativaPayload
-  ): Promise<{ mensagem?: string; sucesso?: boolean }> {
-    const result = await api.post<{ mensagem?: string; sucesso?: boolean }>(
+  async createRetroativa(data: OSRetroativaPayload): Promise<CreateOSResponse> {
+    const result = await api.post<CreateOSResponse>(
       `${this.baseUrl}/retroativa`,
       data
     );
+
     this.cache.clear();
     return result;
   }
