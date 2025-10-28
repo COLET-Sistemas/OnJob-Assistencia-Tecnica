@@ -21,6 +21,7 @@ import {
   Settings,
   Clock,
   Calendar,
+  Camera,
   MapPin,
   X,
   Plus,
@@ -57,9 +58,8 @@ export default function OSRevisaoPage() {
     []
   );
   const [pecas, setPecas] = useState<PecaRevisada[]>([]);
-  const [activeTab, setActiveTab] = useState<
-    "info" | "deslocamentos" | "pecas"
-  >("info");
+  type TabType = "info" | "deslocamentos" | "pecas" | "fotos" | "revisao";
+  const [activeTab, setActiveTab] = useState<TabType>("info");
   const [observacoes, setObservacoes] = useState("");
   const [tabTotalizado, setTabTotalizado] = useState({
     deslocamento: 0,
@@ -568,6 +568,28 @@ export default function OSRevisaoPage() {
           <Package className="h-4 w-4" />
           Peças ({pecas.filter((p) => !p.isDeleted).length})
         </button>
+        <button
+          className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
+            activeTab === "fotos"
+              ? "border-b-2 border-[var(--primary)] text-[var(--primary)]"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+          onClick={() => setActiveTab("fotos")}
+        >
+          <Camera className="h-4 w-4" />
+          Fotos
+        </button>
+        <button
+          className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
+            activeTab === "revisao"
+              ? "border-b-2 border-[var(--primary)] text-[var(--primary)]"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+          onClick={() => setActiveTab("revisao")}
+        >
+          <ClipboardCheck className="h-4 w-4" />
+          Revisão
+        </button>
       </div>
 
       {/* Conteúdo da aba selecionada */}
@@ -643,6 +665,28 @@ export default function OSRevisaoPage() {
                       ))}
                     </tbody>
                   </table>
+                  {/* Aba de Fotos */}
+                  {activeTab === ("fotos" as TabType) && (
+                    <div className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Fotos
+                      </h3>
+                      <div className="text-gray-500">
+                        Em breve: exibição de fotos da OS/FAT.
+                      </div>
+                    </div>
+                  )}
+                  {/* Aba de Revisão */}
+                  {activeTab === ("revisao" as TabType) && (
+                    <div className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Revisão
+                      </h3>
+                      <div className="text-gray-500">
+                        Em breve: área para revisão detalhada da OS.
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-gray-500">
@@ -673,7 +717,7 @@ export default function OSRevisaoPage() {
           <div className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                Deslocamentos
+                Deslocamentos Informados pelo Técnico
               </h3>
 
               <button

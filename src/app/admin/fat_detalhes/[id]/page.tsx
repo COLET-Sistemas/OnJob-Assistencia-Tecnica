@@ -166,7 +166,6 @@ const FATDetalhesPage: React.FC = () => {
     descricao,
     data,
   }) => {
-    // Bloqueia scroll do body
     useEffect(() => {
       const prev = document.body.style.overflow;
       document.body.style.overflow = "hidden";
@@ -175,7 +174,6 @@ const FATDetalhesPage: React.FC = () => {
       };
     }, []);
 
-    // Teclas de atalho
     useEffect(() => {
       const onKey = (e: KeyboardEvent) => {
         if (e.key === "Escape") onClose?.();
@@ -186,63 +184,67 @@ const FATDetalhesPage: React.FC = () => {
       return () => window.removeEventListener("keydown", onKey);
     }, [onClose, onPrev, onNext]);
 
-    // Renderiza no body (fora do card)
     if (typeof document === "undefined") return null;
+
     return createPortal(
       <div
-        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       >
         <div
-          className="relative max-w-[95vw] max-h-[90vh] flex items-center justify-center"
+          className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 flex flex-col items-center justify-center overflow-hidden max-w-[90vw] md:max-w-[75vw] max-h-[85vh]"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Fechar */}
+          {/* Botão Fechar */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-white bg-black/50 hover:bg-black/70 rounded-full p-2 transition"
+            className="absolute cursor-pointer top-3 right-3 text-gray-600 hover:text-red-600 transition"
             aria-label="Fechar"
           >
-            <XCircle className="w-8 h-8" />
+            <XCircle className="w-6 h-6" />
           </button>
 
-          {/* Navegação opcional */}
+          {/* Navegação */}
           {onPrev && (
             <button
               onClick={onPrev}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/70 rounded-full p-4 transition"
+              className="absolute cursor-pointer left-3 top-1/2 -translate-y-1/2 text-gray-700 bg-white/70 hover:bg-white rounded-full p-2 shadow transition"
               aria-label="Anterior"
             >
-              <ArrowLeft className="w-8 h-8" />
+              <ArrowLeft className="w-5 h-5" />
             </button>
           )}
           {onNext && (
             <button
               onClick={onNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/70 rounded-full p-4 transition"
+              className="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-gray-700 bg-white/70 hover:bg-white rounded-full p-2 shadow transition"
               aria-label="Próxima"
             >
-              <ArrowUp className="rotate-90 w-8 h-8" />
+              <ArrowUp className="rotate-90 w-5 h-5" />
             </button>
           )}
 
-          {/* Imagem */}
-          <Image
-            src={src}
-            alt="Imagem ampliada"
-            width={1600}
-            height={1200}
-            className="object-contain rounded-xl shadow-2xl border border-white max-w-[95vw] max-h-[85vh]"
-            priority
-          />
+          {/* Imagem centralizada e bem dimensionada */}
+          <div className="flex items-center justify-center w-full h-full max-h-[70vh]">
+            <Image
+              src={src}
+              alt="Imagem ampliada"
+              width={1200}
+              height={800}
+              className="rounded-lg object-contain max-w-full max-h-[70vh] mx-auto"
+              priority
+            />
+          </div>
 
-          {/* Descrição/Data */}
+          {/* Descrição / Data */}
           {(descricao || data) && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center text-white bg-black/40 px-4 py-2 rounded-lg max-w-[90vw]">
+            <div className="mt-3 text-center px-4">
               {descricao && (
-                <p className="text-base font-medium">{descricao}</p>
+                <p className="text-sm font-medium text-gray-800 break-words">
+                  {descricao}
+                </p>
               )}
-              {data && <p className="text-sm text-gray-300 mt-1">{data}</p>}
+              {data && <p className="text-xs text-gray-500 mt-1">{data}</p>}
             </div>
           )}
         </div>
@@ -784,32 +786,50 @@ const FATDetalhesPage: React.FC = () => {
                     </div>
                   ) : possuiFotos ? (
                     <>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
                         {fotosFAT.map((foto) => {
                           const previewUrl = fotoPreviews[foto.id_fat_foto];
                           return (
-                            <div
+                            <figure
                               key={foto.id_fat_foto}
-                              className="group bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow transition-shadow duration-200 cursor-pointer"
-                              onClick={() => setImagemAmpliada(previewUrl)}
+                              className="group bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow transition-shadow duration-200 cursor-pointer"
+                              onClick={() =>
+                                previewUrl && setImagemAmpliada(previewUrl)
+                              }
+                              title={foto.descricao || foto.nome_arquivo}
                             >
-                              <div className="relative w-full aspect-square bg-gray-50 overflow-hidden">
+                              {/* Thumb menor (4:3) */}
+                              <div className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden">
                                 {previewUrl ? (
                                   <Image
                                     src={previewUrl}
                                     alt={foto.descricao || foto.nome_arquivo}
                                     fill
-                                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 200px"
+                                    sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 16vw"
                                     className="object-cover transition-transform duration-200 group-hover:scale-[1.03]"
                                   />
                                 ) : (
-                                  <div className="flex flex-col items-center justify-center h-full text-gray-400 text-xs text-center">
-                                    <ImageOff className="w-6 h-6" />
+                                  <div className="flex flex-col items-center justify-center h-full text-gray-400 text-[11px] text-center">
+                                    <ImageOff className="w-5 h-5" />
                                     <span>Pré-visualização indisponível</span>
                                   </div>
                                 )}
                               </div>
-                            </div>
+
+                              {/* Título (descrição) e data abaixo do thumb */}
+                              <figcaption className="px-2 py-2">
+                                <p className="text-xs font-medium text-gray-700 truncate">
+                                  {foto.descricao ||
+                                    foto.nome_arquivo ||
+                                    "Sem descrição"}
+                                </p>
+                                {foto.data_cadastro && (
+                                  <p className="text-[11px] text-gray-500">
+                                    {foto.data_cadastro}
+                                  </p>
+                                )}
+                              </figcaption>
+                            </figure>
                           );
                         })}
                       </div>
