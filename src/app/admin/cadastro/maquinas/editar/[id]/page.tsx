@@ -100,10 +100,8 @@ const EditarMaquina = () => {
         response.dados.length > 0
       ) {
         maquinaData = response.dados[0];
-        console.log("Dados da máquina (formato paginado):", maquinaData);
       } else {
         maquinaData = response;
-        console.log("Dados da máquina (formato direto):", maquinaData);
       }
 
       if (!maquinaData) {
@@ -128,37 +126,27 @@ const EditarMaquina = () => {
           : "",
       });
 
-      // Se tiver cliente, carregar os dados do cliente
       if (maquinaData.cliente_atual) {
-        console.log("Configurando cliente a partir do objeto cliente_atual");
-        // O cliente está no objeto cliente_atual
         const clienteId = maquinaData.cliente_atual.id_cliente;
         const clienteNome = maquinaData.cliente_atual.razao_social || "";
 
         setClienteInput(clienteNome);
 
-        // Criar o objeto do cliente selecionado
         const clienteOption = {
           value: clienteId,
           label: clienteNome,
           razao_social: maquinaData.cliente_atual.razao_social || "",
         };
 
-        // Configurar o cliente selecionado para o CustomSelect
         setSelectedCliente(clienteOption);
-
-        // Adicionar o cliente às opções para garantir que ele apareça no dropdown
         setClienteOptions([clienteOption]);
 
-        // Garantir que o ID do cliente esteja no formData
         setFormData((prev) => ({
           ...prev,
           id_cliente_atual: clienteId,
         }));
       } else if (maquinaData.id_cliente_atual) {
-        console.log("Buscando cliente pelo ID:", maquinaData.id_cliente_atual);
-        // Se tiver apenas o ID do cliente, mas não o objeto cliente_atual,
-        // buscar os dados do cliente pela API
+       
         try {
           const clienteData = await clientesService.getAll({
             id: maquinaData.id_cliente_atual,
@@ -192,7 +180,7 @@ const EditarMaquina = () => {
               id_cliente_atual: cliente.id_cliente ?? null,
             }));
           } else {
-            console.log("Cliente não encontrado pela API");
+           
           }
         } catch (clienteError) {
           console.error("Erro ao buscar dados do cliente:", clienteError);

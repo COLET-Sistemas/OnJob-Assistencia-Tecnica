@@ -13,7 +13,7 @@ import { ActivateButton } from "@/components/admin/ui/ActivateButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useFilters } from "@/hooks/useFilters";
 import { usuariosService as usuariosAPI } from "@/api/services/usuariosService";
-import { Mail, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 // Interface dos filtros específicos para usuários
 interface UsuariosFilters {
@@ -97,32 +97,23 @@ const CadastroUsuario = () => {
   }
 
   const columns = [
+    // Coluna 1 — Acessos (Nome em cima, Email embaixo)
     {
-      header: "Login",
-      accessor: "login" as keyof Usuario,
-      render: (usuario: Usuario) => (
-        <div className="text-sm font-semibold text-gray-900">
-          {usuario.login}
-        </div>
-      ),
-    },
-    {
-      header: "Nome",
+      header: "Acessos",
       accessor: "nome" as keyof Usuario,
       render: (usuario: Usuario) => (
-        <div className="text-sm font-medium text-gray-700">{usuario.nome}</div>
-      ),
-    },
-    {
-      header: "Email",
-      accessor: "email" as keyof Usuario,
-      render: (usuario: Usuario) => (
-        <div className="text-sm text-[var(--neutral-graphite)] flex items-center gap-1.5">
-          <Mail size={16} className="text-[var(--primary)]" />
-          {usuario.email}
+        <div className="flex flex-col leading-tight">
+          <span className="text-sm font-semibold text-gray-900 pb-1">
+            {usuario.nome}
+          </span>
+          <span className="text-xs text-[var(--neutral-graphite)] flex items-center gap-1.5">
+            {usuario.email || "-"}
+          </span>
         </div>
       ),
     },
+
+    // Coluna 2 — Perfis (mantém badges)
     {
       header: "Perfis",
       accessor: "perfil_interno" as keyof Usuario,
@@ -146,57 +137,51 @@ const CadastroUsuario = () => {
           )}
           {usuario.perfil_tecnico_proprio && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-green-100 text-green-800">
-              Técnico Próprio
+              Técn Próprio
             </span>
           )}
           {usuario.perfil_tecnico_terceirizado && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-amber-100 text-amber-800">
-              Técnico Terceirizado
+              Técn Terceirizado
             </span>
           )}
         </div>
       ),
     },
+
+    // Coluna 3 — Atividade (Último login em cima, Qtd embaixo)
     {
-      header: "Senha",
-      accessor: "senha_provisoria" as keyof Usuario,
-      render: (usuario: Usuario) => (
-        <>
-          {usuario.senha_provisoria ? (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-yellow-100 text-yellow-800">
-              Provisória
-            </span>
-          ) : (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-green-100 text-green-800">
-              Definitiva
-            </span>
-          )}
-        </>
-      ),
-    },
-    {
-      header: "Qtd. Logins",
-      accessor: "qtd_logins" as keyof Usuario,
-      render: (usuario: Usuario) => (
-        <div className="text-sm text-gray-700 text-center">
-          {usuario.qtd_logins ?? "-"}
-        </div>
-      ),
-    },
-    {
-      header: "Último Login",
+      header: "Atividade",
       accessor: "ultimo_login" as keyof Usuario,
       render: (usuario: Usuario) => (
-        <div className="text-sm text-gray-700 text-center">
-          {usuario.ultimo_login ?? "-"}
+        <div className="flex flex-col items-start leading-tight">
+          <span className="text-sm text-gray-700">
+            {usuario.ultimo_login ?? "-"}
+          </span>
+          <span className="text-xs text-gray-500">
+            {typeof usuario.qtd_logins === "number"
+              ? `${usuario.qtd_logins} logins`
+              : "-"}
+          </span>
         </div>
       ),
     },
+
+    // Coluna 4 — Status (Situação em cima, Senha provisória embaixo se houver)
     {
-      header: "Status",
+      header: "SITUAÇÃO",
       accessor: "situacao" as keyof Usuario,
       render: (usuario: Usuario) => (
-        <TableStatusColumn status={String(usuario.situacao)} />
+        <div className="flex flex-col gap-1 leading-tight">
+          <span className="status-badge">
+            <TableStatusColumn status={String(usuario.situacao)} />
+          </span>
+          {usuario.senha_provisoria ? (
+            <span className="inline-flex w-fit items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-yellow-100 text-yellow-800">
+              Senha provisória
+            </span>
+          ) : null}
+        </div>
       ),
     },
   ];
@@ -239,8 +224,6 @@ const CadastroUsuario = () => {
       return user;
     });
 
-    // Força uma atualização da interface sem realizar uma nova chamada à API
-    // Isso substitui os dados no hook useDataFetch sem fazer um novo GET
     updateData(updatedUsuarios);
   };
 
@@ -333,5 +316,26 @@ const CadastroUsuario = () => {
     </AdminAuthGuard>
   );
 };
+
+// Estilo para ajustar o badge de status
+// O badge ocupará apenas o tamanho do texto
+// Ajuste conforme necessário
+// O escopo do style jsx garante que só afete esta página
+<style jsx>{`
+  .status-badge :global(.table-status-column) {
+    display: inline-flex;
+    width: auto;
+    min-width: unset;
+    padding: 2px 8px;
+    font-size: 11px;
+    border-radius: 6px;
+    align-items: center;
+  }
+  .status-badge {
+    width: fit-content;
+    min-width: unset;
+    display: inline-flex;
+  }
+`}</style>;
 
 export default CadastroUsuario;

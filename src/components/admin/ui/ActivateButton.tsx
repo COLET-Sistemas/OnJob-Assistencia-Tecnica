@@ -8,6 +8,7 @@ type ActivateButtonProps = {
   confirmText?: string;
   confirmTitle?: string;
   label?: string;
+  title?: string;
   className?: string;
   itemName?: string;
 };
@@ -18,8 +19,9 @@ export const ActivateButton = ({
   loading = false,
   confirmText = "Tem certeza que deseja ativar este item?",
   confirmTitle = "Confirmar Ativação",
-  label = "Ativar",
+  label = "",
   className = "",
+  title = "Ativar",
   itemName = "",
 }: ActivateButtonProps) => {
   const [localLoading, setLocalLoading] = useState(false);
@@ -52,13 +54,13 @@ export const ActivateButton = ({
       <button
         onClick={handleClick}
         disabled={isLoading}
-        title={label}
+        title={title}
         className={`
-          inline-flex items-center px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-600 rounded-lg transition-colors gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
-          ${className}
-        `.trim()}
+            inline-flex items-center px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-600 rounded-lg transition-colors gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
+            ${className}
+          `.trim()}
       >
-        <CheckCircle size={15} />
+        <CheckCircle size={16} />
         {isLoading ? "Ativando..." : label}
       </button>
 
