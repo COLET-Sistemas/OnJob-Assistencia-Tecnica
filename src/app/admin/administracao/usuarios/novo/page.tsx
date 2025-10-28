@@ -278,6 +278,7 @@ export default function NovoUsuario() {
                       </span>
                     )}
                   </div>
+
                   <div
                     className={`flex flex-wrap gap-3 ${
                       formErrors.perfil
@@ -285,57 +286,62 @@ export default function NovoUsuario() {
                         : ""
                     }`}
                   >
-                    {perfis.map((perfil) => (
-                      <button
-                        key={perfil.key}
-                        type="button"
-                        onClick={() => {
-                          const name = perfil.key;
-                          setForm((prev) => ({
-                            ...prev,
-                            [name]: !prev[name],
-                          }));
-                          if (formErrors.perfil) {
-                            setFormErrors((prev) => {
-                              const updated = { ...prev };
-                              delete updated.perfil;
-                              return updated;
-                            });
-                          }
-                        }}
-                        className={`
-                          px-4 py-2 rounded-md font-medium transition-all
-                          ${
-                            form[perfil.key]
-                              ? "bg-violet-600 text-white shadow-md hover:bg-violet-700"
-                              : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400"
-                          }
-                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500
-                        `}
-                      >
-                        {perfil.label}
-                      </button>
-                    ))}
+                    {perfis.map((perfil) => {
+                      return (
+                        <button
+                          key={perfil.key}
+                          type="button"
+                          onClick={() => {
+                            const name = perfil.key;
+                            setForm((prev) => ({
+                              ...prev,
+                              [name]: !prev[name],
+                            }));
+                            if (formErrors.perfil) {
+                              setFormErrors((prev) => {
+                                const updated = { ...prev };
+                                delete updated.perfil;
+                                return updated;
+                              });
+                            }
+                          }}
+                          className={`
+            px-4 py-2 rounded-md font-medium transition-all
+            ${
+              form[perfil.key]
+                ? `${"bg-violet-600 hover:bg-violet-700 text-white"} shadow-md`
+                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+            }
+            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500
+          `}
+                        >
+                          {perfil.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-                {/* Permite cadastro */}
-                <div className="space-y-2">
-                  <label className="block text-md font-medium text-slate-700">
-                    Permite Cadastro
-                  </label>
-                  <label className="inline-flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      name="permite_cadastros"
-                      checked={Boolean(form.permite_cadastros)}
-                      onChange={handleChange}
-                      className="h-5 w-5 rounded border-slate-300 text-[var(--primary)] focus:ring-violet-500"
-                    />
-                    <span className="text-gray-700">
-                      Usuário pode cadastrar
-                    </span>
-                  </label>
-                </div>
+
+                {/* Checkbox Permite Cadastro — apenas se o Gestor estiver selecionado */}
+                {form.perfil_gestor_assistencia && (
+                  <div className="space-y-2 mt-4">
+                    <label className="block text-md font-medium text-slate-700">
+                      Permite Cadastro
+                    </label>
+                    <label className="inline-flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        name="permite_cadastros"
+                        checked={Boolean(form.permite_cadastros)}
+                        onChange={handleChange}
+                        className="h-5 w-5 rounded border-slate-300 text-[var(--primary)] focus:ring-violet-500"
+                      />
+                      <span className="text-gray-700">
+                        Usuário gestor pode cadastrar
+                      </span>
+                    </label>
+                  </div>
+                )}
               </div>
             </section>
           </div>

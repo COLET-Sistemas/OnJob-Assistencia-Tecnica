@@ -119,27 +119,42 @@ const CadastroUsuario = () => {
       accessor: "perfil_interno" as keyof Usuario,
       render: (usuario: Usuario) => (
         <div className="flex flex-wrap gap-1.5">
+          {/* ADMIN */}
           {usuario.administrador && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-red-100 text-red-800 gap-1">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-purple-100 text-purple-800 gap-1">
               <ShieldCheck size={12} />
               Admin
             </span>
           )}
+
+          {/* GESTOR */}
           {usuario.perfil_gestor_assistencia && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-purple-100 text-purple-800">
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium gap-1 ${
+                usuario.permite_cadastros
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
               Gestor
             </span>
           )}
+
+          {/* INTERNO */}
           {usuario.perfil_interno && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-blue-100 text-blue-800">
               Interno
             </span>
           )}
+
+          {/* TÉCNICO PRÓPRIO */}
           {usuario.perfil_tecnico_proprio && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-green-100 text-green-800">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-gray-200 text-gray-800">
               Técn Próprio
             </span>
           )}
+
+          {/* TÉCNICO TERCEIRIZADO */}
           {usuario.perfil_tecnico_terceirizado && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-amber-100 text-amber-800">
               Técn Terceirizado
