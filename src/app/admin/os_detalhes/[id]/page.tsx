@@ -12,7 +12,10 @@ import {
   ordensServicoService,
   OSDetalhadaV2,
 } from "@/api/services/ordensServicoService";
-import { ocorrenciasOSService } from "@/api/services/ocorrenciaOSService";
+import {
+  ocorrenciasOSService,
+  OcorrenciaOSDetalhe,
+} from "@/api/services/ocorrenciaOSService";
 import { getStoredRoles, USER_ROLES_UPDATED_EVENT } from "@/utils/userRoles";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { StatusBadge } from "@/components/admin/common";
@@ -169,6 +172,14 @@ const OSDetalhesPage: React.FC = () => {
     null
   );
   const [situacaoModalLoading, setSituacaoModalLoading] = useState(false);
+  const [historicoOcorrencias, setHistoricoOcorrencias] = useState<
+    OcorrenciaOSDetalhe[]
+  >([]);
+  const [historicoOcorrenciasLoading, setHistoricoOcorrenciasLoading] =
+    useState(false);
+
+
+  const [historicoRefreshToken, setHistoricoRefreshToken] = useState(0);
   const [isGestor, setIsGestor] = useState(false);
   const hasLoadedOnceRef = useRef(false);
   const lastLoadedOsIdRef = useRef<number | null>(null);
@@ -261,6 +272,10 @@ const OSDetalhesPage: React.FC = () => {
     setMotivoAlteracao("");
     setSelectedOcorrencia("");
   }, []);
+  const fetchHistoricoOcorrencias = useCallback(async (targetOsId: number) => {
+    const response = await ocorrenciasOSService.listarPorOS(targetOsId);
+    return Array.isArray(response) ? [...response] : [];
+  }, []);
   const handleSituacaoSubmit = useCallback(async () => {
     if (!isGestor) {
       setSituacaoModalError(
@@ -311,6 +326,7 @@ const OSDetalhesPage: React.FC = () => {
       }
 
       feedback.toast("Situação da OS atualizada com sucesso!", "success");
+      setHistoricoRefreshToken((token) => token + 1);
       handleCloseSituacaoModal();
     } catch (submitError) {
       console.error("Erro ao alterar situação da OS:", submitError);
@@ -336,7 +352,7 @@ const OSDetalhesPage: React.FC = () => {
   // Fetch data effect
   useEffect(() => {
     if (numericOsId === null) {
-      setError("Identificador da Ordem de Servi��o inv��lido.");
+      setError("Identificador da Ordem de Serviço inválido.");
       setLoading(false);
       return;
     }
@@ -369,7 +385,7 @@ const OSDetalhesPage: React.FC = () => {
           setOsData(osItem as OSDetalhadaV2);
           hasLoadedOnceRef.current = true;
         } else {
-          throw new Error("Estrutura de dados da OS inv��lida.");
+          throw new Error("Estrutura de dados da OS inválida.");
         }
       } catch (err) {
         if (!isActive) {
@@ -380,7 +396,7 @@ const OSDetalhesPage: React.FC = () => {
         setError(
           err instanceof Error && err.message
             ? err.message
-            : "N��o foi poss��vel carregar os detalhes da Ordem de Servi��o."
+            : "Não foi possível carregar os detalhes da Ordem de Serviço."
         );
       } finally {
         if (isActive && shouldBlockScreen) {
@@ -395,6 +411,50 @@ const OSDetalhesPage: React.FC = () => {
       isActive = false;
     };
   }, [numericOsId]);
+
+  useEffect(() => {
+    if (numericOsId === null) {
+      setHistoricoOcorrencias([]);
+      return;
+    }
+
+    let isActive = true;
+
+    const loadHistorico = async () => {
+      setHistoricoOcorrenciasLoading(true);
+
+
+      try {
+        const response = await fetchHistoricoOcorrencias(numericOsId);
+
+        if (!isActive) {
+          return;
+        }
+
+        setHistoricoOcorrencias(response);
+      } catch (historicoError) {
+        if (!isActive) {
+          return;
+        }
+
+        console.error(
+          "Erro ao carregar historico de ocorrencias da OS:",
+          historicoError
+        );
+        setHistoricoOcorrencias([]);
+      } finally {
+        if (isActive) {
+          setHistoricoOcorrenciasLoading(false);
+        }
+      }
+    };
+
+    loadHistorico();
+
+    return () => {
+      isActive = false;
+    };
+  }, [fetchHistoricoOcorrencias, historicoRefreshToken, numericOsId]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -421,6 +481,209 @@ const OSDetalhesPage: React.FC = () => {
     // ...other FAT properties as needed
   };
   const fatsData: FatType[] = useMemo(() => osData?.fats || [], [osData]);
+
+  const parseCodigo = (value: unknown): number | null => {
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : null;
+    }
+
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    if (value && typeof value === "object") {
+      const possibleCodigo = (value as { codigo?: number | string }).codigo;
+      if (possibleCodigo !== undefined && possibleCodigo !== null) {
+        const parsed = Number(possibleCodigo);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+    }
+
+    return null;
+  };
+
+  const parseDescricao = (value: unknown): string | null => {
+    if (typeof value === "string" && value.trim()) {
+      return value;
+    }
+
+    if (value && typeof value === "object") {
+      const descricaoValue = (value as { descricao?: unknown }).descricao;
+      if (typeof descricaoValue === "string" && descricaoValue.trim()) {
+        return descricaoValue;
+      }
+    }
+
+    return null;
+  };
+
+  const extractStatusCode = (
+    ocorrencia: OcorrenciaOSDetalhe
+  ): number | null => {
+    const candidates: unknown[] = [
+      ocorrencia.nova_situacao,
+      ocorrencia.situacao,
+      ocorrencia.situacao_atual,
+    ];
+
+    for (const candidate of candidates) {
+      const code = parseCodigo(candidate);
+      if (code !== null) {
+        return code;
+      }
+    }
+
+    return null;
+  };
+
+  const extractStatusDescricao = (
+    ocorrencia: OcorrenciaOSDetalhe,
+    statusCode: number | null
+  ): string => {
+    const candidates: unknown[] = [
+      ocorrencia.nova_situacao,
+      ocorrencia.descricao_situacao,
+      ocorrencia.situacao,
+      ocorrencia.situacao_atual,
+    ];
+
+    for (const candidate of candidates) {
+      const descricao = parseDescricao(candidate);
+      if (descricao) {
+        return descricao;
+      }
+    }
+
+    if (statusCode !== null) {
+      const mapping = STATUS_MAPPING[String(statusCode)];
+      if (mapping?.label) {
+        return mapping.label;
+      }
+    }
+
+    return "Situação não informada";
+  };
+
+  const extractDataOcorrencia = (ocorrencia: OcorrenciaOSDetalhe): string => {
+    return (
+      ocorrencia.data_ocorrencia || ocorrencia.data || "" // fallback para string vazia
+    );
+  };
+
+  const extractUsuarioNome = (ocorrencia: OcorrenciaOSDetalhe): string => {
+    if (ocorrencia.usuario?.nome) {
+      return ocorrencia.usuario.nome;
+    }
+
+    if (ocorrencia.usuario_nome) {
+      return ocorrencia.usuario_nome;
+    }
+
+    if (
+      typeof ocorrencia.id_usuario === "number" &&
+      Number.isFinite(ocorrencia.id_usuario)
+    ) {
+      return `Usuario #${ocorrencia.id_usuario}`;
+    }
+
+    return "Sistema";
+  };
+
+  const getTimelineTheme = (statusCode: number | null) => {
+    switch (statusCode) {
+      case 2:
+        return {
+          circleBg: "bg-blue-100",
+          circleBorder: "border-blue-300",
+          circleText: "text-blue-500",
+          headerBg: "bg-blue-50",
+          headerBorder: "border-blue-100",
+          cardBorder: "border-blue-100",
+          statusText: "text-blue-700",
+        };
+      case 3:
+        return {
+          circleBg: "bg-purple-100",
+          circleBorder: "border-purple-300",
+          circleText: "text-purple-500",
+          headerBg: "bg-purple-50",
+          headerBorder: "border-purple-100",
+          cardBorder: "border-purple-100",
+          statusText: "text-purple-700",
+        };
+      case 4:
+        return {
+          circleBg: "bg-orange-100",
+          circleBorder: "border-orange-300",
+          circleText: "text-orange-500",
+          headerBg: "bg-orange-50",
+          headerBorder: "border-orange-100",
+          cardBorder: "border-orange-100",
+          statusText: "text-orange-700",
+        };
+      case 5:
+        return {
+          circleBg: "bg-amber-100",
+          circleBorder: "border-amber-300",
+          circleText: "text-amber-500",
+          headerBg: "bg-amber-50",
+          headerBorder: "border-amber-100",
+          cardBorder: "border-amber-100",
+          statusText: "text-amber-700",
+        };
+      case 6:
+        return {
+          circleBg: "bg-indigo-100",
+          circleBorder: "border-indigo-300",
+          circleText: "text-indigo-500",
+          headerBg: "bg-indigo-50",
+          headerBorder: "border-indigo-100",
+          cardBorder: "border-indigo-100",
+          statusText: "text-indigo-700",
+        };
+      case 7:
+        return {
+          circleBg: "bg-green-100",
+          circleBorder: "border-green-300",
+          circleText: "text-green-500",
+          headerBg: "bg-green-50",
+          headerBorder: "border-green-100",
+          cardBorder: "border-green-100",
+          statusText: "text-green-700",
+        };
+      case 8:
+        return {
+          circleBg: "bg-red-100",
+          circleBorder: "border-red-300",
+          circleText: "text-red-500",
+          headerBg: "bg-red-50",
+          headerBorder: "border-red-100",
+          cardBorder: "border-red-100",
+          statusText: "text-red-700",
+        };
+      case 9:
+        return {
+          circleBg: "bg-rose-100",
+          circleBorder: "border-rose-300",
+          circleText: "text-rose-500",
+          headerBg: "bg-rose-50",
+          headerBorder: "border-rose-100",
+          cardBorder: "border-rose-100",
+          statusText: "text-rose-700",
+        };
+      default:
+        return {
+          circleBg: "bg-gray-100",
+          circleBorder: "border-gray-300",
+          circleText: "text-gray-500",
+          headerBg: "bg-gray-50",
+          headerBorder: "border-gray-100",
+          cardBorder: "border-gray-100",
+          statusText: "text-gray-700",
+        };
+    }
+  };
 
   if (loading) {
     return (
@@ -1126,6 +1389,109 @@ const OSDetalhesPage: React.FC = () => {
                         })}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {historicoOcorrencias.length > 0 && (
+              <div
+                className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 mt-8 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
+                style={{ animationDelay: "0.7s" }}
+              >
+                <div className="py-3 px-6 border-b border-gray-100 flex items-center justify-between gap-3">
+                  <h3 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                    <Clock
+                      className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
+                      style={{ animationDelay: "0.8s" }}
+                    />
+                    Histórico de Ocorrências da OS (
+                    {historicoOcorrencias.length})
+                  </h3>
+                  {historicoOcorrenciasLoading && (
+                    <span className="text-xs text-gray-400">
+                      Atualizando...
+                    </span>
+                  )}
+                </div>
+                <div className="p-6">
+                  <div className="relative">
+                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+
+                    {historicoOcorrencias.map((ocorrencia, index) => {
+                      const statusCode = extractStatusCode(ocorrencia);
+                      const theme = getTimelineTheme(statusCode);
+                      const statusLabel = extractStatusDescricao(
+                        ocorrencia,
+                        statusCode
+                      );
+                      const dataOcorrencia = extractDataOcorrencia(ocorrencia);
+                      const usuarioNome = extractUsuarioNome(ocorrencia);
+                      const descricao =
+                        ocorrencia.descricao_ocorrencia?.trim() ?? "";
+                      const statusIcon =
+                        statusCode !== null
+                          ? STATUS_MAPPING[String(statusCode)]?.icon
+                          : undefined;
+
+                      return (
+                        <div
+                          key={
+                            ocorrencia.id_ocorrencia ??
+                            `ocorrencia-${index.toString()}`
+                          }
+                          className="ml-10 mb-6 relative animate-fadeIn last:mb-0"
+                          style={{ animationDelay: `${0.05 * index}s` }}
+                        >
+                          <div
+                            className={`absolute -left-10 top-1.5 w-6 h-6 rounded-full flex items-center justify-center z-10 ${theme.circleBg} border-2 ${theme.circleBorder}`}
+                          >
+                            {statusIcon || (
+                              <Clock
+                                className={`w-3 h-3 ${theme.circleText}`}
+                              />
+                            )}
+                          </div>
+                          <div
+                            className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border ${theme.cardBorder}`}
+                          >
+                            <div
+                              className={`px-4 py-2 flex justify-between items-center ${theme.headerBg} border-b ${theme.headerBorder}`}
+                            >
+                              <div className="flex flex-col">
+                                <span
+                                  className={`font-medium text-sm ${theme.statusText}`}
+                                >
+                                  {statusLabel}
+                                </span>
+                                <span className="text-xs text-gray-500 flex items-center gap-1">
+                                  <CalendarClock className="w-3 h-3" />
+                                  {dataOcorrencia || "Data não informada"}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <User className="w-3.5 h-3.5 text-gray-400" />
+                                <span className="text-xs font-medium text-gray-600">
+                                  {usuarioNome}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="px-4 py-3">
+                              {descricao ? (
+                                <p className="text-sm text-gray-700 whitespace-pre-line">
+                                  {descricao}
+                                </p>
+                              ) : (
+                                <p className="text-xs text-gray-400 italic">
+                                  Alteração de status sem comentários
+                                  adicionais.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

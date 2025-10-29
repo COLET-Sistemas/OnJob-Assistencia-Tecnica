@@ -25,7 +25,9 @@ export interface OcorrenciaOSDetalhe {
   data?: string;
   situacao?: OcorrenciaSituacao;
   situacao_atual?: OcorrenciaSituacao;
-  nova_situacao?: OcorrenciaSituacao;
+  nova_situacao?: OcorrenciaSituacao | number | string | null;
+  descricao_situacao?: string | null;
+  id_usuario?: number | null;
   usuario?: {
     id?: number;
     nome?: string;
@@ -48,9 +50,25 @@ class OcorrenciasOSService {
       return [];
     }
 
-    return api.get<OcorrenciaOSDetalhe[]>(this.baseUrl, {
+    const response = await api.get<
+      OcorrenciaOSDetalhe[] | { ocorrencias?: OcorrenciaOSDetalhe[] }
+    >(this.baseUrl, {
       params: { id_os, id_fat },
     });
+
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    if (
+      response &&
+      typeof response === "object" &&
+      Array.isArray(response.ocorrencias)
+    ) {
+      return response.ocorrencias;
+    }
+
+    return [];
   }
 }
 

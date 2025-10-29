@@ -22,7 +22,6 @@ import {
   Timer,
   History,
   ImageOff,
-  
 } from "lucide-react";
 import { fatService, type FATDetalhada } from "@/api/services/fatService";
 import { fatFotosService } from "@/api/services/fatFotosService";
@@ -361,14 +360,20 @@ export default function FATDetalheMobile() {
   }, [fetchFAT]);
 
   useEffect(() => {
+    // 👇 Capture a snapshot of the ref's current value
+    const photoUrlsSnapshot = photoObjectUrlsRef.current;
+
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-      photoObjectUrlsRef.current.forEach((url) => {
+
+      // Use the snapshot instead of the ref directly
+      photoUrlsSnapshot.forEach((url) => {
         URL.revokeObjectURL(url);
       });
-      photoObjectUrlsRef.current.clear();
+
+      photoUrlsSnapshot.clear();
     };
   }, []);
 

@@ -1191,7 +1191,8 @@ const FATDetalhesPage: React.FC = () => {
                       className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
                       style={{ animationDelay: "0.8s" }}
                     />
-                    Histórico de Ocorrências ({fatData.ocorrencias.length})
+                    Histórico de Ocorrências da FAT (
+                    {fatData.ocorrencias.length})
                   </h3>
                 </div>
                 <div className="p-6">
