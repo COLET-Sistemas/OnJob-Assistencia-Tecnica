@@ -12,9 +12,12 @@ import {
   ordensServicoService,
   OSDetalhadaV2,
 } from "@/api/services/ordensServicoService";
+import { ocorrenciasOSService } from "@/api/services/ocorrenciaOSService";
+import { getStoredRoles, USER_ROLES_UPDATED_EVENT } from "@/utils/userRoles";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { StatusBadge } from "@/components/admin/common";
 import { LoadingSpinner } from "@/components/LoadingPersonalizado";
+import { feedback } from "@/utils/feedback";
 import {
   Clock,
   Bell,
@@ -39,10 +42,12 @@ import {
   ArrowUp,
   CalendarRange,
   Camera,
+  ListChecks,
   CameraOff,
+  X,
 } from "lucide-react";
 
-// Status mapping como constante fora do componente para m├íxima estabilidade
+// Status mapping como constante fora do componente para máxima estabilidade
 const STATUS_MAPPING: Record<
   string,
   { label: string; className: string; icon: React.ReactNode }
@@ -93,19 +98,19 @@ const STATUS_MAPPING: Record<
     ),
   },
   "6": {
-    label: "Em Revis├úo",
+    label: "Em Revisão",
     className: "bg-indigo-100 text-indigo-700 border border-indigo-200",
     icon: (
-      <span title="Em Revis├úo">
+      <span title="Em Revisão">
         <FileSearch className="w-3.5 h-3.5 text-indigo-600" />
       </span>
     ),
   },
   "7": {
-    label: "Conclu├¡da",
+    label: "Concluída",
     className: "bg-green-100 text-green-700 border border-green-200",
     icon: (
-      <span title="Conclu├¡da">
+      <span title="Concluída">
         <CheckCircle className="w-3.5 h-3.5 text-green-600" />
       </span>
     ),
@@ -130,6 +135,13 @@ const STATUS_MAPPING: Record<
   },
 };
 
+const OCORRENCIA_LABELS: Record<string, string> = {
+  "concluir os": "Concluir OS",
+  "cancelar os": "Cancelar OS",
+  "cancelar os (cliente)": "Cancelar OS (cliente)",
+  "reabrir os": "Reabrir OS",
+};
+
 const OSDetalhesPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
@@ -150,6 +162,14 @@ const OSDetalhesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [osData, setOsData] = useState<OSDetalhadaV2 | null>(null);
   const [showScrollToTop, setShowScrollToTop] = useState<boolean>(false);
+  const [situacaoModalOpen, setSituacaoModalOpen] = useState(false);
+  const [selectedOcorrencia, setSelectedOcorrencia] = useState<string>("");
+  const [motivoAlteracao, setMotivoAlteracao] = useState("");
+  const [situacaoModalError, setSituacaoModalError] = useState<string | null>(
+    null
+  );
+  const [situacaoModalLoading, setSituacaoModalLoading] = useState(false);
+  const [isGestor, setIsGestor] = useState(false);
   const hasLoadedOnceRef = useRef(false);
   const lastLoadedOsIdRef = useRef<number | null>(null);
 
@@ -168,11 +188,155 @@ const OSDetalhesPage: React.FC = () => {
     },
     [router]
   );
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const updateGestorState = () => {
+      try {
+        const roles = getStoredRoles();
+        setIsGestor(Boolean(roles.gestor));
+      } catch (err) {
+        console.error("Falha ao ler perfis do usuário:", err);
+        setIsGestor(false);
+      }
+    };
+
+    updateGestorState();
+
+    const handleStorage = () => {
+      updateGestorState();
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(USER_ROLES_UPDATED_EVENT, updateGestorState);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(USER_ROLES_UPDATED_EVENT, updateGestorState);
+    };
+  }, []);
+  const situacaoOptions = useMemo(() => {
+    const codigo = osData?.situacao_os.codigo;
+
+    if (!codigo) {
+      return [];
+    }
+
+    if (codigo === 5) {
+      return ["concluir os", "cancelar os", "cancelar os (cliente)"];
+    }
+
+    if (codigo === 6) {
+      return [
+        "reabrir os",
+        "concluir os",
+        "cancelar os",
+        "cancelar os (cliente)",
+      ];
+    }
+
+    if ([7, 8, 9].includes(codigo)) {
+      return ["reabrir os"];
+    }
+
+    return [];
+  }, [osData?.situacao_os.codigo]);
+  const shouldShowSituacaoButton = situacaoOptions.length > 0;
+  const canShowSituacaoButton = shouldShowSituacaoButton && isGestor;
+  const handleOpenSituacaoModal = useCallback(() => {
+    if (situacaoOptions.length === 0 || !isGestor) {
+      return;
+    }
+
+    setSelectedOcorrencia(situacaoOptions[0]);
+    setMotivoAlteracao("");
+    setSituacaoModalError(null);
+    setSituacaoModalOpen(true);
+  }, [isGestor, situacaoOptions]);
+  const handleCloseSituacaoModal = useCallback(() => {
+    setSituacaoModalOpen(false);
+    setSituacaoModalError(null);
+    setMotivoAlteracao("");
+    setSelectedOcorrencia("");
+  }, []);
+  const handleSituacaoSubmit = useCallback(async () => {
+    if (!isGestor) {
+      setSituacaoModalError(
+        "Você não possui permissão para alterar a situação."
+      );
+      return;
+    }
+
+    if (!osData || osData.id_os === undefined) {
+      setSituacaoModalError("Não foi possível identificar a OS.");
+      return;
+    }
+
+    if (!selectedOcorrencia) {
+      setSituacaoModalError("Selecione uma opção para a situação.");
+      return;
+    }
+
+    if (!motivoAlteracao.trim()) {
+      setSituacaoModalError("Informe o motivo da alteração.");
+      return;
+    }
+
+    try {
+      setSituacaoModalLoading(true);
+      setSituacaoModalError(null);
+
+      await ocorrenciasOSService.registrarOcorrencia({
+        id_os: osData.id_os,
+        ocorrencia: selectedOcorrencia,
+        descricao_ocorrencia: motivoAlteracao.trim(),
+      });
+
+      ordensServicoService.invalidateOSCache(osData.id_os);
+
+      const updatedData = await ordensServicoService.getById(osData.id_os);
+      const normalizedData =
+        Array.isArray(updatedData) && updatedData.length > 0
+          ? updatedData[0]
+          : updatedData;
+
+      if (
+        normalizedData &&
+        typeof normalizedData === "object" &&
+        "id_os" in normalizedData
+      ) {
+        setOsData(normalizedData as OSDetalhadaV2);
+      }
+
+      feedback.toast("Situação da OS atualizada com sucesso!", "success");
+      handleCloseSituacaoModal();
+    } catch (submitError) {
+      console.error("Erro ao alterar situação da OS:", submitError);
+      setSituacaoModalError(
+        "Não foi possível alterar a situação. Tente novamente."
+      );
+    } finally {
+      setSituacaoModalLoading(false);
+    }
+  }, [
+    handleCloseSituacaoModal,
+    isGestor,
+    motivoAlteracao,
+    osData,
+    selectedOcorrencia,
+  ]);
+  useEffect(() => {
+    if (!isGestor && situacaoModalOpen) {
+      handleCloseSituacaoModal();
+    }
+  }, [handleCloseSituacaoModal, isGestor, situacaoModalOpen]);
 
   // Fetch data effect
   useEffect(() => {
     if (numericOsId === null) {
-      setError("Identificador da Ordem de Servi´┐¢´┐¢o inv´┐¢´┐¢lido.");
+      setError("Identificador da Ordem de Servi��o inv��lido.");
       setLoading(false);
       return;
     }
@@ -205,7 +369,7 @@ const OSDetalhesPage: React.FC = () => {
           setOsData(osItem as OSDetalhadaV2);
           hasLoadedOnceRef.current = true;
         } else {
-          throw new Error("Estrutura de dados da OS inv´┐¢´┐¢lida.");
+          throw new Error("Estrutura de dados da OS inv��lida.");
         }
       } catch (err) {
         if (!isActive) {
@@ -216,7 +380,7 @@ const OSDetalhesPage: React.FC = () => {
         setError(
           err instanceof Error && err.message
             ? err.message
-            : "N´┐¢´┐¢o foi poss´┐¢´┐¢vel carregar os detalhes da Ordem de Servi´┐¢´┐¢o."
+            : "N��o foi poss��vel carregar os detalhes da Ordem de Servi��o."
         );
       } finally {
         if (isActive && shouldBlockScreen) {
@@ -240,7 +404,7 @@ const OSDetalhesPage: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Valores memoizados para otimiza├º├úo
+  // Valores memoizados para otimização
   const clienteData = useMemo(() => osData?.cliente, [osData]);
   const contatoData = useMemo(() => osData?.contato, [osData]);
   const maquinaData = useMemo(() => osData?.maquina, [osData]);
@@ -324,15 +488,26 @@ const OSDetalhesPage: React.FC = () => {
       )}
       <div className="animate-fadeIn">
         <PageHeader
-          title={`Ordem de Servi├ºo #${osData.id_os}`}
+          title={`Ordem de Serviço #${osData.id_os}`}
           config={{
             type: "form",
             backLink: "/admin/os_consulta",
             backLabel: "Voltar para consulta de OS",
+            actions: canShowSituacaoButton ? (
+              <button
+                type="button"
+                onClick={handleOpenSituacaoModal}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--primary)] text-white shadow-sm hover:bg-[var(--primary)]/90 hover:shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={situacaoModalLoading || !isGestor}
+              >
+                <ListChecks className="h-4 w-4" />
+                Situação da OS
+              </button>
+            ) : undefined,
           }}
         />
 
-        {/* Card de descri├º├úo */}
+        {/* Card de descrição */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 py-4 px-6 hover:shadow-md transition-shadow duration-300 animate-fadeIn">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex flex-col w-full lg:w-auto">
@@ -348,7 +523,7 @@ const OSDetalhesPage: React.FC = () => {
 
         {/* Grid Principal */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Coluna Esquerda - Cliente e M├íquina */}
+          {/* Coluna Esquerda - Cliente e Máquina */}
           <div className="lg:col-span-1">
             {/* Card Cliente */}
             <div
@@ -364,7 +539,7 @@ const OSDetalhesPage: React.FC = () => {
                     </h3>
                   </div>
 
-                  {/* Bot├Áes de A├º├úo */}
+                  {/* Botões de Ação */}
                   <div className="flex items-center gap-2 ">
                     {contatoData?.email && (
                       <a
@@ -442,7 +617,7 @@ const OSDetalhesPage: React.FC = () => {
                     clienteData?.cep) && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
-                        Endere├ºo
+                        Endereço
                       </p>
                       <p className="text-gray-800">
                         {clienteData.endereco}
@@ -462,7 +637,7 @@ const OSDetalhesPage: React.FC = () => {
                   {clienteData?.nome_regiao && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
-                        Regi├úo
+                        Região
                       </p>
                       <p className="text-gray-800">{clienteData.nome_regiao}</p>
                     </div>
@@ -511,7 +686,7 @@ const OSDetalhesPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Card M├íquina */}
+            {/* Card Máquina */}
             <div
               className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
               style={{ animationDelay: "0.2s" }}
@@ -522,7 +697,7 @@ const OSDetalhesPage: React.FC = () => {
                     className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
                     style={{ animationDelay: "0.3s" }}
                   />
-                  M├íquina
+                  Máquina
                 </h3>
               </div>
               <div className="p-6">
@@ -530,7 +705,7 @@ const OSDetalhesPage: React.FC = () => {
                   {maquinaData?.numero_serie && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
-                        N┬║ de S├®rie
+                        Nº de Série
                       </p>
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-gray-800">
@@ -562,7 +737,7 @@ const OSDetalhesPage: React.FC = () => {
                   {maquinaData?.descricao && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
-                        Descri├º├úo
+                        Descrição
                       </p>
                       <p className="text-gray-800">{maquinaData.descricao}</p>
                     </div>
@@ -594,7 +769,7 @@ const OSDetalhesPage: React.FC = () => {
                     className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
                     style={{ animationDelay: "0.4s" }}
                   />
-                  Detalhes da Ordem de Servi├ºo
+                  Detalhes da Ordem de Serviço
                 </h3>
               </div>
 
@@ -602,7 +777,7 @@ const OSDetalhesPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Coluna Esquerda */}
                   <div className="space-y-6">
-                    {/* Situa├º├úo da OS */}
+                    {/* Situação da OS */}
                     {osData.situacao_os && osData.situacao_os.codigo && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
@@ -696,17 +871,17 @@ const OSDetalhesPage: React.FC = () => {
                         </div>
                         {osData.abertura.origem_abertura === "T" && (
                           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-                            T├®cnico
+                            Técnico
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* T├®cnico Respons├ível */}
+                    {/* Técnico Responsável */}
                     {osData.tecnico && osData.tecnico.id > 0 && (
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-gray-500">
-                          T├®cnico Respons├ível
+                          Técnico Responsável
                         </p>
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
@@ -735,11 +910,11 @@ const OSDetalhesPage: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Libera├º├úo Financeira */}
+                    {/* Liberação Financeira */}
                     {osData.liberacao_financeira && (
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-gray-500">
-                          Libera├º├úo Financeira
+                          Liberação Financeira
                         </p>
                         <div className="flex items-center gap-2">
                           {osData.liberacao_financeira.liberada ? (
@@ -753,7 +928,7 @@ const OSDetalhesPage: React.FC = () => {
                             <>
                               <XCircle className="h-4 w-4 text-gray-400 flex-shrink-0" />
                               <span className="text-sm text-gray-500">
-                                N├úo liberada
+                                Não liberada
                               </span>
                             </>
                           )}
@@ -796,7 +971,7 @@ const OSDetalhesPage: React.FC = () => {
                       className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
                       style={{ animationDelay: "0.5s" }}
                     />
-                    Fichas de Atendimento T├®cnico ({fatsData.length})
+                    Fichas de Atendimento Técnico ({fatsData.length})
                   </h3>
                 </div>
                 <div className="p-6">
@@ -814,7 +989,7 @@ const OSDetalhesPage: React.FC = () => {
                             FOTO
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            T├®cnico
+                            Técnico
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Status
@@ -849,7 +1024,7 @@ const OSDetalhesPage: React.FC = () => {
                                   desconhecido: {
                                     label:
                                       fat?.descricao_situacao ||
-                                      "Status n├úo informado",
+                                      "Status não informado",
                                     className:
                                       "bg-gray-100 text-gray-700 border border-gray-200",
                                   },
@@ -889,7 +1064,7 @@ const OSDetalhesPage: React.FC = () => {
                               <td className="px-4 py-3 text-center align-middle">
                                 {temFotos ? (
                                   <span
-                                    title={`H├í ${fat.fotos?.length ?? 0} foto${
+                                    title={`Há ${fat.fotos?.length ?? 0} foto${
                                       (fat.fotos?.length ?? 0) > 1 ? "s" : ""
                                     }.`}
                                     className="flex items-center justify-center text-purple-600"
@@ -898,7 +1073,7 @@ const OSDetalhesPage: React.FC = () => {
                                   </span>
                                 ) : (
                                   <span
-                                    title="N├úo h├í fotos."
+                                    title="Não há fotos."
                                     className="flex items-center justify-center"
                                   >
                                     <CameraOff className="h-5 w-5 text-gray-300" />
@@ -945,7 +1120,135 @@ const OSDetalhesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Bot├úo Voltar ao Topo */}
+      {situacaoModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => {
+              if (!situacaoModalLoading) {
+                handleCloseSituacaoModal();
+              }
+            }}
+          />
+
+          <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 animate-in fade-in-0 zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <ListChecks className="h-5 w-5 text-[var(--primary)]" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Informe a nova situação para a OS {osData?.id_os}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseSituacaoModal}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg"
+                disabled={situacaoModalLoading}
+                aria-label="Fechar modal"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  Selecione a nova situação da OS:
+                </p>
+                <div className="space-y-2">
+                  {situacaoOptions.map((option) => (
+                    <label
+                      key={option}
+                      className={`flex items-center gap-3 rounded-lg border px-3 py-2 cursor-pointer transition-colors ${
+                        selectedOcorrencia === option
+                          ? "border-[var(--primary)] bg-[var(--primary)]/5"
+                          : "border-gray-200 hover:border-[var(--primary)]/60"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="situacaoOs"
+                        value={option}
+                        checked={selectedOcorrencia === option}
+                        onChange={() => {
+                          setSelectedOcorrencia(option);
+                          setSituacaoModalError(null);
+                        }}
+                        className="h-4 w-4 text-[var(--primary)] focus:ring-[var(--primary)]"
+                        disabled={situacaoModalLoading}
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        {OCORRENCIA_LABELS[option] ?? option}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="motivoSituacao"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Motivo <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="motivoSituacao"
+                  value={motivoAlteracao}
+                  onChange={(event) => {
+                    setMotivoAlteracao(event.target.value);
+                    if (situacaoModalError) {
+                      setSituacaoModalError(null);
+                    }
+                  }}
+                  className={`w-full rounded-lg border px-3 py-2 text-sm text-gray-800 min-h-[120px] shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] ${
+                    situacaoModalError?.toLowerCase().includes("motivo")
+                      ? "border-red-300"
+                      : "border-gray-300"
+                  }`}
+                  placeholder="Descreva o motivo da alteração..."
+                  disabled={situacaoModalLoading}
+                />
+                {situacaoModalError && (
+                  <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                    {situacaoModalError}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+              <button
+                type="button"
+                onClick={handleCloseSituacaoModal}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={situacaoModalLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSituacaoSubmit}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg bg-[var(--primary)] hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={
+                  situacaoModalLoading ||
+                  !selectedOcorrencia ||
+                  !motivoAlteracao.trim()
+                }
+              >
+                {situacaoModalLoading && (
+                  <span className="inline-flex h-4 w-4 items-center justify-center">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  </span>
+                )}
+                {situacaoModalLoading ? "Alterando..." : "Alterar situação"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Botão Voltar ao Topo */}
       {showScrollToTop && (
         <button
           onClick={handleScrollToTop}

@@ -27,6 +27,7 @@ interface FormConfig {
   type: "form";
   backLink: string;
   backLabel?: string;
+  actions?: React.ReactNode;
 }
 
 interface PageHeaderProps {
@@ -189,8 +190,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
 
   return (
     <header className="mb-5">
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--primary)]/20 p-5 min-h-[88px] flex items-center">
-        <div className="flex items-center gap-4 w-full">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--primary)]/20 p-5 min-h-[88px] flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
           <Link
             href={config.backLink}
             className="p-2 text-slate-600 hover:text-[var(--primary)] hover:bg-violet-50 rounded-lg transition-colors"
@@ -205,10 +206,12 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
             </h2>
           </div>
         </div>
+        {config.actions && (
+          <div className="flex items-center gap-3">{config.actions}</div>
+        )}
       </div>
     </header>
   );
 };
 
 export default PageHeader;
-
