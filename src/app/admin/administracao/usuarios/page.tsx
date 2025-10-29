@@ -97,6 +97,17 @@ const CadastroUsuario = () => {
   }
 
   const columns = [
+    {
+      header: "Login",
+      accessor: "login" as keyof Usuario,
+      render: (usuario: Usuario) => (
+        <div className="flex flex-col leading-tight">
+          <span className="text-sm font-semibold text-gray-900">
+            {usuario.login}
+          </span>
+        </div>
+      ),
+    },
     // Coluna 1 — Acessos (Nome em cima, Email embaixo)
     {
       header: "Acessos",

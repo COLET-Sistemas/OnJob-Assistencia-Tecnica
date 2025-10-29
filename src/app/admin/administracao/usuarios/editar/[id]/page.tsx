@@ -185,6 +185,9 @@ const EditarUsuario = (props: PageProps) => {
     setFormData((prev) => ({
       ...prev,
       [perfilKey]: !prev[perfilKey],
+      ...(perfilKey === "perfil_gestor_assistencia" && prev[perfilKey]
+        ? { permite_cadastros: false }
+        : {}),
     }));
 
     if (formErrors.perfil) {
@@ -352,24 +355,26 @@ const EditarUsuario = (props: PageProps) => {
                   </div>
                 </div>
 
-                {/* Permite cadastro */}
-                <div className="space-y-2">
-                  <label className="block text-md font-medium text-slate-700">
-                    Permite Cadastro
-                  </label>
-                  <label className="inline-flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      name="permite_cadastros"
-                      checked={Boolean(formData.permite_cadastros)}
-                      onChange={handleInputChange}
-                      className="h-5 w-5 rounded border-slate-300 text-[var(--primary)] focus:ring-violet-500"
-                    />
-                    <span className="text-gray-700">
-                      Usuário pode cadastrar
-                    </span>
-                  </label>
-                </div>
+                {/* Checkbox Permite Cadastro — apenas se o Gestor estiver selecionado */}
+                {formData.perfil_gestor_assistencia && (
+                  <div className="space-y-2 mt-4">
+                    <label className="block text-md font-medium text-slate-700">
+                      Permite Cadastro
+                    </label>
+                    <label className="inline-flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        name="permite_cadastros"
+                        checked={Boolean(formData.permite_cadastros)}
+                        onChange={handleInputChange}
+                        className="h-5 w-5 rounded border-slate-300 text-[var(--primary)] focus:ring-violet-500"
+                      />
+                      <span className="text-gray-700">
+                        Usuário gestor pode cadastrar
+                      </span>
+                    </label>
+                  </div>
+                )}
 
                 {/* Situação */}
                 <div className="mt-4">

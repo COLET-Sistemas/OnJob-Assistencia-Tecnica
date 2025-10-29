@@ -293,10 +293,23 @@ export default function NovoUsuario() {
                           type="button"
                           onClick={() => {
                             const name = perfil.key;
-                            setForm((prev) => ({
-                              ...prev,
-                              [name]: !prev[name],
-                            }));
+                            setForm((prev) => {
+                              // Se desmarcar o gestor, desmarcar permite_cadastros também
+                              if (
+                                name === "perfil_gestor_assistencia" &&
+                                prev[name]
+                              ) {
+                                return {
+                                  ...prev,
+                                  [name]: false,
+                                  permite_cadastros: false,
+                                };
+                              }
+                              return {
+                                ...prev,
+                                [name]: !prev[name],
+                              };
+                            });
                             if (formErrors.perfil) {
                               setFormErrors((prev) => {
                                 const updated = { ...prev };
