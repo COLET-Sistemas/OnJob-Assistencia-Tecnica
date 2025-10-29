@@ -276,6 +276,7 @@ export interface OSHistoricoDetalhado extends OSHistorico {
 export interface OSDetalhadaV2 {
   id_os: number;
   numero_os?: string;
+  numero_interno?: string;
   descricao_problema: string;
   em_garantia: boolean;
   prioridade?: "baixa" | "media" | "alta" | "critica";

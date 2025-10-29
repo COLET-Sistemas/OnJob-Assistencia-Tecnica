@@ -6,7 +6,7 @@ import React, {
   useRef,
   useMemo,
 } from "react";
-import ActionButtons from "@/components/tecnico/ActionButtons";
+import FloatingActionMenu from "@/components/tecnico/FloatingActionMenu";
 import { useRouter, useParams } from "next/navigation";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import StatusBadge from "@/components/tecnico/StatusBadge";
@@ -826,10 +826,10 @@ export default function OSDetalheMobile() {
         )}
       </div>
 
-      {/* ActionButtons (Deslocamento e Novo Atendimento) - Não fixos */}
-      <div className="p-4">
-        <ActionButtons id_os={os.id_os} onActionSuccess={handleActionSuccess} />
-      </div>
+      <FloatingActionMenu
+        id_os={os.id_os}
+        onActionSuccess={handleActionSuccess}
+      />
     </main>
   );
 }

@@ -497,7 +497,7 @@ const OSDetalhesPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleOpenSituacaoModal}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--primary)] text-white shadow-sm hover:bg-[var(--primary)]/90 hover:shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center cursor-pointer gap-2 px-4 py-2.5 rounded-xl bg-[var(--primary)] text-white shadow-sm hover:bg-[var(--primary)]/90 hover:shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={situacaoModalLoading || !isGestor}
               >
                 <ListChecks className="h-4 w-4" />
@@ -846,6 +846,20 @@ const OSDetalhesPage: React.FC = () => {
                               </span>
                               <span className="text-sm text-gray-800">
                                 {osData.data_fechamento}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {osData.numero_interno?.trim() && (
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="text-xs text-gray-500">
+                                Número interno
+                              </span>
+                              <span className="text-sm text-gray-800">
+                                {osData.numero_interno}
                               </span>
                             </div>
                           </div>

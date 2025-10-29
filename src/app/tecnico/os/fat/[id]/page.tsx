@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Package,
   Car,
+  ChevronLeft,
   ChevronRight,
   FileText,
   Wrench,
@@ -20,8 +21,11 @@ import {
   Eye,
   Timer,
   History,
+  ImageOff,
+  X,
 } from "lucide-react";
 import { fatService, type FATDetalhada } from "@/api/services/fatService";
+import { fatFotosService } from "@/api/services/fatFotosService";
 import { Loading } from "@/components/LoadingPersonalizado";
 import Toast from "@/components/tecnico/Toast";
 import StatusBadge from "@/components/tecnico/StatusBadge";
@@ -159,6 +163,15 @@ export default function FATDetalheMobile() {
     message: "",
     type: "success",
   });
+  const [photoPreviews, setPhotoPreviews] = useState<Record<number, string>>(
+    {}
+  );
+  const [loadingPhotoPreviews, setLoadingPhotoPreviews] = useState(false);
+  const [photoPreviewError, setPhotoPreviewError] = useState("");
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(
+    null
+  );
 
   const situacoesComBotoes = ["3", "4", "5"];
 
@@ -179,11 +192,51 @@ export default function FATDetalheMobile() {
 
   const isLoadingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const photoObjectUrlsRef = useRef<Map<number, string>>(new Map());
 
   const formatDate = useCallback((dateStr: string | null | undefined) => {
     if (!dateStr?.trim()) return null;
     return dateStr;
   }, []);
+
+  const formatPhotoDate = useCallback(
+    (dateStr: string | Date | null | undefined) => {
+      if (!dateStr) return "Data n\u00e3o dispon\u00edvel";
+
+      const raw =
+        dateStr instanceof Date
+          ? dateStr.toISOString()
+          : typeof dateStr === "string"
+          ? dateStr
+          : String(dateStr);
+
+      const value = raw.trim();
+      if (!value) return "Data n\u00e3o dispon\u00edvel";
+
+      try {
+        const normalized = value.includes("T") ? value : value.replace(" ", "T");
+        const parsed = new Date(normalized);
+        if (!Number.isNaN(parsed.getTime())) {
+          return parsed.toLocaleDateString("pt-BR");
+        }
+      } catch {
+        // ignora queda de parse e tenta fallback textual
+      }
+
+      const [datePart] = value.split(" ");
+      if (!datePart) return "Data n\u00e3o dispon\u00edvel";
+
+      if (datePart.includes("-")) {
+        const [year, month, day] = datePart.split("-");
+        if (year && month && day) {
+          return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`;
+        }
+      }
+
+      return datePart;
+    },
+    []
+  );
 
   const formatTime = useCallback((minutes: number | null | undefined) => {
     if (!minutes) return null;
@@ -310,8 +363,130 @@ export default function FATDetalheMobile() {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      photoObjectUrlsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      photoObjectUrlsRef.current.clear();
     };
   }, []);
+
+  useEffect(() => {
+    if (!fat?.fotos || fat.fotos.length === 0) {
+      photoObjectUrlsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      photoObjectUrlsRef.current.clear();
+      setPhotoPreviews({});
+      setPhotoPreviewError("");
+      setIsPhotoModalOpen(false);
+      setSelectedPhotoIndex(null);
+      setLoadingPhotoPreviews(false);
+      return;
+    }
+
+    const fotosAtuais = fat.fotos;
+    const activeIds = new Set(fotosAtuais.map((foto) => foto.id_fat_foto));
+
+    photoObjectUrlsRef.current.forEach((url, id) => {
+      if (!activeIds.has(id)) {
+        URL.revokeObjectURL(url);
+        photoObjectUrlsRef.current.delete(id);
+      }
+    });
+
+    setPhotoPreviews((prev) => {
+      const next: Record<number, string> = {};
+      activeIds.forEach((id) => {
+        const stored =
+          photoObjectUrlsRef.current.get(id) ?? prev[id] ?? undefined;
+        if (stored) {
+          next[id] = stored;
+          if (!photoObjectUrlsRef.current.has(id)) {
+            photoObjectUrlsRef.current.set(id, stored);
+          }
+        }
+      });
+      return next;
+    });
+
+    const missingFotos = fotosAtuais.filter(
+      (foto) => !photoObjectUrlsRef.current.has(foto.id_fat_foto)
+    );
+
+    if (missingFotos.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadPreviews = async () => {
+      setLoadingPhotoPreviews(true);
+      setPhotoPreviewError("");
+
+      try {
+        const results = await Promise.all(
+          missingFotos.map(async (foto) => {
+            try {
+              const blob = await fatFotosService.visualizar(foto.id_fat_foto);
+              const objectUrl = URL.createObjectURL(blob);
+              return { id: foto.id_fat_foto, url: objectUrl };
+            } catch {
+              return { id: foto.id_fat_foto, url: "" };
+            }
+          })
+        );
+
+        if (cancelled) {
+          results.forEach(({ url }) => {
+            if (url) {
+              URL.revokeObjectURL(url);
+            }
+          });
+          return;
+        }
+
+        const newEntries: Record<number, string> = {};
+        let hadError = false;
+
+        results.forEach(({ id, url }) => {
+          if (url) {
+            const existing = photoObjectUrlsRef.current.get(id);
+            if (existing) {
+              URL.revokeObjectURL(existing);
+            }
+            photoObjectUrlsRef.current.set(id, url);
+            newEntries[id] = url;
+          } else {
+            hadError = true;
+          }
+        });
+
+        if (Object.keys(newEntries).length > 0) {
+          setPhotoPreviews((prev) => ({ ...prev, ...newEntries }));
+        }
+
+        if (hadError) {
+          setPhotoPreviewError("Algumas fotos n\u00e3o puderam ser carregadas.");
+        }
+      } catch {
+        if (!cancelled) {
+          setPhotoPreviewError(
+            "N\u00e3o foi poss\u00edvel carregar as fotos da FAT."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingPhotoPreviews(false);
+        }
+      }
+    };
+
+    loadPreviews();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fat?.fotos]);
 
   const handleIniciarAtendimento = useCallback(async () => {
     try {
@@ -459,6 +634,63 @@ export default function FATDetalheMobile() {
       setLoading(false);
     }
   }, [handleNavigateToOS, extractErrorMessage, showToast]);
+
+  const fotos = fat?.fotos ?? [];
+  const hasPhotos = fotos.length > 0;
+  const hasMultiplePhotos = fotos.length > 1;
+
+  const selectedPhoto =
+    selectedPhotoIndex !== null && selectedPhotoIndex >= 0
+      ? fotos[selectedPhotoIndex] ?? null
+      : null;
+
+  const selectedPhotoPreview = selectedPhoto
+    ? photoPreviews[selectedPhoto.id_fat_foto] ?? ""
+    : "";
+
+  const openPhotoViewer = useCallback(
+    (index: number) => {
+      if (!hasPhotos) return;
+      setSelectedPhotoIndex(index);
+      setIsPhotoModalOpen(true);
+    },
+    [hasPhotos]
+  );
+
+  const closePhotoViewer = useCallback(() => {
+    setIsPhotoModalOpen(false);
+    setSelectedPhotoIndex(null);
+  }, []);
+
+  const showNextPhoto = useCallback(() => {
+    if (!hasMultiplePhotos) return;
+    setSelectedPhotoIndex((current) => {
+      if (current === null || fotos.length === 0) return current;
+      return (current + 1) % fotos.length;
+    });
+  }, [fotos.length, hasMultiplePhotos]);
+
+  const showPreviousPhoto = useCallback(() => {
+    if (!hasMultiplePhotos) return;
+    setSelectedPhotoIndex((current) => {
+      if (current === null || fotos.length === 0) return current;
+      return (current - 1 + fotos.length) % fotos.length;
+    });
+  }, [fotos.length, hasMultiplePhotos]);
+
+  useEffect(() => {
+    if (selectedPhotoIndex === null) return;
+
+    if (fotos.length === 0) {
+      setSelectedPhotoIndex(null);
+      setIsPhotoModalOpen(false);
+      return;
+    }
+
+    if (selectedPhotoIndex < 0 || selectedPhotoIndex >= fotos.length) {
+      setSelectedPhotoIndex(Math.max(0, fotos.length - 1));
+    }
+  }, [fotos.length, selectedPhotoIndex]);
 
   const initialLoading = loading && !fat;
 
@@ -796,43 +1028,61 @@ export default function FATDetalheMobile() {
         )}
 
         {/* Fotos */}
-        {fat.fotos && fat.fotos.length > 0 && (
+        {hasPhotos && (
           <Section
-            title={`Fotos (${fat.fotos.length})`}
+            title={`Fotos (${fotos.length})`}
             icon={<Camera className="w-4 h-4" />}
             collapsible={true}
             defaultExpanded={false}
           >
-            <div className="space-y-2">
-              {fat.fotos.map((foto, index) => (
-                <div
-                  key={foto.id_fat_foto || index}
-                  className="p-3 bg-slate-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Camera className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm text-slate-900 font-medium">
-                      {foto.nome_arquivo}
-                    </span>
-                  </div>
-
-                  {foto.tipo && (
-                    <p className="text-xs text-slate-600 mb-1">
-                      Tipo: {foto.tipo}
-                    </p>
-                  )}
-
-                  {foto.descricao && (
-                    <p className="text-xs text-slate-600 mb-1">
-                      {foto.descricao}
-                    </p>
-                  )}
-
-                  <p className="text-xs text-slate-500">
-                    Data: {formatDate(foto.data_cadastro) || foto.data_cadastro}
-                  </p>
+            <div className="space-y-3">
+              {photoPreviewError && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+                  {photoPreviewError}
                 </div>
-              ))}
+              )}
+              {fotos.map((foto, index) => {
+                const previewUrl = photoPreviews[foto.id_fat_foto];
+                const isLoadingPreview = loadingPhotoPreviews && !previewUrl;
+
+                return (
+                  <div
+                    key={foto.id_fat_foto || index}
+                    className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => openPhotoViewer(index)}
+                      className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100 transition hover:border-[#7B54BE]/60 focus:outline-none focus:ring-2 focus:ring-[#7B54BE] focus:ring-offset-2"
+                    >
+                      {previewUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={previewUrl}
+                          alt={foto.descricao || foto.nome_arquivo}
+                          className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+                        />
+                      ) : isLoadingPreview ? (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <div className="h-6 w-6 rounded-full border-2 border-slate-200 border-t-[#7B54BE] animate-spin" />
+                        </div>
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-slate-400">
+                          <ImageOff className="h-6 w-6" />
+                        </div>
+                      )}
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-slate-800 line-clamp-2">
+                        {foto.descricao?.trim() || foto.nome_arquivo}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {formatPhotoDate(foto.data_cadastro)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </Section>
         )}
@@ -871,6 +1121,65 @@ export default function FATDetalheMobile() {
           </Section>
         )}
       </div>
+
+      {isPhotoModalOpen && selectedPhoto && (
+        <div
+          className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/80 p-4"
+          onClick={closePhotoViewer}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+
+            <div className="relative flex items-center justify-center bg-slate-950/95 px-10 py-10">
+              {hasMultiplePhotos && (
+                <button
+                  type="button"
+                  onClick={showPreviousPhoto}
+                  className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow transition hover:bg-white"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              )}
+
+              {selectedPhotoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedPhotoPreview}
+                  alt={selectedPhoto.descricao || selectedPhoto.nome_arquivo}
+                  className="max-h-[70vh] w-full max-w-[90%] rounded-xl object-contain shadow-xl"
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-3 text-slate-200">
+                  <ImageOff className="h-8 w-8" />
+                  <span className="text-xs uppercase tracking-wide">
+                    Visualiza��o indispon��vel
+                  </span>
+                </div>
+              )}
+
+              {hasMultiplePhotos && (
+                <button
+                  type="button"
+                  onClick={showNextPhoto}
+                  className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow transition hover:bg-white"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+
+            <div className="border-t border-slate-100 bg-white px-6 py-4">
+              <p className="text-sm font-medium text-slate-900">
+                {selectedPhoto.descricao?.trim() || selectedPhoto.nome_arquivo}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                {formatPhotoDate(selectedPhoto.data_cadastro)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50">
         <div className="px-3 py-2">

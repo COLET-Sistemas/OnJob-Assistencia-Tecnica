@@ -20,6 +20,8 @@ import {
   UploadCloud,
   ImageOff,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 const formatDateTime = (value?: string) => {
@@ -28,6 +30,19 @@ const formatDateTime = (value?: string) => {
     return new Intl.DateTimeFormat("pt-BR", {
       dateStyle: "short",
       timeStyle: "short",
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
+};
+
+const formatDate = (value?: string) => {
+  if (!value) return "";
+  try {
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     }).format(new Date(value));
   } catch {
     return value;
@@ -59,7 +74,9 @@ export default function FATFotosPage() {
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [selectedPhoto, setSelectedPhoto] = useState<FATFotoItem | null>(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(
+    null
+  );
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const objectUrlsRef = useRef<Map<number, string>>(new Map());
@@ -291,18 +308,61 @@ export default function FATFotosPage() {
     }
   }, [idOs, fetchPhotos]);
 
-  const openViewer = useCallback((photo: FATFotoItem) => {
-    setSelectedPhoto(photo);
-  }, []);
+  const openViewer = useCallback(
+    (photoId: number) => {
+      const index = photos.findIndex((item) => item.id_fat_foto === photoId);
+      if (index >= 0) {
+        setSelectedPhotoIndex(index);
+      }
+    },
+    [photos]
+  );
 
-  const closeViewer = useCallback(() => setSelectedPhoto(null), []);
+  const closeViewer = useCallback(() => setSelectedPhotoIndex(null), []);
+
+  useEffect(() => {
+    if (selectedPhotoIndex === null) return;
+    if (photos.length === 0) {
+      setSelectedPhotoIndex(null);
+      return;
+    }
+    if (selectedPhotoIndex > photos.length - 1) {
+      setSelectedPhotoIndex(photos.length - 1);
+    }
+  }, [photos, selectedPhotoIndex]);
+
+  const selectedPhoto = useMemo(() => {
+    if (selectedPhotoIndex === null) return null;
+    return photos[selectedPhotoIndex] ?? null;
+  }, [photos, selectedPhotoIndex]);
 
   const selectedPhotoUrl = useMemo(() => {
     if (!selectedPhoto) return "";
     return photoPreviews[selectedPhoto.id_fat_foto] || "";
   }, [selectedPhoto, photoPreviews]);
 
+  const showNextPhoto = useCallback(() => {
+    if (!photos.length) return;
+    setSelectedPhotoIndex((prev) => {
+      if (prev === null) return prev;
+      const nextIndex = (prev + 1) % photos.length;
+      return nextIndex;
+    });
+  }, [photos.length]);
+
+  const showPreviousPhoto = useCallback(() => {
+    if (!photos.length) return;
+    setSelectedPhotoIndex((prev) => {
+      if (prev === null) return prev;
+      const nextIndex = (prev - 1 + photos.length) % photos.length;
+      return nextIndex;
+    });
+  }, [photos.length]);
+
   const hasPhotos = photos.length > 0;
+  const hasMultiplePhotos = photos.length > 1;
+  const currentPhotoPosition =
+    selectedPhotoIndex !== null ? selectedPhotoIndex + 1 : 0;
   const canUpload = resolvedFatId !== null;
 
   return (
@@ -477,29 +537,33 @@ export default function FATFotosPage() {
                     <button
                       key={photo.id_fat_foto}
                       type="button"
-                      onClick={() => openViewer(photo)}
-                      className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#7B54BE] focus:ring-offset-2 transition"
+                      onClick={() => openViewer(photo.id_fat_foto)}
+                      className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm text-left transition hover:border-[#7B54BE]/60 focus:outline-none focus:ring-2 focus:ring-[#7B54BE] focus:ring-offset-2"
                     >
-                      <div className="aspect-square bg-slate-100 flex items-center justify-center">
+                      <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
                         {previewUrl && !loadingPreviews ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={previewUrl}
                             alt={photo.nome_arquivo}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
                           />
                         ) : loadingPreviews ? (
-                          <div className="w-6 h-6 border-2 border-white border-t-[#7B54BE] rounded-full animate-spin" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="h-6 w-6 rounded-full border-2 border-white border-t-[#7B54BE] animate-spin" />
+                          </div>
                         ) : (
-                          <ImageOff className="w-6 h-6 text-slate-400" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <ImageOff className="h-6 w-6 text-slate-400" />
+                          </div>
                         )}
                       </div>
-                      <div className="p-2 text-left">
-                        <p className="text-sm font-semibold text-slate-700 line-clamp-1">
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-slate-700 line-clamp-2">
                           {photo.descricao || photo.nome_arquivo}
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
-                          {formatDateTime(photo.data_cadastro)}
+                          {formatDate(photo.data_cadastro)}
                         </p>
                       </div>
                     </button>
@@ -512,38 +576,65 @@ export default function FATFotosPage() {
       </div>
 
       {selectedPhoto && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col">
-          <div className="flex justify-end p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
             <button
               type="button"
               onClick={closeViewer}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition"
+              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black/80"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </button>
-          </div>
-          <div className="flex-1 flex items-center justify-center px-4 pb-4">
-            {selectedPhotoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={selectedPhotoUrl}
-                alt={selectedPhoto.nome_arquivo}
-                className="max-h-full max-w-full object-contain rounded-lg shadow-2xl"
-              />
-            ) : (
-              <div className="text-white text-sm flex flex-col items-center gap-3">
-                <ImageOff className="w-8 h-8" />
-                Pré-visualização indisponível.
+
+            <div className="relative flex items-center justify-center bg-slate-950/95 px-12 py-10">
+              <button
+                type="button"
+                onClick={showPreviousPhoto}
+                disabled={!hasMultiplePhotos}
+                className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+
+              {selectedPhotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedPhotoUrl}
+                  alt={selectedPhoto.descricao || selectedPhoto.nome_arquivo}
+                  className="max-h-[65vh] w-full max-w-[90%] rounded-xl object-contain shadow-xl"
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-3 text-white">
+                  <ImageOff className="h-10 w-10" />
+                  Pré-visualização indisponível.
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={showNextPhoto}
+                disabled={!hasMultiplePhotos}
+                className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-1 border-t border-slate-200 px-6 py-4">
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span>
+                  {hasMultiplePhotos
+                    ? `Foto ${currentPhotoPosition} de ${photos.length}`
+                    : "Foto única"}
+                </span>
               </div>
-            )}
-          </div>
-          <div className="bg-white px-4 py-3 border-t border-slate-200 space-y-1">
-            <p className="text-sm font-semibold text-slate-700">
-              {selectedPhoto.descricao || selectedPhoto.nome_arquivo}
-            </p>
-            <p className="text-xs text-slate-500">
-              Enviada em {formatDateTime(selectedPhoto.data_cadastro)}
-            </p>
+              <p className="text-sm font-semibold text-slate-700">
+                {selectedPhoto.descricao || selectedPhoto.nome_arquivo}
+              </p>
+              <p className="text-xs text-slate-500">
+                Enviada em {formatDateTime(selectedPhoto.data_cadastro)}
+              </p>
+            </div>
           </div>
         </div>
       )}

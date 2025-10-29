@@ -682,7 +682,7 @@ const FATDetalhesPage: React.FC = () => {
                       <h4 className="text-sm font-semibold text-gray-700 mb-2">
                         Problema Relatado
                       </h4>
-                      <div className="bg-red-50 p-4 rounded-lg">
+                      <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="text-gray-800 whitespace-pre-line">
                           {fatData.descricao_problema}
                         </p>
@@ -696,7 +696,7 @@ const FATDetalhesPage: React.FC = () => {
                       <h4 className="text-sm font-semibold text-gray-700 mb-2">
                         Solução Encontrada
                       </h4>
-                      <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="text-gray-800 whitespace-pre-line">
                           {fatData.solucao_encontrada}
                         </p>
@@ -710,7 +710,7 @@ const FATDetalhesPage: React.FC = () => {
                       <h4 className="text-sm font-semibold text-gray-700 mb-2">
                         Testes Realizados
                       </h4>
-                      <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="text-gray-800 whitespace-pre-line">
                           {fatData.testes_realizados}
                         </p>
@@ -724,7 +724,7 @@ const FATDetalhesPage: React.FC = () => {
                       <h4 className="text-sm font-semibold text-gray-700 mb-2">
                         Sugestões
                       </h4>
-                      <div className="bg-amber-50 p-4 rounded-lg">
+                      <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="text-gray-800 whitespace-pre-line">
                           {fatData.sugestoes}
                         </p>
