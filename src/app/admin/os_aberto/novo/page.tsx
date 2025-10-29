@@ -833,7 +833,7 @@ const NovaOrdemServico = () => {
                         email: "",
                         situacao: "A",
                       },
-                      // isCustom removed since it's not in our interface
+                    
                     });
 
                     setContatoOptions(options as ContatoOption[]);

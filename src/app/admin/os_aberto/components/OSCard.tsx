@@ -182,7 +182,7 @@ const OSCard: React.FC<OSCardProps> = ({
               </div>
 
               {/* Client Info - More prominent */}
-              <div className="md:col-span-4">
+              <div className="md:col-span-2">
                 <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   Cliente / Cidade
                 </div>
@@ -198,7 +198,7 @@ const OSCard: React.FC<OSCardProps> = ({
               </div>
 
               {/* Equipment Info */}
-              <div className="md:col-span-4">
+              <div className="md:col-span-6">
                 <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   Máquina / Série
                 </div>

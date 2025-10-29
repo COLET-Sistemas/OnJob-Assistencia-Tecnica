@@ -111,8 +111,6 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   // Using a properly typed ref for react-select that handles the methods we need
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const selectRef = useRef<any>(null);
-  // This is acceptable here as react-select's typing is complex,
-  // and we only use the focus() method from the ref.
 
   const defaultNoOptionsMessage = ({ inputValue }: { inputValue: string }) =>
     inputValue.length < minCharsToSearch

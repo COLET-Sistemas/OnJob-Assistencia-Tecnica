@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import PageHeader from "@/components/admin/ui/PageHeader";
+
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import {
   CustomSelect,
@@ -139,7 +140,7 @@ const mapMaquinaToOption = (maquina: Maquina): MaquinaOption | null => {
 
   return {
     value: id,
-    label: `${maquina.numero_serie} - ${maquina.descricao ?? ""}`,
+    label: `${maquina.numero_serie} - ${maquina.descricao || ""}`,
     data: maquina,
     data_final_garantia: dataFinalGarantia || undefined,
     isInWarranty,
@@ -172,7 +173,7 @@ const NovaOSRetroativa = () => {
     whatsappContato: "",
     emailContato: "",
     emGarantia: "",
-    numeroInterno: "", // NOVO
+    numeroInterno: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -965,8 +966,9 @@ const NovaOSRetroativa = () => {
               )}
 
               {/* Máquina / Garantia / Técnico */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Máquina ocupa metade do espaço total (2 colunas) */}
+                <div className="md:col-span-2">
                   <CustomSelect
                     id="maquina"
                     label="Máquina"
@@ -974,8 +976,8 @@ const NovaOSRetroativa = () => {
                     placeholder={
                       selectedCliente
                         ? isLoadingMaquinas || isSearchingMaquinas
-                          ? "Carregando maquinas..."
-                          : "Selecione uma maquina"
+                          ? "Carregando máquinas..."
+                          : "Selecione uma máquina"
                         : "Selecione um cliente primeiro"
                     }
                     inputValue={maquinaInput}
@@ -988,14 +990,17 @@ const NovaOSRetroativa = () => {
                     minCharsToSearch={3}
                     noOptionsMessageFn={({ inputValue }) =>
                       inputValue.length < 3
-                        ? "Digite pelo menos 3 caracteres para buscar uma maquina..."
-                        : "Nenhuma maquina encontrada"
+                        ? "Digite pelo menos 3 caracteres para buscar uma máquina..."
+                        : "Nenhuma máquina encontrada"
                     }
                     components={
-                      maquinaSelectComponents as unknown as CustomSelectComponentsProp
+                      maquinaSelectComponents as unknown as ComponentProps<
+                        typeof CustomSelect
+                      >["components"]
                     }
                     error={errors.maquina}
                   />
+
                   <div className="mt-2">
                     {errors.manualMaquinaId && (
                       <p className="text-sm text-red-600 mt-1">
@@ -1005,31 +1010,37 @@ const NovaOSRetroativa = () => {
                   </div>
                 </div>
 
-                <SelectField
-                  label="Equipamento em garantia?"
-                  name="emGarantia"
-                  value={formState.emGarantia}
-                  onChange={handleInputChange}
-                  options={[
-                    { value: "", label: "Selecione..." },
-                    { value: "false", label: "Não" },
-                    { value: "true", label: "Sim" },
-                  ]}
-                  required
-                  error={errors.emGarantia}
-                />
+                {/* Garantia */}
+                <div className="md:col-span-1">
+                  <SelectField
+                    label="Equipamento em garantia?"
+                    name="emGarantia"
+                    value={formState.emGarantia}
+                    onChange={handleInputChange}
+                    options={[
+                      { value: "", label: "Selecione..." },
+                      { value: "false", label: "Não" },
+                      { value: "true", label: "Sim" },
+                    ]}
+                    required
+                    error={errors.emGarantia}
+                  />
+                </div>
 
-                <CustomSelect
-                  id="tecnico"
-                  label="Técnico designado"
-                  required
-                  placeholder="Selecione o técnico..."
-                  onChange={handleTecnicoChange}
-                  options={tecnicoOptions}
-                  value={selectedTecnico}
-                  isLoading={isLoadingTecnicos}
-                  error={errors.tecnico}
-                />
+                {/* Técnico */}
+                <div className="md:col-span-1">
+                  <CustomSelect
+                    id="tecnico"
+                    label="Técnico designado"
+                    required
+                    placeholder="Selecione o técnico..."
+                    onChange={handleTecnicoChange}
+                    options={tecnicoOptions}
+                    value={selectedTecnico}
+                    isLoading={isLoadingTecnicos}
+                    error={errors.tecnico}
+                  />
+                </div>
               </div>
 
               <TextAreaField

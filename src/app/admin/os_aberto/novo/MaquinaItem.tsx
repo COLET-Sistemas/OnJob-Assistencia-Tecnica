@@ -49,11 +49,10 @@ const MaquinaItem: React.FC<MaquinaItemProps> = memo(
 
     const numeroSerie =
       option.numero_serie ||
-      option.label?.split(" - ")[0]?.trim() ||
       option.label ||
       "";
     const descricao =
-      option.descricao || option.label?.split(" - ")[1]?.trim() || "";
+      option.descricao || "";
     const clienteNome = option.clienteNomeFantasia || "";
     const inWarranty = option.isInWarranty ?? false;
     const showWarrantyBadge =
