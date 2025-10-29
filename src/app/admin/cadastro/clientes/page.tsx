@@ -1,6 +1,14 @@
 ﻿"use client";
 import { Loading } from "@/components/LoadingPersonalizado";
-import { User, Plus, MapPin, Settings, Trash2, Pencil } from "lucide-react";
+import {
+  User,
+  Plus,
+  MapPin,
+  Settings,
+  Filter,
+  Trash2,
+  Pencil,
+} from "lucide-react";
 import {
   TableList,
   TableStatusColumn,
@@ -1020,8 +1028,35 @@ const CadastroClientes = () => {
             </h2>
 
             <div className="flex items-center gap-3">
-              {/* Bot�o de novo contato */}
-              {/* Botao de novo contato */}
+              {/* Botão de filtro */}
+              <div className="relative">
+                <button
+                  onClick={handleToggleFilters}
+                  className={`relative px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border cursor-pointer ${
+                    localShowFilters
+                      ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/25"
+                      : "bg-white hover:bg-gray-50 text-[var(--neutral-graphite)] border-gray-200 hover:border-gray-300 hover:shadow-md"
+                  }`}
+                >
+                  <Filter size={18} />
+                  <span className="font-medium">Filtros</span>
+                  {Object.values(filtrosAplicados).some(
+                    (v) => v && v !== ""
+                  ) && (
+                    <div className="absolute -top-1 -right-1 flex items-center justify-center">
+                      <span className="w-5 h-5 bg-[#FDAD15] text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg">
+                        {
+                          Object.values(filtrosAplicados).filter(
+                            (v) => v && v !== ""
+                          ).length
+                        }
+                      </span>
+                    </div>
+                  )}
+                </button>
+              </div>
+
+              {/* Botão Novo Contato */}
               {canManageCadastros ? (
                 <Link
                   href="/admin/cadastro/clientes/contato/novo"
@@ -1040,7 +1075,7 @@ const CadastroClientes = () => {
                 </span>
               )}
 
-              {/* Botao de novo cliente */}
+              {/* Botão Novo Cliente */}
               {canManageCadastros ? (
                 <Link
                   href="/admin/cadastro/clientes/novo"
@@ -1062,6 +1097,7 @@ const CadastroClientes = () => {
           </div>
         </div>
       </header>
+
       <TableList
         title="Lista de Clientes"
         items={clientes || []}

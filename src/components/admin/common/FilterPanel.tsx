@@ -1,26 +1,36 @@
 ﻿"use client";
 
-import { CheckCircle, Filter, Search, X } from "lucide-react";
-import React, { KeyboardEvent, useEffect, useState, useCallback } from "react";
+import { CheckCircle, Filter, Search, X, ChevronDown } from "lucide-react";
+import React, {
+  KeyboardEvent,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 
 interface FilterOption {
   id: string;
   label: string;
-  type: "text" | "select" | "checkbox";
+  type: "text" | "select" | "checkbox" | "autocomplete";
   placeholder?: string;
   options?: Array<{ value: string; label: string }>;
+  // Para autocomplete
+  autocompleteOptions?: string[];
+  isLoadingAutocomplete?: boolean;
+  onAutocompleteChange?: (value: string) => void;
 }
 
 interface FilterPanelProps {
   title: string;
-  pageName?: string; 
+  pageName?: string;
   filterOptions: FilterOption[];
   filterValues: Record<string, string>;
   onFilterChange: (key: string, value: string) => void;
   onClearFilters: () => void;
   onClose: () => void;
   onApplyFilters?: () => void;
-  isOpen?: boolean; 
+  isOpen?: boolean;
 }
 
 const FilterPanel: React.FC<FilterPanelProps> = ({
@@ -36,20 +46,22 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [openAutocomplete, setOpenAutocomplete] = useState<string | null>(null);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
 
   // Check if any filter is active
   const hasActiveFilters = Object.values(filterValues).some(
     (value) => value !== ""
   );
 
-  // Controla a animaÃ§Ã£o de entrada
+  // Controla a animação de entrada
   useEffect(() => {
     if (isOpen) {
       setIsVisible(true);
     }
   }, [isOpen]);
 
-  // FunÃ§Ã£o para fechar com animaÃ§Ã£o
+  // Função para fechar com animação
   const handleClose = useCallback(() => {
     setIsClosing(true);
     setTimeout(() => {
@@ -59,7 +71,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     }, 300);
   }, [onClose]);
 
-  // FunÃ§Ã£o para aplicar filtros com animaÃ§Ã£o de fechamento
+  // Função para aplicar filtros com animação de fechamento
   const handleApplyFilters = useCallback(() => {
     if (onApplyFilters) {
       onApplyFilters();
@@ -67,7 +79,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     handleClose();
   }, [onApplyFilters, handleClose]);
 
-  // FunÃ§Ã£o para limpar filtros com animaÃ§Ã£o de fechamento
+  // Função para limpar filtros com animação de fechamento
   const handleClearFilters = useCallback(() => {
     onClearFilters();
     handleClose();
@@ -78,14 +90,12 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     e: KeyboardEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     if (e.key === "Enter" && onApplyFilters) {
-    
       if (
         e.currentTarget.tagName === "INPUT" &&
         e.currentTarget.type === "text"
       ) {
         const value = e.currentTarget.value;
         if (value && value.length < 3) {
-         
           return;
         }
       }
@@ -105,11 +115,26 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     return () => document.removeEventListener("keydown", handleEscape);
   }, [handleClose]);
 
+  // Close autocomplete when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        autocompleteRef.current &&
+        !autocompleteRef.current.contains(event.target as Node)
+      ) {
+        setOpenAutocomplete(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   if (!isVisible) return null;
 
   return (
     <>
-      {/* Overlay de fundo escuro com animaÃ§Ã£o */}
+      {/* Overlay de fundo escuro com animação */}
       <div
         className={`fixed inset-0 bg-black/10 backdrop-blur-[1px] z-40 transition-all duration-300 ${
           isClosing ? "opacity-0" : "opacity-100"
@@ -118,7 +143,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         aria-hidden="true"
       />
 
-      {/* Painel de filtros com animaÃ§Ã£o aprimorada */}
+      {/* Painel de filtros com animação aprimorada */}
       <div
         className={`fixed inset-y-0 right-0 z-50 w-80 lg:w-96 bg-white shadow-2xl h-screen overflow-hidden border-l border-gray-200/80 transition-all duration-300 ease-out ${
           isClosing
@@ -129,7 +154,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           animation: isClosing ? undefined : "slideInRight 0.3s ease-out",
         }}
       >
-        {/* Header com animaÃ§Ã£o sutil */}
+        {/* Header com animação sutil */}
         <div
           className={`bg-gradient-to-r from-[var(--primary)]/5 to-[var(--secondary-green)]/5 px-6 py-4 border-b border-gray-100 sticky top-0 z-10 transition-all duration-300 ${
             isClosing
@@ -147,7 +172,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                   {pageName ? `${pageName} - ${title}` : title}
                 </h3>
                 <p className="text-xs text-gray-500">
-                  Refine sua busca pelos critÃ©rios abaixo
+                  Refine sua busca pelos critérios abaixo
                 </p>
               </div>
             </div>
@@ -196,7 +221,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             {filterOptions.map((option, index) => (
               <div
                 key={option.id}
-                className="space-y-3 animate-fadeInUp"
+                className={`relative space-y-3 animate-fadeInUp ${
+                  openAutocomplete === option.id ? "z-50" : ""
+                }`}
                 style={{
                   animationDelay: `${index * 50}ms`,
                   animationFillMode: "both",
@@ -219,7 +246,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                           onKeyDown={handleKeyDown}
                           placeholder={
                             option.placeholder ||
-                            "Digite o nome ou razÃ£o social"
+                            "Digite o nome ou razão social"
                           }
                           className={`w-full px-4 pr-10 py-3 pl-11 bg-white border-2 ${
                             filterValues[option.id] &&
@@ -260,6 +287,120 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                         )}
                     </div>
                   )}
+
+                  {option.type === "autocomplete" && (
+                    <div className="space-y-2" ref={autocompleteRef}>
+                      <div
+                        className={`relative ${
+                          openAutocomplete === option.id ? "z-50" : ""
+                        }`}
+                      >
+                        <input
+                          type="text"
+                          value={filterValues[option.id] || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            onFilterChange(option.id, value);
+                            if (option.onAutocompleteChange) {
+                              option.onAutocompleteChange(value);
+                            }
+                            if (value.length >= 3) {
+                              setOpenAutocomplete(option.id);
+                            } else {
+                              setOpenAutocomplete(null);
+                            }
+                          }}
+                          onFocus={() => {
+                            if (
+                              filterValues[option.id]?.length >= 3 &&
+                              option.autocompleteOptions &&
+                              option.autocompleteOptions.length > 0
+                            ) {
+                              setOpenAutocomplete(option.id);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") {
+                              setOpenAutocomplete(null);
+                            }
+                            handleKeyDown(e);
+                          }}
+                          placeholder={
+                            option.placeholder || "Digite para buscar..."
+                          }
+                          className={`w-full px-4 pr-10 py-3 pl-11 bg-white border-2 ${
+                            filterValues[option.id] &&
+                            filterValues[option.id].length > 0 &&
+                            filterValues[option.id].length < 3
+                              ? "border-red-400 focus:border-red-500 focus:ring-red-200"
+                              : "border-gray-200 focus:border-[var(--primary)] focus:ring-[var(--primary)]/20"
+                          } rounded-xl text-sm text-[var(--neutral-graphite)] placeholder-[var(--neutral-graphite)]/60 transition-all duration-200 focus:bg-white focus:ring-2 focus:outline-none group-hover:border-gray-300 focus:scale-[1.01]`}
+                          autoComplete="off"
+                        />
+                        <Search
+                          size={16}
+                          className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 transition-all duration-200 group-focus-within:text-[var(--primary)] group-focus-within:scale-110"
+                        />
+                        {filterValues[option.id] && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onFilterChange(option.id, "");
+                              setOpenAutocomplete(null);
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:text-[var(--primary)] transition-colors duration-150 focus:outline-none z-10"
+                            aria-label={`Limpar ${option.label}`}
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+
+                        {/* Dropdown de sugestões */}
+                        {openAutocomplete === option.id && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto z-50 animate-fadeInUp">
+                            {option.isLoadingAutocomplete ? (
+                              <div className="px-4 py-3 text-sm text-gray-500 flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+                                Buscando...
+                              </div>
+                            ) : option.autocompleteOptions &&
+                              option.autocompleteOptions.length > 0 ? (
+                              <ul className="py-1">
+                                {option.autocompleteOptions.map((item, idx) => (
+                                  <li
+                                    key={idx}
+                                    onClick={() => {
+                                      onFilterChange(option.id, item);
+                                      setOpenAutocomplete(null);
+                                    }}
+                                    className="px-4 py-2.5 text-sm text-gray-700 hover:bg-[var(--primary)]/5 cursor-pointer transition-colors duration-150 flex items-center justify-between group"
+                                  >
+                                    <span className="font-medium">{item}</span>
+                                    <ChevronDown
+                                      size={14}
+                                      className="text-gray-400 rotate-[-90deg] opacity-0 group-hover:opacity-100 transition-opacity"
+                                    />
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div className="px-4 py-3 text-sm text-gray-500">
+                                Nenhum resultado encontrado
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {filterValues[option.id] &&
+                        filterValues[option.id].length > 0 &&
+                        filterValues[option.id].length < 3 && (
+                          <p className="text-xs text-red-500 mt-1 ml-1 animate-fadeIn">
+                            Digite pelo menos 3 caracteres
+                          </p>
+                        )}
+                    </div>
+                  )}
+
                   {option.type === "select" && (
                     <>
                       <select
@@ -377,11 +518,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             ))}
           </form>
 
-          {/* EspaÃ§ador para separar o conteÃºdo dos botÃµes de aÃ§Ã£o */}
           <div className="mt-6"></div>
         </div>
 
-        {/* SeÃ§Ã£o de AÃ§Ãµes - Fixa na parte inferior com animaÃ§Ã£o */}
         <div
           className={`border-t border-gray-200 bg-gray-50/80 p-4 sticky bottom-0 w-full flex flex-col gap-3 transition-all duration-300 ${
             isClosing
@@ -395,7 +534,8 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
               ([key, value]) => {
                 const option = filterOptions.find((opt) => opt.id === key);
                 return (
-                  option?.type === "text" &&
+                  (option?.type === "text" ||
+                    option?.type === "autocomplete") &&
                   value &&
                   value.length > 0 &&
                   value.length < 3
@@ -442,7 +582,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         </div>
       </div>
 
-      {/* Estilos CSS personalizados para animaÃ§Ãµes */}
       <style jsx>{`
         @keyframes slideInRight {
           from {
@@ -501,4 +640,3 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 };
 
 export default FilterPanel;
-

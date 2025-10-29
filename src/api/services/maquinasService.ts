@@ -31,6 +31,10 @@ class MaquinasService {
       params.numero_serie = numeroSerie;
     }
 
+    if (modelo) {
+      params.modelo = modelo;
+    }
+
     if (descricao) {
       params.descricao = descricao;
     }
@@ -80,6 +84,40 @@ class MaquinasService {
 
   async delete(id: number | string): Promise<void> {
     await api.delete<void>(`${this.baseUrl}?id=${id}`);
+  }
+
+  /** 🔍 Busca modelos de máquinas conforme o texto digitado */
+  async getModelos(modelo: string): Promise<string[]> {
+    const response = await api.get<
+      | { data?: { dados?: { modelo: string }[] } }
+      | { dados?: { modelo: string }[] }
+      | { data?: { modelo: string }[] }
+      | { modelo: string }[]
+    >(`/modelos_maquinas`, {
+      params: { modelo },
+    });
+
+    type ModeloItem = string | { modelo?: string };
+    const candidates: unknown[] = [
+      response,
+      (response as { data?: unknown }).data,
+      (response as { dados?: unknown }).dados,
+      (response as { data?: { dados?: unknown } }).data?.dados,
+    ];
+
+    const rawList =
+      (candidates.find((candidate) => Array.isArray(candidate)) as
+        | ModeloItem[]
+        | undefined) ?? [];
+
+    const modelos = rawList
+      .map((item) =>
+        typeof item === "string" ? item : item?.modelo?.toString() ?? ""
+      )
+      .map((valor) => valor.trim())
+      .filter((valor): valor is string => valor.length > 0);
+
+    return Array.from(new Set(modelos));
   }
 }
 

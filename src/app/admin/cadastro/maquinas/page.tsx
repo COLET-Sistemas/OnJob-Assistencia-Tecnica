@@ -9,6 +9,7 @@ import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import Pagination from "@/components/admin/ui/Pagination";
+import useDebouncedCallback from "@/hooks/useDebouncedCallback";
 import { useFilters } from "@/hooks/useFilters";
 import { maquinasService } from "@/api/services/maquinasService";
 import { CheckCircle, XCircle } from "lucide-react";
@@ -17,6 +18,7 @@ interface MaquinasFilters {
   numero_serie: string;
   descricao: string;
   incluir_inativos: string;
+  modelo: string;
   [key: string]: string;
 }
 
@@ -24,6 +26,7 @@ const INITIAL_MAQUINAS_FILTERS: MaquinasFilters = {
   numero_serie: "",
   descricao: "",
   incluir_inativos: "",
+  modelo: "",
 };
 
 interface PaginacaoInfo {
@@ -59,6 +62,10 @@ const CadastroMaquinas = () => {
   const [localShowFilters, setLocalShowFilters] = useState(false);
   const isReloadingRef = useRef(false);
 
+  // Estado para gerenciar as opções de modelo retornadas pela API
+  const [modelosOptions, setModelosOptions] = useState<string[]>([]);
+  const [isLoadingModelos, setIsLoadingModelos] = useState(false);
+
   const {
     filtrosPainel,
     filtrosAplicados,
@@ -76,6 +83,36 @@ const CadastroMaquinas = () => {
     registrosPorPagina: 25,
   });
 
+  // Função debounced para buscar modelos
+  const fetchModelosDebounced = useDebouncedCallback(async (valor: string) => {
+    if (valor.length < 3) {
+      setModelosOptions([]);
+      return;
+    }
+
+    setIsLoadingModelos(true);
+    try {
+      const modelos = await maquinasService.getModelos(valor);
+      setModelosOptions(modelos);
+    } catch (err) {
+      console.error("Erro ao buscar modelos:", err);
+      setModelosOptions([]);
+    } finally {
+      setIsLoadingModelos(false);
+    }
+  }, 500);
+
+  // Atualiza as opções conforme o valor digitado
+  useEffect(() => {
+    const valor = filtrosPainel.modelo ?? "";
+
+    if (valor.length >= 3) {
+      fetchModelosDebounced(valor);
+    } else {
+      setModelosOptions([]);
+    }
+  }, [filtrosPainel.modelo, fetchModelosDebounced]);
+
   const handleApplyFilters = () => {
     setLocalShowFilters(false);
     isReloadingRef.current = true;
@@ -85,6 +122,7 @@ const CadastroMaquinas = () => {
   const handleClearFilters = () => {
     setLocalShowFilters(false);
     isReloadingRef.current = true;
+    setModelosOptions([]);
     limparFiltros();
   };
 
@@ -104,7 +142,7 @@ const CadastroMaquinas = () => {
         paginacao.registrosPorPagina,
         filtrosAplicados.incluir_inativos === "true",
         filtrosAplicados.numero_serie?.trim() || undefined,
-        undefined, 
+        filtrosAplicados.modelo?.trim() || undefined,
         filtrosAplicados.descricao?.trim() || undefined
       );
 
@@ -147,7 +185,6 @@ const CadastroMaquinas = () => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [filtrosAplicados]);
 
-  // Effect para garantir que o menu permaneça fechado durante o recarregamento
   useEffect(() => {
     if (isReloadingRef.current) {
       setLocalShowFilters(false);
@@ -172,10 +209,10 @@ const CadastroMaquinas = () => {
       render: (maquina: Maquina) => (
         <div className="flex items-start gap-2">
           <div className="flex flex-col">
-            <div className=" text-gray-900">
+            <div className="text-gray-900">
               <span className="font-bold text-sm">{maquina.numero_serie}</span>
-              {" -  "}
-              <span className=" text-xs">{maquina.modelo}</span>
+              {" - "}
+              <span className="text-xs">{maquina.modelo}</span>
             </div>
             <div className="text-sm font-bold text-gray-600 mt-1 line-clamp-1">
               {maquina.descricao}
@@ -243,7 +280,6 @@ const CadastroMaquinas = () => {
       await refetch();
     } catch (error) {
       console.error("Erro ao inativar máquina:", error);
-
       showError("Erro ao inativar", error as Record<string, unknown>);
     } finally {
       setTimeout(() => {
@@ -287,6 +323,16 @@ const CadastroMaquinas = () => {
       label: "Descrição",
       type: "text" as const,
       placeholder: "Buscar por descrição...",
+    },
+    {
+      id: "modelo",
+      label: "Modelo",
+      type: "autocomplete" as const,
+      placeholder: isLoadingModelos
+        ? "Buscando modelos..."
+        : "Digite ao menos 3 caracteres para buscar...",
+      autocompleteOptions: modelosOptions,
+      isLoadingAutocomplete: isLoadingModelos,
     },
     {
       id: "incluir_inativos",

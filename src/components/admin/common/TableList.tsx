@@ -12,9 +12,12 @@ interface Column<T> {
 interface FilterOption {
   id: string;
   label: string;
-  type: "text" | "select" | "checkbox";
+  type: "text" | "select" | "checkbox" | "autocomplete";
   placeholder?: string;
   options?: Array<{ value: string; label: string }>;
+  autocompleteOptions?: string[];
+  isLoadingAutocomplete?: boolean;
+  onAutocompleteChange?: (value: string) => void;
 }
 
 interface TableListProps<T> {
