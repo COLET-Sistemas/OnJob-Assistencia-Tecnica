@@ -22,6 +22,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   const [messageType, setMessageType] = useState<"success" | "error" | null>(
     null
   );
+  const [cancelLoading, setCancelLoading] = useState(false);
   const [concluirLoading, setConcluirLoading] = useState(false);
 
   const handleDeslocamento = () => setModalOpen("deslocamento");
@@ -165,9 +166,39 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   const gradientOverlay =
     "absolute inset-0 rounded-xl bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300";
 
-  const handleCancelarOS = () => {
-    setMessage("OS cancelada com sucesso!");
-    setMessageType("success");
+  const handleCancelarOS = async () => {
+    if (!id_os) {
+      setMessage("Dados incompletos para cancelar a OS.");
+      setMessageType("error");
+      return;
+    }
+
+    setCancelLoading(true);
+    setMessage(null);
+    setMessageType(null);
+
+    try {
+      const response = await ocorrenciasOSService.registrarOcorrencia({
+        id_os,
+        ocorrencia: "cancelar os",
+      });
+
+      const successMessage =
+        sanitizeMessage(response?.mensagem) || "OS cancelada com sucesso!";
+
+      setMessage(successMessage);
+      setMessageType("success");
+
+      setTimeout(() => {
+        onActionSuccess?.();
+      }, 1000);
+    } catch (error) {
+      console.error("Erro ao cancelar OS:", error);
+      setMessage(getErrorMessage(error));
+      setMessageType("error");
+    } finally {
+      setCancelLoading(false);
+    }
   };
 
   const handleConcluirOS = async () => {
@@ -257,8 +288,18 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 
         {/* Segunda linha: Cancelar e Concluir OS */}
         <div className="flex flex-wrap gap-3 justify-center">
-          <button className={`${baseBtn} ${redBtn}`} onClick={handleCancelarOS}>
-            <XCircle className="w-3.5 h-3.5" />
+          <button
+            className={`${baseBtn} ${redBtn} ${
+              cancelLoading ? disabledBtn : ""
+            }`}
+            onClick={handleCancelarOS}
+            disabled={cancelLoading}
+          >
+            {cancelLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <XCircle className="w-3.5 h-3.5" />
+            )}
             <span className="font-medium">Cancelar OS</span>
             <div className={gradientOverlay}></div>
           </button>
