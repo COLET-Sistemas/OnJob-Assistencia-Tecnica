@@ -22,7 +22,7 @@ import {
   Timer,
   History,
   ImageOff,
-  X,
+  
 } from "lucide-react";
 import { fatService, type FATDetalhada } from "@/api/services/fatService";
 import { fatFotosService } from "@/api/services/fatFotosService";
