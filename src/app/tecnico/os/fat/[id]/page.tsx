@@ -214,7 +214,9 @@ export default function FATDetalheMobile() {
       if (!value) return "Data n\u00e3o dispon\u00edvel";
 
       try {
-        const normalized = value.includes("T") ? value : value.replace(" ", "T");
+        const normalized = value.includes("T")
+          ? value
+          : value.replace(" ", "T");
         const parsed = new Date(normalized);
         if (!Number.isNaN(parsed.getTime())) {
           return parsed.toLocaleDateString("pt-BR");
@@ -466,7 +468,9 @@ export default function FATDetalheMobile() {
         }
 
         if (hadError) {
-          setPhotoPreviewError("Algumas fotos n\u00e3o puderam ser carregadas.");
+          setPhotoPreviewError(
+            "Algumas fotos n\u00e3o puderam ser carregadas."
+          );
         }
       } catch {
         if (!cancelled) {
@@ -852,6 +856,26 @@ export default function FATDetalheMobile() {
           />
         </Section>
 
+        {fat.maquina?.modelo && fat.maquina.modelo.trim() !== "" && (
+          <Section title="Máquina" icon={<Settings className="w-4 h-4" />}>
+            <Field
+              label="Modelo"
+              value={fat.maquina.modelo}
+              icon={<Settings className="w-3 h-3" />}
+            />
+            <Field
+              label="Descrição"
+              value={fat.maquina.descricao}
+              icon={<FileText className="w-3 h-3" />}
+            />
+            <Field
+              label="Número de Série"
+              value={fat.maquina.numero_serie}
+              icon={<Settings className="w-3 h-3" />}
+            />
+          </Section>
+        )}
+
         {/* Detalhes do Atendimento */}
         <Section
           title="Detalhes do Atendimento"
@@ -909,26 +933,6 @@ export default function FATDetalheMobile() {
             </p>
           )}
         </Section>
-
-        {fat.maquina?.modelo && fat.maquina.modelo.trim() !== "" && (
-          <Section title="Máquina" icon={<Settings className="w-4 h-4" />}>
-            <Field
-              label="Modelo"
-              value={fat.maquina.modelo}
-              icon={<Settings className="w-3 h-3" />}
-            />
-            <Field
-              label="Descrição"
-              value={fat.maquina.descricao}
-              icon={<FileText className="w-3 h-3" />}
-            />
-            <Field
-              label="Número de Série"
-              value={fat.maquina.numero_serie}
-              icon={<Settings className="w-3 h-3" />}
-            />
-          </Section>
-        )}
 
         {fat.pecas && fat.pecas.length > 0 && (
           <Section
@@ -1129,8 +1133,10 @@ export default function FATDetalheMobile() {
           role="dialog"
           aria-modal="true"
         >
-          <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-
+          <div
+            className="relative w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="relative flex items-center justify-center bg-slate-950/95 px-10 py-10">
               {hasMultiplePhotos && (
                 <button
