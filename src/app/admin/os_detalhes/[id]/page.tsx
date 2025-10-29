@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, {
   useEffect,
@@ -42,7 +42,7 @@ import {
   CameraOff,
 } from "lucide-react";
 
-// Status mapping como constante fora do componente para máxima estabilidade
+// Status mapping como constante fora do componente para m├íxima estabilidade
 const STATUS_MAPPING: Record<
   string,
   { label: string; className: string; icon: React.ReactNode }
@@ -93,19 +93,19 @@ const STATUS_MAPPING: Record<
     ),
   },
   "6": {
-    label: "Em Revisão",
+    label: "Em Revis├úo",
     className: "bg-indigo-100 text-indigo-700 border border-indigo-200",
     icon: (
-      <span title="Em Revisão">
+      <span title="Em Revis├úo">
         <FileSearch className="w-3.5 h-3.5 text-indigo-600" />
       </span>
     ),
   },
   "7": {
-    label: "Concluída",
+    label: "Conclu├¡da",
     className: "bg-green-100 text-green-700 border border-green-200",
     icon: (
-      <span title="Concluída">
+      <span title="Conclu├¡da">
         <CheckCircle className="w-3.5 h-3.5 text-green-600" />
       </span>
     ),
@@ -172,7 +172,7 @@ const OSDetalhesPage: React.FC = () => {
   // Fetch data effect
   useEffect(() => {
     if (numericOsId === null) {
-      setError("Identificador da Ordem de Servi��o inv��lido.");
+      setError("Identificador da Ordem de Servi´┐¢´┐¢o inv´┐¢´┐¢lido.");
       setLoading(false);
       return;
     }
@@ -205,7 +205,7 @@ const OSDetalhesPage: React.FC = () => {
           setOsData(osItem as OSDetalhadaV2);
           hasLoadedOnceRef.current = true;
         } else {
-          throw new Error("Estrutura de dados da OS inv��lida.");
+          throw new Error("Estrutura de dados da OS inv´┐¢´┐¢lida.");
         }
       } catch (err) {
         if (!isActive) {
@@ -216,7 +216,7 @@ const OSDetalhesPage: React.FC = () => {
         setError(
           err instanceof Error && err.message
             ? err.message
-            : "N��o foi poss��vel carregar os detalhes da Ordem de Servi��o."
+            : "N´┐¢´┐¢o foi poss´┐¢´┐¢vel carregar os detalhes da Ordem de Servi´┐¢´┐¢o."
         );
       } finally {
         if (isActive && shouldBlockScreen) {
@@ -240,7 +240,7 @@ const OSDetalhesPage: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Valores memoizados para otimização
+  // Valores memoizados para otimiza├º├úo
   const clienteData = useMemo(() => osData?.cliente, [osData]);
   const contatoData = useMemo(() => osData?.contato, [osData]);
   const maquinaData = useMemo(() => osData?.maquina, [osData]);
@@ -324,7 +324,7 @@ const OSDetalhesPage: React.FC = () => {
       )}
       <div className="animate-fadeIn">
         <PageHeader
-          title={`Ordem de Serviço #${osData.id_os}`}
+          title={`Ordem de Servi├ºo #${osData.id_os}`}
           config={{
             type: "form",
             backLink: "/admin/os_consulta",
@@ -332,7 +332,7 @@ const OSDetalhesPage: React.FC = () => {
           }}
         />
 
-        {/* Card de descrição */}
+        {/* Card de descri├º├úo */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 py-4 px-6 hover:shadow-md transition-shadow duration-300 animate-fadeIn">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex flex-col w-full lg:w-auto">
@@ -348,7 +348,7 @@ const OSDetalhesPage: React.FC = () => {
 
         {/* Grid Principal */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Coluna Esquerda - Cliente e Máquina */}
+          {/* Coluna Esquerda - Cliente e M├íquina */}
           <div className="lg:col-span-1">
             {/* Card Cliente */}
             <div
@@ -364,7 +364,7 @@ const OSDetalhesPage: React.FC = () => {
                     </h3>
                   </div>
 
-                  {/* Botões de Ação */}
+                  {/* Bot├Áes de A├º├úo */}
                   <div className="flex items-center gap-2 ">
                     {contatoData?.email && (
                       <a
@@ -442,7 +442,7 @@ const OSDetalhesPage: React.FC = () => {
                     clienteData?.cep) && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
-                        Endereço
+                        Endere├ºo
                       </p>
                       <p className="text-gray-800">
                         {clienteData.endereco}
@@ -462,7 +462,7 @@ const OSDetalhesPage: React.FC = () => {
                   {clienteData?.nome_regiao && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
-                        Região
+                        Regi├úo
                       </p>
                       <p className="text-gray-800">{clienteData.nome_regiao}</p>
                     </div>
@@ -511,7 +511,7 @@ const OSDetalhesPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Card Máquina */}
+            {/* Card M├íquina */}
             <div
               className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
               style={{ animationDelay: "0.2s" }}
@@ -522,7 +522,7 @@ const OSDetalhesPage: React.FC = () => {
                     className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
                     style={{ animationDelay: "0.3s" }}
                   />
-                  Máquina
+                  M├íquina
                 </h3>
               </div>
               <div className="p-6">
@@ -530,7 +530,7 @@ const OSDetalhesPage: React.FC = () => {
                   {maquinaData?.numero_serie && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
-                        Nº de Série
+                        N┬║ de S├®rie
                       </p>
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-gray-800">
@@ -562,7 +562,7 @@ const OSDetalhesPage: React.FC = () => {
                   {maquinaData?.descricao && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
-                        Descrição
+                        Descri├º├úo
                       </p>
                       <p className="text-gray-800">{maquinaData.descricao}</p>
                     </div>
@@ -594,7 +594,7 @@ const OSDetalhesPage: React.FC = () => {
                     className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
                     style={{ animationDelay: "0.4s" }}
                   />
-                  Detalhes da Ordem de Serviço
+                  Detalhes da Ordem de Servi├ºo
                 </h3>
               </div>
 
@@ -602,7 +602,7 @@ const OSDetalhesPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Coluna Esquerda */}
                   <div className="space-y-6">
-                    {/* Situação da OS */}
+                    {/* Situa├º├úo da OS */}
                     {osData.situacao_os && osData.situacao_os.codigo && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
@@ -696,17 +696,17 @@ const OSDetalhesPage: React.FC = () => {
                         </div>
                         {osData.abertura.origem_abertura === "T" && (
                           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-                            Técnico
+                            T├®cnico
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Técnico Responsável */}
+                    {/* T├®cnico Respons├ível */}
                     {osData.tecnico && osData.tecnico.id > 0 && (
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-gray-500">
-                          Técnico Responsável
+                          T├®cnico Respons├ível
                         </p>
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
@@ -735,11 +735,11 @@ const OSDetalhesPage: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Liberação Financeira */}
+                    {/* Libera├º├úo Financeira */}
                     {osData.liberacao_financeira && (
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-gray-500">
-                          Liberação Financeira
+                          Libera├º├úo Financeira
                         </p>
                         <div className="flex items-center gap-2">
                           {osData.liberacao_financeira.liberada ? (
@@ -753,7 +753,7 @@ const OSDetalhesPage: React.FC = () => {
                             <>
                               <XCircle className="h-4 w-4 text-gray-400 flex-shrink-0" />
                               <span className="text-sm text-gray-500">
-                                Não liberada
+                                N├úo liberada
                               </span>
                             </>
                           )}
@@ -796,7 +796,7 @@ const OSDetalhesPage: React.FC = () => {
                       className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
                       style={{ animationDelay: "0.5s" }}
                     />
-                    Fichas de Atendimento Técnico ({fatsData.length})
+                    Fichas de Atendimento T├®cnico ({fatsData.length})
                   </h3>
                 </div>
                 <div className="p-6">
@@ -814,7 +814,7 @@ const OSDetalhesPage: React.FC = () => {
                             FOTO
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Técnico
+                            T├®cnico
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Status
@@ -849,7 +849,7 @@ const OSDetalhesPage: React.FC = () => {
                                   desconhecido: {
                                     label:
                                       fat?.descricao_situacao ||
-                                      "Status não informado",
+                                      "Status n├úo informado",
                                     className:
                                       "bg-gray-100 text-gray-700 border border-gray-200",
                                   },
@@ -889,7 +889,7 @@ const OSDetalhesPage: React.FC = () => {
                               <td className="px-4 py-3 text-center align-middle">
                                 {temFotos ? (
                                   <span
-                                    title={`Há ${fat.fotos?.length ?? 0} foto${
+                                    title={`H├í ${fat.fotos?.length ?? 0} foto${
                                       (fat.fotos?.length ?? 0) > 1 ? "s" : ""
                                     }.`}
                                     className="flex items-center justify-center text-purple-600"
@@ -898,7 +898,7 @@ const OSDetalhesPage: React.FC = () => {
                                   </span>
                                 ) : (
                                   <span
-                                    title="Não há fotos."
+                                    title="N├úo h├í fotos."
                                     className="flex items-center justify-center"
                                   >
                                     <CameraOff className="h-5 w-5 text-gray-300" />
@@ -945,7 +945,7 @@ const OSDetalhesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Botão Voltar ao Topo */}
+      {/* Bot├úo Voltar ao Topo */}
       {showScrollToTop && (
         <button
           onClick={handleScrollToTop}
