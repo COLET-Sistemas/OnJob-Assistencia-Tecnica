@@ -172,11 +172,8 @@ const OSDetalhesPage: React.FC = () => {
     null
   );
   const [situacaoModalLoading, setSituacaoModalLoading] = useState(false);
-  const [historicoOcorrencias, setHistoricoOcorrencias] = useState<
-    OcorrenciaOSDetalhe[]
-  >([]);
   const [historicoOcorrenciasLoading, setHistoricoOcorrenciasLoading] =
-    useState(false);
+    useState(true);
 
 
   const [historicoRefreshToken, setHistoricoRefreshToken] = useState(0);
@@ -272,10 +269,6 @@ const OSDetalhesPage: React.FC = () => {
     setMotivoAlteracao("");
     setSelectedOcorrencia("");
   }, []);
-  const fetchHistoricoOcorrencias = useCallback(async (targetOsId: number) => {
-    const response = await ocorrenciasOSService.listarPorOS(targetOsId);
-    return Array.isArray(response) ? [...response] : [];
-  }, []);
   const handleSituacaoSubmit = useCallback(async () => {
     if (!isGestor) {
       setSituacaoModalError(
@@ -354,6 +347,7 @@ const OSDetalhesPage: React.FC = () => {
     if (numericOsId === null) {
       setError("Identificador da Ordem de Serviço inválido.");
       setLoading(false);
+      setHistoricoOcorrenciasLoading(false);
       return;
     }
 
@@ -370,6 +364,7 @@ const OSDetalhesPage: React.FC = () => {
     }
 
     setError(null);
+    setHistoricoOcorrenciasLoading(true);
 
     const fetchOSData = async () => {
       try {
@@ -399,9 +394,14 @@ const OSDetalhesPage: React.FC = () => {
             : "Não foi possível carregar os detalhes da Ordem de Serviço."
         );
       } finally {
-        if (isActive && shouldBlockScreen) {
+        if (!isActive) {
+          return;
+        }
+
+        if (shouldBlockScreen) {
           setLoading(false);
         }
+        setHistoricoOcorrenciasLoading(false);
       }
     };
 
@@ -410,51 +410,7 @@ const OSDetalhesPage: React.FC = () => {
     return () => {
       isActive = false;
     };
-  }, [numericOsId]);
-
-  useEffect(() => {
-    if (numericOsId === null) {
-      setHistoricoOcorrencias([]);
-      return;
-    }
-
-    let isActive = true;
-
-    const loadHistorico = async () => {
-      setHistoricoOcorrenciasLoading(true);
-
-
-      try {
-        const response = await fetchHistoricoOcorrencias(numericOsId);
-
-        if (!isActive) {
-          return;
-        }
-
-        setHistoricoOcorrencias(response);
-      } catch (historicoError) {
-        if (!isActive) {
-          return;
-        }
-
-        console.error(
-          "Erro ao carregar historico de ocorrencias da OS:",
-          historicoError
-        );
-        setHistoricoOcorrencias([]);
-      } finally {
-        if (isActive) {
-          setHistoricoOcorrenciasLoading(false);
-        }
-      }
-    };
-
-    loadHistorico();
-
-    return () => {
-      isActive = false;
-    };
-  }, [fetchHistoricoOcorrencias, historicoRefreshToken, numericOsId]);
+  }, [historicoRefreshToken, numericOsId]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -465,6 +421,10 @@ const OSDetalhesPage: React.FC = () => {
   }, []);
 
   // Valores memoizados para otimização
+  const historicoOcorrencias = useMemo<OcorrenciaOSDetalhe[]>(
+    () => osData?.ocorrencias ?? [],
+    [osData]
+  );
   const clienteData = useMemo(() => osData?.cliente, [osData]);
   const contatoData = useMemo(() => osData?.contato, [osData]);
   const maquinaData = useMemo(() => osData?.maquina, [osData]);

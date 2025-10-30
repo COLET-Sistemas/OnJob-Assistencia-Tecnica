@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import MobileHeader from "@/components/tecnico/MobileHeader";
-import ActionButtonsFat from "@/components/tecnico/ActionButtonsFat";
+import FloatingActionMenuFat from "@/components/tecnico/FloatingActionMenuFat";
 import {
   User,
   Settings,
@@ -30,34 +30,59 @@ import Toast from "@/components/tecnico/Toast";
 import StatusBadge from "@/components/tecnico/StatusBadge";
 
 // Botão de ação para FAT
-type ActionButtonFatProps = {
+// type ActionButtonFatProps = {
+//   label: string;
+//   icon: React.ReactNode;
+//   onClick: () => void;
+//   color: string;
+// };
+// function ActionButtonFat({
+//   label,
+//   icon,
+//   onClick,
+//   color,
+// }: ActionButtonFatProps) {
+//   return (
+//     <button
+//       onClick={onClick}
+//       className={`
+//         group relative flex flex-col items-center gap-1.5 p-2
+//         rounded-xl border transition-all duration-200 ease-out
+//         w-28 flex-shrink-0 bg-white hover:bg-gray-50
+//         ${color}
+//         hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 border-gray-200 hover:border-gray-300
+//       `}
+//       type="button"
+//     >
+//       <div className="flex items-center justify-center w-6 h-6">{icon}</div>
+//       <span className="text-xs font-medium text-gray-700 text-center">
+//         {label}
+//       </span>
+//     </button>
+//   );
+// }
+
+type SectionActionButtonProps = {
   label: string;
   icon: React.ReactNode;
   onClick: () => void;
-  color: string;
 };
-function ActionButtonFat({
+
+function SectionActionButton({
   label,
   icon,
   onClick,
-  color,
-}: ActionButtonFatProps) {
+}: SectionActionButtonProps) {
   return (
     <button
-      onClick={onClick}
-      className={`
-        group relative flex flex-col items-center gap-1.5 p-2 
-        rounded-xl border transition-all duration-200 ease-out
-        w-28 flex-shrink-0 bg-white hover:bg-gray-50
-        ${color}
-        hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 border-gray-200 hover:border-gray-300
-      `}
       type="button"
+      onClick={onClick}
+      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#7B54BE] bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
     >
-      <div className="flex items-center justify-center w-6 h-6">{icon}</div>
-      <span className="text-xs font-medium text-gray-700 text-center">
-        {label}
+      <span className="flex items-center justify-center text-slate-500">
+        {icon}
       </span>
+      <span>{label}</span>
     </button>
   );
 }
@@ -255,6 +280,17 @@ export default function FATDetalheMobile() {
       router.push("/tecnico/os");
     }
   }, [fat?.id_os, params?.id, router]);
+
+  const handleNavigateToSection = useCallback(
+    (section: "deslocamento" | "atendimento" | "pecas" | "fotos") => {
+      const fatId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
+      if (!fatId) {
+        return;
+      }
+      router.push(`/tecnico/os/fat/${fatId}/${section}`);
+    },
+    [params?.id, router]
+  );
 
   // Função para extrair mensagem de erro da API
   const extractErrorMessage = useCallback((error: unknown): string => {
@@ -648,6 +684,11 @@ export default function FATDetalheMobile() {
   const hasPhotos = fotos.length > 0;
   const hasMultiplePhotos = fotos.length > 1;
 
+  const pecas = fat?.pecas ?? [];
+  const hasPecas = pecas.length > 0;
+  const deslocamentos = fat?.deslocamentos ?? [];
+  const hasDeslocamentos = deslocamentos.length > 0;
+
   const selectedPhoto =
     selectedPhotoIndex !== null && selectedPhotoIndex >= 0
       ? fotos[selectedPhotoIndex] ?? null
@@ -783,7 +824,7 @@ export default function FATDetalheMobile() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-25">
+    <main className="min-h-screen bg-slate-50 pb-5">
       <MobileHeader
         title={fat.id_fat ? `FAT #${fat.id_fat}` : "Detalhes da FAT"}
         onAddClick={handleNavigateToOS}
@@ -881,6 +922,73 @@ export default function FATDetalheMobile() {
           </Section>
         )}
 
+        {/* Deslocamentos */}
+        <Section
+          title={`Deslocamentos (${deslocamentos.length})`}
+          icon={<Car className="w-4 h-4" />}
+          collapsible={true}
+          defaultExpanded={false}
+        >
+          {hasDeslocamentos ? (
+            <div className="space-y-2">
+              {deslocamentos.map((desloc, index) => (
+                <div
+                  key={desloc.id_deslocamento || index}
+                  className="p-3 bg-slate-50 rounded-lg"
+                >
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-slate-500">KM Ida:</span>
+                      <span className="ml-1 text-slate-900">
+                        {desloc.km_ida || 0}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">KM Volta:</span>
+                      <span className="ml-1 text-slate-900">
+                        {desloc.km_volta || 0}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Tempo Ida:</span>
+                      <span className="ml-1 text-slate-900">
+                        {formatTime(desloc.tempo_ida_min) || "N/A"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Tempo Volta:</span>
+                      <span className="ml-1 text-slate-900">
+                        {formatTime(desloc.tempo_volta_min) || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                  {desloc.observacoes && (
+                    <div className="mt-2">
+                      <p className="text-xs text-slate-500 mb-1">
+                        Observações:
+                      </p>
+                      <p className="text-xs text-slate-700">
+                        {desloc.observacoes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500 italic">
+              Nenhum deslocamento registrado
+            </p>
+          )}
+          <div className="mt-4">
+            <SectionActionButton
+              label="Ir para Deslocamento"
+              icon={<Car className="w-4 h-4" />}
+              onClick={() => handleNavigateToSection("deslocamento")}
+            />
+          </div>
+        </Section>
+
         {/* Detalhes do Atendimento */}
         <Section
           title="Detalhes do Atendimento"
@@ -937,17 +1045,24 @@ export default function FATDetalheMobile() {
               Não há informações sobre o atendimento
             </p>
           )}
+          <div className="mt-4">
+            <SectionActionButton
+              label="Ir para Atendimento"
+              icon={<Wrench className="w-4 h-4" />}
+              onClick={() => handleNavigateToSection("atendimento")}
+            />
+          </div>
         </Section>
 
-        {fat.pecas && fat.pecas.length > 0 && (
-          <Section
-            title={`Peças Utilizadas (${fat.pecas.length})`}
-            icon={<Package className="w-4 h-4" />}
-            collapsible={true}
-            defaultExpanded={false}
-          >
+        <Section
+          title={`Peças Utilizadas (${pecas.length})`}
+          icon={<Package className="w-4 h-4" />}
+          collapsible={true}
+          defaultExpanded={false}
+        >
+          {hasPecas ? (
             <div className="space-y-2">
-              {fat.pecas.map((peca, index) => (
+              {pecas.map((peca, index) => (
                 <div
                   key={peca.id_fat_peca || index}
                   className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
@@ -977,73 +1092,28 @@ export default function FATDetalheMobile() {
                 </div>
               ))}
             </div>
-          </Section>
-        )}
-
-        {/* Deslocamentos */}
-        {fat.deslocamentos && fat.deslocamentos.length > 0 && (
-          <Section
-            title={`Deslocamentos (${fat.deslocamentos.length})`}
-            icon={<Car className="w-4 h-4" />}
-            collapsible={true}
-            defaultExpanded={false}
-          >
-            <div className="space-y-2">
-              {fat.deslocamentos.map((desloc, index) => (
-                <div
-                  key={desloc.id_deslocamento || index}
-                  className="p-3 bg-slate-50 rounded-lg"
-                >
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-slate-500">KM Ida:</span>
-                      <span className="ml-1 text-slate-900">
-                        {desloc.km_ida || 0}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">KM Volta:</span>
-                      <span className="ml-1 text-slate-900">
-                        {desloc.km_volta || 0}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Tempo Ida:</span>
-                      <span className="ml-1 text-slate-900">
-                        {formatTime(desloc.tempo_ida_min) || "N/A"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Tempo Volta:</span>
-                      <span className="ml-1 text-slate-900">
-                        {formatTime(desloc.tempo_volta_min) || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                  {desloc.observacoes && (
-                    <div className="mt-2">
-                      <p className="text-xs text-slate-500 mb-1">
-                        Observações:
-                      </p>
-                      <p className="text-xs text-slate-700">
-                        {desloc.observacoes}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
+          ) : (
+            <p className="text-sm text-slate-500 italic">
+              Nenhuma peça cadastrada
+            </p>
+          )}
+          <div className="mt-4">
+            <SectionActionButton
+              label="Ir para Peças"
+              icon={<Package className="w-4 h-4" />}
+              onClick={() => handleNavigateToSection("pecas")}
+            />
+          </div>
+        </Section>
 
         {/* Fotos */}
-        {hasPhotos && (
-          <Section
-            title={`Fotos (${fotos.length})`}
-            icon={<Camera className="w-4 h-4" />}
-            collapsible={true}
-            defaultExpanded={false}
-          >
+        <Section
+          title={`Fotos (${fotos.length})`}
+          icon={<Camera className="w-4 h-4" />}
+          collapsible={true}
+          defaultExpanded={false}
+        >
+          {hasPhotos ? (
             <div className="space-y-3">
               {photoPreviewError && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
@@ -1093,8 +1163,19 @@ export default function FATDetalheMobile() {
                 );
               })}
             </div>
-          </Section>
-        )}
+          ) : (
+            <p className="text-sm text-slate-500 italic">
+              Nenhuma foto cadastrada
+            </p>
+          )}
+          <div className="mt-4">
+            <SectionActionButton
+              label="Ir para Fotos"
+              icon={<Camera className="w-4 h-4" />}
+              onClick={() => handleNavigateToSection("fotos")}
+            />
+          </div>
+        </Section>
 
         {fat.ocorrencias && fat.ocorrencias.length > 0 && (
           <Section
@@ -1192,37 +1273,25 @@ export default function FATDetalheMobile() {
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50">
+      {/* <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50">
         <div className="px-3 py-2">
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             <ActionButtonFat
               label="Deslocamento"
               icon={<Car className="w-5 h-5 text-emerald-600" />}
-              onClick={() => {
-                if (params?.id) {
-                  router.push(`/tecnico/os/fat/${params.id}/deslocamento`);
-                }
-              }}
+              onClick={() => handleNavigateToSection("deslocamento")}
               color="hover:border-emerald-300"
             />
             <ActionButtonFat
               label="Atendimento"
               icon={<Wrench className="w-5 h-5 text-blue-600" />}
-              onClick={() => {
-                if (params?.id) {
-                  router.push(`/tecnico/os/fat/${params.id}/atendimento`);
-                }
-              }}
+              onClick={() => handleNavigateToSection("atendimento")}
               color="hover:border-blue-300"
             />
             <ActionButtonFat
               label="Peças"
               icon={<Package className="w-5 h-5 text-green-600" />}
-              onClick={() => {
-                if (params?.id) {
-                  router.push(`/tecnico/os/fat/${params.id}/pecas`);
-                }
-              }}
+              onClick={() => handleNavigateToSection("pecas")}
               color="hover:border-green-300"
             />
             <ActionButtonFat
@@ -1237,22 +1306,20 @@ export default function FATDetalheMobile() {
             />
           </div>
         </div>
-      </div>
+      </div> */}
 
       {deveMostrarBotoes && (
-        <div className="bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 p-3 safe-area-bottom">
-          <ActionButtonsFat
-            fat={fat}
-            id_os={fat.id_os}
-            onIniciarAtendimento={handleIniciarAtendimento}
-            onPausarAtendimento={handlePausarAtendimento}
-            onRetomarAtendimento={handleRetomarAtendimento}
-            onInterromperAtendimento={handleInterromperAtendimento}
-            onCancelarAtendimento={handleCancelarAtendimento}
-            onConcluirAtendimento={handleConcluirAtendimento}
-            onActionSuccess={() => fetchFAT(true)}
-          />
-        </div>
+        <FloatingActionMenuFat
+          fat={fat}
+          id_os={fat.id_os}
+          onIniciarAtendimento={handleIniciarAtendimento}
+          onPausarAtendimento={handlePausarAtendimento}
+          onRetomarAtendimento={handleRetomarAtendimento}
+          onInterromperAtendimento={handleInterromperAtendimento}
+          onCancelarAtendimento={handleCancelarAtendimento}
+          onConcluirAtendimento={handleConcluirAtendimento}
+          onActionSuccess={() => fetchFAT(true)}
+        />
       )}
     </main>
   );

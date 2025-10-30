@@ -1,5 +1,6 @@
 import api from "../api";
 import { ocorrenciasOSService } from "./ocorrenciaOSService";
+import type { OcorrenciaOSDetalhe } from "./ocorrenciaOSService";
 
 export interface OSStatusCount {
   em_execucao: number;
@@ -384,6 +385,7 @@ export interface OSDetalhadaV2 {
   pecas_corrigidas: OSPecaCorrigida[];
   deslocamentos_corrigidos: OSDeslocamentoCorrigido[];
   fats: OSFatDetalhado[];
+  ocorrencias?: OcorrenciaOSDetalhe[];
   historico?: OSHistoricoDetalhado[];
   anexos?: OSAnexo[];
   // Campos adicionais que podem estar presentes

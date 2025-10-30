@@ -20,13 +20,24 @@ interface NotificacaoCache {
   [key: string]: unknown; // Permite propriedades adicionais retornadas pela API
 }
 
+type NotificacoesListResult = Awaited<
+  ReturnType<typeof notificacoesService.getNotificacoes>
+>;
+
+interface UseNotificacoesOptions {
+  skipInitialListLoad?: boolean;
+}
+
 /**
  * Hook para gerenciar o estado das notificações no sistema
  * Inicia o polling de notificações após o login e mantém a contagem atualizada
  * - Polling de contagem a cada 40 segundos
  * - Polling de lista completa a cada 10 minutos com cache
  */
-export function useNotificacoes() {
+export function useNotificacoes(
+  options: UseNotificacoesOptions = {}
+) {
+  const { skipInitialListLoad = false } = options;
   // Agora acompanhamos tanto o total de notificações quanto o número de não lidas
   const [notificacoesCount, setNotificacoesCount] = useState(0); // nao_lidas
   const [totalNotificacoes, setTotalNotificacoes] = useState(0); // total_notificacoes
@@ -41,6 +52,10 @@ export function useNotificacoes() {
 
   // Cache para armazenar a lista completa de notificações
   const cacheRef = useRef<NotificacaoCache | null>(null);
+  const pendingRequestsRef = useRef<
+    Record<string, Promise<NotificacoesListResult | NotificacaoCache | null>>
+  >({});
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const CACHE_VALIDITY_MS = 10 * 60 * 1000; // 10 minutos em milissegundos
 
   // Função para buscar a contagem de notificações
@@ -94,57 +109,71 @@ export function useNotificacoes() {
     pagina: number = 1,
     forceRefresh: boolean = false
   ) => {
-    try {
-      setListState((prev) => ({ ...prev, loading: true, error: null }));
+    const now = Date.now();
+    const cacheIsValid =
+      !forceRefresh &&
+      cacheRef.current &&
+      pagina === 1 &&
+      now - cacheRef.current.timestamp < CACHE_VALIDITY_MS;
 
-      // Verificar se temos um cache válido e não estamos forçando refresh
-      const now = Date.now();
-      if (
-        !forceRefresh &&
-        cacheRef.current &&
-        now - cacheRef.current.timestamp < CACHE_VALIDITY_MS &&
-        pagina === 1
-      ) {
-        // Usar cache
-        setListState((prev) => ({ ...prev, loading: false }));
-        return cacheRef.current;
-      }
-
-      // Buscar dados da API
-      const response = await notificacoesService.getNotificacoes(
-        pagina,
-        10,
-        true
-      );
-
-      // Atualizar os contadores baseados na resposta - evita chamada extra a getNotificacoesCount
-      if (response) {
-        if (typeof response.nao_lidas === "number") {
-          setNotificacoesCount(response.nao_lidas);
-        }
-        if (typeof response.total_notificacoes === "number") {
-          setTotalNotificacoes(response.total_notificacoes);
-        }
-      }
-
-      // Se for página 1, atualizar o cache
-      if (pagina === 1 && response && response.dados) {
-        cacheRef.current = {
-          ...response,
-          timestamp: now,
-        };
-      }
-
-      return response;
-    } catch (error) {
-      console.error("Erro ao buscar lista de notificações:", error);
-      const errorObj =
-        error instanceof Error ? error : new Error("Erro desconhecido");
-      setListState((prev) => ({ ...prev, error: errorObj }));
-      return null;
-    } finally {
+    if (cacheIsValid && cacheRef.current) {
       setListState((prev) => ({ ...prev, loading: false }));
+      return cacheRef.current;
     }
+
+    const requestKey = String(pagina);
+    const existingRequest = pendingRequestsRef.current[requestKey];
+
+    if (existingRequest) {
+      setListState((prev) => ({ ...prev, loading: true, error: null }));
+      return existingRequest;
+    }
+
+    setListState((prev) => ({ ...prev, loading: true, error: null }));
+
+    const requestPromise: Promise<
+      NotificacoesListResult | NotificacaoCache | null
+    > = (async () => {
+      try {
+        const response = await notificacoesService.getNotificacoes(
+          pagina,
+          10,
+          true
+        );
+
+        if (response) {
+          if (typeof response.nao_lidas === "number") {
+            setNotificacoesCount(response.nao_lidas);
+          }
+          if (typeof response.total_notificacoes === "number") {
+            setTotalNotificacoes(response.total_notificacoes);
+          }
+        }
+
+        if (pagina === 1 && response && Array.isArray(response.dados)) {
+          cacheRef.current = {
+            ...response,
+            timestamp: Date.now(),
+          };
+
+          return cacheRef.current;
+        }
+
+        return response;
+      } catch (error) {
+        console.error("Erro ao buscar lista de notifica????es:", error);
+        const errorObj =
+          error instanceof Error ? error : new Error("Erro desconhecido");
+        setListState((prev) => ({ ...prev, error: errorObj }));
+        return null;
+      } finally {
+        setListState((prev) => ({ ...prev, loading: false }));
+        delete pendingRequestsRef.current[requestKey];
+      }
+    })();
+
+    pendingRequestsRef.current[requestKey] = requestPromise;
+    return requestPromise;
   };
 
   // Verificar se o usuário está autenticado
@@ -158,35 +187,34 @@ export function useNotificacoes() {
 
   // Efeito para iniciar o polling de notificações quando o componente montar
   // e o usuário estiver autenticado - usando um padrão singleton para evitar múltiplas chamadas
+  
   useEffect(() => {
-    // Verificar autenticação antes de iniciar o polling
-    if (!isAuthenticated()) return;
+    if (!isAuthenticated() || skipInitialListLoad) {
+      return;
+    }
 
-    // Inicializar apenas uma vez em toda a aplicação
-    // Isso garante que múltiplos componentes usando este hook não criem múltiplos intervalos
     if (!hasInitializedRef.current) {
       hasInitializedRef.current = true;
 
-      // Carregar a lista completa em background apenas uma vez
       fetchNotificacoesList();
 
-      // Configurar o intervalo para polling da LISTA COMPLETA a cada 10 minutos
-      // Somente se ainda não tivermos configurado (singleton)
-      setInterval(() => {
+      intervalRef.current = setInterval(() => {
         if (isAuthenticated()) {
-          fetchNotificacoesList(1, true); // Força atualização do cache a cada 10 minutos
+          fetchNotificacoesList(1, true);
         }
       }, CACHE_VALIDITY_MS);
-
-      // Não precisamos limpar este intervalo pois queremos que ele continue rodando
-      // enquanto a aplicação estiver aberta, mesmo que os componentes sejam desmontados
     }
 
-    // Note que removemos o fetchNotificacoesCount e seu intervalo daqui
-    // O NotificacoesUpdater será o único componente responsável por isso
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        hasInitializedRef.current = false;
+      }
+    };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [skipInitialListLoad]);
 
   // Atualizar manualmente a contagem (útil após marcar como lida)
   const updateCount = (newCount: number, newTotal?: number) => {

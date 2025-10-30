@@ -27,7 +27,6 @@ import {
   MessageSquare,
   Package,
   ChevronRight,
-  Navigation,
   FileText,
 } from "lucide-react";
 import {
@@ -649,7 +648,7 @@ export default function OSDetalheMobile() {
                   <span className="flex-1 text-sm font-semibold leading-snug text-current">
                     {enderecoFormatado}
                   </span>
-                  <Navigation className="w-4 h-4 text-blue-600 group-hover:scale-105 transition-transform duration-200" />
+                 
                 </button>
               }
               icon={<MapPin className="w-3 h-3" />}
@@ -675,7 +674,7 @@ export default function OSDetalheMobile() {
                   className="inline-flex w-full items-center justify-between gap-2 rounded-lg  text-sm font-semibold text-black transition-colors duration-200 hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
                 >
                   <span className="truncate">{telefoneContato}</span>
-                  <Phone className="w-4 h-4 text-green-600" />
+              
                 </a>
               }
               icon={<Phone className="w-3 h-3" />}
@@ -693,7 +692,7 @@ export default function OSDetalheMobile() {
                   className="inline-flex w-full items-center justify-between gap-2 rounded-lg text-sm font-semibold text-black transition-colors duration-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                 >
                   <span className="truncate">{whatsappContato}</span>
-                  <MessageCircle className="w-4 h-4 text-emerald-500" />
+                
                 </a>
               }
               icon={<MessageCircle className="w-3 h-3" />}
@@ -709,7 +708,7 @@ export default function OSDetalheMobile() {
                   className="inline-flex w-full items-center justify-between gap-2 rounded-lg  text-sm font-semibold text-black transition-colors duration-200 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
                 >
                   <span className="truncate">{emailContato}</span>
-                  <Mail className="w-4 h-4 text-purple-600" />
+                 
                 </a>
               }
               icon={<Mail className="w-3 h-3" />}

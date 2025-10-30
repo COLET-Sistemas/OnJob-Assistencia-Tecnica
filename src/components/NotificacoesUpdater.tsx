@@ -9,7 +9,7 @@ import { useNotificacoes } from "@/hooks";
  * Centraliza o controle de polling para evitar múltiplas chamadas à API
  */
 const NotificacoesUpdater = () => {
-  const { fetchNotificacoesCount } = useNotificacoes();
+  const { fetchNotificacoesCount } = useNotificacoes({ skipInitialListLoad: true });
 
   // Verificar se o usuário está autenticado
   const isAuthenticated = () => {
