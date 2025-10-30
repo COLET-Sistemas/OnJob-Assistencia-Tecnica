@@ -8,6 +8,7 @@ export interface OcorrenciaOS {
 
 export interface OcorrenciaResponse {
   mensagem: string;
+  id_fat?: number | null;
 }
 
 type OcorrenciaSituacao = {

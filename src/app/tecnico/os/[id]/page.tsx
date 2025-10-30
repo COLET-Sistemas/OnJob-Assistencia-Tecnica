@@ -7,6 +7,7 @@ import React, {
   useMemo,
 } from "react";
 import FloatingActionMenu from "@/components/tecnico/FloatingActionMenu";
+import type { ActionSuccessPayload } from "@/components/tecnico/hooks/useOsActions";
 import { useRouter, useParams } from "next/navigation";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import StatusBadge from "@/components/tecnico/StatusBadge";
@@ -450,15 +451,27 @@ export default function OSDetalheMobile() {
     [params?.id]
   );
 
-  const handleActionSuccess = useCallback(() => {
-    setRefreshCount((prev) => {
-      const newCount = prev + 1;
-      return newCount;
-    });
+  const handleActionSuccess = useCallback(
+    (payload: ActionSuccessPayload) => {
+      if (
+        payload.action === "atendimento" &&
+        typeof payload.idFat === "number" &&
+        Number.isFinite(payload.idFat)
+      ) {
+        router.push(`/tecnico/os/fat/${payload.idFat}`);
+        return;
+      }
 
-    // Chamar fetchOS com force=true - apenas uma vez
-    fetchOS(true);
-  }, [fetchOS]);
+      setRefreshCount((prev) => {
+        const newCount = prev + 1;
+        return newCount;
+      });
+
+      // Chamar fetchOS com force=true - apenas uma vez
+      fetchOS(true);
+    },
+    [fetchOS, router]
+  );
 
   // Effect otimizado com cleanup
   useEffect(() => {

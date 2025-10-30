@@ -6,9 +6,20 @@ import { ocorrenciasOSService } from "@/api/services/ocorrenciaOSService";
 type ModalType = null | "deslocamento" | "atendimento";
 type MessageType = "success" | "error" | null;
 
+export type ActionSuccessType =
+  | "deslocamento"
+  | "atendimento"
+  | "cancelar_os"
+  | "concluir_os";
+
+export interface ActionSuccessPayload {
+  action: ActionSuccessType;
+  idFat?: number;
+}
+
 interface UseOsActionsOptions {
   id_os?: number;
-  onActionSuccess?: () => void;
+  onActionSuccess?: (payload: ActionSuccessPayload) => void;
 }
 
 const sanitizeMessage = (value?: string | null): string | undefined => {
@@ -140,15 +151,26 @@ export const useOsActions = ({
           descricao_ocorrencia: descricao,
         });
 
+        const actionOnSuccess = modalOpen;
+        const idFat =
+          typeof response?.id_fat === "number" && Number.isFinite(response.id_fat)
+            ? response.id_fat
+            : undefined;
+
         setModalOpen(null);
         setMessage(
           sanitizeMessage(response.mensagem) || "Acao realizada com sucesso!"
         );
         setMessageType("success");
 
-        setTimeout(() => {
-          onActionSuccess?.();
-        }, 1000);
+        if (onActionSuccess && actionOnSuccess) {
+          setTimeout(() => {
+            onActionSuccess({
+              action: actionOnSuccess,
+              idFat,
+            });
+          }, 1000);
+        }
       } catch (error) {
         console.error("Erro ao registrar ocorrencia:", error);
         setMessage(getErrorMessage(error));
@@ -182,9 +204,13 @@ export const useOsActions = ({
       );
       setMessageType("success");
 
-      setTimeout(() => {
-        onActionSuccess?.();
-      }, 1000);
+      if (onActionSuccess) {
+        setTimeout(() => {
+          onActionSuccess({
+            action: "cancelar_os",
+          });
+        }, 1000);
+      }
     } catch (error) {
       console.error("Erro ao cancelar OS:", error);
       setMessage(getErrorMessage(error));
@@ -216,9 +242,13 @@ export const useOsActions = ({
       );
       setMessageType("success");
 
-      setTimeout(() => {
-        onActionSuccess?.();
-      }, 1000);
+      if (onActionSuccess) {
+        setTimeout(() => {
+          onActionSuccess({
+            action: "concluir_os",
+          });
+        }, 1000);
+      }
     } catch (error) {
       console.error("Erro ao concluir OS:", error);
       setMessage(getErrorMessage(error));
@@ -255,4 +285,3 @@ export const useOsActions = ({
 };
 
 export type UseOsActionsReturn = ReturnType<typeof useOsActions>;
-

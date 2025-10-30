@@ -11,11 +11,11 @@ import {
 } from "lucide-react";
 import Toast from "@/components/tecnico/Toast";
 import OcorrenciaModal from "./OcorrenciaModal";
-import { useOsActions } from "./hooks/useOsActions";
+import { useOsActions, type ActionSuccessPayload } from "./hooks/useOsActions";
 
 interface FloatingActionMenuProps {
   id_os?: number;
-  onActionSuccess?: () => void;
+  onActionSuccess?: (payload: ActionSuccessPayload) => void;
 }
 
 const optionBaseClasses =

@@ -616,42 +616,60 @@ export default function FATPecasPage() {
             {/* Campos adicionais exibidos quando há peça encontrada ou modo sem código */}
             {(pecaEncontrada || modoSemCodigo) && (
               <>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                    Quantidade
-                  </label>
-                  <div className="relative">
-                    <input
-                      ref={quantidadeInputRef}
-                      type="number"
-                      value={form.quantidade}
-                      onChange={handleQuantidadeChange}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
-                      placeholder="Quantidade de peças"
-                      min={1}
-                      required
-                    />
-                    {!modoSemCodigo && pecaEncontrada?.unidade_medida && (
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">
-                        {pecaEncontrada.unidade_medida}
-                      </span>
-                    )}
+                {modoSemCodigo ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        Qtde.
+                      </label>
+                      <input
+                        ref={quantidadeInputRef}
+                        type="number"
+                        value={form.quantidade}
+                        onChange={handleQuantidadeChange}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
+                        placeholder="Quantidade de peças"
+                        min={1}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        Unid.
+                      </label>
+                      <input
+                        type="text"
+                        value={form.unidade_medida}
+                        onChange={handleUnidadeChange}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
+                        placeholder="Informe a unidade"
+                        required
+                        maxLength={3}
+                      />
+                    </div>
                   </div>
-                </div>
-
-                {modoSemCodigo && (
+                ) : (
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                      Unidade
+                      Quantidade
                     </label>
-                    <input
-                      type="text"
-                      value={form.unidade_medida}
-                      onChange={handleUnidadeChange}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
-                      placeholder="Informe a unidade de medida"
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        ref={quantidadeInputRef}
+                        type="number"
+                        value={form.quantidade}
+                        onChange={handleQuantidadeChange}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
+                        placeholder="Quantidade de peças"
+                        min={1}
+                        required
+                      />
+                      {pecaEncontrada?.unidade_medida && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">
+                          {pecaEncontrada.unidade_medida}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
 

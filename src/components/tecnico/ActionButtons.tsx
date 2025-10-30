@@ -3,11 +3,11 @@ import Toast from "@/components/tecnico/Toast";
 import React from "react";
 import { Car, Play, Loader2, XCircle, CheckCircle } from "lucide-react";
 import OcorrenciaModal from "./OcorrenciaModal";
-import { useOsActions } from "./hooks/useOsActions";
+import { useOsActions, type ActionSuccessPayload } from "./hooks/useOsActions";
 
 interface ActionButtonsProps {
   id_os?: number;
-  onActionSuccess?: () => void;
+  onActionSuccess?: (payload: ActionSuccessPayload) => void;
 }
 
 const baseBtn =
@@ -144,4 +144,3 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 };
 
 export default ActionButtons;
-
