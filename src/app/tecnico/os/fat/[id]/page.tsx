@@ -922,6 +922,71 @@ export default function FATDetalheMobile() {
           </Section>
         )}
 
+        {/* Detalhes do Atendimento */}
+        <Section
+          title="Detalhes do Atendimento"
+          icon={<Wrench className="w-4 h-4" />}
+        >
+          {(fat.solucao_encontrada && fat.solucao_encontrada !== "") ||
+          (fat.testes_realizados && fat.testes_realizados !== "") ||
+          (fat.sugestoes && fat.sugestoes !== "") ||
+          (fat.observacoes && fat.observacoes !== "") ||
+          (fat.numero_ciclos != null && fat.numero_ciclos > 0) ? (
+            <>
+              {fat.solucao_encontrada && (
+                <Field
+                  label="Solução Encontrada"
+                  value={fat.solucao_encontrada}
+                  icon={<CheckSquare className="w-3 h-3" />}
+                />
+              )}
+
+              {fat.testes_realizados && (
+                <Field
+                  label="Testes Realizados"
+                  value={fat.testes_realizados}
+                  icon={<Eye className="w-3 h-3" />}
+                />
+              )}
+
+              {fat.sugestoes && (
+                <Field
+                  label="Sugestões"
+                  value={fat.sugestoes}
+                  icon={<MessageSquare className="w-3 h-3" />}
+                />
+              )}
+
+              {fat.observacoes && (
+                <Field
+                  label="Observações"
+                  value={fat.observacoes}
+                  icon={<FileText className="w-3 h-3" />}
+                />
+              )}
+
+              {fat.numero_ciclos != null && fat.numero_ciclos > 0 && (
+                <Field
+                  label="Número de Ciclos"
+                  value={fat.numero_ciclos.toString()}
+                  icon={<Timer className="w-3 h-3" />}
+                />
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-slate-500 italic">
+              Não há informações sobre o atendimento
+            </p>
+          )}
+          <div className="mt-4">
+            <SectionActionButton
+              label="Ir para Atendimento"
+              icon={<Wrench className="w-4 h-4" />}
+              onClick={() => handleNavigateToSection("atendimento")}
+            />
+          </div>
+        </Section>
+
         {/* Deslocamentos */}
         <Section
           title={`Deslocamentos (${deslocamentos.length})`}
@@ -985,71 +1050,6 @@ export default function FATDetalheMobile() {
               label="Ir para Deslocamento"
               icon={<Car className="w-4 h-4" />}
               onClick={() => handleNavigateToSection("deslocamento")}
-            />
-          </div>
-        </Section>
-
-        {/* Detalhes do Atendimento */}
-        <Section
-          title="Detalhes do Atendimento"
-          icon={<Wrench className="w-4 h-4" />}
-        >
-          {(fat.solucao_encontrada && fat.solucao_encontrada !== "") ||
-          (fat.testes_realizados && fat.testes_realizados !== "") ||
-          (fat.sugestoes && fat.sugestoes !== "") ||
-          (fat.observacoes && fat.observacoes !== "") ||
-          (fat.numero_ciclos != null && fat.numero_ciclos > 0) ? (
-            <>
-              {fat.solucao_encontrada && (
-                <Field
-                  label="Solução Encontrada"
-                  value={fat.solucao_encontrada}
-                  icon={<CheckSquare className="w-3 h-3" />}
-                />
-              )}
-
-              {fat.testes_realizados && (
-                <Field
-                  label="Testes Realizados"
-                  value={fat.testes_realizados}
-                  icon={<Eye className="w-3 h-3" />}
-                />
-              )}
-
-              {fat.sugestoes && (
-                <Field
-                  label="Sugestões"
-                  value={fat.sugestoes}
-                  icon={<MessageSquare className="w-3 h-3" />}
-                />
-              )}
-
-              {fat.observacoes && (
-                <Field
-                  label="Observações"
-                  value={fat.observacoes}
-                  icon={<FileText className="w-3 h-3" />}
-                />
-              )}
-
-              {fat.numero_ciclos != null && fat.numero_ciclos > 0 && (
-                <Field
-                  label="Número de Ciclos"
-                  value={fat.numero_ciclos.toString()}
-                  icon={<Timer className="w-3 h-3" />}
-                />
-              )}
-            </>
-          ) : (
-            <p className="text-sm text-slate-500 italic">
-              Não há informações sobre o atendimento
-            </p>
-          )}
-          <div className="mt-4">
-            <SectionActionButton
-              label="Ir para Atendimento"
-              icon={<Wrench className="w-4 h-4" />}
-              onClick={() => handleNavigateToSection("atendimento")}
             />
           </div>
         </Section>
