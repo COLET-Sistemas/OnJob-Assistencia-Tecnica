@@ -245,6 +245,7 @@ export default function FATPecasPage() {
     descricao_peca: "",
     quantidade: "" as number | "",
     observacoes: "",
+    unidade_medida: "",
   });
   const [pecaEncontrada, setPecaEncontrada] = useState<PecaBusca | null>(null);
   const [buscando, setBuscando] = useState(false);
@@ -402,6 +403,14 @@ export default function FATPecasPage() {
     []
   );
 
+  const handleUnidadeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const unidade_medida = e.target.value;
+      setForm((prev) => ({ ...prev, unidade_medida }));
+    },
+    []
+  );
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -421,6 +430,10 @@ export default function FATPecasPage() {
         setError("Informe a quantidade.");
         return;
       }
+      if (modoSemCodigo && !form.unidade_medida.trim()) {
+        setError("Informe a unidade de medida.");
+        return;
+      }
       setSubmitting(true);
       try {
         await api.post("/fats_pecas", {
@@ -429,7 +442,7 @@ export default function FATPecasPage() {
           descricao_peca: form.descricao_peca.trim(),
           quantidade: Number(form.quantidade),
           unidade_medida: modoSemCodigo
-            ? ""
+            ? form.unidade_medida.trim()
             : pecaEncontrada?.unidade_medida || "",
           observacoes: form.observacoes.trim(),
         });
@@ -439,6 +452,7 @@ export default function FATPecasPage() {
           descricao_peca: "",
           quantidade: "",
           observacoes: "",
+          unidade_medida: "",
         });
         setPecaEncontrada(null);
         setModoSemCodigo(false);
@@ -467,7 +481,7 @@ export default function FATPecasPage() {
 
   const handleNaoSeiCodigo = useCallback(() => {
     setModoSemCodigo(true);
-    setForm((prev) => ({ ...prev, codigo_peca: "" }));
+    setForm((prev) => ({ ...prev, codigo_peca: "", unidade_medida: "" }));
     setPecaEncontrada(null);
     setError("");
   }, []);
@@ -479,6 +493,7 @@ export default function FATPecasPage() {
       descricao_peca: "",
       quantidade: "",
       observacoes: "",
+      unidade_medida: "",
     });
     setPecaEncontrada(null);
     setError("");
@@ -543,7 +558,7 @@ export default function FATPecasPage() {
                       type="button"
                       onClick={handlePesquisarPeca}
                       disabled={buscando || !form.codigo_peca.trim()}
-                      className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-medium text-sm active:scale-[0.98]"
+                      className="px-4 py-3 bg-[var(--primary)] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-medium text-sm active:scale-[0.98]"
                     >
                       {buscando ? (
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -598,45 +613,67 @@ export default function FATPecasPage() {
               </>
             )}
 
-            {/* Campo quantidade - sempre aparece quando tem peça encontrada ou está no modo sem código */}
+            {/* Campos adicionais exibidos quando há peça encontrada ou modo sem código */}
             {(pecaEncontrada || modoSemCodigo) && (
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                  Quantidade
-                </label>
-                <div className="relative">
-                  <input
-                    ref={quantidadeInputRef}
-                    type="number"
-                    value={form.quantidade}
-                    onChange={handleQuantidadeChange}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
-                    placeholder="Quantidade de peças"
-                    min={1}
-                    required
-                  />
-                  {!modoSemCodigo && pecaEncontrada?.unidade_medida && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">
-                      {pecaEncontrada.unidade_medida}
-                    </span>
-                  )}
+              <>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                    Quantidade
+                  </label>
+                  <div className="relative">
+                    <input
+                      ref={quantidadeInputRef}
+                      type="number"
+                      value={form.quantidade}
+                      onChange={handleQuantidadeChange}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
+                      placeholder="Quantidade de peças"
+                      min={1}
+                      required
+                    />
+                    {!modoSemCodigo && pecaEncontrada?.unidade_medida && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">
+                        {pecaEncontrada.unidade_medida}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
+
+                {modoSemCodigo && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                      Unidade
+                    </label>
+                    <input
+                      type="text"
+                      value={form.unidade_medida}
+                      onChange={handleUnidadeChange}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
+                      placeholder="Informe a unidade de medida"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                    Observações
+                  </label>
+                  <input
+                    type="text"
+                    value={form.observacoes}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        observacoes: e.target.value,
+                      }))
+                    }
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
+                    placeholder="Observações sobre a peça (opcional)"
+                  />
+                </div>
+              </>
             )}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                Observações
-              </label>
-              <input
-                type="text"
-                value={form.observacoes}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, observacoes: e.target.value }))
-                }
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
-                placeholder="Observações sobre a peça (opcional)"
-              />
-            </div>
 
             {/* Botão submit - aparece quando tem peça encontrada ou está no modo sem código */}
             {(pecaEncontrada || modoSemCodigo) && (
