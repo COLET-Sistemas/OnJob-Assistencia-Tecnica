@@ -6,7 +6,11 @@ import type { PecaRevisada } from "../types";
 interface PecasTabProps {
   pecas: PecaRevisada[];
   onAdd: () => void;
-  onChange: (index: number, field: keyof OSPecaUtilizada, value: number | string) => void;
+  onChange: (
+    index: number,
+    field: keyof OSPecaUtilizada,
+    value: number | string
+  ) => void;
   onEdit: (index: number) => void;
   onSave: (index: number) => void;
   onCancel: (index: number) => void;
@@ -71,13 +75,16 @@ const PecasTab: React.FC<PecasTabProps> = ({
                   scope="col"
                   className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Acoes
+                  Ações
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {pecas.map((peca, index) => (
-                <tr key={peca.id || index} className={`${peca.isDeleted ? "bg-red-50" : ""}`}>
+                <tr
+                  key={peca.id || index}
+                  className={`${peca.isDeleted ? "bg-red-50" : ""}`}
+                >
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                     #{peca.id_fat || "-"}
                   </td>
@@ -87,7 +94,9 @@ const PecasTab: React.FC<PecasTabProps> = ({
                         type="text"
                         className="w-24 border border-gray-300 rounded-md px-2 py-1"
                         value={peca.codigo || ""}
-                        onChange={(e) => onChange(index, "codigo", e.target.value)}
+                        onChange={(e) =>
+                          onChange(index, "codigo", e.target.value)
+                        }
                         placeholder="Codigo"
                       />
                     ) : (
@@ -100,7 +109,9 @@ const PecasTab: React.FC<PecasTabProps> = ({
                         type="text"
                         className="w-full border border-gray-300 rounded-md px-2 py-1"
                         value={peca.descricao || ""}
-                        onChange={(e) => onChange(index, "descricao", e.target.value)}
+                        onChange={(e) =>
+                          onChange(index, "descricao", e.target.value)
+                        }
                         placeholder="Descricao"
                       />
                     ) : (
@@ -113,7 +124,9 @@ const PecasTab: React.FC<PecasTabProps> = ({
                         type="number"
                         className="w-16 border border-gray-300 rounded-md px-2 py-1"
                         value={peca.quantidade || 0}
-                        onChange={(e) => onChange(index, "quantidade", Number(e.target.value))}
+                        onChange={(e) =>
+                          onChange(index, "quantidade", Number(e.target.value))
+                        }
                         min="1"
                       />
                     ) : (
@@ -122,24 +135,39 @@ const PecasTab: React.FC<PecasTabProps> = ({
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
                     {peca.isDeleted ? (
-                      <button className="text-green-600 hover:text-green-900" onClick={() => onRestore(index)}>
+                      <button
+                        className="text-green-600 hover:text-green-900"
+                        onClick={() => onRestore(index)}
+                      >
                         Restaurar
                       </button>
                     ) : peca.isEditing ? (
                       <div className="flex gap-2 justify-end">
-                        <button className="text-green-600 hover:text-green-900" onClick={() => onSave(index)}>
+                        <button
+                          className="text-green-600 hover:text-green-900"
+                          onClick={() => onSave(index)}
+                        >
                           <Save className="h-4 w-4" />
                         </button>
-                        <button className="text-red-600 hover:text-red-900" onClick={() => onCancel(index)}>
+                        <button
+                          className="text-red-600 hover:text-red-900"
+                          onClick={() => onCancel(index)}
+                        >
                           <X className="h-4 w-4" />
                         </button>
                       </div>
                     ) : (
                       <div className="flex gap-2 justify-end">
-                        <button className="text-blue-600 hover:text-blue-900" onClick={() => onEdit(index)}>
+                        <button
+                          className="text-blue-600 hover:text-blue-900"
+                          onClick={() => onEdit(index)}
+                        >
                           <Edit className="h-4 w-4" />
                         </button>
-                        <button className="text-red-600 hover:text-red-900" onClick={() => onDelete(index)}>
+                        <button
+                          className="text-red-600 hover:text-red-900"
+                          onClick={() => onDelete(index)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>

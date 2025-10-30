@@ -421,7 +421,7 @@ export default function OSRevisaoPage() {
           <div className="flex items-center gap-2">
             <Clipboard className="h-4 w-4 text-gray-500 shrink-0" />
             <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">Conclusão</p>
+              <p className="font-medium text-gray-700 truncate">Concluso</p>
               <p className="text-xs text-gray-600">
                 {os.data_fechamento || "-"}
               </p>

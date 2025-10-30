@@ -175,7 +175,6 @@ const OSDetalhesPage: React.FC = () => {
   const [historicoOcorrenciasLoading, setHistoricoOcorrenciasLoading] =
     useState(true);
 
-
   const [historicoRefreshToken, setHistoricoRefreshToken] = useState(0);
   const [isGestor, setIsGestor] = useState(false);
   const hasLoadedOnceRef = useRef(false);
@@ -232,7 +231,7 @@ const OSDetalhesPage: React.FC = () => {
       return [];
     }
 
-    if (codigo === 5) {
+    if ([1, 2, 3, 4, 5].includes(codigo)) {
       return ["concluir os", "cancelar os", "cancelar os (cliente)"];
     }
 
