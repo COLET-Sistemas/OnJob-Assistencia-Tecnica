@@ -1245,7 +1245,7 @@ export default function FATDetalheMobile() {
                 <div className="flex flex-col items-center gap-3 text-slate-200">
                   <ImageOff className="h-8 w-8" />
                   <span className="text-xs uppercase tracking-wide">
-                    Visualiza��o indispon��vel
+                    Visualização indisponível
                   </span>
                 </div>
               )}
