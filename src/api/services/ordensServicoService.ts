@@ -137,6 +137,7 @@ export interface OSPecaUtilizada {
   descricao?: string;
   codigo?: string;
   quantidade: number;
+  unidade_medida?: string;
   valor_unitario?: number;
   valor_total?: number;
 }
@@ -233,11 +234,14 @@ export interface OSDetalhada {
 export interface OSPecaCorrigida {
   id: number;
   id_peca?: number;
-  nome: string;
+  nome?: string;
+  descricao?: string;
   codigo?: string;
   quantidade: number;
+  unidade_medida?: string;
   valor_unitario?: number;
   valor_total?: number;
+  id_fat?: number;
   data_correcao?: string;
 }
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, {
   useCallback,
@@ -19,7 +19,6 @@ import {
   RefreshCcw,
   UploadCloud,
   ImageOff,
-  X,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -62,6 +61,8 @@ export default function FATFotosPage() {
   const [fat, setFat] = useState<FATDetalhada | null>(null);
   const [idOs, setIdOs] = useState<number | null>(null);
   const [photos, setPhotos] = useState<FATFotoItem[]>([]);
+  const [currentFatPhotos, setCurrentFatPhotos] = useState<FATFotoItem[]>([]);
+  const [otherFatPhotos, setOtherFatPhotos] = useState<FATFotoItem[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<Record<number, string>>(
     {}
   );
@@ -158,28 +159,50 @@ export default function FATFotosPage() {
   }, []);
 
   const fetchPhotos = useCallback(
-    async (targetIdOs?: number) => {
+    async (targetIdOs?: number, targetFatId?: number | null) => {
       const effectiveIdOs = targetIdOs ?? idOs;
       if (!effectiveIdOs) return;
+
+      const activeFatId = targetFatId ?? resolvedFatId ?? null;
 
       setLoadingPhotos(true);
       setError(null);
       try {
         const data = await fatFotosService.listar(effectiveIdOs);
-        setPhotos(data);
+
+        const { current, others } =
+          activeFatId === null
+            ? { current: data, others: [] }
+            : data.reduce(
+                (acc, item) => {
+                  if (item.id_fat === activeFatId) acc.current.push(item);
+                  else acc.others.push(item);
+                  return acc;
+                },
+                { current: [] as FATFotoItem[], others: [] as FATFotoItem[] }
+              );
+
+        const orderedPhotos =
+          activeFatId === null ? data : [...current, ...others];
+
+        setCurrentFatPhotos(current);
+        setOtherFatPhotos(others);
+        setPhotos(orderedPhotos);
         setLoadingPreviews(true);
-        await loadPreviews(data);
+        await loadPreviews(orderedPhotos);
       } catch (err) {
         console.error(err);
+        setCurrentFatPhotos([]);
+        setOtherFatPhotos([]);
         setPhotos([]);
         setPhotoPreviews({});
-        setError("Não foi possível carregar as fotos. Tente novamente.");
+        setError("Nǜo foi poss��vel carregar as fotos. Tente novamente.");
       } finally {
         setLoadingPhotos(false);
         setLoadingPreviews(false);
       }
     },
-    [idOs, loadPreviews]
+    [idOs, loadPreviews, resolvedFatId]
   );
 
   useEffect(() => {
@@ -196,11 +219,11 @@ export default function FATFotosPage() {
 
         setFat(detail);
         setIdOs(detail.id_os);
-        await fetchPhotos(detail.id_os);
+        await fetchPhotos(detail.id_os, detail.id_fat ?? null);
       } catch (err) {
         console.error(err);
         if (active) {
-          setError("Não foi possível carregar os dados da FAT.");
+          setError("Não foi possí­vel carregar os dados da FAT.");
         }
       } finally {
         if (active) {
@@ -304,9 +327,9 @@ export default function FATFotosPage() {
 
   const handleRefresh = useCallback(() => {
     if (idOs) {
-      fetchPhotos(idOs);
+      fetchPhotos(idOs, resolvedFatId);
     }
-  }, [idOs, fetchPhotos]);
+  }, [idOs, fetchPhotos, resolvedFatId]);
 
   const openViewer = useCallback(
     (photoId: number) => {
@@ -360,6 +383,8 @@ export default function FATFotosPage() {
   }, [photos.length]);
 
   const hasPhotos = photos.length > 0;
+  const hasCurrentPhotos = currentFatPhotos.length > 0;
+  const hasOtherPhotos = otherFatPhotos.length > 0;
   const hasMultiplePhotos = photos.length > 1;
   const currentPhotoPosition =
     selectedPhotoIndex !== null ? selectedPhotoIndex + 1 : 0;
@@ -384,7 +409,7 @@ export default function FATFotosPage() {
       `}</style>
 
       <MobileHeader
-        title="Fotos da FAT"
+        title="Fotos das FATs"
         onAddClick={handleBackToFat}
         leftVariant="back"
       />
@@ -414,12 +439,28 @@ export default function FATFotosPage() {
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3 animate-fadeInUp">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <p className="text-xs uppercase text-slate-500 tracking-wide">
-                Ordem de Serviço
+              <p className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                {fat?.id_os ? (
+                  <span className="text-slate-700">
+                    OS&nbsp;
+                    <span className="text-slate-900">
+                      #{fat.id_os} &nbsp;&nbsp;&nbsp;&nbsp;
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-slate-400">OS -</span>
+                )}
+
+                {fat?.id_fat ? (
+                  <span className="text-slate-700">
+                    FAT&nbsp;
+                    <span className="text-slate-900">#{fat.id_fat}</span>
+                  </span>
+                ) : (
+                  <span className="text-slate-400">FAT -</span>
+                )}
               </p>
-              <p className="text-base font-semibold text-slate-800">
-                {fat?.id_os ? `#${fat.id_os}` : "-"}
-              </p>
+
               <p className="text-sm text-slate-500">
                 {fat?.maquina?.descricao || "Máquina não informada"}
               </p>
@@ -498,7 +539,8 @@ export default function FATFotosPage() {
                 </button>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Confirme se a imagem e a descrição correspondem antes de salvar.
+                Confirme se a imagem e a descrição correspondem antes de
+                salvar.
               </p>
             </div>
           ) : (
@@ -530,45 +572,107 @@ export default function FATFotosPage() {
             )}
 
             {hasPhotos && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {photos.map((photo) => {
-                  const previewUrl = photoPreviews[photo.id_fat_foto];
-                  return (
-                    <button
-                      key={photo.id_fat_foto}
-                      type="button"
-                      onClick={() => openViewer(photo.id_fat_foto)}
-                      className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm text-left transition hover:border-[#7B54BE]/60 focus:outline-none focus:ring-2 focus:ring-[#7B54BE] focus:ring-offset-2"
-                    >
-                      <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                        {previewUrl && !loadingPreviews ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={previewUrl}
-                            alt={photo.nome_arquivo}
-                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                          />
-                        ) : loadingPreviews ? (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="h-6 w-6 rounded-full border-2 border-white border-t-[#7B54BE] animate-spin" />
-                          </div>
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <ImageOff className="h-6 w-6 text-slate-400" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-slate-700 line-clamp-2">
-                          {photo.descricao || photo.nome_arquivo}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {formatDate(photo.data_cadastro)}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
+              <div className="space-y-6">
+                {hasCurrentPhotos && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Fotos desta FAT
+                    </p>
+                    <div className="flex flex-col gap-3">
+                      {currentFatPhotos.map((photo) => {
+                        const previewUrl = photoPreviews[photo.id_fat_foto];
+                        return (
+                          <button
+                            key={photo.id_fat_foto}
+                            type="button"
+                            onClick={() => openViewer(photo.id_fat_foto)}
+                            className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm text-left transition hover:border-[#7B54BE]/60 focus:outline-none focus:ring-2 focus:ring-[#7B54BE] focus:ring-offset-2"
+                          >
+                            <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                              {previewUrl && !loadingPreviews ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={previewUrl}
+                                  alt={photo.nome_arquivo}
+                                  className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                />
+                              ) : loadingPreviews ? (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="h-6 w-6 rounded-full border-2 border-white border-t-[#7B54BE] animate-spin" />
+                                </div>
+                              ) : (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <ImageOff className="h-6 w-6 text-slate-400" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-slate-700 line-clamp-2">
+                                {photo.descricao || photo.nome_arquivo}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {formatDate(photo.data_cadastro)}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {hasOtherPhotos && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Fotos de outras FATs
+                    </p>
+                    <div className="flex flex-col gap-3">
+                      {otherFatPhotos.map((photo) => {
+                        const previewUrl = photoPreviews[photo.id_fat_foto];
+                        return (
+                          <button
+                            key={photo.id_fat_foto}
+                            type="button"
+                            onClick={() => openViewer(photo.id_fat_foto)}
+                            className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm text-left transition hover:border-[#7B54BE]/60 focus:outline-none focus:ring-2 focus:ring-[#7B54BE] focus:ring-offset-2"
+                          >
+                            <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                              {previewUrl && !loadingPreviews ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={previewUrl}
+                                  alt={photo.nome_arquivo}
+                                  className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                />
+                              ) : loadingPreviews ? (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="h-6 w-6 rounded-full border-2 border-white border-t-[#7B54BE] animate-spin" />
+                                </div>
+                              ) : (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <ImageOff className="h-6 w-6 text-slate-400" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-slate-700 line-clamp-2">
+                                {photo.descricao || photo.nome_arquivo}
+                              </p>
+                              {photo.id_fat ? (
+                                <p className="mt-1 text-xs text-slate-500">
+                                  FAT {photo.id_fat}
+                                </p>
+                              ) : null}
+                              <p className="mt-1 text-xs text-slate-500">
+                                {formatDate(photo.data_cadastro)}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </section>
@@ -576,16 +680,18 @@ export default function FATFotosPage() {
       </div>
 
       {selectedPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <button
-              type="button"
-              onClick={closeViewer}
-              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black/80"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeViewer();
+            }
+          }}
+        >
+          <div
+            className="relative w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
             <div className="relative flex items-center justify-center bg-slate-950/95 px-12 py-10">
               <button
                 type="button"
@@ -606,7 +712,7 @@ export default function FATFotosPage() {
               ) : (
                 <div className="flex flex-col items-center gap-3 text-white">
                   <ImageOff className="h-10 w-10" />
-                  Pré-visualização indisponível.
+                  Pré-visualização indisponí­vel.
                 </div>
               )}
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -31,7 +31,12 @@ import DeslocamentosTab from "./components/DeslocamentosTab";
 import PecasTab from "./components/PecasTab";
 import FotosTab from "./components/FotosTab";
 import RevisaoTab from "./components/RevisaoTab";
-import type { DeslocamentoRevisado, PecaRevisada } from "./types";
+import type {
+  DeslocamentoOriginal,
+  DeslocamentoRevisado,
+  PecaOriginal,
+  PecaRevisada,
+} from "./types";
 
 export default function OSRevisaoPage() {
   const params = useParams();
@@ -39,10 +44,14 @@ export default function OSRevisaoPage() {
   const [loading, setLoading] = useState(true);
   const [os, setOS] = useState<OSDetalhadaV2 | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [deslocamentos, setDeslocamentos] = useState<DeslocamentoRevisado[]>(
-    []
-  );
-  const [pecas, setPecas] = useState<PecaRevisada[]>([]);
+  const [deslocamentosOriginais, setDeslocamentosOriginais] = useState<
+    DeslocamentoOriginal[]
+  >([]);
+  const [deslocamentosRevisados, setDeslocamentosRevisados] = useState<
+    DeslocamentoRevisado[]
+  >([]);
+  const [pecasOriginais, setPecasOriginais] = useState<PecaOriginal[]>([]);
+  const [pecasRevisadas, setPecasRevisadas] = useState<PecaRevisada[]>([]);
   type TabType = "info" | "deslocamentos" | "pecas" | "fotos" | "revisao";
   const [activeTab, setActiveTab] = useState<TabType>("info");
   const [observacoes, setObservacoes] = useState("");
@@ -50,7 +59,7 @@ export default function OSRevisaoPage() {
   // Carregar dados da OS
   const fetchOS = useCallback(async () => {
     if (!params?.id) {
-      setError("ID da OS não fornecido");
+      setError("ID da OS nÃ£o fornecido");
       setLoading(false);
       return;
     }
@@ -58,65 +67,129 @@ export default function OSRevisaoPage() {
     try {
       setLoading(true);
       const osId = Number(params.id);
-      const response = await ordensServicoService.getById(osId, true); // Forçar atualização
+      const response = await ordensServicoService.getById(osId, true); // ForÃ§ar atualizaÃ§Ã£o
       setOS(response);
       setObservacoes(response.revisao_os?.observacoes || "");
 
       // Processar deslocamentos de todas as FATs
-      let todosDeslocamentos: DeslocamentoRevisado[] = [];
-      let todasPecas: PecaRevisada[] = [];
+      let todosDeslocamentosOriginais: DeslocamentoOriginal[] = [];
+      let todosDeslocamentosRevisados: DeslocamentoRevisado[] = [];
+      let todasPecasOriginais: PecaOriginal[] = [];
+      let todasPecasRevisadas: PecaRevisada[] = [];
 
-      // Para cada FAT, extrair deslocamentos e peças
+      // Para cada FAT, extrair deslocamentos e peÃ§as
       response.fats.forEach((fat) => {
         // Processar deslocamentos
         if (fat.deslocamentos && Array.isArray(fat.deslocamentos)) {
           const deslocamentosFat = fat.deslocamentos.map((d) => ({
             ...d,
             id_fat: fat.id_fat,
-            isEditing: false,
-            isDeleted: false,
           }));
-          todosDeslocamentos = [...todosDeslocamentos, ...deslocamentosFat];
+          todosDeslocamentosOriginais = [
+            ...todosDeslocamentosOriginais,
+            ...deslocamentosFat,
+          ];
         }
 
-        // Processar peças
+        // Processar peÃ§as
         if (fat.pecas_utilizadas && Array.isArray(fat.pecas_utilizadas)) {
           const pecasFat = fat.pecas_utilizadas.map((p) => ({
             ...p,
             id_fat: fat.id_fat,
-            isEditing: false,
-            isDeleted: false,
           }));
-          todasPecas = [...todasPecas, ...pecasFat];
+          todasPecasOriginais = [...todasPecasOriginais, ...pecasFat];
         }
       });
 
-      setDeslocamentos(todosDeslocamentos);
-      setPecas(todasPecas);
+      if (
+        response.deslocamentos_corrigidos &&
+        Array.isArray(response.deslocamentos_corrigidos)
+      ) {
+        todosDeslocamentosRevisados = response.deslocamentos_corrigidos.map(
+          (deslocamento) => ({
+            id_deslocamento:
+              deslocamento.id ?? Math.floor(Math.random() * -1000),
+            km_ida: deslocamento.km_ida ?? 0,
+            km_volta: deslocamento.km_volta ?? 0,
+            tempo_ida_min: deslocamento.tempo_ida_min ?? 0,
+            tempo_volta_min: deslocamento.tempo_volta_min ?? 0,
+            observacoes: deslocamento.observacoes ?? "",
+            valor_km: deslocamento.valor_km,
+            valor_total: deslocamento.valor ?? 0,
+            id_corrigido: deslocamento.id,
+            isEditing: false,
+            isDeleted: false,
+            isNew: false,
+          })
+        );
+      }
+
+      if (response.pecas_corrigidas && Array.isArray(response.pecas_corrigidas)) {
+        todasPecasRevisadas = response.pecas_corrigidas.map((peca) => {
+          const quantidade = peca.quantidade ?? 0;
+          const valorUnitario = peca.valor_unitario ?? 0;
+          const valorTotal =
+            peca.valor_total ?? Number((quantidade * valorUnitario).toFixed(2));
+          const codigo = peca.codigo ?? "";
+          const descricaoBase = (peca.descricao ?? peca.nome ?? "")
+            .toLowerCase()
+            .trim();
+          const origemKey =
+            peca.id != null
+              ? `id:${peca.id}`
+              : peca.id_peca != null
+              ? `catalog:${peca.id_peca}`
+              : `fat:${peca.id_fat ?? "na"}:${descricaoBase}:${quantidade}`;
+
+          return {
+            id: peca.id ?? Math.floor(Math.random() * -1000),
+            id_peca: peca.id_peca,
+            id_fat: peca.id_fat,
+            nome: peca.nome ?? peca.descricao,
+            descricao: peca.descricao ?? peca.nome ?? "",
+            codigo,
+            quantidade,
+            unidade_medida: peca.unidade_medida ?? "",
+            valor_unitario: valorUnitario,
+            valor_total: valorTotal,
+            id_corrigida: peca.id,
+            origemIdPeca: origemKey,
+            data_correcao: peca.data_correcao,
+            isEditing: codigo.trim().length === 0,
+            isDeleted: false,
+            isNew: false,
+          };
+        });
+      }
+
+      setDeslocamentosOriginais(todosDeslocamentosOriginais);
+      setDeslocamentosRevisados(todosDeslocamentosRevisados);
+      setPecasOriginais(todasPecasOriginais);
+      setPecasRevisadas(todasPecasRevisadas);
     } catch (err) {
       console.error("Erro ao carregar OS:", err);
       setError(
-        "Não foi possÃƒÂ­vel carregar os detalhes da OS. Por favor, tente novamente."
+        "NÃ£o foi possÃ­Â­vel carregar os detalhes da OS. Por favor, tente novamente."
       );
     } finally {
       setLoading(false);
     }
   }, [params?.id]);
 
-  // Carregar dados na inicialização
+  // Carregar dados na inicializaÃ§Ã£o
   useEffect(() => {
     fetchOS();
   }, [fetchOS]);
 
   // Manipuladores para deslocamentos
   const handleEditDeslocamento = (index: number) => {
-    setDeslocamentos((prev) =>
+    setDeslocamentosRevisados((prev) =>
       prev.map((d, i) => (i === index ? { ...d, isEditing: true } : d))
     );
   };
 
   const handleSaveDeslocamento = (index: number) => {
-    setDeslocamentos((prev) => {
+    setDeslocamentosRevisados((prev) => {
       const updated = prev.map((d, i) =>
         i === index ? { ...d, isEditing: false } : d
       );
@@ -125,20 +198,20 @@ export default function OSRevisaoPage() {
   };
 
   const handleCancelDeslocamento = (index: number) => {
-    setDeslocamentos((prev) => {
+    setDeslocamentosRevisados((prev) => {
       // Se for um novo deslocamento
       if (prev[index].isNew) {
         const filtered = prev.filter((_, i) => i !== index);
         return filtered;
       }
 
-      // Caso contrário, apenas cancela a edição
+      // Caso contrÃ¡rio, apenas cancela a ediÃ§Ã£o
       return prev.map((d, i) => (i === index ? { ...d, isEditing: false } : d));
     });
   };
 
   const handleDeleteDeslocamento = (index: number) => {
-    setDeslocamentos((prev) => {
+    setDeslocamentosRevisados((prev) => {
       const updated = prev.map((d, i) =>
         i === index ? { ...d, isDeleted: true } : d
       );
@@ -147,7 +220,7 @@ export default function OSRevisaoPage() {
   };
 
   const handleRestoreDeslocamento = (index: number) => {
-    setDeslocamentos((prev) => {
+    setDeslocamentosRevisados((prev) => {
       const updated = prev.map((d, i) =>
         i === index ? { ...d, isDeleted: false } : d
       );
@@ -156,7 +229,7 @@ export default function OSRevisaoPage() {
   };
 
   const handleAddDeslocamento = () => {
-    setDeslocamentos((prev) => {
+    setDeslocamentosRevisados((prev) => {
       const newDeslocamento: DeslocamentoRevisado = {
         id_deslocamento: Math.floor(Math.random() * -1000),
         km_ida: 0,
@@ -176,7 +249,7 @@ export default function OSRevisaoPage() {
     field: keyof OSDeslocamento,
     value: number | string
   ) => {
-    setDeslocamentos((prev) => {
+    setDeslocamentosRevisados((prev) => {
       const updated = prev.map((d, i) =>
         i === index ? { ...d, [field]: value } : d
       );
@@ -184,37 +257,221 @@ export default function OSRevisaoPage() {
     });
   };
 
-  // Manipuladores para peças
+  const convertOriginalToRevisado = (
+    deslocamento: DeslocamentoOriginal
+  ): DeslocamentoRevisado => {
+    const fallbackId =
+      deslocamento.id_deslocamento ?? Math.floor(Math.random() * -1000);
+    return {
+      id_deslocamento: fallbackId,
+      id_fat: deslocamento.id_fat,
+      km_ida: deslocamento.km_ida,
+      km_volta: deslocamento.km_volta,
+      tempo_ida_min: deslocamento.tempo_ida_min,
+      tempo_volta_min: deslocamento.tempo_volta_min,
+      observacoes: deslocamento.observacoes,
+      valor_km: deslocamento.valor_km,
+      valor_total: deslocamento.valor_total,
+      origemIdDeslocamento: deslocamento.id_deslocamento,
+      isEditing: false,
+      isDeleted: false,
+      isNew: false,
+    };
+  };
+
+  const handleAcceptDeslocamento = (deslocamento: DeslocamentoOriginal) => {
+    if (!deslocamento) return;
+
+    setDeslocamentosRevisados((prev) => {
+      const origemId = deslocamento.id_deslocamento;
+      const exists =
+        origemId !== undefined &&
+        prev.some(
+          (item) =>
+            item.origemIdDeslocamento === origemId ||
+            item.id_deslocamento === origemId
+        );
+
+      if (exists) {
+        return prev;
+      }
+
+      return [...prev, convertOriginalToRevisado(deslocamento)];
+    });
+  };
+
+  const handleAcceptAllDeslocamentos = () => {
+    setDeslocamentosRevisados((prev) => {
+      const existingIds = new Set(
+        prev
+          .map((item) => item.origemIdDeslocamento ?? item.id_deslocamento)
+          .filter((id): id is number => typeof id === "number")
+      );
+
+      const novos = deslocamentosOriginais
+        .filter((deslocamento) => {
+          if (deslocamento.id_deslocamento === undefined) {
+            return true;
+          }
+
+          return !existingIds.has(deslocamento.id_deslocamento);
+        })
+        .map(convertOriginalToRevisado);
+
+      if (novos.length === 0) {
+        return prev;
+      }
+
+      return [...prev, ...novos];
+    });
+  };
+
+  function getPecaOrigemKey(peca: PecaOriginal): string {
+    if (peca.id != null) {
+      return `id:${peca.id}`;
+    }
+
+    if (peca.id_peca != null) {
+      return `catalog:${peca.id_peca}`;
+    }
+
+    const descricao = (peca.descricao ?? peca.nome ?? "")
+      .toLowerCase()
+      .trim();
+    const quantidade = peca.quantidade ?? 0;
+    const fat = peca.id_fat ?? "na";
+
+    return `fat:${fat}:${descricao}:${quantidade}`;
+  }
+
+  const convertOriginalToRevisada = (peca: PecaOriginal): PecaRevisada => {
+    const baseId = peca.id ?? peca.id_peca;
+    const fallbackId = baseId ?? Math.floor(Math.random() * -1000);
+    const quantidade = peca.quantidade ?? 0;
+    const valorUnitario = peca.valor_unitario ?? 0;
+    const valorTotal = peca.valor_total ?? quantidade * valorUnitario;
+    const codigo = peca.codigo ?? "";
+    const origemKey = getPecaOrigemKey(peca);
+
+    return {
+      id: fallbackId,
+      id_peca: peca.id_peca,
+      id_fat: peca.id_fat,
+      nome: peca.nome ?? peca.descricao,
+      descricao: peca.descricao ?? peca.nome ?? "",
+      codigo,
+      quantidade,
+      unidade_medida: peca.unidade_medida ?? "",
+      valor_unitario: valorUnitario,
+      valor_total: valorTotal,
+      origemIdPeca: origemKey,
+      isEditing: codigo.trim().length === 0,
+      isDeleted: false,
+      isNew: false,
+    };
+  };
+
+  const handleAcceptPeca = (peca: PecaOriginal) => {
+    if (!peca) return;
+
+    const origemKey = getPecaOrigemKey(peca);
+
+    setPecasRevisadas((prev) => {
+      const exists = prev.some((item) => {
+        const itemKey =
+          item.origemIdPeca != null
+            ? String(item.origemIdPeca)
+            : item.id != null
+            ? `id:${item.id}`
+            : null;
+
+        return itemKey === origemKey;
+      });
+
+      if (exists) {
+        return prev;
+      }
+
+      return [...prev, convertOriginalToRevisada(peca)];
+    });
+  };
+
+  const handleAcceptAllPecas = () => {
+    setPecasRevisadas((prev) => {
+      const existingKeys = new Set(
+        prev
+          .map((item) => {
+            if (item.origemIdPeca != null) {
+              return String(item.origemIdPeca);
+            }
+
+            if (item.id != null) {
+              return `id:${item.id}`;
+            }
+
+            return null;
+          })
+          .filter((key): key is string => key !== null)
+      );
+
+      const novas = pecasOriginais
+        .filter((peca) => {
+          const origemKey = getPecaOrigemKey(peca);
+          return !existingKeys.has(origemKey);
+        })
+        .map(convertOriginalToRevisada);
+
+      if (novas.length === 0) {
+        return prev;
+      }
+
+      return [...prev, ...novas];
+    });
+  };
+
+// Manipuladores para peÃ§as
   const handleEditPeca = (index: number) => {
-    setPecas((prev) =>
+    setPecasRevisadas((prev) =>
       prev.map((p, i) => (i === index ? { ...p, isEditing: true } : p))
     );
   };
 
   const handleSavePeca = (index: number) => {
-    setPecas((prev) => {
-      const updated = prev.map((p, i) =>
-        i === index ? { ...p, isEditing: false } : p
+    setPecasRevisadas((prev) => {
+      const item = prev[index];
+      if (!item) {
+        return prev;
+      }
+
+      if (!item.codigo || item.codigo.trim().length === 0) {
+        return prev.map((p, i) =>
+          i === index ? { ...p, isEditing: true } : p
+        );
+      }
+
+      return prev.map((p, i) =>
+        i === index ? { ...p, isEditing: false, isNew: false } : p
       );
-      return updated;
     });
   };
 
   const handleCancelPeca = (index: number) => {
-    setPecas((prev) => {
-      // Se for uma nova peça, removÃƒÂª-la
-      if (prev[index].isNew) {
-        const filtered = prev.filter((_, i) => i !== index);
-        return filtered;
+    setPecasRevisadas((prev) => {
+      const item = prev[index];
+      if (!item) {
+        return prev;
       }
 
-      // Caso contrário, apenas cancela a edição
+      if (item.isNew) {
+        return prev.filter((_, i) => i !== index);
+      }
+
       return prev.map((p, i) => (i === index ? { ...p, isEditing: false } : p));
     });
   };
 
   const handleDeletePeca = (index: number) => {
-    setPecas((prev) => {
+    setPecasRevisadas((prev) => {
       const updated = prev.map((p, i) =>
         i === index ? { ...p, isDeleted: true } : p
       );
@@ -223,7 +480,7 @@ export default function OSRevisaoPage() {
   };
 
   const handleRestorePeca = (index: number) => {
-    setPecas((prev) => {
+    setPecasRevisadas((prev) => {
       const updated = prev.map((p, i) =>
         i === index ? { ...p, isDeleted: false } : p
       );
@@ -232,15 +489,17 @@ export default function OSRevisaoPage() {
   };
 
   const handleAddPeca = () => {
-    setPecas((prev) => {
+    setPecasRevisadas((prev) => {
       const newPeca: PecaRevisada = {
         id: Math.floor(Math.random() * -1000),
         descricao: "",
         codigo: "",
         quantidade: 1,
+        unidade_medida: "",
         valor_unitario: 0,
         valor_total: 0,
         isEditing: true,
+        isDeleted: false,
         isNew: true,
       };
       return [...prev, newPeca];
@@ -252,7 +511,7 @@ export default function OSRevisaoPage() {
     field: keyof OSPecaUtilizada,
     value: number | string
   ) => {
-    setPecas((prev) => {
+    setPecasRevisadas((prev) => {
       const updated = prev.map((p, i) => {
         if (i !== index) return p;
 
@@ -260,8 +519,9 @@ export default function OSRevisaoPage() {
 
         // Atualizar valor_total se quantidade ou valor_unitario mudar
         if (field === "quantidade" || field === "valor_unitario") {
-          updatedPeca.valor_total =
-            (updatedPeca.quantidade || 0) * (updatedPeca.valor_unitario || 0);
+          const quantidade = Number(updatedPeca.quantidade) || 0;
+          const valorUnitario = Number(updatedPeca.valor_unitario) || 0;
+          updatedPeca.valor_total = quantidade * valorUnitario;
         }
 
         return updatedPeca;
@@ -307,7 +567,7 @@ export default function OSRevisaoPage() {
   return (
     <>
       <PageHeader
-        title={`Revisão de OS #${os.id_os}`}
+        title={`RevisÃ£o de OS #${os.id_os}`}
         config={{
           type: "form",
           backLink: "/admin/os_revisao",
@@ -393,7 +653,7 @@ export default function OSRevisaoPage() {
           <div className="flex items-center gap-2">
             <Wrench className="h-4 w-4 text-gray-500 shrink-0" />
             <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">Técnico</p>
+              <p className="font-medium text-gray-700 truncate">TÃ©cnico</p>
               <p className="text-xs text-gray-600 truncate">
                 {os.tecnico?.nome || "Nao atribuido"}
               </p>
@@ -421,7 +681,7 @@ export default function OSRevisaoPage() {
           <div className="flex items-center gap-2">
             <Clipboard className="h-4 w-4 text-gray-500 shrink-0" />
             <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">Concluso</p>
+              <p className="font-medium text-gray-700 truncate">ConclusÃ£o</p>
               <p className="text-xs text-gray-600">
                 {os.data_fechamento || "-"}
               </p>
@@ -452,7 +712,8 @@ export default function OSRevisaoPage() {
           onClick={() => setActiveTab("deslocamentos")}
         >
           <Car className="h-4 w-4" />
-          Deslocamentos ({deslocamentos.filter((d) => !d.isDeleted).length})
+          Deslocamentos (
+          {deslocamentosRevisados.filter((d) => !d.isDeleted).length})
         </button>
         <button
           className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
@@ -463,7 +724,7 @@ export default function OSRevisaoPage() {
           onClick={() => setActiveTab("pecas")}
         >
           <Package className="h-4 w-4" />
-          Pecas ({pecas.filter((p) => !p.isDeleted).length})
+          Pecas ({pecasRevisadas.filter((p) => !p.isDeleted).length})
         </button>
         <button
           className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
@@ -500,7 +761,10 @@ export default function OSRevisaoPage() {
 
         {activeTab === "deslocamentos" && (
           <DeslocamentosTab
-            deslocamentos={deslocamentos}
+            originais={deslocamentosOriginais}
+            revisados={deslocamentosRevisados}
+            onAccept={handleAcceptDeslocamento}
+            onAcceptAll={handleAcceptAllDeslocamentos}
             onAdd={handleAddDeslocamento}
             onChange={handleDeslocamentoChange}
             onEdit={handleEditDeslocamento}
@@ -513,7 +777,10 @@ export default function OSRevisaoPage() {
 
         {activeTab === "pecas" && (
           <PecasTab
-            pecas={pecas}
+            originais={pecasOriginais}
+            revisadas={pecasRevisadas}
+            onAccept={handleAcceptPeca}
+            onAcceptAll={handleAcceptAllPecas}
             onAdd={handleAddPeca}
             onChange={handlePecaChange}
             onEdit={handleEditPeca}
@@ -531,3 +798,5 @@ export default function OSRevisaoPage() {
     </>
   );
 }
+
+

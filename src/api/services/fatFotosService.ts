@@ -4,6 +4,7 @@ import { API_CONFIG, createHeaders } from "../api";
 
 export interface FATFotoItem {
   id_fat_foto: number;
+  id_fat?: number | null;
   nome_arquivo: string;
   tipo: string;
   descricao?: string | null;
