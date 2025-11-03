@@ -138,6 +138,7 @@ export interface OSPecaUtilizada {
   codigo?: string;
   quantidade: number;
   unidade_medida?: string;
+  unidade?: string;
   valor_unitario?: number;
   valor_total?: number;
 }
@@ -239,6 +240,7 @@ export interface OSPecaCorrigida {
   codigo?: string;
   quantidade: number;
   unidade_medida?: string;
+  unidade?: string;
   valor_unitario?: number;
   valor_total?: number;
   id_fat?: number;
@@ -801,7 +803,7 @@ class OrdensServicoService {
         codigo: peca.codigo || "",
         descricao: peca.descricao || peca.nome || "",
         quantidade: peca.quantidade,
-        valor_unitario: peca.valor_unitario || 0,
+        unidade: String(peca.unidade ?? peca.unidade_medida ?? "").trim(),
       })),
       deslocamentos_corrigidos: dados.deslocamentos.map((desl) => ({
         km_ida: desl.km_ida,

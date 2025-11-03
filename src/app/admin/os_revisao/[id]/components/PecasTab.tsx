@@ -115,7 +115,7 @@ const PecasTab: React.FC<PecasTabProps> = ({
                     Descrição
                   </th>
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Qtd / Unidade
+                    Qtd / Unidade_medida
                   </th>
                   <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ações
@@ -210,7 +210,7 @@ const PecasTab: React.FC<PecasTabProps> = ({
                     Descrição
                   </th>
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Qtd / Unidade
+                    Qtd / Unidade_medida
                   </th>
                   <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ações
@@ -302,7 +302,7 @@ const PecasTab: React.FC<PecasTabProps> = ({
                             <span className="ml-2 text-xs text-gray-500 uppercase">
                               {peca.unidade_medida && peca.unidade_medida.trim().length > 0
                                 ? peca.unidade_medida
-                                : "s/ unidade"}
+                                : "s/ unidade_medida"}
                             </span>
                           </span>
                         )}

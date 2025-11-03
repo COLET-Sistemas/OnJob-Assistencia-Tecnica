@@ -37,7 +37,7 @@ import type {
   PecaOriginal,
   PecaRevisada,
 } from "./types";
-import { useFeedback } from "@/context";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 export default function OSRevisaoPage() {
   const params = useParams();
@@ -60,7 +60,7 @@ export default function OSRevisaoPage() {
   const [submittingAction, setSubmittingAction] = useState<
     "save" | "conclude" | null
   >(null);
-  const { showToast } = useFeedback();
+  const { showSuccess, showError } = useToast();
 
   // Carregar dados da OS
   const fetchOS = useCallback(async () => {
@@ -139,6 +139,8 @@ export default function OSRevisaoPage() {
           const valorUnitario = peca.valor_unitario ?? 0;
           const valorTotal =
             peca.valor_total ?? Number((quantidade * valorUnitario).toFixed(2));
+          const unidadeMedida = (peca.unidade_medida ?? "").toString().trim();
+          const unidade = (peca.unidade ?? unidadeMedida).toString().trim();
           const codigo = peca.codigo ?? "";
           const descricaoBase = (peca.descricao ?? peca.nome ?? "")
             .toLowerCase()
@@ -158,7 +160,8 @@ export default function OSRevisaoPage() {
             descricao: peca.descricao ?? peca.nome ?? "",
             codigo,
             quantidade,
-            unidade_medida: peca.unidade_medida ?? "",
+            unidade_medida: unidadeMedida,
+            unidade,
             valor_unitario: valorUnitario,
             valor_total: valorTotal,
             id_corrigida: peca.id,
@@ -357,6 +360,8 @@ export default function OSRevisaoPage() {
     const quantidade = peca.quantidade ?? 0;
     const valorUnitario = peca.valor_unitario ?? 0;
     const valorTotal = peca.valor_total ?? quantidade * valorUnitario;
+    const unidadeMedida = (peca.unidade_medida ?? "").toString().trim();
+    const unidade = (peca.unidade ?? unidadeMedida).toString().trim();
     const codigo = peca.codigo ?? "";
     const origemKey = getPecaOrigemKey(peca);
 
@@ -368,7 +373,8 @@ export default function OSRevisaoPage() {
       descricao: peca.descricao ?? peca.nome ?? "",
       codigo,
       quantidade,
-      unidade_medida: peca.unidade_medida ?? "",
+      unidade_medida: unidadeMedida,
+      unidade,
       valor_unitario: valorUnitario,
       valor_total: valorTotal,
       origemIdPeca: origemKey,
@@ -503,6 +509,7 @@ export default function OSRevisaoPage() {
         codigo: "",
         quantidade: 1,
         unidade_medida: "",
+        unidade: "",
         valor_unitario: 0,
         valor_total: 0,
         isEditing: true,
@@ -523,6 +530,13 @@ export default function OSRevisaoPage() {
         if (i !== index) return p;
 
         const updatedPeca = { ...p, [field]: value };
+
+        if (field === "unidade_medida") {
+          updatedPeca.unidade =
+            typeof value === "string"
+              ? value.trim()
+              : String(value ?? "").trim();
+        }
 
         // Atualizar valor_total se quantidade ou valor_unitario mudar
         if (field === "quantidade" || field === "valor_unitario") {
@@ -569,8 +583,8 @@ export default function OSRevisaoPage() {
         descricao: peca.descricao ?? "",
         codigo: peca.codigo ?? "",
         quantidade: Number(peca.quantidade ?? 0),
-        unidade_medida: peca.unidade_medida ?? "",
-        valor_unitario: Number(peca.valor_unitario ?? 0),
+        unidade_medida: (peca.unidade_medida ?? "").toString().trim(),
+        unidade: (peca.unidade ?? peca.unidade_medida ?? "").toString().trim(),
         valor_total: Number(peca.valor_total ?? 0),
       }));
 
@@ -580,7 +594,7 @@ export default function OSRevisaoPage() {
     }
 
     if (!os) {
-      showToast("OS nao encontrada para revisao.", "error");
+      showError("Erro na revisao", "OS nao encontrada para revisao.");
       return;
     }
 
@@ -593,19 +607,21 @@ export default function OSRevisaoPage() {
       );
       const pecasParaEnvio = sanitizePecasParaEnvio(pecasRevisadas);
 
-      await ordensServicoService.salvarRevisaoOS(os.id_os, {
+      const response = await ordensServicoService.salvarRevisaoOS(os.id_os, {
         observacoes,
         pecas: pecasParaEnvio,
         deslocamentos: deslocamentosParaEnvio,
         concluir_os: concluirOs,
       });
 
-      showToast(
-        concluirOs
+      const successTitle = concluirOs ? "Revisao concluida" : "Revisao salva";
+      const successMessage =
+        response?.message ??
+        (concluirOs
           ? "Revisao concluida com sucesso."
-          : "Revisao salva para continuar mais tarde.",
-        "success"
-      );
+          : "Revisao salva para continuar mais tarde.");
+
+      showSuccess(successTitle, successMessage);
 
       router.push("/admin/os_revisao");
     } catch (error: unknown) {
@@ -626,7 +642,7 @@ export default function OSRevisaoPage() {
       } else if (error instanceof Error && error.message) {
         message = error.message;
       }
-      showToast(message, "error");
+      showError("Erro ao salvar revisao da OS", message);
     } finally {
       setIsSubmittingRevisao(false);
       setSubmittingAction(null);
