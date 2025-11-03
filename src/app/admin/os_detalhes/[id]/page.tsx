@@ -1417,12 +1417,16 @@ const OSDetalhesPage: React.FC = () => {
                             <div
                               className={`px-4 py-2 flex justify-between items-center ${theme.headerBg} border-b ${theme.headerBorder}`}
                             >
-                              <div className="flex flex-col">
-                                <span
-                                  className={`font-medium text-sm ${theme.statusText}`}
-                                >
-                                  {statusLabel}
-                                </span>
+                              <div className="flex flex-col gap-1">
+                                {descricao ? (
+                                  <span className="font-medium text-sm text-gray-700 whitespace-pre-line">
+                                    {descricao}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-gray-400 italic">
+                                    Alteração de status sem comentários adicionais.
+                                  </span>
+                                )}
                                 <span className="text-xs text-gray-500 flex items-center gap-1">
                                   <CalendarClock className="w-3 h-3" />
                                   {dataOcorrencia || "Data não informada"}
@@ -1436,14 +1440,13 @@ const OSDetalhesPage: React.FC = () => {
                               </div>
                             </div>
                             <div className="px-4 py-3">
-                              {descricao ? (
-                                <p className="text-sm text-gray-700 whitespace-pre-line">
-                                  {descricao}
+                              {statusLabel ? (
+                                <p className={`text-sm font-medium ${theme.statusText}`}>
+                                  {statusLabel}
                                 </p>
                               ) : (
                                 <p className="text-xs text-gray-400 italic">
-                                  Alteração de status sem comentários
-                                  adicionais.
+                                  Status da nova situação não informado.
                                 </p>
                               )}
                             </div>

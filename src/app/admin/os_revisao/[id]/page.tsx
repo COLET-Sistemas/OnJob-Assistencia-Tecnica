@@ -37,6 +37,7 @@ import type {
   PecaOriginal,
   PecaRevisada,
 } from "./types";
+import { useFeedback } from "@/context";
 
 export default function OSRevisaoPage() {
   const params = useParams();
@@ -55,11 +56,16 @@ export default function OSRevisaoPage() {
   type TabType = "info" | "deslocamentos" | "pecas" | "fotos" | "revisao";
   const [activeTab, setActiveTab] = useState<TabType>("info");
   const [observacoes, setObservacoes] = useState("");
+  const [isSubmittingRevisao, setIsSubmittingRevisao] = useState(false);
+  const [submittingAction, setSubmittingAction] = useState<
+    "save" | "conclude" | null
+  >(null);
+  const { showToast } = useFeedback();
 
   // Carregar dados da OS
   const fetchOS = useCallback(async () => {
     if (!params?.id) {
-      setError("ID da OS nÃ£o fornecido");
+      setError("ID da OS não fornecido");
       setLoading(false);
       return;
     }
@@ -67,7 +73,7 @@ export default function OSRevisaoPage() {
     try {
       setLoading(true);
       const osId = Number(params.id);
-      const response = await ordensServicoService.getById(osId, true); // ForÃ§ar atualizaÃ§Ã£o
+      const response = await ordensServicoService.getById(osId, true); // Forçar atualização
       setOS(response);
       setObservacoes(response.revisao_os?.observacoes || "");
 
@@ -77,7 +83,7 @@ export default function OSRevisaoPage() {
       let todasPecasOriginais: PecaOriginal[] = [];
       let todasPecasRevisadas: PecaRevisada[] = [];
 
-      // Para cada FAT, extrair deslocamentos e peÃ§as
+      // Para cada FAT, extrair deslocamentos e peças
       response.fats.forEach((fat) => {
         // Processar deslocamentos
         if (fat.deslocamentos && Array.isArray(fat.deslocamentos)) {
@@ -91,7 +97,7 @@ export default function OSRevisaoPage() {
           ];
         }
 
-        // Processar peÃ§as
+        // Processar peças
         if (fat.pecas_utilizadas && Array.isArray(fat.pecas_utilizadas)) {
           const pecasFat = fat.pecas_utilizadas.map((p) => ({
             ...p,
@@ -124,7 +130,10 @@ export default function OSRevisaoPage() {
         );
       }
 
-      if (response.pecas_corrigidas && Array.isArray(response.pecas_corrigidas)) {
+      if (
+        response.pecas_corrigidas &&
+        Array.isArray(response.pecas_corrigidas)
+      ) {
         todasPecasRevisadas = response.pecas_corrigidas.map((peca) => {
           const quantidade = peca.quantidade ?? 0;
           const valorUnitario = peca.valor_unitario ?? 0;
@@ -169,14 +178,14 @@ export default function OSRevisaoPage() {
     } catch (err) {
       console.error("Erro ao carregar OS:", err);
       setError(
-        "NÃ£o foi possÃ­Â­vel carregar os detalhes da OS. Por favor, tente novamente."
+        "Não foi possí­vel carregar os detalhes da OS. Por favor, tente novamente."
       );
     } finally {
       setLoading(false);
     }
   }, [params?.id]);
 
-  // Carregar dados na inicializaÃ§Ã£o
+  // Carregar dados na inicialização
   useEffect(() => {
     fetchOS();
   }, [fetchOS]);
@@ -205,7 +214,7 @@ export default function OSRevisaoPage() {
         return filtered;
       }
 
-      // Caso contrÃ¡rio, apenas cancela a ediÃ§Ã£o
+      // Caso contrário, apenas cancela a edição
       return prev.map((d, i) => (i === index ? { ...d, isEditing: false } : d));
     });
   };
@@ -335,9 +344,7 @@ export default function OSRevisaoPage() {
       return `catalog:${peca.id_peca}`;
     }
 
-    const descricao = (peca.descricao ?? peca.nome ?? "")
-      .toLowerCase()
-      .trim();
+    const descricao = (peca.descricao ?? peca.nome ?? "").toLowerCase().trim();
     const quantidade = peca.quantidade ?? 0;
     const fat = peca.id_fat ?? "na";
 
@@ -429,7 +436,7 @@ export default function OSRevisaoPage() {
     });
   };
 
-// Manipuladores para peÃ§as
+  // Manipuladores para peças
   const handleEditPeca = (index: number) => {
     setPecasRevisadas((prev) =>
       prev.map((p, i) => (i === index ? { ...p, isEditing: true } : p))
@@ -530,6 +537,106 @@ export default function OSRevisaoPage() {
     });
   };
 
+  const sanitizeDeslocamentosParaEnvio = (
+    deslocamentos: DeslocamentoRevisado[]
+  ): OSDeslocamento[] =>
+    deslocamentos
+      .filter((deslocamento) => !deslocamento.isDeleted)
+      .map((deslocamento) => ({
+        id_deslocamento: deslocamento.id_deslocamento,
+        km_ida: Number(deslocamento.km_ida ?? 0),
+        km_volta: Number(deslocamento.km_volta ?? 0),
+        tempo_ida_min: Number(deslocamento.tempo_ida_min ?? 0),
+        tempo_volta_min: Number(deslocamento.tempo_volta_min ?? 0),
+        valor_km:
+          deslocamento.valor_km != null
+            ? Number(deslocamento.valor_km)
+            : undefined,
+        valor_total:
+          deslocamento.valor_total != null
+            ? Number(deslocamento.valor_total)
+            : undefined,
+        observacoes: deslocamento.observacoes ?? "",
+      }));
+
+  const sanitizePecasParaEnvio = (pecas: PecaRevisada[]): OSPecaUtilizada[] =>
+    pecas
+      .filter((peca) => !peca.isDeleted)
+      .map((peca) => ({
+        id: peca.id,
+        id_peca: peca.id_peca,
+        nome: peca.nome,
+        descricao: peca.descricao ?? "",
+        codigo: peca.codigo ?? "",
+        quantidade: Number(peca.quantidade ?? 0),
+        unidade_medida: peca.unidade_medida ?? "",
+        valor_unitario: Number(peca.valor_unitario ?? 0),
+        valor_total: Number(peca.valor_total ?? 0),
+      }));
+
+  const handleSubmitRevisao = async (concluirOs: boolean) => {
+    if (isSubmittingRevisao) {
+      return;
+    }
+
+    if (!os) {
+      showToast("OS nao encontrada para revisao.", "error");
+      return;
+    }
+
+    setIsSubmittingRevisao(true);
+    setSubmittingAction(concluirOs ? "conclude" : "save");
+
+    try {
+      const deslocamentosParaEnvio = sanitizeDeslocamentosParaEnvio(
+        deslocamentosRevisados
+      );
+      const pecasParaEnvio = sanitizePecasParaEnvio(pecasRevisadas);
+
+      await ordensServicoService.salvarRevisaoOS(os.id_os, {
+        observacoes,
+        pecas: pecasParaEnvio,
+        deslocamentos: deslocamentosParaEnvio,
+        concluir_os: concluirOs,
+      });
+
+      showToast(
+        concluirOs
+          ? "Revisao concluida com sucesso."
+          : "Revisao salva para continuar mais tarde.",
+        "success"
+      );
+
+      router.push("/admin/os_revisao");
+    } catch (error: unknown) {
+      console.error("Erro ao salvar revisao da OS:", error);
+      let message = "Erro ao salvar revisao da OS.";
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { message?: string } } }).response
+          ?.data?.message === "string"
+      ) {
+        message = String(
+          (
+            error as { response?: { data?: { message?: string } } }
+          ).response?.data?.message
+        );
+      } else if (error instanceof Error && error.message) {
+        message = error.message;
+      }
+      showToast(message, "error");
+    } finally {
+      setIsSubmittingRevisao(false);
+      setSubmittingAction(null);
+    }
+  };
+
+  const handleCancelarRevisao = () => {
+    router.push("/admin/os_revisao");
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -567,7 +674,7 @@ export default function OSRevisaoPage() {
   return (
     <>
       <PageHeader
-        title={`RevisÃ£o de OS #${os.id_os}`}
+        title={`Revisão de OS #${os.id_os}`}
         config={{
           type: "form",
           backLink: "/admin/os_revisao",
@@ -653,7 +760,7 @@ export default function OSRevisaoPage() {
           <div className="flex items-center gap-2">
             <Wrench className="h-4 w-4 text-gray-500 shrink-0" />
             <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">TÃ©cnico</p>
+              <p className="font-medium text-gray-700 truncate">Técnico</p>
               <p className="text-xs text-gray-600 truncate">
                 {os.tecnico?.nome || "Nao atribuido"}
               </p>
@@ -681,7 +788,7 @@ export default function OSRevisaoPage() {
           <div className="flex items-center gap-2">
             <Clipboard className="h-4 w-4 text-gray-500 shrink-0" />
             <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">ConclusÃ£o</p>
+              <p className="font-medium text-gray-700 truncate">Conclusão</p>
               <p className="text-xs text-gray-600">
                 {os.data_fechamento || "-"}
               </p>
@@ -701,7 +808,7 @@ export default function OSRevisaoPage() {
           onClick={() => setActiveTab("info")}
         >
           <FileText className="h-4 w-4" />
-          Informacoes
+          Informações
         </button>
         <button
           className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
@@ -724,7 +831,7 @@ export default function OSRevisaoPage() {
           onClick={() => setActiveTab("pecas")}
         >
           <Package className="h-4 w-4" />
-          Pecas ({pecasRevisadas.filter((p) => !p.isDeleted).length})
+          Peças ({pecasRevisadas.filter((p) => !p.isDeleted).length})
         </button>
         <button
           className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
@@ -746,7 +853,7 @@ export default function OSRevisaoPage() {
           onClick={() => setActiveTab("revisao")}
         >
           <ClipboardCheck className="h-4 w-4" />
-          Revisao
+          Revisão
         </button>
       </div>
 
@@ -791,12 +898,21 @@ export default function OSRevisaoPage() {
           />
         )}
 
-        {activeTab === "fotos" && <FotosTab />}
+        {activeTab === "fotos" && (
+          <FotosTab osId={os.id_os} fats={os.fats ?? []} />
+        )}
 
-        {activeTab === "revisao" && <RevisaoTab />}
+        {activeTab === "revisao" && (
+          <RevisaoTab
+            observacoes={observacoes}
+            onObservacoesChange={setObservacoes}
+            onSubmit={handleSubmitRevisao}
+            onCancel={handleCancelarRevisao}
+            isSubmitting={isSubmittingRevisao}
+            submittingAction={submittingAction}
+          />
+        )}
       </div>
     </>
   );
 }
-
-

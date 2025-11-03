@@ -1,10 +1,627 @@
-﻿import React from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import Image from "next/image";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ImageOff,
+  Loader2,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
+import type { OSDetalhadaV2 } from "@/api/services/ordensServicoService";
+import {
+  fatFotosService,
+  type FATFotoItem,
+} from "@/api/services/fatFotosService";
 
-const FotosTab: React.FC = () => {
+interface FotosTabProps {
+  osId: number;
+  fats: OSDetalhadaV2["fats"];
+}
+
+type FotoState = FATFotoItem & {
+  previewUrl: string | null;
+  isEditing: boolean;
+  tempDescricao: string;
+};
+
+const FotosTab: React.FC<FotosTabProps> = ({ osId, fats }) => {
+  const [loading, setLoading] = useState<boolean>(true);
+  const [photos, setPhotos] = useState<FotoState[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [savingId, setSavingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const objectUrlsRef = useRef<Map<number, string>>(new Map());
+
+  const fatInfoMap = useMemo(() => {
+    const map = new Map<number, { dataAtendimento?: string }>();
+    fats.forEach((fat) => {
+      map.set(fat.id_fat, { dataAtendimento: fat.data_atendimento });
+    });
+    return map;
+  }, [fats]);
+
+  const formatDateTime = useCallback((value?: string | null) => {
+    if (!value) {
+      return "-";
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    return date.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }, []);
+
+  const loadPhotos = useCallback(async () => {
+    if (!osId) {
+      setPhotos([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setWarning(null);
+
+    objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    objectUrlsRef.current.clear();
+
+    try {
+      const response = await fatFotosService.listar(osId);
+      const getTime = (value: string) => {
+        const parsed = new Date(value).getTime();
+        return Number.isNaN(parsed) ? 0 : parsed;
+      };
+
+      const ordered = [...response].sort(
+        (a, b) => getTime(b.data_cadastro) - getTime(a.data_cadastro)
+      );
+
+      if (ordered.length === 0) {
+        setPhotos([]);
+        setSelectedIndex(null);
+        return;
+      }
+
+      const results = await Promise.allSettled(
+        ordered.map(async (foto) => {
+          try {
+            const blob = await fatFotosService.visualizar(foto.id_fat_foto);
+            const url = URL.createObjectURL(blob);
+            return { id: foto.id_fat_foto, url };
+          } catch (err) {
+            console.error("Erro ao carregar imagem da FAT:", err);
+            return { id: foto.id_fat_foto, url: "" };
+          }
+        })
+      );
+
+      const urlsMap = new Map<number, string>();
+      let hadPreviewErrors = false;
+
+      results.forEach((result) => {
+        if (result.status === "fulfilled" && result.value.url) {
+          urlsMap.set(result.value.id, result.value.url);
+        } else {
+          hadPreviewErrors = true;
+        }
+      });
+
+      objectUrlsRef.current = urlsMap;
+
+      setPhotos(
+        ordered.map((foto) => ({
+          ...foto,
+          previewUrl: urlsMap.get(foto.id_fat_foto) ?? null,
+          isEditing: false,
+          tempDescricao: foto.descricao ?? "",
+        }))
+      );
+
+      if (hadPreviewErrors) {
+        setWarning("Algumas imagens não puderam ser exibidas.");
+      }
+    } catch (err) {
+      console.error("Erro ao carregar fotos da OS:", err);
+      setPhotos([]);
+      setSelectedIndex(null);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível carregar as fotos da OS."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [osId]);
+
+  useEffect(() => {
+    loadPhotos();
+  }, [loadPhotos]);
+
+  useEffect(() => {
+    return () => {
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      objectUrlsRef.current.clear();
+    };
+  }, []);
+
+  const handleStartEditing = (id: number) => {
+    setError(null);
+    setPhotos((prev) =>
+      prev.map((photo) =>
+        photo.id_fat_foto === id
+          ? {
+              ...photo,
+              isEditing: true,
+              tempDescricao: photo.descricao ?? "",
+            }
+          : { ...photo, isEditing: false }
+      )
+    );
+  };
+
+  const handleDescricaoChange = (id: number, value: string) => {
+    setPhotos((prev) =>
+      prev.map((photo) =>
+        photo.id_fat_foto === id
+          ? {
+              ...photo,
+              tempDescricao: value,
+            }
+          : photo
+      )
+    );
+  };
+
+  const handleCancelEditing = (id: number) => {
+    setPhotos((prev) =>
+      prev.map((photo) =>
+        photo.id_fat_foto === id
+          ? {
+              ...photo,
+              isEditing: false,
+              tempDescricao: photo.descricao ?? "",
+            }
+          : photo
+      )
+    );
+  };
+
+  const handleSaveDescricao = async (id: number) => {
+    const currentPhoto = photos.find((item) => item.id_fat_foto === id);
+    if (!currentPhoto) {
+      return;
+    }
+
+    const trimmed = currentPhoto.tempDescricao.trim();
+    if (!trimmed) {
+      setError("Informe uma descrição para a foto.");
+      return;
+    }
+
+    if (trimmed === (currentPhoto.descricao ?? "")) {
+      setPhotos((prev) =>
+        prev.map((photo) =>
+          photo.id_fat_foto === id
+            ? {
+                ...photo,
+                isEditing: false,
+                tempDescricao: trimmed,
+              }
+            : photo
+        )
+      );
+      return;
+    }
+
+    setSavingId(id);
+    setError(null);
+
+    try {
+      await fatFotosService.atualizarDescricao(id, trimmed);
+      setPhotos((prev) =>
+        prev.map((photo) =>
+          photo.id_fat_foto === id
+            ? {
+                ...photo,
+                descricao: trimmed,
+                tempDescricao: trimmed,
+                isEditing: false,
+              }
+            : photo
+        )
+      );
+    } catch (err) {
+      console.error("Erro ao atualizar descrição da foto:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível atualizar a descrição da foto."
+      );
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    const confirmDelete = window.confirm(
+      "Tem certeza que deseja excluir a foto? Esta operação não pode ser desfeita"
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    setDeletingId(id);
+    setError(null);
+
+    try {
+      await fatFotosService.excluir(id);
+      const url = objectUrlsRef.current.get(id);
+      if (url) {
+        URL.revokeObjectURL(url);
+        objectUrlsRef.current.delete(id);
+      }
+      setPhotos((prev) => {
+        const index = prev.findIndex((photo) => photo.id_fat_foto === id);
+        const next = prev.filter((photo) => photo.id_fat_foto !== id);
+        setSelectedIndex((current) => {
+          if (current === null || index === -1) {
+            return current;
+          }
+          if (index === current) {
+            if (next.length === 0) {
+              return null;
+            }
+            return Math.min(current, next.length - 1);
+          }
+          if (index < current) {
+            return current - 1;
+          }
+          return current;
+        });
+        return next;
+      });
+    } catch (err) {
+      console.error("Erro ao excluir foto:", err);
+      setError(
+        err instanceof Error ? err.message : "Não foi possível excluir a foto."
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const openViewer = (index: number) => {
+    setSelectedIndex(index);
+  };
+
+  const closeViewer = () => {
+    setSelectedIndex(null);
+  };
+
+  const showNext = useCallback(() => {
+    setSelectedIndex((current) => {
+      if (current === null || photos.length === 0) {
+        return current;
+      }
+      return (current + 1) % photos.length;
+    });
+  }, [photos.length]);
+
+  const showPrevious = useCallback(() => {
+    setSelectedIndex((current) => {
+      if (current === null || photos.length === 0) {
+        return current;
+      }
+      return (current - 1 + photos.length) % photos.length;
+    });
+  }, [photos.length]);
+
+  useEffect(() => {
+    if (selectedIndex === null) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeViewer();
+      }
+      if (event.key === "ArrowRight" && photos.length > 1) {
+        showNext();
+      }
+      if (event.key === "ArrowLeft" && photos.length > 1) {
+        showPrevious();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedIndex, photos.length, showNext, showPrevious]);
+
+  const hasPhotos = photos.length > 0;
+  const hasMultiplePhotos = photos.length > 1;
+  const selectedPhoto =
+    selectedIndex !== null && photos[selectedIndex]
+      ? photos[selectedIndex]
+      : null;
+
   return (
     <div className="p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Fotos</h3>
-      <div className="text-gray-500">Em breve: exibicao de fotos da OS/FAT.</div>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h3 className="text-lg font-semibold text-gray-900">Fotos da OS</h3>
+        {hasPhotos && (
+          <span className="text-sm text-gray-500">
+            {photos.length} {photos.length === 1 ? "foto" : "fotos"}
+          </span>
+        )}
+      </div>
+
+      {error && (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {warning && !error && (
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          {warning}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex min-h-[200px] items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-[var(--primary)]" />
+        </div>
+      ) : !hasPhotos ? (
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-center">
+          <ImageOff className="mb-3 h-8 w-8 text-gray-400" />
+          <p className="text-sm font-medium text-gray-600">
+            Nenhuma foto encontrada para esta OS.
+          </p>
+          <p className="mt-1 text-xs text-gray-500">
+            Nenhuma foto foi registrada até o momento.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {photos.map((foto, index) => {
+            const fatInfo = foto.id_fat
+              ? fatInfoMap.get(foto.id_fat)
+              : undefined;
+            const isSaving = savingId === foto.id_fat_foto;
+            const isDeleting = deletingId === foto.id_fat_foto;
+            const isSaveDisabled = isSaving || !foto.tempDescricao.trim();
+
+            return (
+              <div
+                key={foto.id_fat_foto}
+                className="relative flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md"
+              >
+                <button
+                  type="button"
+                  onClick={() => openViewer(index)}
+                  className="group relative block h-48 w-full overflow-hidden bg-gray-100"
+                  title="Ampliar imagem"
+                >
+                  {foto.previewUrl ? (
+                    <Image
+                      src={foto.previewUrl}
+                      alt={foto.descricao || foto.nome_arquivo}
+                      fill
+                      className="object-cover transition-transform duration-200 group-hover:scale-105"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                      priority={index < 2}
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-gray-400">
+                      <ImageOff className="h-8 w-8" />
+                    </div>
+                  )}
+                </button>
+
+                <div className="flex flex-1 flex-col gap-3 p-4">
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span className="font-medium text-gray-700">
+                      {foto.id_fat ? `FAT ${foto.id_fat}` : "FAT não informada"}
+                    </span>
+                    <span>{formatDateTime(foto.data_cadastro)}</span>
+                  </div>
+
+                  {fatInfo?.dataAtendimento && (
+                    <p className="text-xs text-gray-500">
+                      Atendimento: {formatDateTime(fatInfo.dataAtendimento)}
+                    </p>
+                  )}
+
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <p className="flex-1 text-sm text-gray-700">
+                        {foto.descricao?.trim()
+                          ? foto.descricao
+                          : "Descrição não informada"}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditing(foto.id_fat_foto)}
+                        className="rounded-full p-1 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+                        title="Editar descrição"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {foto.isEditing && (
+                      <div className="space-y-2">
+                        <textarea
+                          value={foto.tempDescricao}
+                          onChange={(event) =>
+                            handleDescricaoChange(
+                              foto.id_fat_foto,
+                              event.target.value
+                            )
+                          }
+                          rows={3}
+                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+                        />
+
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCancelEditing(foto.id_fat_foto)
+                            }
+                            className="rounded-md border border-gray-200 px-3 py-1 text-sm text-gray-600 hover:bg-gray-50"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSaveDescricao(foto.id_fat_foto)
+                            }
+                            disabled={isSaveDisabled}
+                            className="inline-flex items-center gap-1 rounded-md bg-[var(--primary)] px-3 py-1 text-sm font-medium text-white transition hover:bg-[var(--primary)]/90 disabled:cursor-not-allowed disabled:opacity-70"
+                          >
+                            {isSaving ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Check className="h-4 w-4" />
+                            )}
+                            Salvar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-auto flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(foto.id_fat_foto)}
+                      disabled={isDeleting}
+                      className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {selectedPhoto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={closeViewer}
+        >
+          <div
+            className="relative w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={closeViewer}
+              className="absolute right-4 top-4 z-10 rounded-full bg-black/70 p-2 text-white transition hover:bg-black"
+              title="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {hasMultiplePhotos && (
+              <>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    showPrevious();
+                  }}
+                  className="absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-gray-800 shadow transition hover:bg-white"
+                  title="Foto anterior"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    showNext();
+                  }}
+                  className="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-gray-800 shadow transition hover:bg-white"
+                  title="Próxima foto"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </>
+            )}
+
+            <div className="relative flex h-[70vh] items-center justify-center bg-black">
+              {selectedPhoto.previewUrl ? (
+                <Image
+                  src={selectedPhoto.previewUrl}
+                  alt={selectedPhoto.descricao || selectedPhoto.nome_arquivo}
+                  fill
+                  className="object-contain"
+                  sizes="100vw"
+                  unoptimized
+                />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-gray-200">
+                  <ImageOff className="h-10 w-10" />
+                  <span className="text-sm">
+                    Pré-visualização indisponível para esta imagem.
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-gray-200 bg-white p-4">
+              <div className="flex flex-col gap-1 text-sm text-gray-600">
+                <span className="font-semibold text-gray-800">
+                  {selectedPhoto.descricao?.trim()
+                    ? selectedPhoto.descricao
+                    : selectedPhoto.nome_arquivo}
+                </span>
+                <span>
+                  {selectedPhoto.id_fat
+                    ? `FAT ${selectedPhoto.id_fat}`
+                    : "FAT não informada"}
+                </span>
+                <span>
+                  Registro: {formatDateTime(selectedPhoto.data_cadastro)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

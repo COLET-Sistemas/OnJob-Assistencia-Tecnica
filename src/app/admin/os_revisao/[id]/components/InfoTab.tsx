@@ -21,7 +21,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ os }) => {
   return (
     <div className="p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Informacoes da Ordem de Servico
+        Informações da Ordem de Serviço
       </h3>
 
       <div className="mb-6">
@@ -59,7 +59,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ os }) => {
                     scope="col"
                     className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Tecnico
+                    Técnico
                   </th>
                   <th
                     scope="col"
@@ -85,7 +85,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ os }) => {
                 {os.fats.map((fat) => {
                   const detailItems = [
                     {
-                      label: "Solucao encontrada",
+                      label: "Solução encontrada",
                       value: fat.solucao_encontrada,
                     },
                     {
@@ -93,15 +93,15 @@ const InfoTab: React.FC<InfoTabProps> = ({ os }) => {
                       value: fat.testes_realizados,
                     },
                     {
-                      label: "Sugestoes",
+                      label: "Sugestões",
                       value: fat.sugestoes,
                     },
                     {
-                      label: "Observacoes",
+                      label: "Observações",
                       value: fat.observacoes,
                     },
                     {
-                      label: "Numero de ciclos",
+                      label: "Número de ciclos",
                       value:
                         typeof fat.numero_ciclos === "number" &&
                         !Number.isNaN(fat.numero_ciclos)
@@ -199,4 +199,3 @@ const InfoTab: React.FC<InfoTabProps> = ({ os }) => {
 };
 
 export default InfoTab;
-

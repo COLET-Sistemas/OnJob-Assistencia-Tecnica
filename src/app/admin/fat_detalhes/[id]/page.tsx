@@ -1207,6 +1207,10 @@ const FATDetalhesPage: React.FC = () => {
                       // Função para renderizar o card da ocorrência
                       const renderOcorrenciaCard = () => {
                         const statusCode = ocorrencia.nova_situacao.codigo;
+                        const statusDescricao =
+                          ocorrencia.nova_situacao?.descricao?.trim();
+                        const descricaoOcorrencia =
+                          ocorrencia.descricao_ocorrencia?.trim();
                         let bgHeaderColor = "bg-gray-50";
                         let borderHeaderColor = "border-gray-100";
                         let borderCardColor = "border-gray-100";
@@ -1278,12 +1282,16 @@ const FATDetalhesPage: React.FC = () => {
                               className={`px-4 py-2 flex justify-between items-center ${bgHeaderColor} border-b ${borderHeaderColor}`}
                             >
                               <div className="flex items-center gap-3">
-                                <div className="flex flex-col">
-                                  <span
-                                    className={`font-medium text-sm ${textStatusColor}`}
-                                  >
-                                    {ocorrencia.nova_situacao.descricao}
-                                  </span>
+                                <div className="flex flex-col gap-1">
+                                  {descricaoOcorrencia ? (
+                                    <span className="font-medium text-sm text-gray-700 whitespace-pre-line">
+                                      {descricaoOcorrencia}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-gray-400 italic">
+                                      Alteração de status sem comentários adicionais.
+                                    </span>
+                                  )}
                                   <span className="text-xs text-gray-500 flex items-center gap-1">
                                     <CalendarClock className="w-3 h-3" />
                                     {ocorrencia.data_ocorrencia}
@@ -1299,19 +1307,17 @@ const FATDetalhesPage: React.FC = () => {
                             </div>
 
                             {/* Corpo do card */}
-                            {ocorrencia.descricao_ocorrencia ? (
-                              <div className="px-4 py-3">
-                                <p className="text-sm text-gray-700 whitespace-pre-line">
-                                  {ocorrencia.descricao_ocorrencia}
+                            <div className="px-4 py-3">
+                              {statusDescricao ? (
+                                <p className={`text-sm font-medium ${textStatusColor}`}>
+                                  {statusDescricao}
                                 </p>
-                              </div>
-                            ) : (
-                              <div className="px-4 py-3">
+                              ) : (
                                 <p className="text-xs text-gray-400 italic">
-                                  Alteração de status sem comentários adicionais
+                                  Status da nova situação não informado.
                                 </p>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         );
                       };

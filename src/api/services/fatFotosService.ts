@@ -34,7 +34,7 @@ class FATFotosService {
     );
 
     if (!response.ok) {
-      throw new Error("Não foi possível carregar as fotos da FAT.");
+      throw new Error("Nao foi possivel carregar as fotos da FAT.");
     }
 
     const data = await response.json();
@@ -87,12 +87,54 @@ class FATFotosService {
     );
 
     if (!response.ok) {
-      throw new Error("Não foi possível carregar a imagem.");
+      throw new Error("Nao foi possivel carregar a imagem.");
     }
 
     return response.blob();
   }
+
+  async atualizarDescricao(
+    id_fat_foto: number,
+    descricao: string
+  ): Promise<void> {
+    const headers = {
+      ...createHeaders(),
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
+
+    const response = await fetch(this.buildUrl("/fat_fotos"), {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        id_fat_foto,
+        descricao,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Nao foi possivel atualizar a descricao da foto.");
+    }
+  }
+
+  async excluir(id_fat_foto: number): Promise<void> {
+    const headers = {
+      ...createHeaders(),
+      Accept: "application/json",
+    };
+
+    const response = await fetch(
+      this.buildUrl(`/fat_fotos?id_fat_foto=${id_fat_foto}`),
+      {
+        method: "DELETE",
+        headers,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Nao foi possivel excluir a foto.");
+    }
+  }
 }
 
 export const fatFotosService = new FATFotosService();
-

@@ -785,6 +785,7 @@ class OrdensServicoService {
       observacoes: string;
       pecas: OSPecaUtilizada[];
       deslocamentos: OSDeslocamento[];
+      concluir_os: boolean;
     }
   ): Promise<{ success: boolean; message: string }> {
     // Obter ID do usuário atual do localStorage
@@ -795,6 +796,7 @@ class OrdensServicoService {
       id_os: id_os,
       id_usuario_revisor: id_usuario_revisor,
       observacoes_revisao: dados.observacoes,
+      concluir_os: dados.concluir_os,
       pecas_corrigidas: dados.pecas.map((peca) => ({
         codigo: peca.codigo || "",
         descricao: peca.descricao || peca.nome || "",
@@ -810,7 +812,7 @@ class OrdensServicoService {
       })),
     };
 
-    await api.post(`/revisoes_os`, requestData);
+    await api.put(`/ordens_servico/revisao`, requestData);
 
     // Invalidar caches relacionados
     this.invalidateOSCache(id_os);
