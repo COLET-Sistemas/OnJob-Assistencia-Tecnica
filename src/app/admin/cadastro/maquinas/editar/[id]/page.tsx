@@ -15,10 +15,11 @@ import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { InputField, LoadingButton } from "@/components/admin/form";
 import CustomSelect, { OptionType } from "@/components/admin/form/CustomSelect";
+import useDebouncedCallback from "@/hooks/useDebouncedCallback";
 
 interface FormData {
   numero_serie: string;
@@ -56,6 +57,25 @@ const EditarMaquina = () => {
     nota_fiscal_venda: "",
     data_final_garantia: "",
   });
+
+  const modeloInputValueRef = useRef("");
+  const modeloBlurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [modeloOptions, setModeloOptions] = useState<string[]>([]);
+  const [isLoadingModelos, setIsLoadingModelos] = useState(false);
+  const [showModeloSuggestions, setShowModeloSuggestions] =
+    useState(false);
+
+  useEffect(() => {
+    modeloInputValueRef.current = formData.modelo;
+  }, [formData.modelo]);
+
+  useEffect(() => {
+    return () => {
+      if (modeloBlurTimeoutRef.current) {
+        clearTimeout(modeloBlurTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Estados para o cliente
   const [clienteInput, setClienteInput] = useState("");
@@ -209,6 +229,22 @@ const EditarMaquina = () => {
   ) => {
     const { name, value } = e.target;
 
+    if (name === "modelo") {
+      cancelModeloBlurTimeout();
+      modeloInputValueRef.current = value;
+      const valorSanitizado = value.trim();
+
+      if (valorSanitizado.length >= 3) {
+        setShowModeloSuggestions(true);
+        setIsLoadingModelos(true);
+        fetchModelosDebounced(value);
+      } else {
+        setShowModeloSuggestions(false);
+        setModeloOptions([]);
+        setIsLoadingModelos(false);
+      }
+    }
+
     // Se o campo alterado for data_1a_venda, calcular data_final_garantia mantendo dia e mês
     if (name === "data_1a_venda") {
       let dataFinalGarantia = "";
@@ -258,6 +294,98 @@ const EditarMaquina = () => {
   };
 
   // Função para buscar clientes
+  const cancelModeloBlurTimeout = useCallback(() => {
+    if (modeloBlurTimeoutRef.current) {
+      clearTimeout(modeloBlurTimeoutRef.current);
+      modeloBlurTimeoutRef.current = null;
+    }
+  }, []);
+
+  const fetchModelosDebounced = useDebouncedCallback(
+    async (valor: string) => {
+      const termo = valor.trim();
+
+      if (termo.length < 3) {
+        setIsLoadingModelos(false);
+        setModeloOptions([]);
+        return;
+      }
+
+      try {
+        const modelos = await maquinasService.getModelos(termo);
+
+        if (modeloInputValueRef.current.trim() !== termo) {
+          return;
+        }
+
+        setModeloOptions(modelos);
+      } catch (error) {
+        console.error("Erro ao buscar modelos:", error);
+
+        if (modeloInputValueRef.current.trim() === termo) {
+          setModeloOptions([]);
+        }
+      } finally {
+        if (modeloInputValueRef.current.trim() === termo) {
+          setIsLoadingModelos(false);
+        }
+      }
+    },
+    500
+  );
+
+  const handleModeloSelect = useCallback(
+    (modeloSelecionado: string) => {
+      cancelModeloBlurTimeout();
+      modeloInputValueRef.current = modeloSelecionado;
+
+      setFormData((prev) => ({
+        ...prev,
+        modelo: modeloSelecionado,
+      }));
+
+      setShowModeloSuggestions(false);
+      setModeloOptions([]);
+      setIsLoadingModelos(false);
+
+      setFormErrors((prev) => {
+        if (!prev.modelo) {
+          return prev;
+        }
+
+        const updated = { ...prev };
+        delete updated.modelo;
+        return updated;
+      });
+    },
+    [cancelModeloBlurTimeout]
+  );
+
+  const handleModeloBlur = useCallback(() => {
+    modeloBlurTimeoutRef.current = setTimeout(() => {
+      setShowModeloSuggestions(false);
+    }, 150);
+  }, []);
+
+  const handleModeloFocus = useCallback(() => {
+    cancelModeloBlurTimeout();
+    const valorAtual = modeloInputValueRef.current.trim();
+
+    if (valorAtual.length >= 3) {
+      setShowModeloSuggestions(true);
+
+      if (!isLoadingModelos && modeloOptions.length === 0) {
+        setIsLoadingModelos(true);
+        fetchModelosDebounced(valorAtual);
+      }
+    }
+  }, [
+    cancelModeloBlurTimeout,
+    fetchModelosDebounced,
+    isLoadingModelos,
+    modeloOptions.length,
+  ]);
+
   const searchClientes = useCallback(
     async (term: string) => {
       if (!term || term.length < 3) return;
@@ -387,6 +515,35 @@ const EditarMaquina = () => {
     }
   };
 
+  const modeloDropdown =
+    showModeloSuggestions && formData.modelo.trim().length >= 3 ? (
+      <div className="absolute left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+        {isLoadingModelos ? (
+          <div className="px-4 py-2 text-sm text-slate-500">
+            Buscando modelos...
+          </div>
+        ) : modeloOptions.length > 0 ? (
+          modeloOptions.map((option) => (
+            <button
+              type="button"
+              key={option}
+              className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-violet-50 focus:bg-violet-100 focus:outline-none"
+              onMouseDown={(event) => {
+                event.preventDefault();
+                handleModeloSelect(option);
+              }}
+            >
+              {option}
+            </button>
+          ))
+        ) : (
+          <div className="px-4 py-2 text-sm text-slate-500">
+            Nenhum modelo encontrado
+          </div>
+        )}
+      </div>
+    ) : null;
+
   if (loading) {
     return (
       <Loading
@@ -442,6 +599,10 @@ const EditarMaquina = () => {
                       placeholder="Modelo da máquina"
                       required
                       onChange={handleInputChange}
+                      onBlur={handleModeloBlur}
+                      onFocus={handleModeloFocus}
+                      autoComplete="off"
+                      renderDropdown={modeloDropdown}
                     />
                   </div>
                 </div>

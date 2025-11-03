@@ -16,6 +16,10 @@ interface InputFieldProps {
   inputRef?: React.RefObject<HTMLInputElement>;
   type?: string;
   className?: string;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  autoComplete?: string;
+  renderDropdown?: React.ReactNode;
 }
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -33,6 +37,10 @@ const InputField: React.FC<InputFieldProps> = ({
   inputRef,
   type = "text",
   className = "",
+  onFocus,
+  onKeyDown,
+  autoComplete,
+  renderDropdown,
 }) => {
   const inputId = `input-${name}`;
   const errorId = `error-${name}`;
@@ -59,10 +67,13 @@ const InputField: React.FC<InputFieldProps> = ({
           value={value}
           onChange={onChange}
           onBlur={onBlur}
+          onFocus={onFocus}
+          onKeyDown={onKeyDown}
           placeholder={placeholder}
           readOnly={readOnly}
           disabled={disabled}
           autoFocus={autoFocus}
+          autoComplete={autoComplete}
           className={`
             w-full px-4 py-3 rounded-lg border transition-all duration-200
             focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500
@@ -80,6 +91,7 @@ const InputField: React.FC<InputFieldProps> = ({
           aria-invalid={!!error}
           ref={inputRef}
         />
+        {renderDropdown}
       </div>
 
       {error && (
