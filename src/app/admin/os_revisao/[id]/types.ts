@@ -29,6 +29,15 @@ export interface PecaRevisada extends OSPecaUtilizada {
   isEditing?: boolean;
   isDeleted?: boolean;
   isNew?: boolean;
+  descricaoOriginal?: string;
+  codigoOriginal?: string | null;
 }
 
 export type PecaCorrigidaApi = OSPecaCorrigida;
+
+export interface PecaCatalogo {
+  id: number;
+  codigo: string;
+  descricao: string;
+  unidade_medida: string;
+}

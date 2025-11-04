@@ -36,6 +36,7 @@ import type {
   DeslocamentoRevisado,
   PecaOriginal,
   PecaRevisada,
+  PecaCatalogo,
 } from "./types";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 
@@ -371,7 +372,9 @@ export default function OSRevisaoPage() {
       id_fat: peca.id_fat,
       nome: peca.nome ?? peca.descricao,
       descricao: peca.descricao ?? peca.nome ?? "",
+      descricaoOriginal: peca.descricao ?? peca.nome ?? "",
       codigo,
+      codigoOriginal: peca.codigo ?? null,
       quantidade,
       unidade_medida: unidadeMedida,
       unidade,
@@ -506,7 +509,9 @@ export default function OSRevisaoPage() {
       const newPeca: PecaRevisada = {
         id: Math.floor(Math.random() * -1000),
         descricao: "",
+        descricaoOriginal: "",
         codigo: "",
+        codigoOriginal: "",
         quantidade: 1,
         unidade_medida: "",
         unidade: "",
@@ -549,6 +554,27 @@ export default function OSRevisaoPage() {
       });
       return updated;
     });
+  };
+
+  const handlePecaCatalogSelect = (
+    index: number,
+    catalogItem: PecaCatalogo
+  ) => {
+    setPecasRevisadas((prev) =>
+      prev.map((p, i) => {
+        if (i !== index) return p;
+
+        return {
+          ...p,
+          id_peca: catalogItem.id,
+          codigo: catalogItem.codigo,
+          descricao: catalogItem.descricao,
+          nome: catalogItem.descricao,
+          unidade_medida: catalogItem.unidade_medida,
+          unidade: catalogItem.unidade_medida,
+        };
+      })
+    );
   };
 
   const sanitizeDeslocamentosParaEnvio = (
@@ -906,6 +932,7 @@ export default function OSRevisaoPage() {
             onAcceptAll={handleAcceptAllPecas}
             onAdd={handleAddPeca}
             onChange={handlePecaChange}
+            onSelectCatalogItem={handlePecaCatalogSelect}
             onEdit={handleEditPeca}
             onSave={handleSavePeca}
             onCancel={handleCancelPeca}

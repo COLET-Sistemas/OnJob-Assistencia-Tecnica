@@ -1190,21 +1190,24 @@ export default function FATDetalheMobile() {
                   key={ocorrencia.id_ocorrencia || index}
                   className="border-l-2 border-blue-200 pl-3"
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <StatusBadge
-                      status={String(ocorrencia.nova_situacao.codigo)}
-                    />
+                  <div className="flex justify-end">
                     <span className="text-xs text-slate-500">
                       {formatDate(ocorrencia.data_ocorrencia) ||
                         ocorrencia.data_ocorrencia}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-700 mb-1">
+                  <p className="text-sm font-medium text-slate-900 leading-snug">
                     {ocorrencia.descricao_ocorrencia}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 mt-1">
                     Por: {ocorrencia.usuario.nome}
                   </p>
+                  <div className="mt-2">
+                    <StatusBadge
+                      status={String(ocorrencia.nova_situacao.codigo)}
+                      descricao={ocorrencia.nova_situacao?.descricao}
+                    />
+                  </div>
                 </div>
               ))}
             </div>

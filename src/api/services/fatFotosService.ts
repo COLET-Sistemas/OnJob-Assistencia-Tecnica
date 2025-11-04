@@ -77,9 +77,7 @@ class FATFotosService {
     };
 
     const response = await fetch(
-      this.buildUrl(
-        `${this.endpoint}/visualizar?id_fat_foto=${id_fat_foto}`
-      ),
+      this.buildUrl(`${this.endpoint}/visualizar?id_fat_foto=${id_fat_foto}`),
       {
         method: "GET",
         headers,
@@ -117,10 +115,12 @@ class FATFotosService {
     const payload = await this.parseJsonResponse(response);
 
     if (!response.ok) {
+      const extractedMessage = payload
+        ? this.extractMessage(payload)
+        : undefined;
       const message =
-        (payload && this.extractMessage(payload)) ||
-        "Nao foi possivel atualizar a descricao da foto.";
-      throw new Error(message);
+        extractedMessage || "Nao foi possivel atualizar a descricao da foto.";
+      throw new Error(String(message));
     }
 
     return payload ? this.extractMessage(payload) : undefined;
@@ -168,10 +168,11 @@ class FATFotosService {
     const payload = await this.parseJsonResponse(response);
 
     if (!response.ok) {
-      const message =
-        (payload && this.extractMessage(payload)) ||
-        "Nao foi possivel excluir a foto.";
-      throw new Error(message);
+      const extractedMessage = payload
+        ? this.extractMessage(payload)
+        : undefined;
+      const message = extractedMessage || "Nao foi possivel excluir a foto.";
+      throw new Error(String(message));
     }
 
     return payload ? this.extractMessage(payload) : undefined;

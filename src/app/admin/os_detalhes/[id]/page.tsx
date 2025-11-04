@@ -20,7 +20,7 @@ import { getStoredRoles, USER_ROLES_UPDATED_EVENT } from "@/utils/userRoles";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { StatusBadge } from "@/components/admin/common";
 import { LoadingSpinner } from "@/components/LoadingPersonalizado";
-import { feedback } from "@/utils/feedback";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 import {
   Clock,
   Bell,
@@ -145,9 +145,146 @@ const OCORRENCIA_LABELS: Record<string, string> = {
   "reabrir os": "Reabrir OS",
 };
 
+const sanitizeApiMessage = (value?: string | null): string | undefined => {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    const inner = trimmed.slice(1, -1).trim();
+    return inner || undefined;
+  }
+
+  return trimmed;
+};
+
+const extractMessageFromValue = (
+  value: unknown,
+  visited = new WeakSet<object>()
+): string | undefined => {
+  if (typeof value === "string") {
+    const sanitized = sanitizeApiMessage(value);
+    if (sanitized) {
+      return sanitized;
+    }
+
+    const trimmed = value.trim();
+    return trimmed ? trimmed : undefined;
+  }
+
+  if (typeof value === "object" && value !== null) {
+    const objectValue = value as object;
+    if (visited.has(objectValue)) {
+      return undefined;
+    }
+    visited.add(objectValue);
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const result = extractMessageFromValue(item, visited);
+        if (result) {
+          return result;
+        }
+      }
+      return undefined;
+    }
+
+    const recordValue = value as Record<string, unknown>;
+    const candidates = [
+      "erro",
+      "mensagem",
+      "message",
+      "detail",
+      "detalhe",
+      "descricao",
+      "descricao_ocorrencia",
+      "data",
+    ];
+
+    for (const key of candidates) {
+      if (Object.prototype.hasOwnProperty.call(recordValue, key)) {
+        const result = extractMessageFromValue(recordValue[key], visited);
+        if (result) {
+          return result;
+        }
+      }
+    }
+
+    for (const nested of Object.values(recordValue)) {
+      const result = extractMessageFromValue(nested, visited);
+      if (result) {
+        return result;
+      }
+    }
+  }
+
+  return undefined;
+};
+
+type ApiErrorWithData = Error & { data?: unknown };
+
+const getApiErrorMessage = (error: unknown): string | undefined => {
+  if (!error) {
+    return undefined;
+  }
+
+  if (error instanceof Error) {
+    const errorWithData = error as ApiErrorWithData;
+    const rawData = errorWithData.data;
+
+    if (
+      rawData &&
+      typeof rawData === "object" &&
+      Object.prototype.hasOwnProperty.call(rawData, "erro") &&
+      typeof (rawData as Record<string, unknown>).erro === "string"
+    ) {
+      const erroValue = sanitizeApiMessage(
+        (rawData as Record<string, unknown>).erro as string
+      );
+      if (erroValue) {
+        return erroValue;
+      }
+      const trimmedErro = (
+        (rawData as Record<string, unknown>).erro as string
+      ).trim();
+      if (trimmedErro) {
+        return trimmedErro;
+      }
+    }
+
+    const dataMessage = extractMessageFromValue(rawData);
+    if (dataMessage) {
+      return dataMessage;
+    }
+
+    const sanitizedMessage = sanitizeApiMessage(error.message);
+    if (sanitizedMessage) {
+      return sanitizedMessage;
+    }
+
+    const trimmedMessage = error.message.trim();
+    if (trimmedMessage) {
+      return trimmedMessage;
+    }
+
+    return extractMessageFromValue(error);
+  }
+
+  return extractMessageFromValue(error);
+};
+
 const OSDetalhesPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
 
   const rawOsId = params?.id;
   const osId = useMemo(() => {
@@ -295,7 +432,7 @@ const OSDetalhesPage: React.FC = () => {
       setSituacaoModalLoading(true);
       setSituacaoModalError(null);
 
-      await ocorrenciasOSService.registrarOcorrencia({
+      const response = await ocorrenciasOSService.registrarOcorrencia({
         id_os: osData.id_os,
         ocorrencia: selectedOcorrencia,
         descricao_ocorrencia: motivoAlteracao.trim(),
@@ -317,14 +454,19 @@ const OSDetalhesPage: React.FC = () => {
         setOsData(normalizedData as OSDetalhadaV2);
       }
 
-      feedback.toast("Situação da OS atualizada com sucesso!", "success");
+      const successMessage =
+        sanitizeApiMessage(response?.mensagem) ||
+        "Situação da OS atualizada com sucesso!";
+      showSuccess("Situação da OS", successMessage);
       setHistoricoRefreshToken((token) => token + 1);
       handleCloseSituacaoModal();
     } catch (submitError) {
       console.error("Erro ao alterar situação da OS:", submitError);
-      setSituacaoModalError(
-        "Não foi possível alterar a situação. Tente novamente."
-      );
+      const errorMessage =
+        getApiErrorMessage(submitError) ||
+        "Não foi possível alterar a situação. Tente novamente.";
+      setSituacaoModalError(errorMessage);
+      showError("Erro ao alterar situação da OS", errorMessage);
     } finally {
       setSituacaoModalLoading(false);
     }
@@ -334,6 +476,8 @@ const OSDetalhesPage: React.FC = () => {
     motivoAlteracao,
     osData,
     selectedOcorrencia,
+    showError,
+    showSuccess,
   ]);
   useEffect(() => {
     if (!isGestor && situacaoModalOpen) {

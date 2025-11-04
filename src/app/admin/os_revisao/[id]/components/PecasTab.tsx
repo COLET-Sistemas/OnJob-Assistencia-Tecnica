@@ -1,7 +1,10 @@
 ﻿import React from "react";
+import { createPortal } from "react-dom";
 import { Plus, Save, X, Edit, Trash2, Package, Check } from "lucide-react";
 import type { OSPecaUtilizada } from "@/api/services/ordensServicoService";
-import type { PecaOriginal, PecaRevisada } from "../types";
+import { pecasService } from "@/api/services/pecasService";
+import useDebouncedCallback from "@/hooks/useDebouncedCallback";
+import type { PecaOriginal, PecaRevisada, PecaCatalogo } from "../types";
 
 const buildOrigemKeyFromOriginal = (peca: PecaOriginal): string => {
   if (peca.id != null) {
@@ -21,6 +24,22 @@ const buildOrigemKeyFromOriginal = (peca: PecaOriginal): string => {
   return `fat:${fat}:${descricao}:${quantidade}`;
 };
 
+type SearchMode = "codigo" | "descricao";
+
+interface CatalogSearchState {
+  mode: SearchMode;
+  term: string;
+  isOpen: boolean;
+  isLoading: boolean;
+  results: PecaCatalogo[];
+  error?: string;
+}
+
+const MIN_SEARCH_TERM_LENGTH: Record<SearchMode, number> = {
+  codigo: 2,
+  descricao: 3,
+};
+
 interface PecasTabProps {
   originais: PecaOriginal[];
   revisadas: PecaRevisada[];
@@ -32,6 +51,7 @@ interface PecasTabProps {
     field: keyof OSPecaUtilizada,
     value: number | string
   ) => void;
+  onSelectCatalogItem: (index: number, item: PecaCatalogo) => void;
   onEdit: (index: number) => void;
   onSave: (index: number) => void;
   onCancel: (index: number) => void;
@@ -46,6 +66,7 @@ const PecasTab: React.FC<PecasTabProps> = ({
   onAcceptAll,
   onAdd,
   onChange,
+  onSelectCatalogItem,
   onEdit,
   onSave,
   onCancel,
@@ -71,6 +92,371 @@ const PecasTab: React.FC<PecasTabProps> = ({
     originais.every((peca) => revisadasKeys.has(buildOrigemKeyFromOriginal(peca)));
 
   const canAcceptAll = originais.length > 0 && !allOriginaisAccepted;
+
+
+
+  const originalByKey = React.useMemo(() => {
+    const map = new Map<string, PecaOriginal>();
+
+    originais.forEach((peca) => {
+      const key = buildOrigemKeyFromOriginal(peca);
+      map.set(key, peca);
+      if (peca.id != null) {
+        map.set(`id:${peca.id}`, peca);
+      }
+      if (peca.id_peca != null) {
+        map.set(`catalog:${peca.id_peca}`, peca);
+      }
+    });
+
+    return map;
+  }, [originais]);
+
+  const [searchStates, setSearchStates] = React.useState<
+    Record<number, CatalogSearchState>
+  >({});
+
+  React.useEffect(() => {
+    setSearchStates((prev) => {
+      let mutated = false;
+      const next: Record<number, CatalogSearchState> = {};
+
+      revisadas.forEach((peca, index) => {
+        if (peca.isEditing && prev[index]) {
+          next[index] = prev[index];
+        } else if (!peca.isEditing && prev[index]) {
+          mutated = true;
+        }
+      });
+
+      if (!mutated && Object.keys(prev).length === Object.keys(next).length) {
+        return prev;
+      }
+
+      return next;
+    });
+  }, [revisadas]);
+
+  const anchorRefs = React.useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const registerAnchor = React.useCallback((key: string, el: HTMLDivElement | null) => {
+    if (el) {
+      anchorRefs.current.set(key, el);
+    } else {
+      anchorRefs.current.delete(key);
+    }
+  }, []);
+
+  const [isPortalReady, setIsPortalReady] = React.useState(false);
+  const [, setPortalTick] = React.useState(0);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return;
+    }
+
+    setIsPortalReady(true);
+  }, []);
+
+  const hasOpenDropdown = React.useMemo(
+    () => Object.values(searchStates).some((state) => state.isOpen),
+    [searchStates]
+  );
+
+  React.useEffect(() => {
+    if (!isPortalReady || !hasOpenDropdown) {
+      return;
+    }
+
+    const handleReposition = () => {
+      setPortalTick((prev) => (prev + 1) % Number.MAX_SAFE_INTEGER);
+    };
+
+    window.addEventListener("scroll", handleReposition, true);
+    window.addEventListener("resize", handleReposition);
+
+    return () => {
+      window.removeEventListener("scroll", handleReposition, true);
+      window.removeEventListener("resize", handleReposition);
+    };
+  }, [hasOpenDropdown, isPortalReady]);
+
+  const debouncedFetchCatalog = useDebouncedCallback(
+    async (rowIndex: number, term: string, mode: SearchMode) => {
+      try {
+        const params: Record<string, string | number | boolean> = {
+          qtde_registros: 20,
+          nro_pagina: 1,
+        };
+
+        if (mode === "codigo") {
+          params.codigo = term;
+        } else {
+          params.descricao = term;
+        }
+
+        const response = await pecasService.getAll(params);
+        const options: PecaCatalogo[] =
+          response.dados?.map((item) => ({
+            id: item.id,
+            codigo: item.codigo_peca,
+            descricao: item.descricao,
+            unidade_medida: item.unidade_medida,
+          })) ?? [];
+
+        setSearchStates((prev) => {
+          const current = prev[rowIndex];
+          if (!current || current.term !== term || current.mode !== mode) {
+            return prev;
+          }
+
+          return {
+            ...prev,
+            [rowIndex]: {
+              ...current,
+              isOpen: true,
+              isLoading: false,
+              results: options,
+              error:
+                options.length === 0
+                  ? current.error ?? "Nenhuma Peça encontrada."
+                  : undefined,
+            },
+          };
+        });
+      } catch (error) {
+        console.error("Erro ao buscar Peças no catálogo:", error);
+        setSearchStates((prev) => {
+          const current = prev[rowIndex];
+          if (!current || current.term !== term || current.mode !== mode) {
+            return prev;
+          }
+
+          return {
+            ...prev,
+            [rowIndex]: {
+              ...current,
+              isOpen: true,
+              isLoading: false,
+              results: [],
+              error: "Erro ao buscar Peças. Tente novamente.",
+            },
+          };
+        });
+      }
+    },
+    400
+  );
+
+  const handleTriggerCatalogSearch = React.useCallback(
+    (rowIndex: number, mode: SearchMode, rawTerm: string) => {
+      const term = rawTerm.trim();
+      const minLength = MIN_SEARCH_TERM_LENGTH[mode];
+
+      if (term.length < minLength) {
+        setSearchStates((prev) => {
+          if (!(rowIndex in prev)) {
+            return prev;
+          }
+
+          const next = { ...prev };
+          delete next[rowIndex];
+          return next;
+        });
+        return;
+      }
+
+      setSearchStates((prev) => {
+        const existing = prev[rowIndex];
+        const nextState: CatalogSearchState = {
+          mode,
+          term,
+          isOpen: true,
+          isLoading: true,
+          results:
+            existing && existing.mode === mode && existing.term === term
+              ? existing.results
+              : [],
+          error: undefined,
+        };
+
+        if (
+          existing &&
+          existing.mode === nextState.mode &&
+          existing.term === nextState.term &&
+          existing.isOpen &&
+          existing.isLoading
+        ) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [rowIndex]: nextState,
+        };
+      });
+
+      debouncedFetchCatalog(rowIndex, term, mode);
+    },
+    [debouncedFetchCatalog]
+  );
+
+  const handleSelectCatalog = React.useCallback(
+    (rowIndex: number, item: PecaCatalogo) => {
+      onSelectCatalogItem(rowIndex, item);
+      setSearchStates((prev) => {
+        if (!(rowIndex in prev)) {
+          return prev;
+        }
+
+        const next = { ...prev };
+        delete next[rowIndex];
+        return next;
+      });
+    },
+    [onSelectCatalogItem]
+  );
+
+  const renderSearchResults = (rowIndex: number, anchor: SearchMode) => {
+    if (!isPortalReady) {
+      return null;
+    }
+
+    const state = searchStates[rowIndex];
+    if (!state || !state.isOpen || state.mode !== anchor) {
+      return null;
+    }
+
+    const anchorKey = `${rowIndex}-${anchor}`;
+    const anchorElement = anchorRefs.current.get(anchorKey);
+
+    if (!anchorElement) {
+      return null;
+    }
+
+    const rect = anchorElement.getBoundingClientRect();
+    const dropdownStyle: React.CSSProperties = {
+      position: "absolute",
+      top: rect.bottom + window.scrollY + 4,
+      left: rect.left + window.scrollX,
+      width: rect.width,
+      zIndex: 99999,
+    };
+
+    if (state.isLoading || state.error || state.results.length === 0) {
+      const message = state.isLoading
+        ? "Buscando Peças..."
+        : state.error ?? "Nenhuma Peça encontrada.";
+
+      const dropdown = (
+        <div
+          className="rounded-md border border-gray-200 bg-white shadow-2xl"
+          style={dropdownStyle}
+        >
+          <div className="px-3 py-2 text-sm text-gray-500">{message}</div>
+        </div>
+      );
+
+      return createPortal(dropdown, document.body);
+    }
+
+    const dropdown = (
+      <div
+        className="max-h-60 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-2xl"
+        style={dropdownStyle}
+      >
+        {state.results.map((item) => (
+          <button
+            type="button"
+            key={`${item.id}-${item.codigo}`}
+            className="group flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm text-gray-700 hover:bg-[var(--primary)] hover:text-white"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => handleSelectCatalog(rowIndex, item)}
+          >
+            <span className="font-medium group-hover:text-white">
+              {item.codigo}
+            </span>
+            <span className="text-xs group-hover:text-white">
+              {item.descricao}
+            </span>
+            <span className="text-[10px] uppercase text-gray-400 group-hover:text-white">
+              Unidade: {item.unidade_medida}
+            </span>
+          </button>
+        ))}
+      </div>
+    );
+
+    return createPortal(dropdown, document.body);
+  };
+
+  const resolveOrigemKey = (peca: PecaRevisada): string | null => {
+    if (typeof peca.origemIdPeca === "string") {
+      return peca.origemIdPeca;
+    }
+
+    if (typeof peca.origemIdPeca === "number") {
+      return `id:${peca.origemIdPeca}`;
+    }
+
+    if (typeof peca.id === "number") {
+      return `id:${peca.id}`;
+    }
+
+    if (typeof peca.id_peca === "number") {
+      return `catalog:${peca.id_peca}`;
+    }
+
+    return null;
+  };
+
+  const getOriginalDescricao = React.useCallback(
+    (peca: PecaRevisada): string | null => {
+      if (typeof peca.descricaoOriginal === "string") {
+        const trimmed = peca.descricaoOriginal.trim();
+        if (trimmed.length > 0) {
+          return trimmed;
+        }
+      }
+
+      const key = resolveOrigemKey(peca);
+      if (key) {
+        const original = originalByKey.get(key);
+        if (original) {
+          const descricao = original.descricao ?? original.nome ?? "";
+          const trimmed = descricao.trim();
+          return trimmed.length > 0 ? trimmed : null;
+        }
+      }
+
+      return null;
+    },
+    [originalByKey]
+  );
+
+  const getOriginalCodigo = React.useCallback(
+    (peca: PecaRevisada): string | null => {
+      if (typeof peca.codigoOriginal === "string") {
+        const trimmed = peca.codigoOriginal.trim();
+        if (trimmed.length > 0) {
+          return trimmed;
+        }
+      }
+
+      const key = resolveOrigemKey(peca);
+      if (key) {
+        const original = originalByKey.get(key);
+        if (original?.codigo) {
+          const trimmed = original.codigo.trim();
+          if (trimmed.length > 0) {
+            return trimmed;
+          }
+        }
+      }
+
+      return null;
+    },
+    [originalByKey]
+  );
 
   return (
     <div className="p-6 space-y-8">
@@ -122,7 +508,7 @@ const PecasTab: React.FC<PecasTabProps> = ({
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-200 overflow-visible">
                 {originais.map((peca, index) => {
                   const origemKey = buildOrigemKeyFromOriginal(peca);
                   const isAccepted = revisadasKeys.has(origemKey);
@@ -174,7 +560,7 @@ const PecasTab: React.FC<PecasTabProps> = ({
           <div className="text-center py-6 bg-gray-50 rounded-md">
             <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
             <p className="text-gray-500">
-              Nenhuma peça informada pelo técnico.
+              Nenhuma Peça informada pelo Técnico.
             </p>
           </div>
         )}
@@ -221,6 +607,10 @@ const PecasTab: React.FC<PecasTabProps> = ({
                 {revisadas.map((peca, index) => {
                   const codigoAtual = (peca.codigo ?? "").trim();
                   const possuiCodigo = codigoAtual.length > 0;
+                  const originalDescricao = getOriginalDescricao(peca);
+                  const originalCodigo = getOriginalCodigo(peca);
+                  const unidadeMedidaAtual = (peca.unidade_medida ?? "").trim();
+                  const isCatalogSelection = typeof peca.id_peca === "number";
 
                   return (
                     <tr
@@ -232,21 +622,49 @@ const PecasTab: React.FC<PecasTabProps> = ({
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                         {peca.isEditing ? (
-                          <input
-                            type="text"
-                            className={`w-28 border rounded-md px-2 py-1 ${
-                              possuiCodigo
-                                ? "border-gray-300"
-                                : "border-red-400 focus:border-red-500"
-                            }`}
-                            value={peca.codigo ?? ""}
-                            onChange={(e) =>
-                              onChange(index, "codigo", e.target.value)
-                            }
-                            placeholder="Código"
-                          />
+                          <div className="relative w-40" ref={(el) => registerAnchor(`${index}-codigo`, el)}>
+                            <input
+                              type="text"
+                              className={`w-full border rounded-md px-2 py-1 ${
+                                possuiCodigo
+                                  ? "border-gray-300"
+                                  : "border-red-400 focus:border-red-500"
+                              }`}
+                              value={peca.codigo ?? ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                onChange(index, "codigo", value);
+                                handleTriggerCatalogSearch(
+                                  index,
+                                  "codigo",
+                                  value
+                                );
+                              }}
+                              placeholder="Código"
+                            />
+                            {renderSearchResults(index, "codigo")}
+                            {originalCodigo &&
+                              originalCodigo.trim().length > 0 &&
+                              originalCodigo.trim() !== codigoAtual && (
+                                <p className="mt-1 text-xs text-gray-500">
+                                  Código informado pelo Técnico:{" "}
+                                  <span className="font-medium text-gray-600">
+                                    {originalCodigo}
+                                  </span>
+                                </p>
+                              )}
+                          </div>
                         ) : possuiCodigo ? (
-                          peca.codigo
+                          <div className="flex flex-col">
+                            <span>{peca.codigo}</span>
+                            {originalCodigo &&
+                              originalCodigo.trim().length > 0 &&
+                              originalCodigo.trim() !== codigoAtual && (
+                                <span className="text-xs text-gray-400">
+                                  Técnico: {originalCodigo}
+                                </span>
+                              )}
+                          </div>
                         ) : (
                           <span className="text-xs font-medium text-red-500">
                             Obrigatório
@@ -255,44 +673,91 @@ const PecasTab: React.FC<PecasTabProps> = ({
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
                         {peca.isEditing ? (
-                          <input
-                            type="text"
-                            className="w-full border border-gray-300 rounded-md px-2 py-1"
-                            value={peca.descricao ?? ""}
-                            onChange={(e) =>
-                              onChange(index, "descricao", e.target.value)
-                            }
-                            placeholder="Descrição"
-                          />
+                          <div className="relative" ref={(el) => registerAnchor(`${index}-descricao`, el)}>
+                            <input
+                              type="text"
+                              className="w-full border border-gray-300 rounded-md px-2 py-1"
+                              value={peca.descricao ?? ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                onChange(index, "descricao", value);
+                                handleTriggerCatalogSearch(
+                                  index,
+                                  "descricao",
+                                  value
+                                );
+                              }}
+                              placeholder="Descrição"
+                            />
+                            {renderSearchResults(index, "descricao")}
+                            {originalDescricao &&
+                              originalDescricao.trim().length > 0 &&
+                              originalDescricao.trim() !==
+                                (peca.descricao ?? "").trim() && (
+                                <p className="mt-1 text-xs text-gray-500">
+                                  Texto do Técnico:{" "}
+                                  <span className="font-medium text-gray-600">
+                                    {originalDescricao}
+                                  </span>
+                                </p>
+                              )}
+                          </div>
                         ) : (
-                          peca.descricao ?? "-"
+                          <div className="flex flex-col">
+                            <span>{peca.descricao ?? "-"}</span>
+                            {originalDescricao &&
+                              originalDescricao.trim().length > 0 &&
+                              originalDescricao.trim() !==
+                                (peca.descricao ?? "").trim() && (
+                                <span className="text-xs text-gray-400">
+                                  Texto do Técnico: {originalDescricao}
+                                </span>
+                              )}
+                          </div>
                         )}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                         {peca.isEditing ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              className="w-20 border border-gray-300 rounded-md px-2 py-1"
-                              value={peca.quantidade ?? 0}
-                              onChange={(e) =>
-                                onChange(
-                                  index,
-                                  "quantidade",
-                                  Number(e.target.value)
-                                )
-                              }
-                              min={1}
-                            />
-                            <input
-                              type="text"
-                              className="w-20 border border-gray-300 rounded-md px-2 py-1 uppercase"
-                              value={peca.unidade_medida ?? ""}
-                              onChange={(e) =>
-                                onChange(index, "unidade_medida", e.target.value)
-                              }
-                              placeholder="Unid."
-                            />
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                className="w-20 border border-gray-300 rounded-md px-2 py-1"
+                                value={peca.quantidade ?? 0}
+                                onChange={(e) =>
+                                  onChange(
+                                    index,
+                                    "quantidade",
+                                    Number(e.target.value)
+                                  )
+                                }
+                                min={1}
+                              />
+                              {isCatalogSelection ? (
+                                <span className="inline-flex items-center rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-xs font-medium uppercase text-gray-600">
+                                  {unidadeMedidaAtual || "-"}
+                                </span>
+                              ) : (
+                                <input
+                                  type="text"
+                                  className="w-24 border border-gray-300 rounded-md px-2 py-1 uppercase"
+                                  value={peca.unidade_medida ?? ""}
+                                  onChange={(e) =>
+                                    onChange(
+                                      index,
+                                      "unidade_medida",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Unid."
+                                />
+                              )}
+                            </div>
+                            {isCatalogSelection && (
+                              <span className="text-[11px] uppercase text-gray-400">
+                                Unidade definida pelo catálogo
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-sm text-gray-900">
@@ -300,8 +765,8 @@ const PecasTab: React.FC<PecasTabProps> = ({
                               {peca.quantidade}
                             </span>
                             <span className="ml-2 text-xs text-gray-500 uppercase">
-                              {peca.unidade_medida && peca.unidade_medida.trim().length > 0
-                                ? peca.unidade_medida
+                              {unidadeMedidaAtual.length > 0
+                                ? unidadeMedidaAtual
                                 : "s/ unidade_medida"}
                             </span>
                           </span>
@@ -332,7 +797,7 @@ const PecasTab: React.FC<PecasTabProps> = ({
                               title={
                                 possuiCodigo
                                   ? undefined
-                                  : "Informe o código antes de salvar"
+                                  : "Informe o Código antes de salvar"
                               }
                             >
                               <Save className="h-4 w-4" />
@@ -370,12 +835,12 @@ const PecasTab: React.FC<PecasTabProps> = ({
         ) : (
           <div className="text-center py-6 bg-gray-50 rounded-md">
             <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-500">Nenhuma peça revisada.</p>
+            <p className="text-gray-500">Nenhuma Peça revisada.</p>
             <button
               className="mt-2 text-[var(--primary)] hover:underline text-sm"
               onClick={onAdd}
             >
-              Adicionar peça
+              Adicionar Peça
             </button>
           </div>
         )}
@@ -385,3 +850,7 @@ const PecasTab: React.FC<PecasTabProps> = ({
 };
 
 export default PecasTab;
+
+
+
+
