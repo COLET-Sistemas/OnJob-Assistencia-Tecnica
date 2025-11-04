@@ -1272,16 +1272,16 @@ const ConsultaOSPage: React.FC = () => {
                     type="text"
                     placeholder="Digite o número de série"
                     className="w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 placeholder:text-gray-400 transition-all duration-200"
-                    value={filtrosPainel.maquina || ""}
+                    value={filtrosPainel.numero_serie || ""}
                     onChange={(e) =>
-                      handleFilterChange("maquina", e.target.value)
+                      handleFilterChange("numero_serie", e.target.value)
                     }
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                    {filtrosPainel.maquina ? (
+                    {filtrosPainel.numero_serie ? (
                       <button
                         type="button"
-                        onClick={() => handleClearField("maquina")}
+                        onClick={() => handleClearField("numero_serie")}
                         className="text-gray-400 hover:text-gray-600 focus:outline-none"
                         aria-label="Limpar número de série"
                       >
@@ -1726,3 +1726,4 @@ const ConsultaOSPage: React.FC = () => {
 };
 
 export default ConsultaOSPage;
+
