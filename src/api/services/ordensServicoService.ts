@@ -789,7 +789,7 @@ class OrdensServicoService {
       deslocamentos: OSDeslocamento[];
       concluir_os: boolean;
     }
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{ success: boolean; message: string; mensagem: string }> {
     // Obter ID do usuário atual do localStorage
     const id_usuario_revisor = Number(localStorage.getItem("id_usuario"));
 
@@ -814,14 +814,29 @@ class OrdensServicoService {
       })),
     };
 
-    await api.put(`/ordens_servico/revisao`, requestData);
+    const response = await api.put<{
+      mensagem?: string;
+      message?: string;
+      success?: boolean;
+    }>(`/ordens_servico/revisao`, requestData);
 
     // Invalidar caches relacionados
     this.invalidateOSCache(id_os);
 
+    const mensagemDaApi =
+      (typeof response?.mensagem === "string" && response.mensagem) ||
+      (typeof response?.message === "string" && response.message) ||
+      (dados.concluir_os
+        ? "Revisao concluida com sucesso."
+        : "Revisao salva com sucesso.");
+
+    const sucessoDaApi =
+      typeof response?.success === "boolean" ? response.success : true;
+
     return {
-      success: true,
-      message: "Revisão salva com sucesso",
+      success: sucessoDaApi,
+      message: mensagemDaApi,
+      mensagem: mensagemDaApi,
     };
   }
 }

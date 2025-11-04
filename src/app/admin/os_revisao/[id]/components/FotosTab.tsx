@@ -21,6 +21,7 @@ import {
   fatFotosService,
   type FATFotoItem,
 } from "@/api/services/fatFotosService";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 interface FotosTabProps {
   osId: number;
@@ -42,6 +43,7 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats }) => {
   const [savingId, setSavingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
+  const { showSuccess, showError } = useToast();
   const objectUrlsRef = useRef<Map<number, string>>(new Map());
 
   const fatInfoMap = useMemo(() => {
@@ -142,15 +144,16 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats }) => {
       console.error("Erro ao carregar fotos da OS:", err);
       setPhotos([]);
       setSelectedIndex(null);
-      setError(
+      const message =
         err instanceof Error
           ? err.message
-          : "Não foi possível carregar as fotos da OS."
-      );
+          : "Nao foi possivel carregar as fotos da OS.";
+      setError(message);
+      showError("Erro ao carregar fotos", message);
     } finally {
       setLoading(false);
     }
-  }, [osId]);
+  }, [osId, showError]);
 
   useEffect(() => {
     loadPhotos();
@@ -236,7 +239,10 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats }) => {
     setError(null);
 
     try {
-      await fatFotosService.atualizarDescricao(id, trimmed);
+      const responseMessage = await fatFotosService.atualizarDescricao(
+        id,
+        trimmed
+      );
       setPhotos((prev) =>
         prev.map((photo) =>
           photo.id_fat_foto === id
@@ -249,13 +255,18 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats }) => {
             : photo
         )
       );
+      showSuccess(
+        "Descricao atualizada",
+        responseMessage ?? "Descricao atualizada com sucesso."
+      );
     } catch (err) {
-      console.error("Erro ao atualizar descrição da foto:", err);
-      setError(
+      console.error("Erro ao atualizar descricao da foto:", err);
+      const message =
         err instanceof Error
           ? err.message
-          : "Não foi possível atualizar a descrição da foto."
-      );
+          : "Nao foi possivel atualizar a descricao da foto.";
+      setError(message);
+      showError("Erro ao atualizar descricao da foto", message);
     } finally {
       setSavingId(null);
     }
@@ -274,7 +285,7 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats }) => {
     setError(null);
 
     try {
-      await fatFotosService.excluir(id);
+      const responseMessage = await fatFotosService.excluir(id);
       const url = objectUrlsRef.current.get(id);
       if (url) {
         URL.revokeObjectURL(url);
@@ -300,11 +311,18 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats }) => {
         });
         return next;
       });
+      showSuccess(
+        "Foto excluida",
+        responseMessage ?? "Foto excluida com sucesso."
+      );
     } catch (err) {
       console.error("Erro ao excluir foto:", err);
-      setError(
-        err instanceof Error ? err.message : "Não foi possível excluir a foto."
-      );
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Nao foi possivel excluir a foto.";
+      setError(message);
+      showError("Erro ao excluir foto", message);
     } finally {
       setDeletingId(null);
     }

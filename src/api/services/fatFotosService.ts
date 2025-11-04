@@ -96,44 +96,85 @@ class FATFotosService {
   async atualizarDescricao(
     id_fat_foto: number,
     descricao: string
-  ): Promise<void> {
+  ): Promise<string | undefined> {
     const headers = {
       ...createHeaders(),
       Accept: "application/json",
       "Content-Type": "application/json",
     };
 
-    const response = await fetch(this.buildUrl("/fat_fotos"), {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({
-        id_fat_foto,
-        descricao,
-      }),
-    });
+    const response = await fetch(
+      this.buildUrl(`/fat_fotos?id=${id_fat_foto}`),
+      {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({
+          descricao,
+        }),
+      }
+    );
+
+    const payload = await this.parseJsonResponse(response);
 
     if (!response.ok) {
-      throw new Error("Nao foi possivel atualizar a descricao da foto.");
+      const message =
+        (payload && this.extractMessage(payload)) ||
+        "Nao foi possivel atualizar a descricao da foto.";
+      throw new Error(message);
+    }
+
+    return payload ? this.extractMessage(payload) : undefined;
+  }
+
+  private extractMessage(payload: unknown): string | undefined {
+    if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+      const data = payload as Record<string, unknown>;
+      if (typeof data.mensagem === "string") {
+        return data.mensagem;
+      }
+      if (typeof data.message === "string") {
+        return data.message;
+      }
+    }
+    return undefined;
+  }
+
+  private async parseJsonResponse(response: Response): Promise<unknown> {
+    try {
+      const text = await response.text();
+      if (!text) {
+        return undefined;
+      }
+      return JSON.parse(text);
+    } catch {
+      return undefined;
     }
   }
 
-  async excluir(id_fat_foto: number): Promise<void> {
+  async excluir(id_fat_foto: number): Promise<string | undefined> {
     const headers = {
       ...createHeaders(),
       Accept: "application/json",
     };
 
     const response = await fetch(
-      this.buildUrl(`/fat_fotos?id_fat_foto=${id_fat_foto}`),
+      this.buildUrl(`/fat_fotos?id=${id_fat_foto}`),
       {
         method: "DELETE",
         headers,
       }
     );
 
+    const payload = await this.parseJsonResponse(response);
+
     if (!response.ok) {
-      throw new Error("Nao foi possivel excluir a foto.");
+      const message =
+        (payload && this.extractMessage(payload)) ||
+        "Nao foi possivel excluir a foto.";
+      throw new Error(message);
     }
+
+    return payload ? this.extractMessage(payload) : undefined;
   }
 }
 

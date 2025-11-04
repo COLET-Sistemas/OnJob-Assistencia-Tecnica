@@ -31,7 +31,7 @@ const RevisaoTab: React.FC<RevisaoTabProps> = ({
           htmlFor="observacoes-revisao"
           className="block text-sm font-medium text-gray-700 mb-2"
         >
-          observaçõesdo revisor
+          Observações do revisor
         </label>
         <textarea
           id="observacoes-revisao"

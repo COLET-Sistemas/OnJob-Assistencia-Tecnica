@@ -616,6 +616,7 @@ export default function OSRevisaoPage() {
 
       const successTitle = concluirOs ? "Revisao concluida" : "Revisao salva";
       const successMessage =
+        response?.mensagem ??
         response?.message ??
         (concluirOs
           ? "Revisao concluida com sucesso."
