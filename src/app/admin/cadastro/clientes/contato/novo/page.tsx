@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 // Serviços
@@ -64,6 +64,7 @@ const isValidPhone = (phone: string) => {
 
 const NovoContato = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showSuccess, showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -73,6 +74,10 @@ const NovoContato = () => {
     null
   );
   const [isSearchingClientes, setIsSearchingClientes] = useState(false);
+  const clienteIdParam = searchParams.get("clienteId");
+  const [prefilledClienteId, setPrefilledClienteId] = useState<number | null>(
+    null
+  );
 
   // Campos do formulário
   const [nome, setNome] = useState("");
@@ -108,6 +113,80 @@ const NovoContato = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!clienteIdParam) {
+      if (prefilledClienteId !== null) {
+        setPrefilledClienteId(null);
+      }
+      return;
+    }
+
+    const parsedId = Number(clienteIdParam);
+    if (Number.isNaN(parsedId)) {
+      return;
+    }
+
+    if (prefilledClienteId === parsedId) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadCliente = async () => {
+      setIsLoading(true);
+      try {
+        const response = await clientesService.getById(parsedId);
+        const dados = Array.isArray(response?.dados) ? response.dados : [];
+
+        const clienteEncontrado =
+          dados.find(
+            (cliente: Cliente) =>
+              Number(cliente.id_cliente ?? cliente.id ?? 0) === parsedId
+          ) ?? dados[0];
+
+        if (!clienteEncontrado || !isMounted) {
+          return;
+        }
+
+        const option: ClienteOption = {
+          value:
+            clienteEncontrado.id_cliente ||
+            clienteEncontrado.id ||
+            parsedId,
+          label: `${clienteEncontrado.razao_social} (${
+            clienteEncontrado.codigo_erp || "-"
+          })`,
+          cidade: clienteEncontrado.cidade,
+          uf: clienteEncontrado.uf,
+        };
+
+        setSelectedCliente(option);
+        setClienteInput(option.label);
+        setClienteOptions((prev) => {
+          const exists = prev.some((opt) => opt.value === option.value);
+          return exists ? prev : [option, ...prev];
+        });
+        setPrefilledClienteId(option.value);
+      } catch (error) {
+        console.error("Erro ao carregar cliente para novo contato:", error);
+        showError(
+          "Erro",
+          "Não foi possível carregar o cliente selecionado automaticamente."
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadCliente();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [clienteIdParam, prefilledClienteId, showError]);
 
   // Handler para o select de cliente
   const handleClienteChange = useCallback(
@@ -243,7 +322,14 @@ const NovoContato = () => {
       showSuccess("Sucesso", response.mensagem);
 
       // Redireciona para a lista de clientes após cadastro
+      const selectedClienteIdForSession = selectedCliente.value;
       setTimeout(() => {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(
+            "expandClienteId",
+            String(selectedClienteIdForSession)
+          );
+        }
         router.push("/admin/cadastro/clientes");
       }, 1000);
     } catch (error) {

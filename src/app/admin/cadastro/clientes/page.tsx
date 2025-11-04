@@ -109,6 +109,19 @@ const CadastroClientes = () => {
     []
   );
 
+  const navigateToNewContact = useCallback(
+    (clienteId: number) => {
+      if (!clienteId) {
+        return;
+      }
+
+      router.push(
+        `/admin/cadastro/clientes/contato/novo?clienteId=${clienteId}`
+      );
+    },
+    [router]
+  );
+
   const getSituacaoLabel = (situacao?: string) => {
     if (!situacao) {
       return "-";
@@ -367,7 +380,7 @@ const CadastroClientes = () => {
 
       // Verifica se o cliente já tem contatos carregados
       const clienteAtual = clientes.find((c) => getClienteId(c) === clientId);
-      if (clienteAtual?.contatos?.length) {
+      if (clienteAtual && Array.isArray(clienteAtual.contatos)) {
         return;
       }
 
@@ -381,7 +394,9 @@ const CadastroClientes = () => {
             if (getClienteId(c) === clientId) {
               return {
                 ...c,
-                contatos: response.contatos,
+                contatos: Array.isArray(response.contatos)
+                  ? response.contatos
+                  : [],
               };
             }
             return c;
@@ -665,6 +680,53 @@ const CadastroClientes = () => {
         const clientId = getClienteId(cliente);
         const isExpanded =
           expandedClienteId === clientId && expandedSection === "contatos";
+
+        if (!hasContatos) {
+          const emptyButtonClasses = canManageCadastros
+            ? "bg-[var(--neutral-light-gray)] text-[var(--neutral-graphite)] border-gray-200 hover:bg-[var(--primary)]/5 hover:border-[var(--primary)]/30 cursor-pointer"
+            : "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed";
+
+          return (
+            <button
+              className={`px-2.5 py-1.5 border rounded-lg text-xs font-medium flex items-center gap-2 transition-all ${emptyButtonClasses}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (!canManageCadastros) {
+                  return;
+                }
+                navigateToNewContact(clientId);
+              }}
+              type="button"
+              disabled={!canManageCadastros}
+              title={
+                canManageCadastros
+                  ? "Cadastrar novo contato para este cliente"
+                  : cadastroDeniedMessage
+              }
+              aria-expanded={false}
+              aria-controls={getSectionDomId(clientId, "contatos")}
+            >
+              <User
+                size={16}
+                className={
+                  canManageCadastros
+                    ? "text-[var(--neutral-graphite)]"
+                    : "text-gray-400"
+                }
+              />
+              <span
+                className={
+                  canManageCadastros
+                    ? "text-[var(--neutral-graphite)]"
+                    : "text-gray-400"
+                }
+              >
+                (0)
+              </span>
+            </button>
+          );
+        }
 
         return (
           <button
@@ -1255,13 +1317,36 @@ const CadastroClientes = () => {
               id={containerId}
               className="p-4 bg-gray-50 rounded-lg shadow-inner"
             >
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-sm font-bold text-gray-700">
-                  Contatos do Cliente
-                </h3>
-                <span className="text-xs text-gray-500">
-                  {contatosCount} contato(s)
-                </span>
+              <div className="flex flex-wrap justify-between items-center gap-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-gray-700">
+                    Contatos do Cliente
+                  </h3>
+                  <span className="text-xs text-gray-500">
+                    {contatosCount} contato(s)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (!canManageCadastros) {
+                      return;
+                    }
+                    navigateToNewContact(clienteId);
+                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all bg-[var(--secondary-yellow)] text-white border border-[var(--secondary-yellow)] hover:bg-[var(--secondary-yellow)]/90 hover:border-[var(--secondary-yellow)]/90 disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={!canManageCadastros}
+                  title={
+                    canManageCadastros
+                      ? "Cadastrar um novo contato"
+                      : cadastroDeniedMessage
+                  }
+                >
+                  <Plus size={14} />
+                  Novo contato
+                </button>
               </div>
               {!cliente.contatos || cliente.contatos.length === 0 ? (
                 <div className="text-center py-6 text-gray-500">
