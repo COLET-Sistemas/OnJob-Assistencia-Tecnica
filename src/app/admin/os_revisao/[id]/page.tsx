@@ -632,13 +632,12 @@ export default function OSRevisaoPage() {
         typeof error === "object" &&
         error !== null &&
         "response" in error &&
-        typeof (error as { response?: { data?: { message?: string } } }).response
-          ?.data?.message === "string"
+        typeof (error as { response?: { data?: { message?: string } } })
+          .response?.data?.message === "string"
       ) {
         message = String(
-          (
-            error as { response?: { data?: { message?: string } } }
-          ).response?.data?.message
+          (error as { response?: { data?: { message?: string } } }).response
+            ?.data?.message
         );
       } else if (error instanceof Error && error.message) {
         message = error.message;
@@ -807,7 +806,7 @@ export default function OSRevisaoPage() {
             <div className="overflow-hidden">
               <p className="font-medium text-gray-700 truncate">Conclusão</p>
               <p className="text-xs text-gray-600">
-                {os.data_fechamento || "-"}
+                {os.situacao_os.data_situacao || "-"}
               </p>
             </div>
           </div>
