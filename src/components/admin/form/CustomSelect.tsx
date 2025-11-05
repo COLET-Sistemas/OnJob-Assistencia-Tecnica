@@ -33,15 +33,15 @@ export const getCustomSelectStyles = <
     }),
     placeholder: (provided: Record<string, unknown>) => ({
       ...provided,
-      color: "#94a3b8", // text-slate-400
+      color: "#94a3b8", 
     }),
     valueContainer: (provided: Record<string, unknown>) => ({
       ...provided,
-      padding: "0 16px", // px-4
+      padding: "0 16px", 
     }),
     input: (provided: Record<string, unknown>) => ({
       ...provided,
-      color: "#0f172a", // text-slate-900
+      color: "#0f172a", 
     }),
     singleValue: (
       provided: Record<string, unknown>,

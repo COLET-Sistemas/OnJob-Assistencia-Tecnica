@@ -1283,7 +1283,7 @@ const OSDetalhesPage: React.FC = () => {
                           )}
                         </div>
                         {osData.tecnico.observacoes && (
-                          <p className="text-xs text-gray-600 mt-2 p-2 bg-gray-50 rounded-md">
+                          <p className="text-xs text-gray-600 mt-2 p-2 bg-gray-50 rounded-md whitespace-pre-line">
                             {osData.tecnico.observacoes}
                           </p>
                         )}

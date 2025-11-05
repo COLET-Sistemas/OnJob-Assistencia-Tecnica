@@ -15,7 +15,7 @@ import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { InputField, LoadingButton } from "@/components/admin/form";
 import CustomSelect, { OptionType } from "@/components/admin/form/CustomSelect";
@@ -35,6 +35,10 @@ interface FormData {
 interface ClienteOption extends Omit<OptionType, "value"> {
   value: number;
   razao_social?: string;
+}
+
+interface ModeloOption extends Omit<OptionType, "value"> {
+  value: string;
 }
 
 const EditarMaquina = () => {
@@ -58,24 +62,12 @@ const EditarMaquina = () => {
     data_final_garantia: "",
   });
 
-  const modeloInputValueRef = useRef("");
-  const modeloBlurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [modeloOptions, setModeloOptions] = useState<string[]>([]);
-  const [isLoadingModelos, setIsLoadingModelos] = useState(false);
-  const [showModeloSuggestions, setShowModeloSuggestions] =
-    useState(false);
-
-  useEffect(() => {
-    modeloInputValueRef.current = formData.modelo;
-  }, [formData.modelo]);
-
-  useEffect(() => {
-    return () => {
-      if (modeloBlurTimeoutRef.current) {
-        clearTimeout(modeloBlurTimeoutRef.current);
-      }
-    };
-  }, []);
+  const [modeloInput, setModeloInput] = useState("");
+  const [modeloOptions, setModeloOptions] = useState<ModeloOption[]>([]);
+  const [selectedModelo, setSelectedModelo] = useState<ModeloOption | null>(
+    null
+  );
+  const [isSearchingModelo, setIsSearchingModelo] = useState(false);
 
   // Estados para o cliente
   const [clienteInput, setClienteInput] = useState("");
@@ -145,6 +137,17 @@ const EditarMaquina = () => {
           ? converterDataBRparaISO(maquinaData.data_final_garantia)
           : "",
       });
+
+      if (maquinaData.modelo) {
+        const modeloOption: ModeloOption = {
+          value: maquinaData.modelo,
+          label: maquinaData.modelo,
+        };
+        setSelectedModelo(modeloOption);
+      } else {
+        setSelectedModelo(null);
+      }
+      setModeloInput("");
 
       if (maquinaData.cliente_atual) {
         const clienteId = maquinaData.cliente_atual.id_cliente;
@@ -229,22 +232,6 @@ const EditarMaquina = () => {
   ) => {
     const { name, value } = e.target;
 
-    if (name === "modelo") {
-      cancelModeloBlurTimeout();
-      modeloInputValueRef.current = value;
-      const valorSanitizado = value.trim();
-
-      if (valorSanitizado.length >= 3) {
-        setShowModeloSuggestions(true);
-        setIsLoadingModelos(true);
-        fetchModelosDebounced(value);
-      } else {
-        setShowModeloSuggestions(false);
-        setModeloOptions([]);
-        setIsLoadingModelos(false);
-      }
-    }
-
     // Se o campo alterado for data_1a_venda, calcular data_final_garantia mantendo dia e mês
     if (name === "data_1a_venda") {
       let dataFinalGarantia = "";
@@ -294,97 +281,89 @@ const EditarMaquina = () => {
   };
 
   // Função para buscar clientes
-  const cancelModeloBlurTimeout = useCallback(() => {
-    if (modeloBlurTimeoutRef.current) {
-      clearTimeout(modeloBlurTimeoutRef.current);
-      modeloBlurTimeoutRef.current = null;
-    }
-  }, []);
-
-  const fetchModelosDebounced = useDebouncedCallback(
+  const debouncedSearchModelos = useDebouncedCallback(
     async (valor: string) => {
       const termo = valor.trim();
 
       if (termo.length < 3) {
-        setIsLoadingModelos(false);
         setModeloOptions([]);
+        setIsSearchingModelo(false);
         return;
       }
 
       try {
         const modelos = await maquinasService.getModelos(termo);
-
-        if (modeloInputValueRef.current.trim() !== termo) {
-          return;
-        }
-
-        setModeloOptions(modelos);
+        setModeloOptions(
+          modelos.map(
+            (modelo) =>
+              ({
+                value: modelo,
+                label: modelo,
+              } as ModeloOption)
+          )
+        );
       } catch (error) {
         console.error("Erro ao buscar modelos:", error);
-
-        if (modeloInputValueRef.current.trim() === termo) {
-          setModeloOptions([]);
-        }
+        setModeloOptions([]);
       } finally {
-        if (modeloInputValueRef.current.trim() === termo) {
-          setIsLoadingModelos(false);
-        }
+        setIsSearchingModelo(false);
       }
     },
-    500
+    400
   );
 
-  const handleModeloSelect = useCallback(
-    (modeloSelecionado: string) => {
-      cancelModeloBlurTimeout();
-      modeloInputValueRef.current = modeloSelecionado;
+  const handleModeloInputChange = useCallback(
+    (inputValue: string) => {
+      setModeloInput(inputValue);
+
+      if (inputValue.trim().length >= 3) {
+        setIsSearchingModelo(true);
+      } else {
+        setModeloOptions([]);
+        setIsSearchingModelo(false);
+      }
+
+      if (formErrors.modelo) {
+        setFormErrors((prev) => {
+          const updated = { ...prev };
+          delete updated.modelo;
+          return updated;
+        });
+      }
+
+      debouncedSearchModelos(inputValue);
+    },
+    [debouncedSearchModelos, formErrors.modelo]
+  );
+
+  const handleModeloChange = useCallback(
+    (selectedOption: OptionType | null) => {
+      const modeloOption = selectedOption
+        ? ({
+            ...selectedOption,
+            value: selectedOption.value.toString(),
+          } as ModeloOption)
+        : null;
+
+      setSelectedModelo(modeloOption);
+      setModeloInput("");
 
       setFormData((prev) => ({
         ...prev,
-        modelo: modeloSelecionado,
+        modelo: modeloOption ? modeloOption.value : "",
       }));
 
-      setShowModeloSuggestions(false);
-      setModeloOptions([]);
-      setIsLoadingModelos(false);
-
-      setFormErrors((prev) => {
-        if (!prev.modelo) {
-          return prev;
-        }
-
-        const updated = { ...prev };
-        delete updated.modelo;
-        return updated;
-      });
+      if (formErrors.modelo) {
+        setFormErrors((prev) => {
+          const updated = { ...prev };
+          delete updated.modelo;
+          return updated;
+        });
+      }
     },
-    [cancelModeloBlurTimeout]
+    [formErrors.modelo]
   );
 
-  const handleModeloBlur = useCallback(() => {
-    modeloBlurTimeoutRef.current = setTimeout(() => {
-      setShowModeloSuggestions(false);
-    }, 150);
-  }, []);
-
-  const handleModeloFocus = useCallback(() => {
-    cancelModeloBlurTimeout();
-    const valorAtual = modeloInputValueRef.current.trim();
-
-    if (valorAtual.length >= 3) {
-      setShowModeloSuggestions(true);
-
-      if (!isLoadingModelos && modeloOptions.length === 0) {
-        setIsLoadingModelos(true);
-        fetchModelosDebounced(valorAtual);
-      }
-    }
-  }, [
-    cancelModeloBlurTimeout,
-    fetchModelosDebounced,
-    isLoadingModelos,
-    modeloOptions.length,
-  ]);
 
   const searchClientes = useCallback(
     async (term: string) => {
@@ -515,35 +494,6 @@ const EditarMaquina = () => {
     }
   };
 
-  const modeloDropdown =
-    showModeloSuggestions && formData.modelo.trim().length >= 3 ? (
-      <div className="absolute left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
-        {isLoadingModelos ? (
-          <div className="px-4 py-2 text-sm text-slate-500">
-            Buscando modelos...
-          </div>
-        ) : modeloOptions.length > 0 ? (
-          modeloOptions.map((option) => (
-            <button
-              type="button"
-              key={option}
-              className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-violet-50 focus:bg-violet-100 focus:outline-none"
-              onMouseDown={(event) => {
-                event.preventDefault();
-                handleModeloSelect(option);
-              }}
-            >
-              {option}
-            </button>
-          ))
-        ) : (
-          <div className="px-4 py-2 text-sm text-slate-500">
-            Nenhum modelo encontrado
-          </div>
-        )}
-      </div>
-    ) : null;
-
   if (loading) {
     return (
       <Loading
@@ -591,23 +541,36 @@ const EditarMaquina = () => {
 
                   {/* Modelo */}
                   <div>
-                    <InputField
+                    <CustomSelect
+                      id="modelo"
                       label="Modelo"
-                      name="modelo"
-                      value={formData.modelo}
-                      error={formErrors.modelo}
-                      placeholder="Modelo da máquina"
                       required
-                      onChange={handleInputChange}
-                      onBlur={handleModeloBlur}
-                      onFocus={handleModeloFocus}
-                      autoComplete="off"
-                      renderDropdown={modeloDropdown}
+                      placeholder="Digite pelo menos 3 caracteres para buscar o modelo..."
+                      inputValue={modeloInput}
+                      onInputChange={handleModeloInputChange}
+                      onChange={handleModeloChange}
+                      options={
+                        selectedModelo &&
+                        !modeloOptions.find(
+                          (option) => option.value === selectedModelo.value
+                        )
+                          ? [selectedModelo, ...modeloOptions]
+                          : modeloOptions
+                      }
+                      value={selectedModelo}
+                      isLoading={isSearchingModelo}
+                      error={formErrors.modelo}
+                      minCharsToSearch={3}
+                      noOptionsMessageFn={({ inputValue }) =>
+                        inputValue.length < 3
+                          ? "Digite pelo menos 3 caracteres para buscar..."
+                          : "Nenhum modelo encontrado"
+                      }
                     />
                   </div>
                 </div>
 
-                {/* Descrição */}
+                {/* Descricao */}
                 <div>
                   <InputField
                     label="Descrição"
@@ -746,3 +709,4 @@ const EditarMaquina = () => {
 };
 
 export default EditarMaquina;
+

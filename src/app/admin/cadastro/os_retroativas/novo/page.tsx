@@ -1043,22 +1043,37 @@ const NovaOSRetroativa = () => {
                 </div>
               </div>
 
-              <TextAreaField
-                id="descricaoProblema"
-                label="Descricão do defeito"
-                value={formState.descricaoProblema}
-                onChange={(event) => {
-                  setFormField("descricaoProblema", event.target.value);
-                }}
-                placeholder="Descreva o defeito relatado..."
-                rows={4}
-                required
-              />
-              {errors.descricaoProblema && (
-                <p className="text-sm text-red-600">
-                  {errors.descricaoProblema}
-                </p>
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <TextAreaField
+                    id="descricaoProblema"
+                    label="Descricão do defeito"
+                    value={formState.descricaoProblema}
+                    onChange={(event) => {
+                      setFormField("descricaoProblema", event.target.value);
+                    }}
+                    placeholder="Descreva o defeito relatado..."
+                    rows={4}
+                    required
+                  />
+                  {errors.descricaoProblema && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {errors.descricaoProblema}
+                    </p>
+                  )}
+                </div>
+
+                <TextAreaField
+                  id="observacoesTecnico"
+                  label="Observações do técnico"
+                  value={formState.observacoesTecnico}
+                  onChange={(event) => {
+                    setFormField("observacoesTecnico", event.target.value);
+                  }}
+                  placeholder="Detalhes registrados pelo técnico..."
+                  rows={4}
+                />
+              </div>
             </section>
 
             {/* FAT */}
@@ -1074,8 +1089,8 @@ const NovaOSRetroativa = () => {
 
               {/* grid base: em telas md, 2 colunas; mobile, 1 coluna */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* 1ª linha: Solução encontrada (ocupa as 2 colunas) */}
-                <div className="md:col-span-2">
+                {/* 1ª linha: Solução encontrada | Testes realizados */}
+                <div>
                   <TextAreaField
                     id="solucaoEncontrada"
                     label="Solução encontrada"
@@ -1084,55 +1099,49 @@ const NovaOSRetroativa = () => {
                       setFormField("solucaoEncontrada", event.target.value);
                     }}
                     placeholder="Descreva a solução aplicada..."
-                    rows={4}
+                    rows={3}
                   />
                 </div>
 
-                {/* 2ª linha: Testes realizados | Sugestões ao cliente */}
-                <TextAreaField
-                  id="testesRealizados"
-                  label="Testes realizados"
-                  value={formState.testesRealizados}
-                  onChange={(event) => {
-                    setFormField("testesRealizados", event.target.value);
-                  }}
-                  placeholder="Informe os testes executados..."
-                  rows={4}
-                />
+                <div>
+                  <TextAreaField
+                    id="testesRealizados"
+                    label="Testes realizados"
+                    value={formState.testesRealizados}
+                    onChange={(event) => {
+                      setFormField("testesRealizados", event.target.value);
+                    }}
+                    placeholder="Informe os testes executados..."
+                    rows={3}
+                  />
+                </div>
 
-                <TextAreaField
-                  id="sugestoes"
-                  label="Sugestões ao cliente"
-                  value={formState.sugestoes}
-                  onChange={(event) => {
-                    setFormField("sugestoes", event.target.value);
-                  }}
-                  placeholder="Recomendações ou cuidados futuros..."
-                  rows={4}
-                />
+                {/* 2ª linha: Sugestões ao cliente | Observações gerais */}
+                <div>
+                  <TextAreaField
+                    id="sugestoes"
+                    label="Sugestões ao cliente"
+                    value={formState.sugestoes}
+                    onChange={(event) => {
+                      setFormField("sugestoes", event.target.value);
+                    }}
+                    placeholder="Recomendações ou cuidados futuros..."
+                    rows={3}
+                  />
+                </div>
 
-                {/* 3ª linha: Observações gerais | Observações do técnico */}
-                <TextAreaField
-                  id="observacoes"
-                  label="Observações gerais"
-                  value={formState.observacoes}
-                  onChange={(event) => {
-                    setFormField("observacoes", event.target.value);
-                  }}
-                  placeholder="Observações adicionais relevantes..."
-                  rows={3}
-                />
-
-                <TextAreaField
-                  id="observacoesTecnico"
-                  label="Observações do técnico"
-                  value={formState.observacoesTecnico}
-                  onChange={(event) => {
-                    setFormField("observacoesTecnico", event.target.value);
-                  }}
-                  placeholder="Detalhes registrados pelo técnico..."
-                  rows={3}
-                />
+                <div>
+                  <TextAreaField
+                    id="observacoes"
+                    label="Observações gerais"
+                    value={formState.observacoes}
+                    onChange={(event) => {
+                      setFormField("observacoes", event.target.value);
+                    }}
+                    placeholder="Observações adicionais relevantes..."
+                    rows={3}
+                  />
+                </div>
 
                 {/* mensagem de erro de detalhes (se existir) ocupando linha toda */}
                 {errors.detalhesAtendimento && (
