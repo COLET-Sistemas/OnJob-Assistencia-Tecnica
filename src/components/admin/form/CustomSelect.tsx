@@ -24,7 +24,11 @@ export const getCustomSelectStyles = <
       minHeight: "48px", // py-3 equivalent
       padding: "0",
       backgroundColor: state.isDisabled ? "#f8fafc" : "#ffffff",
-      opacity: state.isDisabled ? 1 : provided.opacity ?? 1,
+      opacity: state.isDisabled
+        ? 1
+        : typeof provided.opacity === "number"
+        ? provided.opacity
+        : 1,
       cursor: state.isDisabled ? "not-allowed" : "default",
     }),
     placeholder: (provided: Record<string, unknown>) => ({
@@ -45,7 +49,11 @@ export const getCustomSelectStyles = <
     ) => ({
       ...provided,
       color: "#0f172a",
-      opacity: state.isDisabled ? 1 : provided.opacity ?? 1,
+      opacity: state.isDisabled
+        ? 1
+        : typeof provided.opacity === "number"
+        ? provided.opacity
+        : 1,
     }),
     option: (
       provided: Record<string, unknown>,
