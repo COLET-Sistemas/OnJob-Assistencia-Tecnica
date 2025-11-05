@@ -1118,25 +1118,6 @@ const CadastroClientes = () => {
                 </button>
               </div>
 
-              {/* Botão Novo Contato */}
-              {canManageCadastros ? (
-                <Link
-                  href="/admin/cadastro/clientes/contato/novo"
-                  className="bg-[var(--secondary-yellow)] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-lg border border-[var(--secondary-yellow)] hover:bg-[var(--secondary-yellow)]/90 hover:border-[var(--secondary-yellow)]/90"
-                >
-                  <Plus size={18} />
-                  Novo Contato
-                </Link>
-              ) : (
-                <span
-                  className="px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed"
-                  title={cadastroDeniedMessage}
-                >
-                  <Plus size={18} />
-                  Novo Contato
-                </span>
-              )}
-
               {/* Botão Novo Cliente */}
               {canManageCadastros ? (
                 <Link

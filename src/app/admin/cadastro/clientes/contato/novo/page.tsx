@@ -97,22 +97,25 @@ const NovoContato = () => {
     telefone?: boolean;
   }>({});
 
+  const isClienteLocked = Boolean(selectedCliente);
+
   // Efeito para inicializar página
   useEffect(() => {
     // Configura isLoading inicialmente como falso
     setIsLoading(false);
 
-    // Pequeno delay para garantir que o componente foi renderizado completamente
-    const timer = setTimeout(() => {
-      // Buscar o elemento de input dentro do componente Select
-      const clienteInput = document.querySelector("#cliente input");
-      if (clienteInput) {
-        (clienteInput as HTMLInputElement).focus();
-      }
-    }, 100);
+    if (!clienteIdParam) {
+      // Pequeno delay para garantir que o componente foi renderizado completamente
+      const timer = setTimeout(() => {
+        const clienteInputElement = document.querySelector("#cliente input");
+        if (clienteInputElement) {
+          (clienteInputElement as HTMLInputElement).focus();
+        }
+      }, 100);
 
-    return () => clearTimeout(timer);
-  }, []);
+      return () => clearTimeout(timer);
+    }
+  }, [clienteIdParam]);
 
   useEffect(() => {
     if (!clienteIdParam) {
@@ -371,19 +374,32 @@ const NovoContato = () => {
             <CustomSelect
               id="cliente"
               label=""
-              placeholder="Selecione ou pesquise um cliente..."
+              placeholder={
+                isClienteLocked
+                  ? "Cliente selecionado automaticamente"
+                  : "Selecione ou pesquise um cliente..."
+              }
               options={clienteOptions}
               value={selectedCliente}
               onChange={handleClienteChange}
-              inputValue={clienteInput}
-              onInputChange={handleClienteInputChange}
-              isLoading={isSearchingClientes}
-              noOptionsMessageFn={() =>
-                clienteInput.length < 3
-                  ? "Digite pelo menos 3 caracteres para pesquisar..."
-                  : "Nenhum cliente encontrado"
+              {...(!isClienteLocked
+                ? {
+                    inputValue: clienteInput,
+                    onInputChange: handleClienteInputChange,
+                  }
+                : {})}
+              isLoading={!isClienteLocked && isSearchingClientes}
+              noOptionsMessageFn={
+                !isClienteLocked
+                  ? () =>
+                      clienteInput.length < 3
+                        ? "Digite pelo menos 3 caracteres para pesquisar..."
+                        : "Nenhum cliente encontrado"
+                  : undefined
               }
-              isClearable
+              isDisabled={isClienteLocked}
+              isSearchable={!isClienteLocked}
+              isClearable={!isClienteLocked}
             />
           </FormField>
         </motion.div>

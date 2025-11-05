@@ -12,7 +12,7 @@ export const getCustomSelectStyles = <
   return {
     control: (
       provided: Record<string, unknown>,
-      state: { isFocused: boolean }
+      state: { isFocused: boolean; isDisabled: boolean }
     ) => ({
       ...provided,
       borderColor: state.isFocused ? "var(--primary)" : "#e2e8f0",
@@ -23,6 +23,9 @@ export const getCustomSelectStyles = <
       borderRadius: "0.5rem", // rounded-lg
       minHeight: "48px", // py-3 equivalent
       padding: "0",
+      backgroundColor: state.isDisabled ? "#f8fafc" : "#ffffff",
+      opacity: state.isDisabled ? 1 : provided.opacity ?? 1,
+      cursor: state.isDisabled ? "not-allowed" : "default",
     }),
     placeholder: (provided: Record<string, unknown>) => ({
       ...provided,
@@ -36,9 +39,13 @@ export const getCustomSelectStyles = <
       ...provided,
       color: "#0f172a", // text-slate-900
     }),
-    singleValue: (provided: Record<string, unknown>) => ({
+    singleValue: (
+      provided: Record<string, unknown>,
+      state: { isDisabled: boolean }
+    ) => ({
       ...provided,
       color: "#0f172a",
+      opacity: state.isDisabled ? 1 : provided.opacity ?? 1,
     }),
     option: (
       provided: Record<string, unknown>,
@@ -93,8 +100,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   label,
   required = false,
   placeholder,
-  inputValue = "",
-  onInputChange = () => {},
+  inputValue,
+  onInputChange,
   onChange,
   options,
   value,
@@ -133,8 +140,12 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       <Select
         id={id}
         placeholder={placeholder}
-        inputValue={inputValue}
-        onInputChange={onInputChange}
+        {...(typeof inputValue === "string"
+          ? {
+              inputValue,
+              onInputChange: onInputChange ?? (() => {}),
+            }
+          : {})}
         onChange={(newValue) => {
           // Safely cast the newValue to our expected type
           if (newValue && "value" in newValue && "label" in newValue) {
