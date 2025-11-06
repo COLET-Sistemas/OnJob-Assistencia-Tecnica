@@ -54,6 +54,7 @@ export interface OSItem {
     numero_serie: string;
     descricao: string;
     modelo: string;
+    observacoes?: string;
   };
   situacao_os: {
     codigo: number;
@@ -334,6 +335,7 @@ export interface OSDetalhadaV2 {
     numero_serie: string;
     descricao: string;
     modelo: string;
+    observacoes?: string;
     marca?: string;
     ano_fabricacao?: number;
     horas_trabalhadas?: number;
@@ -424,6 +426,7 @@ interface OSFilterParams
   data_inicial?: string;
   data_final?: string;
   numero_os?: string;
+  em_garantia?: string;
 }
 
 interface OSForm {
@@ -784,7 +787,8 @@ class OrdensServicoService {
   async salvarRevisaoOS(
     id_os: number,
     dados: {
-      observacoes: string;
+      observacoesRevisao: string;
+      observacoesMaquina?: string;
       pecas: OSPecaUtilizada[];
       deslocamentos: OSDeslocamento[];
       concluir_os: boolean;
@@ -794,25 +798,28 @@ class OrdensServicoService {
     const id_usuario_revisor = Number(localStorage.getItem("id_usuario"));
 
     // Formatar dados para envio à API
-    const requestData = {
-      id_os: id_os,
-      id_usuario_revisor: id_usuario_revisor,
-      observacoes_revisao: dados.observacoes,
-      concluir_os: dados.concluir_os,
-      pecas_corrigidas: dados.pecas.map((peca) => ({
-        codigo: peca.codigo || "",
-        descricao: peca.descricao || peca.nome || "",
-        quantidade: peca.quantidade,
-        unidade: String(peca.unidade ?? peca.unidade_medida ?? "").trim(),
-      })),
-      deslocamentos_corrigidos: dados.deslocamentos.map((desl) => ({
-        km_ida: desl.km_ida,
-        km_volta: desl.km_volta,
-        tempo_ida_min: desl.tempo_ida_min,
-        tempo_volta_min: desl.tempo_volta_min,
-        observacao: desl.observacoes,
-      })),
-    };
+      const requestData = {
+        id_os: id_os,
+        id_usuario_revisor: id_usuario_revisor,
+        observacoes_revisao: dados.observacoesRevisao,
+        concluir_os: dados.concluir_os,
+        ...(dados.observacoesMaquina !== undefined
+          ? { observacoes_maquina: dados.observacoesMaquina }
+          : {}),
+        pecas_corrigidas: dados.pecas.map((peca) => ({
+          codigo: peca.codigo || "",
+          descricao: peca.descricao || peca.nome || "",
+          quantidade: peca.quantidade,
+          unidade: String(peca.unidade ?? peca.unidade_medida ?? "").trim(),
+        })),
+        deslocamentos_corrigidos: dados.deslocamentos.map((desl) => ({
+          km_ida: desl.km_ida,
+          km_volta: desl.km_volta,
+          tempo_ida_min: desl.tempo_ida_min,
+          tempo_volta_min: desl.tempo_volta_min,
+          observacao: desl.observacoes,
+        })),
+      };
 
     const response = await api.put<{
       mensagem?: string;

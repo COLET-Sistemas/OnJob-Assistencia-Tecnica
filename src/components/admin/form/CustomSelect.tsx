@@ -101,6 +101,7 @@ interface CustomSelectProps {
   isSearchable?: boolean;
   isClearable?: boolean;
   className?: string;
+  filterOption?: SelectProps<OptionType, false>["filterOption"];
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -122,6 +123,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   isSearchable = true,
   isClearable = true,
   className = "",
+  filterOption,
 }) => {
   // Using a properly typed ref for react-select that handles the methods we need
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -178,6 +180,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         }
         menuPosition="fixed"
         components={components}
+        filterOption={filterOption}
         ref={selectRef}
         isDisabled={isDisabled}
         instanceId={id}

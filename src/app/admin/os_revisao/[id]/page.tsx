@@ -56,7 +56,10 @@ export default function OSRevisaoPage() {
   const [pecasRevisadas, setPecasRevisadas] = useState<PecaRevisada[]>([]);
   type TabType = "info" | "deslocamentos" | "pecas" | "fotos" | "revisao";
   const [activeTab, setActiveTab] = useState<TabType>("info");
-  const [observacoes, setObservacoes] = useState("");
+  const [observacoesRevisao, setObservacoesRevisao] = useState("");
+  const [observacoesMaquina, setObservacoesMaquina] = useState("");
+  const [editarObservacoesMaquina, setEditarObservacoesMaquina] =
+    useState(false);
   const [isSubmittingRevisao, setIsSubmittingRevisao] = useState(false);
   const [submittingAction, setSubmittingAction] = useState<
     "save" | "conclude" | null
@@ -76,7 +79,9 @@ export default function OSRevisaoPage() {
       const osId = Number(params.id);
       const response = await ordensServicoService.getById(osId, true); // Forçar atualização
       setOS(response);
-      setObservacoes(response.revisao_os?.observacoes || "");
+      setObservacoesRevisao(response.revisao_os?.observacoes || "");
+      setObservacoesMaquina(response.maquina?.observacoes ?? "");
+      setEditarObservacoesMaquina(false);
 
       // Processar deslocamentos de todas as FATs
       let todosDeslocamentosOriginais: DeslocamentoOriginal[] = [];
@@ -634,7 +639,10 @@ export default function OSRevisaoPage() {
       const pecasParaEnvio = sanitizePecasParaEnvio(pecasRevisadas);
 
       const response = await ordensServicoService.salvarRevisaoOS(os.id_os, {
-        observacoes,
+        observacoesRevisao,
+        observacoesMaquina: editarObservacoesMaquina
+          ? observacoesMaquina
+          : undefined,
         pecas: pecasParaEnvio,
         deslocamentos: deslocamentosParaEnvio,
         concluir_os: concluirOs,
@@ -903,8 +911,7 @@ export default function OSRevisaoPage() {
         {activeTab === "info" && (
           <InfoTab
             os={os}
-            observacoes={observacoes}
-            onObservacoesChange={setObservacoes}
+            machineObservations={observacoesMaquina}
           />
         )}
 
@@ -947,8 +954,12 @@ export default function OSRevisaoPage() {
 
         {activeTab === "revisao" && (
           <RevisaoTab
-            observacoes={observacoes}
-            onObservacoesChange={setObservacoes}
+            observacoesRevisao={observacoesRevisao}
+            onObservacoesRevisaoChange={setObservacoesRevisao}
+            observacoesMaquina={observacoesMaquina}
+            isEditandoObservacoesMaquina={editarObservacoesMaquina}
+            onToggleEditarObservacoesMaquina={setEditarObservacoesMaquina}
+            onObservacoesMaquinaChange={setObservacoesMaquina}
             onSubmit={handleSubmitRevisao}
             onCancel={handleCancelarRevisao}
             isSubmitting={isSubmittingRevisao}

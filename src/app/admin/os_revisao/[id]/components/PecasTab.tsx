@@ -1,6 +1,15 @@
 ﻿import React from "react";
 import { createPortal } from "react-dom";
-import { Plus, Save, X, Edit, Trash2, Package, Check, Search } from "lucide-react";
+import {
+  Plus,
+  Save,
+  X,
+  Edit,
+  Trash2,
+  Package,
+  Check,
+  Search,
+} from "lucide-react";
 import type { OSPecaUtilizada } from "@/api/services/ordensServicoService";
 import { pecasService } from "@/api/services/pecasService";
 import useDebouncedCallback from "@/hooks/useDebouncedCallback";
@@ -15,9 +24,7 @@ const buildOrigemKeyFromOriginal = (peca: PecaOriginal): string => {
     return `catalog:${peca.id_peca}`;
   }
 
-  const descricao = (peca.descricao ?? peca.nome ?? "")
-    .toLowerCase()
-    .trim();
+  const descricao = (peca.descricao ?? peca.nome ?? "").toLowerCase().trim();
   const quantidade = peca.quantidade ?? 0;
   const fat = peca.id_fat ?? "na";
 
@@ -89,11 +96,11 @@ const PecasTab: React.FC<PecasTabProps> = ({
 
   const allOriginaisAccepted =
     originais.length > 0 &&
-    originais.every((peca) => revisadasKeys.has(buildOrigemKeyFromOriginal(peca)));
+    originais.every((peca) =>
+      revisadasKeys.has(buildOrigemKeyFromOriginal(peca))
+    );
 
   const canAcceptAll = originais.length > 0 && !allOriginaisAccepted;
-
-
 
   const originalByKey = React.useMemo(() => {
     const map = new Map<string, PecaOriginal>();
@@ -149,14 +156,19 @@ const PecasTab: React.FC<PecasTabProps> = ({
     });
   }, [revisadas]);
 
-  const anchorRefs = React.useRef<Map<string, HTMLDivElement | null>>(new Map());
-  const registerAnchor = React.useCallback((key: string, el: HTMLDivElement | null) => {
-    if (el) {
-      anchorRefs.current.set(key, el);
-    } else {
-      anchorRefs.current.delete(key);
-    }
-  }, []);
+  const anchorRefs = React.useRef<Map<string, HTMLDivElement | null>>(
+    new Map()
+  );
+  const registerAnchor = React.useCallback(
+    (key: string, el: HTMLDivElement | null) => {
+      if (el) {
+        anchorRefs.current.set(key, el);
+      } else {
+        anchorRefs.current.delete(key);
+      }
+    },
+    []
+  );
 
   const [isPortalReady, setIsPortalReady] = React.useState(false);
   const [, setPortalTick] = React.useState(0);
@@ -285,7 +297,7 @@ const PecasTab: React.FC<PecasTabProps> = ({
                 isOpen: false,
                 isLoading: false,
                 results: [],
-                error: "Erro ao buscar Peças. Tente novamente.",
+                error: "Código de peça não encontrado.",
               },
             };
           });
@@ -673,17 +685,9 @@ const PecasTab: React.FC<PecasTabProps> = ({
                   const searchState = searchStates[index];
                   const codigoSearchState =
                     searchState?.mode === "codigo" ? searchState : undefined;
-                  let codigoSearchFeedback: React.ReactNode = null;
-                  if (
-                    codigoSearchState?.error &&
-                    !codigoSearchState.isLoading
-                  ) {
-                    codigoSearchFeedback = (
-                      <p className="mt-1 text-xs text-red-500">
-                        {codigoSearchState.error}
-                      </p>
-                    );
-                  }
+                  const showCodigoSearchError =
+                    Boolean(codigoSearchState && codigoSearchState.error) &&
+                    Boolean(codigoSearchState && !codigoSearchState.isLoading);
 
                   return (
                     <tr
@@ -695,59 +699,70 @@ const PecasTab: React.FC<PecasTabProps> = ({
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                         {peca.isEditing ? (
-                          <div className="flex items-start gap-2">
-                            <div className="relative w-40" ref={(el) => registerAnchor(`${index}-codigo`, el)}>
-                              <input
-                                type="text"
-                                className={`w-full border rounded-md px-2 py-1 ${
-                                  possuiCodigo
-                                    ? "border-gray-300"
-                                    : "border-red-400 focus:border-red-500"
-                                }`}
-                                value={peca.codigo ?? ""}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  onChange(index, "codigo", value);
-                                  clearSearchState(index);
-                                }}
-                                placeholder="Código"
-                              />
-                              {renderSearchResults(index, "codigo")}
-                              {originalCodigo &&
-                                originalCodigo.trim().length > 0 &&
-                                originalCodigo.trim() !== codigoAtual && (
-                                  <p className="mt-1 text-xs text-gray-500">
-                                    Código informado pelo Técnico:{" "}
-                                    <span className="font-medium text-gray-600">
-                                      {originalCodigo}
-                                    </span>
-                                  </p>
-                                )}
-                            </div>
-                            {requiresManualCodigo && (
-                              <button
-                                type="button"
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-500 hover:border-[var(--primary)] hover:text-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
-                                onClick={() =>
-                                  handleTriggerCatalogSearch(
-                                    index,
-                                    "codigo",
-                                    peca.codigo ?? ""
-                                  )
+                          <div>
+                            <div className="flex items-start gap-2">
+                              <div
+                                className="relative w-40"
+                                ref={(el) =>
+                                  registerAnchor(`${index}-codigo`, el)
                                 }
-                                disabled={!canSearchCodigo}
-                                title={
-                                  canSearchCodigo
-                                    ? "Buscar código no catálogo"
-                                    : "Informe ao menos 2 caracteres para buscar"
-                                }
-                                aria-label="Buscar código no catálogo"
                               >
-                                <Search className="h-4 w-4" />
-                              </button>
+                                <input
+                                  type="text"
+                                  className={`w-full border rounded-md px-2 py-1 ${
+                                    possuiCodigo
+                                      ? "border-gray-300"
+                                      : "border-red-400 focus:border-red-500"
+                                  }`}
+                                  value={peca.codigo ?? ""}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    onChange(index, "codigo", value);
+                                    clearSearchState(index);
+                                  }}
+                                  placeholder="Código"
+                                />
+                                {renderSearchResults(index, "codigo")}
+                                {originalCodigo &&
+                                  originalCodigo.trim().length > 0 &&
+                                  originalCodigo.trim() !== codigoAtual && (
+                                    <p className="mt-1 text-xs text-gray-500">
+                                      Código informado pelo Técnico:{" "}
+                                      <span className="font-medium text-gray-600">
+                                        {originalCodigo}
+                                      </span>
+                                    </p>
+                                  )}
+                              </div>
+                              {requiresManualCodigo && (
+                                <button
+                                  type="button"
+                                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-500 hover:border-[var(--primary)] hover:text-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                                  onClick={() =>
+                                    handleTriggerCatalogSearch(
+                                      index,
+                                      "codigo",
+                                      peca.codigo ?? ""
+                                    )
+                                  }
+                                  disabled={!canSearchCodigo}
+                                  title={
+                                    canSearchCodigo
+                                      ? "Buscar código no catálogo"
+                                      : "Informe ao menos 2 caracteres para buscar"
+                                  }
+                                  aria-label="Buscar código no catálogo"
+                                >
+                                  <Search className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                            {showCodigoSearchError && (
+                              <p className="mt-1 text-xs text-red-500">
+                                {codigoSearchState?.error ?? ""}
+                              </p>
                             )}
                           </div>
-                          {codigoSearchFeedback}
                         ) : possuiCodigo ? (
                           <div className="flex flex-col">
                             <span>{peca.codigo}</span>
@@ -767,7 +782,12 @@ const PecasTab: React.FC<PecasTabProps> = ({
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
                         {peca.isEditing ? (
-                          <div className="relative" ref={(el) => registerAnchor(`${index}-descricao`, el)}>
+                          <div
+                            className="relative"
+                            ref={(el) =>
+                              registerAnchor(`${index}-descricao`, el)
+                            }
+                          >
                             <input
                               type="text"
                               className="w-full border border-gray-300 rounded-md px-2 py-1"
@@ -944,7 +964,3 @@ const PecasTab: React.FC<PecasTabProps> = ({
 };
 
 export default PecasTab;
-
-
-
-

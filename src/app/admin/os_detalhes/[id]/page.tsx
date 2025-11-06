@@ -1117,6 +1117,17 @@ const OSDetalhesPage: React.FC = () => {
                       <p className="text-gray-800">{maquinaData.modelo}</p>
                     </div>
                   )}
+
+                  {!!maquinaData?.observacoes?.trim() && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">
+                        Observações
+                      </p>
+                      <p className="text-gray-800 whitespace-pre-line">
+                        {maquinaData.observacoes}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -8,6 +8,7 @@ export interface Maquina {
   data_final_garantia: string;
   situacao: string;
   garantia: boolean;
+  observacoes?: string;
   cliente_atual: {
     id_cliente: number;
     nome_fantasia: string;
@@ -23,6 +24,7 @@ export interface FormData {
   data_final_garantia: string;
   situacao: string;
   id_cliente_atual: number;
+  observacoes?: string;
 }
 
 // Nova interface para o formato da resposta da API

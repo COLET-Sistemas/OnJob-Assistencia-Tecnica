@@ -17,7 +17,11 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
-import { InputField, LoadingButton } from "@/components/admin/form";
+import {
+  InputField,
+  LoadingButton,
+  TextAreaField,
+} from "@/components/admin/form";
 import CustomSelect, { OptionType } from "@/components/admin/form/CustomSelect";
 import useDebouncedCallback from "@/hooks/useDebouncedCallback";
 
@@ -30,6 +34,7 @@ interface FormData {
   data_1a_venda: string;
   nota_fiscal_venda: string;
   data_final_garantia: string;
+  observacoes: string;
 }
 
 interface ClienteOption extends Omit<OptionType, "value"> {
@@ -60,6 +65,7 @@ const EditarMaquina = () => {
     data_1a_venda: "",
     nota_fiscal_venda: "",
     data_final_garantia: "",
+    observacoes: "",
   });
 
   const [modeloInput, setModeloInput] = useState("");
@@ -136,6 +142,7 @@ const EditarMaquina = () => {
         data_final_garantia: maquinaData.data_final_garantia
           ? converterDataBRparaISO(maquinaData.data_final_garantia)
           : "",
+        observacoes: maquinaData.observacoes || "",
       });
 
       if (maquinaData.modelo) {
@@ -169,7 +176,6 @@ const EditarMaquina = () => {
           id_cliente_atual: clienteId,
         }));
       } else if (maquinaData.id_cliente_atual) {
-       
         try {
           const clienteData = await clientesService.getAll({
             id: maquinaData.id_cliente_atual,
@@ -203,7 +209,6 @@ const EditarMaquina = () => {
               id_cliente_atual: cliente.id_cliente ?? null,
             }));
           } else {
-           
           }
         } catch (clienteError) {
           console.error("Erro ao buscar dados do cliente:", clienteError);
@@ -281,36 +286,33 @@ const EditarMaquina = () => {
   };
 
   // Função para buscar clientes
-  const debouncedSearchModelos = useDebouncedCallback(
-    async (valor: string) => {
-      const termo = valor.trim();
+  const debouncedSearchModelos = useDebouncedCallback(async (valor: string) => {
+    const termo = valor.trim();
 
-      if (termo.length < 3) {
-        setModeloOptions([]);
-        setIsSearchingModelo(false);
-        return;
-      }
+    if (termo.length < 3) {
+      setModeloOptions([]);
+      setIsSearchingModelo(false);
+      return;
+    }
 
-      try {
-        const modelos = await maquinasService.getModelos(termo);
-        setModeloOptions(
-          modelos.map(
-            (modelo) =>
-              ({
-                value: modelo,
-                label: modelo,
-              } as ModeloOption)
-          )
-        );
-      } catch (error) {
-        console.error("Erro ao buscar modelos:", error);
-        setModeloOptions([]);
-      } finally {
-        setIsSearchingModelo(false);
-      }
-    },
-    400
-  );
+    try {
+      const modelos = await maquinasService.getModelos(termo);
+      setModeloOptions(
+        modelos.map(
+          (modelo) =>
+            ({
+              value: modelo,
+              label: modelo,
+            } as ModeloOption)
+        )
+      );
+    } catch (error) {
+      console.error("Erro ao buscar modelos:", error);
+      setModeloOptions([]);
+    } finally {
+      setIsSearchingModelo(false);
+    }
+  }, 400);
 
   const handleModeloInputChange = useCallback(
     (inputValue: string) => {
@@ -363,7 +365,6 @@ const EditarMaquina = () => {
     },
     [formErrors.modelo]
   );
-
 
   const searchClientes = useCallback(
     async (term: string) => {
@@ -482,6 +483,7 @@ const EditarMaquina = () => {
         data_1a_venda: formData.data_1a_venda || undefined,
         nota_fiscal_venda: formData.nota_fiscal_venda,
         data_final_garantia: formData.data_final_garantia || undefined,
+        observacoes: formData.observacoes,
       });
       showSuccess("Sucesso", "Máquina atualizada com sucesso");
       router.push("/admin/cadastro/maquinas");
@@ -645,7 +647,7 @@ const EditarMaquina = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-5">
                   {/* Data 1ª Venda */}
                   <div>
                     <InputField
@@ -680,6 +682,18 @@ const EditarMaquina = () => {
                   </div>
                 </div>
               </div>
+
+              <div>
+                <TextAreaField
+                  id="observacoes"
+                  name="observacoes"
+                  label="Observações"
+                  value={formData.observacoes}
+                  onChange={handleInputChange}
+                  placeholder="Informações adicionais sobre a máquina"
+                  rows={4}
+                />
+              </div>
             </section>
           </div>
 
@@ -709,4 +723,3 @@ const EditarMaquina = () => {
 };
 
 export default EditarMaquina;
-

@@ -1,8 +1,12 @@
 import React from "react";
 
 interface RevisaoTabProps {
-  observacoes: string;
-  onObservacoesChange: (value: string) => void;
+  observacoesRevisao: string;
+  onObservacoesRevisaoChange: (value: string) => void;
+  observacoesMaquina: string;
+  isEditandoObservacoesMaquina: boolean;
+  onToggleEditarObservacoesMaquina: (checked: boolean) => void;
+  onObservacoesMaquinaChange: (value: string) => void;
   onSubmit: (concluirOs: boolean) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
@@ -11,8 +15,12 @@ interface RevisaoTabProps {
 }
 
 const RevisaoTab: React.FC<RevisaoTabProps> = ({
-  observacoes,
-  onObservacoesChange,
+  observacoesRevisao,
+  onObservacoesRevisaoChange,
+  observacoesMaquina,
+  isEditandoObservacoesMaquina,
+  onToggleEditarObservacoesMaquina,
+  onObservacoesMaquinaChange,
   onSubmit,
   onCancel,
   isSubmitting = false,
@@ -23,24 +31,66 @@ const RevisaoTab: React.FC<RevisaoTabProps> = ({
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Revisão da Ordem de Serviço
-        </h3>
-        <label
-          htmlFor="observacoes-revisao"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
-          Observações do revisor
-        </label>
-        <textarea
-          id="observacoes-revisao"
-          className="w-full min-h-[160px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-          placeholder="Registre aqui detalhes importantes da revisão realizada."
-          value={observacoes}
-          onChange={(event) => onObservacoesChange(event.target.value)}
-          disabled={isSubmitting}
-        />
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Revisão da Ordem de Serviço
+          </h3>
+          <label
+            htmlFor="observacoes-revisao"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Observações do revisor
+          </label>
+          <textarea
+            id="observacoes-revisao"
+            className="w-full min-h-[160px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+            placeholder="Registre aqui detalhes importantes da revisão realizada."
+            value={observacoesRevisao}
+            onChange={(event) => onObservacoesRevisaoChange(event.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            id="editar-observacao-maquina"
+            type="checkbox"
+            className="h-4 w-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+            checked={isEditandoObservacoesMaquina}
+            onChange={(event) =>
+              onToggleEditarObservacoesMaquina(event.target.checked)
+            }
+            disabled={isSubmitting}
+          />
+          <label
+            htmlFor="editar-observacao-maquina"
+            className="text-sm font-medium text-gray-700"
+          >
+            Editar observação da máquina
+          </label>
+        </div>
+
+        {isEditandoObservacoesMaquina && (
+          <div>
+            <label
+              htmlFor="observacoes-maquina"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Observação da máquina
+            </label>
+            <textarea
+              id="observacoes-maquina"
+              className="w-full min-h-[160px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+              placeholder="Atualize as observações da máquina quando necessário."
+              value={observacoesMaquina}
+              onChange={(event) =>
+                onObservacoesMaquinaChange(event.target.value)
+              }
+              disabled={isSubmitting}
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -72,7 +122,7 @@ const RevisaoTab: React.FC<RevisaoTabProps> = ({
           >
             {isSubmitting && submittingAction === "conclude"
               ? "Concluindo..."
-              : "Revisão concluida"}
+              : "Revisão concluída"}
           </button>
         </div>
       </div>

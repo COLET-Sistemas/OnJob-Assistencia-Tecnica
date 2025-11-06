@@ -1418,6 +1418,7 @@ const EditarOrdemServico = () => {
                       ? "Digite pelo menos 3 caracteres para buscar"
                       : "Nenhum cliente encontrado"
                   }
+                  filterOption={() => true}
                   className={errors.cliente ? "campo-erro" : ""}
                   components={
                     clienteSelectComponents as unknown as React.ComponentProps<

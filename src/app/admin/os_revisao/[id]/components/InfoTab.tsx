@@ -4,12 +4,15 @@ import type { OSDetalhadaV2 } from "@/api/services/ordensServicoService";
 
 interface InfoTabProps {
   os: OSDetalhadaV2;
-  observacoes: string;
-  onObservacoesChange: (value: string) => void;
+  machineObservations: string;
 }
 
-const InfoTab: React.FC<InfoTabProps> = ({ os }) => {
+const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
   const [expandedFatId, setExpandedFatId] = React.useState<number | null>(null);
+  const machineNotes =
+    machineObservations.trim().length > 0
+      ? machineObservations
+      : os.maquina?.observacoes?.trim() ?? "";
 
   const handleRowClick = (fatId: number, canExpand: boolean) => {
     if (!canExpand) {
@@ -193,6 +196,17 @@ const InfoTab: React.FC<InfoTabProps> = ({ os }) => {
             Nenhuma FAT associada a esta OS.
           </p>
         )}
+      </div>
+
+      <div>
+        <h4 className="text-sm font-medium text-gray-700 mb-2">
+          Observação da máquina
+        </h4>
+        <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-700 whitespace-pre-line">
+          {machineNotes.length > 0
+            ? machineNotes
+            : "Nenhuma observação cadastrada para a máquina."}
+        </div>
       </div>
     </div>
   );

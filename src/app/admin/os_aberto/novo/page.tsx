@@ -743,6 +743,7 @@ const NovaOrdemServico = () => {
                   ? "Digite pelo menos 3 caracteres para buscar..."
                   : "Nenhum cliente encontrado"
               }
+              filterOption={() => true}
               // @ts-expect-error - Type incompatibility between ClienteOptionType and OptionType components
               components={clienteSelectComponents}
             />

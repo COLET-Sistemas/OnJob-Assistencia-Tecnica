@@ -16,7 +16,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
-import { InputField, LoadingButton } from "@/components/admin/form";
+import {
+  InputField,
+  LoadingButton,
+  TextAreaField,
+} from "@/components/admin/form";
 import CustomSelect, { OptionType } from "@/components/admin/form/CustomSelect";
 import useDebouncedCallback from "@/hooks/useDebouncedCallback";
 
@@ -29,6 +33,7 @@ interface FormData {
   data_1a_venda: string | null;
   nota_fiscal_venda: string;
   data_final_garantia: string | null;
+  observacoes: string;
 }
 
 // Define ClienteOption to ensure type compatibility with CustomSelect's OptionType
@@ -88,6 +93,7 @@ const CadastrarMaquina = () => {
     data_1a_venda: null,
     nota_fiscal_venda: "",
     data_final_garantia: null,
+    observacoes: "",
   });
   const [modeloInput, setModeloInput] = useState("");
   const [modeloOptions, setModeloOptions] = useState<ModeloOption[]>([]);
@@ -130,36 +136,33 @@ const CadastrarMaquina = () => {
     }
   };
 
-  const debouncedSearchModelos = useDebouncedCallback(
-    async (valor: string) => {
-      const termo = valor.trim();
+  const debouncedSearchModelos = useDebouncedCallback(async (valor: string) => {
+    const termo = valor.trim();
 
-      if (termo.length < 3) {
-        setModeloOptions([]);
-        setIsSearchingModelo(false);
-        return;
-      }
+    if (termo.length < 3) {
+      setModeloOptions([]);
+      setIsSearchingModelo(false);
+      return;
+    }
 
-      try {
-        const modelos = await maquinasService.getModelos(termo);
-        setModeloOptions(
-          modelos.map(
-            (modelo) =>
-              ({
-                value: modelo,
-                label: modelo,
-              } as ModeloOption)
-          )
-        );
-      } catch (error) {
-        console.error("Erro ao buscar modelos:", error);
-        setModeloOptions([]);
-      } finally {
-        setIsSearchingModelo(false);
-      }
-    },
-    400
-  );
+    try {
+      const modelos = await maquinasService.getModelos(termo);
+      setModeloOptions(
+        modelos.map(
+          (modelo) =>
+            ({
+              value: modelo,
+              label: modelo,
+            } as ModeloOption)
+        )
+      );
+    } catch (error) {
+      console.error("Erro ao buscar modelos:", error);
+      setModeloOptions([]);
+    } finally {
+      setIsSearchingModelo(false);
+    }
+  }, 400);
 
   const handleModeloInputChange = useCallback(
     (inputValue: string) => {
@@ -406,6 +409,7 @@ const CadastrarMaquina = () => {
         nota_fiscal_venda: formData.nota_fiscal_venda,
         data_final_garantia: formatDateBR(formData.data_final_garantia),
         situacao: formData.situacao,
+        observacoes: formData.observacoes,
       };
 
       const response = await maquinasService.create(maquinaData);
@@ -500,7 +504,7 @@ const CadastrarMaquina = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-5">
                   {/* Cliente Atual */}
                   <div className="md:col-span-3">
                     <CustomSelect
@@ -557,6 +561,18 @@ const CadastrarMaquina = () => {
                   </div>
                 </div>
               </div>
+
+              <div>
+                <TextAreaField
+                  id="observacoes"
+                  name="observacoes"
+                  label="Observações"
+                  value={formData.observacoes}
+                  onChange={handleInputChange}
+                  placeholder="Informações adicionais sobre a máquina"
+                  rows={4}
+                />
+              </div>
             </section>
           </div>
 
@@ -586,4 +602,3 @@ const CadastrarMaquina = () => {
 };
 
 export default CadastrarMaquina;
-

@@ -39,6 +39,7 @@ export interface OSDetalhesResponse {
     numero_serie: string;
     descricao: string;
     modelo: string;
+    observacoes?: string;
   };
   situacao_os: {
     codigo: number;

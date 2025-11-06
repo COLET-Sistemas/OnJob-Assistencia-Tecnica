@@ -140,6 +140,7 @@ const INITIAL_OS_FILTERS: Record<string, string> = {
   numero_serie: "",
   id_tecnico: "",
   tipo_tecnico: "",
+  em_garantia: "",
 };
 
 const INITIAL_PAGINATION_STATE: {
@@ -1297,6 +1298,163 @@ const ConsultaOSPage: React.FC = () => {
               </div>
 
               {/* Status */}
+              <div className="space-y-2 hidden">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <span className="text-gray-600">
+                    <FileSearch size={16} />
+                  </span>
+                  Status
+                </label>
+                <div className="relative">
+                  <select
+                    className="w-full px-3 py-3 appearance-none border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 bg-white transition-all duration-200"
+                    value={filtrosPainel.status || ""}
+                    onChange={(e) =>
+                      handleFilterChange("status", e.target.value)
+                    }
+                  >
+                    <option value="1,2,3,4,5,6,7,8,9">Todas</option>
+                    <option value="1">Pendentes</option>
+                    <option value="1,2,3,4,5">Em aberto</option>
+                    <option value="6">Aguardando Revisão</option>
+                    <option value="6,7">Concluídas</option>
+                    <option value="8,9">Canceladas</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <span className="text-gray-400">
+                      <ChevronDown className="h-5 w-5" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Garantia */}
+              <div className="space-y-2 hidden">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Garantia
+                </label>
+                <div className="relative">
+                  <select
+                    className="w-full px-3 py-3 appearance-none border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 bg-white transition-all duration-200"
+                    value={filtrosPainel.em_garantia || ""}
+                    onChange={(e) =>
+                      handleFilterChange("em_garantia", e.target.value)
+                    }
+                  >
+                    <option value="">Listar Ambos</option>
+                    <option value="S">Em garantia</option>
+                    <option value="N">Fora de garantia</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <span className="text-gray-400">
+                      <ChevronDown className="h-5 w-5" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Técnico */}
+              <div className="space-y-2 hidden">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Técnico
+                </label>
+                <div className="relative">
+                  <select
+                    className="w-full px-3 py-3 appearance-none border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 bg-white transition-all duration-200"
+                    value={
+                      filtrosPainel.tipo_tecnico ||
+                      filtrosPainel.id_tecnico ||
+                      ""
+                    }
+                    onChange={(e) => {
+                      if (
+                        e.target.value === "interno" ||
+                        e.target.value === "terceiro"
+                      ) {
+                        // Se for seleção por tipo, limpa id_tecnico e configura tipo_tecnico
+                        handleFilterChange("id_tecnico", "");
+                        handleFilterChange("tipo_tecnico", e.target.value);
+                      } else {
+                        // Se for seleção por ID, limpa tipo_tecnico
+                        handleFilterChange("tipo_tecnico", "");
+                        handleFilterChange("id_tecnico", e.target.value);
+                      }
+                    }}
+                  >
+                    <option value="">Todos os Técnicos</option>
+                    <option value="interno">Apenas Internos</option>
+                    <option value="terceiro">Apenas Terceiros</option>
+                    <optgroup label="Técnicos específicos">
+                      {tecnicos &&
+                        tecnicos.map((tecnico) => (
+                          <option
+                            key={tecnico?.id || "unknown"}
+                            value={tecnico?.id?.toString() || ""}
+                          >
+                            {tecnico?.nome || "Técnico sem nome"}
+                          </option>
+                        ))}
+                    </optgroup>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    {loadingTecnicos ? (
+                      <div className="h-4 w-4 border-2 border-t-[var(--primary)] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin pointer-events-none" />
+                    ) : filtrosPainel.tipo_tecnico ||
+                      filtrosPainel.id_tecnico ? (
+                      <button
+                        type="button"
+                        onClick={() => handleClearField("id_tecnico")}
+                        className="text-gray-400 hover:text-gray-600 focus:outline-none mr-5"
+                        aria-label="Limpar seleção de técnico"
+                      >
+                        <X size={16} />
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 pointer-events-none">
+                        <ChevronDown className="h-5 w-5" />
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Número Interno */}
+              <div className="space-y-2 hidden">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Número Interno
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Digite o número interno"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 placeholder:text-gray-400 transition-all duration-200"
+                    value={filtrosPainel.numero_interno || ""}
+                    onChange={(e) =>
+                      handleFilterChange("numero_interno", e.target.value)
+                    }
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    {filtrosPainel.numero_interno ? (
+                      <button
+                        type="button"
+                        onClick={() => handleClearField("numero_interno")}
+                        className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                        aria-label="Limpar número interno"
+                      >
+                        <X size={16} />
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 pointer-events-none">
+                        <Search size={16} />
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+            {/* Status, Técnico, Número Interno e Garantia */}
+            <div className="md:col-span-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Status */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <span className="text-gray-600">
@@ -1426,8 +1584,34 @@ const ConsultaOSPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Tipo de Data, Data Inicial e Data Final em uma linha */}
-              <div className="col-span-1 lg:col-span-3">
+              {/* Garantia */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Garantia
+                </label>
+                <div className="relative">
+                  <select
+                    className="w-full px-3 py-3 appearance-none border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 bg-white transition-all duration-200"
+                    value={filtrosPainel.em_garantia || ""}
+                    onChange={(e) =>
+                      handleFilterChange("em_garantia", e.target.value)
+                    }
+                  >
+                    <option value="">Listar Ambos</option>
+                    <option value="S">Em garantia</option>
+                    <option value="N">Fora de garantia</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <span className="text-gray-400">
+                      <ChevronDown className="h-5 w-5" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tipo de Data, Data Inicial e Data Final em uma linha */}
+            <div className="col-span-1 lg:col-span-3">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Tipo de Data */}
                   <div className="space-y-2">
@@ -1726,4 +1910,6 @@ const ConsultaOSPage: React.FC = () => {
 };
 
 export default ConsultaOSPage;
+
+
 
