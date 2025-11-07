@@ -26,6 +26,20 @@ export interface HistoricoResponse {
   total_registros: number;
   total_paginas: number;
   dados: HistoricoRegistro[];
+  maquina?: {
+    id_maquina?: number;
+    numero_serie?: string;
+    descricao?: string;
+    modelo?: string;
+    observacoes?: string;
+    data_final_garantia?: string;
+  };
+  cliente?: {
+    id_cliente?: number;
+    nome_fantasia?: string;
+    razao_social?: string;
+    cnpj?: string;
+  };
 }
 
 interface HistoricoParams {

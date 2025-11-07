@@ -38,6 +38,12 @@ const HistoricoModal: React.FC<HistoricoModalProps> = ({
   const [registros, setRegistros] = useState<HistoricoRegistro[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [maquinaInfo, setMaquinaInfo] = useState<
+    HistoricoResponse["maquina"] | null
+  >(null);
+  const [clienteInfo, setClienteInfo] = useState<
+    HistoricoResponse["cliente"] | null
+  >(null);
 
   const tipoDescricao = useMemo(() => {
     if (tipo === "cliente") return "Histórico do Cliente";
@@ -61,6 +67,8 @@ const HistoricoModal: React.FC<HistoricoModalProps> = ({
       });
 
       setRegistros(response?.dados || []);
+      setMaquinaInfo(response?.maquina || null);
+      setClienteInfo(response?.cliente || null);
       setTotalPaginas(Math.max(response?.total_paginas || 1, 1));
     } catch (error) {
       console.error("Erro ao carregar histórico:", error);
@@ -68,6 +76,8 @@ const HistoricoModal: React.FC<HistoricoModalProps> = ({
         "Não foi possível carregar o histórico. Tente novamente mais tarde."
       );
       setRegistros([]);
+      setMaquinaInfo(null);
+      setClienteInfo(null);
     } finally {
       setLoading(false);
     }
@@ -78,6 +88,8 @@ const HistoricoModal: React.FC<HistoricoModalProps> = ({
       setPagina(1);
       setRegistros([]);
       setErrorMessage(null);
+      setMaquinaInfo(null);
+      setClienteInfo(null);
     }
   }, [isOpen, targetId, tipo]);
 
@@ -106,15 +118,56 @@ const HistoricoModal: React.FC<HistoricoModalProps> = ({
 
       <div className="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 animate-in fade-in-0 zoom-in-95 duration-200">
         <div className="flex items-start justify-between p-6 border-b border-gray-200">
-          <div>
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
               <History className="w-5 h-5 text-indigo-600" />
               <h3 className="text-lg font-semibold text-gray-900">
                 {tipoDescricao}
               </h3>
             </div>
-            {targetLabel && (
-              <p className="text-sm text-gray-500 mt-1">{targetLabel}</p>
+            {isHistoricoMaquina ? (
+              <div className="text-sm text-gray-600 space-y-1">
+                <p className="font-semibold text-gray-900">
+                  {maquinaInfo?.descricao ||
+                    targetLabel?.replace("Máquina: ", "") ||
+                    "Máquina"}
+                </p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                  {maquinaInfo?.numero_serie && (
+                    <span>S/N {maquinaInfo.numero_serie}</span>
+                  )}
+                  {maquinaInfo?.modelo && (
+                    <span>Modelo: {maquinaInfo.modelo}</span>
+                  )}
+                  {maquinaInfo?.data_final_garantia && (
+                    <span>Garantia até {maquinaInfo.data_final_garantia}</span>
+                  )}
+                </div>
+                {maquinaInfo?.observacoes && (
+                  <p className="text-xs text-gray-500 italic">
+                    {maquinaInfo.observacoes}
+                  </p>
+                )}
+              </div>
+            ) : isHistoricoCliente ? (
+              <div className="text-sm text-gray-600 space-y-1">
+                <p className="font-semibold text-gray-900">
+                  {clienteInfo?.nome_fantasia ||
+                    clienteInfo?.razao_social ||
+                    targetLabel ||
+                    "Cliente"}
+                </p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                  {clienteInfo?.razao_social && (
+                    <span>{clienteInfo.razao_social}</span>
+                  )}
+                  {clienteInfo?.cnpj && <span>CNPJ: {clienteInfo.cnpj}</span>}
+                </div>
+              </div>
+            ) : (
+              targetLabel && (
+                <p className="text-sm text-gray-500 mt-1">{targetLabel}</p>
+              )
             )}
           </div>
           <button
@@ -155,12 +208,28 @@ const HistoricoModal: React.FC<HistoricoModalProps> = ({
                       <div className="p-4 space-y-4">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                              <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                                OS
+                            <p className="text-sm font-semibold text-gray-900 flex items-center gap-3">
+                              <span className="flex items-center gap-1">
+                                <span className="text-[14px] font-medium uppercase tracking-wide text-gray-500">
+                                  OS
+                                </span>
+                                <span className="text-gray-800">
+                                  #{registro.numero_os}
+                                </span>
                               </span>
-                              #{registro.numero_os}
+
+                              <span className="w-1 h-1 rounded-full bg-gray-400"></span>
+
+                              <span className="flex items-center gap-1">
+                                <span className="text-[14px] font-medium uppercase tracking-wide text-gray-500">
+                                  FAT
+                                </span>
+                                <span className="text-gray-800">
+                                  #{registro.id_fat}
+                                </span>
+                              </span>
                             </p>
+
                             <p className="text-xs text-gray-500">
                               Atendimento em {registro.data_atendimento}
                             </p>
@@ -253,36 +322,7 @@ const HistoricoModal: React.FC<HistoricoModalProps> = ({
                               </p>
                             </div>
                           )}
-                          {registro.observacoes && (
-                            <div className="p-3 bg-white rounded-lg border border-gray-100">
-                              <p className="text-xs uppercase tracking-wide text-gray-500">
-                                Observações
-                              </p>
-                              <p className="text-gray-800 whitespace-pre-wrap mt-1">
-                                {registro.observacoes}
-                              </p>
-                            </div>
-                          )}
-                          {registro.observacoes_tecnico && (
-                            <div className="p-3 bg-white rounded-lg border border-gray-100">
-                              <p className="text-xs uppercase tracking-wide text-gray-500">
-                                Observações do técnico
-                              </p>
-                              <p className="text-gray-800 whitespace-pre-wrap mt-1">
-                                {registro.observacoes_tecnico}
-                              </p>
-                            </div>
-                          )}
-                          {registro.observacoes_revisao && (
-                            <div className="p-3 bg-white rounded-lg border border-gray-100">
-                              <p className="text-xs uppercase tracking-wide text-gray-500">
-                                Observações de revisão
-                              </p>
-                              <p className="text-gray-800 whitespace-pre-wrap mt-1">
-                                {registro.observacoes_revisao}
-                              </p>
-                            </div>
-                          )}
+
                           {registro.testes_realizados && (
                             <div className="p-3 bg-white rounded-lg border border-gray-100">
                               <p className="text-xs uppercase tracking-wide text-gray-500">
@@ -300,6 +340,37 @@ const HistoricoModal: React.FC<HistoricoModalProps> = ({
                               </p>
                               <p className="text-gray-800 whitespace-pre-wrap mt-1">
                                 {registro.sugestoes}
+                              </p>
+                            </div>
+                          )}
+                          {registro.observacoes && (
+                            <div className="p-3 bg-white rounded-lg border border-gray-100">
+                              <p className="text-xs uppercase tracking-wide text-gray-500">
+                                Observações
+                              </p>
+                              <p className="text-gray-800 whitespace-pre-wrap mt-1">
+                                {registro.observacoes}
+                              </p>
+                            </div>
+                          )}
+
+                          {registro.observacoes_tecnico && (
+                            <div className="p-3 bg-white rounded-lg border border-gray-100">
+                              <p className="text-xs uppercase tracking-wide text-gray-500">
+                                Observações do técnico
+                              </p>
+                              <p className="text-gray-800 whitespace-pre-wrap mt-1">
+                                {registro.observacoes_tecnico}
+                              </p>
+                            </div>
+                          )}
+                          {registro.observacoes_revisao && (
+                            <div className="p-3 bg-white rounded-lg border border-gray-100">
+                              <p className="text-xs uppercase tracking-wide text-gray-500">
+                                Observações de revisão
+                              </p>
+                              <p className="text-gray-800 whitespace-pre-wrap mt-1">
+                                {registro.observacoes_revisao}
                               </p>
                             </div>
                           )}
