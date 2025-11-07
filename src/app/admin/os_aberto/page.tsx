@@ -17,8 +17,10 @@ import LiberacaoFinanceiraModal from "@/app/admin/os_aberto/components/Liberacao
 import AlterarPendenciaModal from "@/app/admin/os_aberto/components/AlterarPendenciaModal";
 import TecnicoModal from "@/app/admin/os_aberto/components/TecnicoModal";
 import CancelarOSModal from "@/app/admin/os_aberto/components/CancelarOSModal";
+import HistoricoModal from "@/app/admin/os_aberto/components/HistoricoModal";
 import { OrdemServico } from "@/types/OrdemServico";
 import { useRouter, useSearchParams } from "next/navigation";
+import { HistoricoTipo } from "@/api/services/historicoService";
 
 const CODIGO_SITUACAO = {
   PENDENTE: 1,
@@ -30,6 +32,56 @@ const CODIGO_SITUACAO = {
 
 const EXPANDED_STORAGE_KEY = "osAbertoExpandedId";
 const EXPANDED_RESTORE_FLAG_KEY = "osAbertoShouldRestoreExpanded";
+
+const POSSIBLE_MAQUINA_ID_KEYS = [
+  "id",
+  "id_maquina",
+  "idMaquina",
+  "maquina_id",
+  "id_maquina_cliente",
+] as const;
+
+const resolveMaquinaId = (
+  maquinaData?: Partial<OrdemServico["maquina"]> | null
+): number | null => {
+  if (!maquinaData) return null;
+
+  for (const key of POSSIBLE_MAQUINA_ID_KEYS) {
+    const value = (maquinaData as Record<string, unknown>)[key];
+    if (typeof value === "number" && value > 0) {
+      return value;
+    }
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      if (!Number.isNaN(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+  }
+
+  return null;
+};
+
+const buildMaquinaLabel = (
+  maquinaData?: Partial<OrdemServico["maquina"]> | null
+): string => {
+  if (!maquinaData) return "Máquina";
+  const descricao =
+    maquinaData.descricao || (maquinaData as { modelo?: string }).modelo || "";
+  const serialInfo = maquinaData.numero_serie
+    ? ` • S/N ${maquinaData.numero_serie}`
+    : "";
+
+  if (descricao) {
+    return `Máquina: ${descricao}${serialInfo}`;
+  }
+
+  if (serialInfo) {
+    return `Máquina${serialInfo}`;
+  }
+
+  return "Máquina";
+};
 
 const TelaOSAbertas: React.FC = () => {
   const router = useRouter();
@@ -72,6 +124,18 @@ const TelaOSAbertas: React.FC = () => {
     mode: "add" as "add" | "edit",
     currentTecnicoId: 0,
     currentTecnicoNome: "",
+  });
+
+  const [historicoModal, setHistoricoModal] = useState<{
+    isOpen: boolean;
+    tipo: HistoricoTipo | null;
+    targetId: number | null;
+    targetLabel: string;
+  }>({
+    isOpen: false,
+    tipo: null,
+    targetId: null,
+    targetLabel: "",
   });
 
   const [situacoes, setSituacoes] = useState({
@@ -516,6 +580,64 @@ const TelaOSAbertas: React.FC = () => {
     [fetchData, handleCloseCancelamentoModal, showError, showSuccess]
   );
 
+  const handleOpenHistoricoCliente = useCallback(
+    (cliente: OrdemServico["cliente"]) => {
+      if (!cliente?.id) return;
+      setHistoricoModal({
+        isOpen: true,
+        tipo: "cliente",
+        targetId: cliente.id,
+        targetLabel: cliente.nome ? `Cliente: ${cliente.nome}` : "Cliente",
+      });
+    },
+    []
+  );
+
+  const handleOpenHistoricoMaquina = useCallback(
+    async (maquina: OrdemServico["maquina"], osId: number) => {
+      let maquinaId = resolveMaquinaId(maquina);
+      let labelText = buildMaquinaLabel(maquina);
+
+      if (!maquinaId) {
+        try {
+          const detalhes = await ordensServicoService.getById(osId);
+          maquinaId = resolveMaquinaId(
+            (detalhes?.maquina as OrdemServico["maquina"]) || null
+          );
+          labelText = buildMaquinaLabel(
+            (detalhes?.maquina as OrdemServico["maquina"]) || maquina
+          );
+        } catch (error) {
+          console.error("Erro ao buscar dados da máquina:", error);
+          showError("Erro ao carregar dados da máquina.");
+          return;
+        }
+      }
+
+      if (!maquinaId) {
+        showError("Não foi possível identificar a máquina desta OS.");
+        return;
+      }
+
+      setHistoricoModal({
+        isOpen: true,
+        tipo: "maquina",
+        targetId: maquinaId,
+        targetLabel: labelText,
+      });
+    },
+    [showError]
+  );
+
+  const handleCloseHistoricoModal = useCallback(() => {
+    setHistoricoModal({
+      isOpen: false,
+      tipo: null,
+      targetId: null,
+      targetLabel: "",
+    });
+  }, []);
+
   const handleConfirmTecnico = useCallback(
     async (osId: number, tecnicoId: number, tecnicoNome: string) => {
       try {
@@ -715,6 +837,8 @@ const TelaOSAbertas: React.FC = () => {
                   onAlterarTecnico={createAlterarTecnicoHandler(os)}
                   onEditarOS={handleEditarOS}
                   onCancelarOS={handleOpenCancelamentoModal}
+                  onHistoricoCliente={handleOpenHistoricoCliente}
+                  onHistoricoMaquina={handleOpenHistoricoMaquina}
                 />
               </div>
             ))}
@@ -755,6 +879,15 @@ const TelaOSAbertas: React.FC = () => {
         currentTecnicoNome={modalTecnico.currentTecnicoNome}
         onClose={handleCloseTecnicoModal}
         onConfirm={handleConfirmTecnico}
+      />
+
+      {/* Modal de Histórico */}
+      <HistoricoModal
+        isOpen={historicoModal.isOpen}
+        tipo={historicoModal.tipo}
+        targetId={historicoModal.targetId}
+        targetLabel={historicoModal.targetLabel || undefined}
+        onClose={handleCloseHistoricoModal}
       />
 
       {/* Modal de Cancelamento de OS */}

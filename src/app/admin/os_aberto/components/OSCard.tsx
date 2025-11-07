@@ -25,6 +25,7 @@ import {
   Wrench,
   PauseCircle,
   FileX,
+  History,
 } from "lucide-react";
 import { isDataAgendadaPassada } from "@/utils/formatters";
 
@@ -50,6 +51,11 @@ interface OSCardProps {
   ) => void;
   onEditarOS?: (osId: number) => void;
   onCancelarOS?: (osId: number) => void;
+  onHistoricoCliente?: (cliente: OrdemServico["cliente"]) => void;
+  onHistoricoMaquina?: (
+    maquina: OrdemServico["maquina"],
+    osId: number
+  ) => void;
 }
 
 const OSCard: React.FC<OSCardProps> = ({
@@ -65,6 +71,8 @@ const OSCard: React.FC<OSCardProps> = ({
   onAlterarTecnico,
   onEditarOS,
   onCancelarOS,
+  onHistoricoCliente,
+  onHistoricoMaquina,
 }) => {
   // Função para determinar a cor baseada no código da situação
   const getSituacaoColor = (codigo: number) => {
@@ -350,6 +358,36 @@ const OSCard: React.FC<OSCardProps> = ({
                     </h4>
                   </div>
                   <div className="flex items-center gap-2">
+                    {onHistoricoMaquina && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onHistoricoMaquina(os.maquina, os.id_os);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 
+                                hover:bg-amber-100 rounded-md text-xs font-medium transition-colors 
+                                border border-amber-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                        title="Histórico desta máquina"
+                      >
+                        <History className="w-3.5 h-3.5" />
+                        Histórico da Máquina
+                      </button>
+                    )}
+                    {onHistoricoCliente && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onHistoricoCliente(os.cliente);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 
+                                hover:bg-emerald-100 rounded-md text-xs font-medium transition-colors 
+                                border border-emerald-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                        title="Histórico deste cliente"
+                      >
+                        <History className="w-3.5 h-3.5" />
+                        Histórico do Cliente
+                      </button>
+                    )}
                     {onEditarOS && (
                       <button
                         onClick={(e) => {
