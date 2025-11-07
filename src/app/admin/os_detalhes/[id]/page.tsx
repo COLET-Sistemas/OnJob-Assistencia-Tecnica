@@ -1118,6 +1118,33 @@ const OSDetalhesPage: React.FC = () => {
                     </div>
                   )}
 
+                  {(maquinaData?.data_1a_venda ||
+                    maquinaData?.data_final_garantia) && (
+                    <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:gap-26">
+                      {maquinaData?.data_1a_venda && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">
+                            Data 1° Venda
+                          </p>
+                          <p className="text-gray-800">
+                            {maquinaData.data_1a_venda}
+                          </p>
+                        </div>
+                      )}
+
+                      {maquinaData?.data_final_garantia && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">
+                            Data Final Garantia
+                          </p>
+                          <p className="text-gray-800">
+                            {maquinaData.data_final_garantia}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {!!maquinaData?.observacoes?.trim() && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
@@ -1579,7 +1606,8 @@ const OSDetalhesPage: React.FC = () => {
                                   </span>
                                 ) : (
                                   <span className="text-xs text-gray-400 italic">
-                                    Alteração de status sem comentários adicionais.
+                                    Alteração de status sem comentários
+                                    adicionais.
                                   </span>
                                 )}
                                 <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -1596,7 +1624,9 @@ const OSDetalhesPage: React.FC = () => {
                             </div>
                             <div className="px-4 py-3">
                               {statusLabel ? (
-                                <p className={`text-sm font-medium ${theme.statusText}`}>
+                                <p
+                                  className={`text-sm font-medium ${theme.statusText}`}
+                                >
                                   {statusLabel}
                                 </p>
                               ) : (

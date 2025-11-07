@@ -209,6 +209,7 @@ export interface OSDetalhada {
     numero_serie: string;
     descricao?: string;
     modelo?: string;
+    
   };
   tecnico?: {
     id: number;
@@ -340,6 +341,8 @@ export interface OSDetalhadaV2 {
     ano_fabricacao?: number;
     horas_trabalhadas?: number;
     ultima_manutencao?: string;
+    data_1a_venda?: string;
+    data_final_garantia?: string;
   };
   // Situação da OS expandida
   situacao_os: {
