@@ -1,6 +1,13 @@
 ﻿"use client";
 
-import { CheckCircle, Filter, Search, X, ChevronDown } from "lucide-react";
+import {
+  CheckCircle,
+  Filter,
+  Search,
+  X,
+  ChevronDown,
+  Calendar,
+} from "lucide-react";
 import React, {
   KeyboardEvent,
   useEffect,
@@ -12,7 +19,7 @@ import React, {
 interface FilterOption {
   id: string;
   label: string;
-  type: "text" | "select" | "checkbox" | "autocomplete";
+  type: "text" | "select" | "checkbox" | "autocomplete" | "date";
   placeholder?: string;
   options?: Array<{ value: string; label: string }>;
   // Para autocomplete
@@ -285,6 +292,34 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                             Digite pelo menos 3 caracteres
                           </p>
                         )}
+                    </div>
+                  )}
+                  {option.type === "date" && (
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <input
+                          type="date"
+                          value={filterValues[option.id] || ""}
+                          onChange={(e) => onFilterChange(option.id, e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          placeholder={option.placeholder || "Selecione uma data"}
+                          className="w-full px-4 pr-10 py-3 pl-11 bg-white border-2 border-gray-200 focus:border-[var(--primary)] focus:ring-[var(--primary)]/20 rounded-xl text-sm text-[var(--neutral-graphite)] placeholder-[var(--neutral-graphite)]/60 transition-all duration-200 focus:bg-white focus:ring-2 focus:outline-none group-hover:border-gray-300 focus:scale-[1.01]"
+                        />
+                        <Calendar
+                          size={16}
+                          className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 transition-all duration-200 group-focus-within:text-[var(--primary)] group-focus-within:scale-110"
+                        />
+                        {filterValues[option.id] && (
+                          <button
+                            type="button"
+                            onClick={() => onFilterChange(option.id, "")}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:text-[var(--primary)] transition-colors duration-150 focus:outline-none"
+                            aria-label={`Limpar ${option.label}`}
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
 

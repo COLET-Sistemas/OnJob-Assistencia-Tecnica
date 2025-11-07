@@ -12,13 +12,16 @@ import Pagination from "@/components/admin/ui/Pagination";
 import useDebouncedCallback from "@/hooks/useDebouncedCallback";
 import { useFilters } from "@/hooks/useFilters";
 import { maquinasService } from "@/api/services/maquinasService";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CircleCheck, CircleX } from "lucide-react";
 
 interface MaquinasFilters {
   numero_serie: string;
   descricao: string;
   incluir_inativos: string;
   modelo: string;
+  garantia: string;
+  data_venda_ini: string;
+  data_venda_fim: string;
   [key: string]: string;
 }
 
@@ -27,6 +30,18 @@ const INITIAL_MAQUINAS_FILTERS: MaquinasFilters = {
   descricao: "",
   incluir_inativos: "",
   modelo: "",
+  garantia: "",
+  data_venda_ini: "",
+  data_venda_fim: "",
+};
+
+const formatDateForApi = (value: string) => {
+  if (!value) return "";
+  const [year, month, day] = value.split("-");
+  if (year && month && day) {
+    return `${day}.${month}.${year}`;
+  }
+  return value;
 };
 
 interface PaginacaoInfo {
@@ -35,27 +50,6 @@ interface PaginacaoInfo {
   totalRegistros: number;
   registrosPorPagina: number;
 }
-
-const WarrantyBadge = ({ inWarranty }: { inWarranty: boolean }) => {
-  return (
-    <div
-      className={`flex items-center gap-1 px-2 py-1 rounded-md ${
-        inWarranty
-          ? "bg-green-100 text-green-700"
-          : "bg-orange-100 text-orange-700"
-      }`}
-    >
-      {inWarranty ? (
-        <CheckCircle className="w-4 h-4" />
-      ) : (
-        <XCircle className="w-4 h-4" />
-      )}
-      <span className="text-xs font-medium">
-        {inWarranty ? "Na Garantia" : "Fora da Garantia"}
-      </span>
-    </div>
-  );
-};
 
 const CadastroMaquinas = () => {
   const { showSuccess, showError } = useToast();
@@ -114,6 +108,19 @@ const CadastroMaquinas = () => {
   }, [filtrosPainel.modelo, fetchModelosDebounced]);
 
   const handleApplyFilters = () => {
+    const dataVendaIni = filtrosPainel.data_venda_ini?.trim();
+    const dataVendaFim = filtrosPainel.data_venda_fim?.trim();
+    const hasPartialDate =
+      (dataVendaIni && !dataVendaFim) || (!dataVendaIni && dataVendaFim);
+
+    if (hasPartialDate) {
+      showError(
+        "Filtro incompleto",
+        "Informe a data inicial e final da venda para aplicar o filtro."
+      );
+      return;
+    }
+
     setLocalShowFilters(false);
     isReloadingRef.current = true;
     aplicarFiltros();
@@ -137,13 +144,32 @@ const CadastroMaquinas = () => {
     isReloadingRef.current = true;
 
     try {
+      const dataVendaIniFilter = filtrosAplicados.data_venda_ini?.trim();
+      const dataVendaFimFilter = filtrosAplicados.data_venda_fim?.trim();
+      const shouldApplyDateFilter = Boolean(
+        dataVendaIniFilter && dataVendaFimFilter
+      );
+
+      const garantiaFilter =
+        filtrosAplicados.garantia === "true" ||
+        filtrosAplicados.garantia === "false"
+          ? filtrosAplicados.garantia
+          : "";
+
       const response = await maquinasService.getAll(
         paginacao.paginaAtual,
         paginacao.registrosPorPagina,
         filtrosAplicados.incluir_inativos === "true",
         filtrosAplicados.numero_serie?.trim() || undefined,
         filtrosAplicados.modelo?.trim() || undefined,
-        filtrosAplicados.descricao?.trim() || undefined
+        filtrosAplicados.descricao?.trim() || undefined,
+        shouldApplyDateFilter && dataVendaIniFilter
+          ? formatDateForApi(dataVendaIniFilter)
+          : undefined,
+        shouldApplyDateFilter && dataVendaFimFilter
+          ? formatDateForApi(dataVendaFimFilter)
+          : undefined,
+        garantiaFilter || undefined
       );
 
       setPaginacao((prev) => ({
@@ -207,16 +233,26 @@ const CadastroMaquinas = () => {
       header: "Máquina",
       accessor: "numero_serie" as keyof Maquina,
       render: (maquina: Maquina) => (
-        <div className="flex items-start gap-2">
-          <div className="flex flex-col">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-5 h-5 flex items-center justify-center shrink-0"
+              title={maquina.garantia ? "Em garantia" : "Fora da garantia"}
+            >
+              {maquina.garantia ? (
+                <CircleCheck className="w-5 h-5 text-emerald-500" />
+              ) : (
+                <CircleX className="w-5 h-5 text-amber-500" />
+              )}
+            </div>
             <div className="text-gray-900">
               <span className="font-bold text-sm">{maquina.numero_serie}</span>
               {" - "}
               <span className="text-xs">{maquina.modelo}</span>
             </div>
-            <div className="text-sm font-bold text-gray-600 mt-1 line-clamp-1">
-              {maquina.descricao}
-            </div>
+          </div>
+          <div className="text-sm font-bold text-gray-600 mt-1 line-clamp-1">
+            {maquina.descricao}
           </div>
         </div>
       ),
@@ -253,13 +289,6 @@ const CadastroMaquinas = () => {
         <span className="text-sm text-gray-600">
           {maquina.data_final_garantia}
         </span>
-      ),
-    },
-    {
-      header: "Garantia",
-      accessor: "garantia" as keyof Maquina,
-      render: (maquina: Maquina) => (
-        <WarrantyBadge inWarranty={maquina.garantia} />
       ),
     },
     {
@@ -333,6 +362,29 @@ const CadastroMaquinas = () => {
         : "Digite ao menos 3 caracteres para buscar...",
       autocompleteOptions: modelosOptions,
       isLoadingAutocomplete: isLoadingModelos,
+    },
+    {
+      id: "garantia",
+      label: "Garantia",
+      type: "select" as const,
+      placeholder: "Selecione o status da garantia",
+      options: [
+        { value: "", label: "Todas" },
+        { value: "true", label: "Em garantia" },
+        { value: "false", label: "Fora da garantia" },
+      ],
+    },
+    {
+      id: "data_venda_ini",
+      label: "Data inicial da venda",
+      type: "date" as const,
+      placeholder: "Selecione a data inicial",
+    },
+    {
+      id: "data_venda_fim",
+      label: "Data final da venda",
+      type: "date" as const,
+      placeholder: "Selecione a data final",
     },
     {
       id: "incluir_inativos",

@@ -37,6 +37,9 @@ interface ClienteOption extends OptionType {
   value: number;
   cidade?: string;
   uf?: string;
+  nome_fantasia?: string;
+  razao_social?: string;
+  codigo_erp?: string;
 }
 
 interface MaquinaOption extends MachineOptionType {
@@ -367,12 +370,30 @@ const NovaOrdemServico = () => {
       const response = await clientesService.search(term);
 
       // Acessa os dados dos clientes no array 'dados'
-      const options = response.dados.map((cliente: Cliente) => ({
-        value: cliente.id_cliente || cliente.id || 0,
-        label: `${cliente.razao_social} (${cliente.codigo_erp || "-"})`,
-        cidade: cliente.cidade,
-        uf: cliente.uf,
-      }));
+      const options = response.dados.map((cliente: Cliente) => {
+        const razaoSocial =
+          cliente.razao_social && cliente.razao_social.trim().length > 0
+            ? cliente.razao_social
+            : cliente.nome_fantasia || "Cliente sem razão social";
+        const nomeFantasia =
+          cliente.nome_fantasia && cliente.nome_fantasia.trim().length > 0
+            ? cliente.nome_fantasia
+            : undefined;
+        const codigoErp =
+          cliente.codigo_erp && cliente.codigo_erp.trim().length > 0
+            ? ` (${cliente.codigo_erp})`
+            : " (-)";
+
+        return {
+          value: cliente.id_cliente || cliente.id || 0,
+          label: `${razaoSocial}${codigoErp}`,
+          cidade: cliente.cidade,
+          uf: cliente.uf,
+          nome_fantasia: nomeFantasia,
+          razao_social: cliente.razao_social || "",
+          codigo_erp: cliente.codigo_erp || "",
+        };
+      });
       setClienteOptions(options);
     } catch (error) {
       console.error("Erro ao buscar clientes:", error);

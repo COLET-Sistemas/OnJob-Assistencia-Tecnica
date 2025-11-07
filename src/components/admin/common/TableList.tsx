@@ -12,7 +12,7 @@ interface Column<T> {
 interface FilterOption {
   id: string;
   label: string;
-  type: "text" | "select" | "checkbox" | "autocomplete";
+  type: "text" | "select" | "checkbox" | "autocomplete" | "date";
   placeholder?: string;
   options?: Array<{ value: string; label: string }>;
   autocompleteOptions?: string[];

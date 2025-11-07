@@ -31,9 +31,6 @@ function DataTable<T extends object>({
     description: "Tente ajustar seus filtros ou cadastre um novo item.",
   },
   expandedRowId,
-  // onRowExpand is received but no longer used directly by the DataTable component.
-  // It's still needed as an interface since component users call it directly.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onRowExpand,
   renderExpandedRow,
 }: DataTableProps<T>): React.ReactElement {
@@ -69,19 +66,27 @@ function DataTable<T extends object>({
         >
           {data.length > 0 ? (
             data.map((item, index) => {
-              // Use index as a fallback when keyField is undefined
-              const id =
-                item[keyField] !== undefined
-                  ? String(item[keyField])
-                  : `row-${index}`;
+              const rowIdentifier =
+                (item[keyField] as number | string | undefined) ?? index;
+              const rowKey = String(rowIdentifier);
               const isExpanded =
                 expandedRowId !== undefined &&
                 expandedRowId !== null &&
-                String(expandedRowId) === id;
+                String(expandedRowId) === rowKey;
+              const isRowClickable = typeof onRowExpand === "function";
 
               return (
-                <React.Fragment key={id}>
-                  <tr className="hover:bg-[var(--primary)]/5 transition-colors duration-150">
+                <React.Fragment key={rowKey}>
+                  <tr
+                    className={`hover:bg-[var(--primary)]/5 transition-colors duration-150 ${
+                      isRowClickable ? "cursor-pointer" : ""
+                    }`}
+                    onClick={() => {
+                      if (onRowExpand) {
+                        onRowExpand(rowIdentifier);
+                      }
+                    }}
+                  >
                     {columns.map((column, colIndex) => (
                       <td
                         key={colIndex}

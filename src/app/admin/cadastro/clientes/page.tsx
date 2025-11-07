@@ -32,11 +32,45 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import ConfirmModal from "@/components/admin/ui/ConfirmModal";
 
-const { clientesService, maquinasService } = services;
+const { clientesService, maquinasService, cidadesService } = services;
+
+const CITY_VALUE_SEPARATOR = "::";
+const CITY_ALL_KEY = "__all__";
+const DEFAULT_CITY_OPTION = { value: "", label: "Todas" } as const;
+
+const serializeCidadeFilterValue = (cidade: string, uf: string) => {
+  const safeCidade = encodeURIComponent(cidade.trim());
+  const safeUf = uf.trim().toUpperCase();
+  return `${safeCidade}${CITY_VALUE_SEPARATOR}${safeUf}`;
+};
+
+const parseCidadeFilterValue = (value?: string) => {
+  if (!value) {
+    return null;
+  }
+
+  const [encodedCidade, uf] = value.split(CITY_VALUE_SEPARATOR);
+  if (!encodedCidade || !uf) {
+    return null;
+  }
+
+  try {
+    return {
+      cidade: decodeURIComponent(encodedCidade),
+      uf,
+    };
+  } catch {
+    return {
+      cidade: encodedCidade,
+      uf,
+    };
+  }
+};
 
 interface ClientesFilters {
   nome: string;
   uf: string;
+  cidade: string;
   incluir_inativos: string;
   id_regiao: string;
   [key: string]: string;
@@ -45,6 +79,7 @@ interface ClientesFilters {
 const INITIAL_CLIENTES_FILTERS: ClientesFilters = {
   nome: "",
   uf: "",
+  cidade: "",
   incluir_inativos: "",
   id_regiao: "",
 };
@@ -84,6 +119,9 @@ const CadastroClientes = () => {
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [regioes, setRegioes] = useState<Regiao[]>([]);
+  const [cidadeOptions, setCidadeOptions] = useState<
+    { value: string; label: string }[]
+  >([{ ...DEFAULT_CITY_OPTION }]);
 
   // Estados para o modal de confirmação de inativação de contato
   const [showInactivateModal, setShowInactivateModal] = useState(false);
@@ -97,6 +135,7 @@ const CadastroClientes = () => {
   const [localShowFilters, setLocalShowFilters] = useState(false);
   // Ref para evitar que o menu reabra durante o recarregamento
   const isReloadingRef = useRef(false);
+  const lastCidadeRequestKeyRef = useRef<string>(CITY_ALL_KEY);
 
   // Helper function to safely get client ID
   const getClienteId = useCallback((cliente: Cliente): number => {
@@ -212,6 +251,73 @@ const CadastroClientes = () => {
     toggleFilters,
   } = useFilters(INITIAL_CLIENTES_FILTERS);
 
+  const fetchCidadeOptions = useCallback(
+    async (uf?: string) => {
+      try {
+        const cidades = await cidadesService.getAll(uf);
+        const uniqueOptions = new Map<string, { value: string; label: string }>();
+
+        cidades.forEach(({ cidade, uf }) => {
+          const nome = (cidade || "").trim();
+          const sigla = (uf || "").trim().toUpperCase();
+
+          if (!nome || !sigla) {
+            return;
+          }
+
+          const value = serializeCidadeFilterValue(nome, sigla);
+          if (!uniqueOptions.has(value)) {
+            uniqueOptions.set(value, {
+              value,
+              label: `${nome} - ${sigla}`,
+            });
+          }
+        });
+
+        const sortedOptions = Array.from(uniqueOptions.values()).sort((a, b) =>
+          a.label.localeCompare(b.label, "pt-BR")
+        );
+
+        return [{ ...DEFAULT_CITY_OPTION }, ...sortedOptions];
+      } catch (error) {
+        console.error("Erro ao carregar cidades para o filtro:", error);
+        showError(
+          "Erro ao carregar cidades",
+          "Não foi possível carregar a lista de cidades para o filtro."
+        );
+        return [{ ...DEFAULT_CITY_OPTION }];
+      }
+    },
+    [showError]
+  );
+
+  useEffect(() => {
+    let isSubscribed = true;
+    const selectedCity = parseCidadeFilterValue(filtrosPainel.cidade);
+    const ufSource =
+      filtrosPainel.uf?.trim() || selectedCity?.uf?.trim() || "";
+    const normalizedUf =
+      ufSource.length > 0 ? ufSource.toUpperCase() : undefined;
+    const requestKey = normalizedUf ?? CITY_ALL_KEY;
+    lastCidadeRequestKeyRef.current = requestKey;
+
+    fetchCidadeOptions(normalizedUf).then((options) => {
+      if (!isSubscribed) {
+        return;
+      }
+
+      if (lastCidadeRequestKeyRef.current !== requestKey) {
+        return;
+      }
+
+      setCidadeOptions(options);
+    });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [filtrosPainel.cidade, filtrosPainel.uf, fetchCidadeOptions]);
+
   const [paginacao, setPaginacao] = useState<PaginacaoInfo>({
     paginaAtual: 1,
     totalPaginas: 1,
@@ -269,7 +375,16 @@ const CadastroClientes = () => {
       };
 
       if (filtrosAplicados.nome) params.nome = filtrosAplicados.nome;
-      if (filtrosAplicados.uf) params.uf = filtrosAplicados.uf;
+      const cidadeSelecionada = parseCidadeFilterValue(
+        filtrosAplicados.cidade
+      );
+
+      if (cidadeSelecionada) {
+        params.cidade = cidadeSelecionada.cidade;
+        params.uf = cidadeSelecionada.uf.toUpperCase();
+      } else if (filtrosAplicados.uf) {
+        params.uf = filtrosAplicados.uf.toUpperCase();
+      }
       if (filtrosAplicados.id_regiao) {
         params.id_regiao = filtrosAplicados.id_regiao;
       }
@@ -369,6 +484,13 @@ const CadastroClientes = () => {
       });
     },
     []
+  );
+
+  const handleRowExpandMaquinas = useCallback(
+    (id: number | string) => {
+      toggleExpand(id, "maquinas");
+    },
+    [toggleExpand]
   );
 
   // Efeito para carregar os contatos quando um cliente Ã© expandido
@@ -983,11 +1105,21 @@ const CadastroClientes = () => {
   };
 
   const handleFiltroChangeCustom = (campo: string, valor: string) => {
+    let nextValue = valor;
+
     if (campo === "incluir_inativos") {
-      valor = valor === "true" ? "true" : "";
+      nextValue = valor === "true" ? "true" : "";
     }
 
-    handleFiltroChange(campo, valor);
+    if (campo === "uf") {
+      const normalizedUf = (nextValue || "").toUpperCase();
+      if (normalizedUf !== filtrosPainel.uf && filtrosPainel.cidade) {
+        handleFiltroChange("cidade", "");
+      }
+      nextValue = normalizedUf;
+    }
+
+    handleFiltroChange(campo, nextValue);
   };
 
   const ufOptions = [
@@ -1061,6 +1193,12 @@ const CadastroClientes = () => {
       label: "UF",
       type: "select" as const,
       options: ufOptions,
+    },
+    {
+      id: "cidade",
+      label: "Cidade",
+      type: "select" as const,
+      options: cidadeOptions,
     },
     {
       id: "id_regiao",
@@ -1159,7 +1297,7 @@ const CadastroClientes = () => {
           description: "Tente ajustar os filtros ou cadastre um novo cliente.",
         }}
         expandedRowId={expandedClienteId}
-        onRowExpand={toggleExpand}
+        onRowExpand={handleRowExpandMaquinas}
         renderExpandedRow={(cliente) => {
           const section = expandedSection ?? "contatos";
           const clienteId = getClienteId(cliente);

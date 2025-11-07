@@ -14,7 +14,10 @@ class MaquinasService {
     incluirInativos = false,
     numeroSerie?: string,
     modelo?: string,
-    descricao?: string
+    descricao?: string,
+    dataVendaIni?: string,
+    dataVendaFim?: string,
+    garantia?: string
   ): Promise<MaquinaResponse> {
     const params: Record<string, string | number | boolean> = {
       nro_pagina: page,
@@ -37,6 +40,15 @@ class MaquinasService {
 
     if (descricao) {
       params.descricao = descricao;
+    }
+
+    if (dataVendaIni && dataVendaFim) {
+      params.data_venda_ini = dataVendaIni;
+      params.data_venda_fim = dataVendaFim;
+    }
+
+    if (garantia) {
+      params.garantia = garantia;
     }
 
     return await api.get<MaquinaResponse>(this.baseUrl, { params });
