@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { OrdemServico } from "../../../../types/OrdemServico";
 import {
   Calendar,
@@ -146,6 +147,9 @@ const OSCard: React.FC<OSCardProps> = ({
 
   // Função para verificar se o técnico está indefinido
   const isTecnicoIndefinido = !os.tecnico.nome || os.tecnico.nome.trim() === "";
+  const clienteHistoricoHref = os?.cliente?.id
+    ? `/admin/clientes_detalhes/${os.cliente.id}?tab=historico`
+    : null;
 
   return (
     <div
@@ -194,9 +198,20 @@ const OSCard: React.FC<OSCardProps> = ({
                 <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   Cliente / Cidade
                 </div>
-                <div className="font-semibold text-gray-900 truncate text-base mt-1">
-                  {os.cliente.nome}
-                </div>
+                {clienteHistoricoHref ? (
+                  <Link
+                    href={clienteHistoricoHref}
+                    onClick={(e) => e.stopPropagation()}
+                    className="font-semibold text-black  truncate text-base mt-1 block transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                    title="Abrir detalhes do cliente"
+                  >
+                    {os.cliente.nome || "Cliente"}
+                  </Link>
+                ) : (
+                  <div className="font-semibold text-gray-900 truncate text-base mt-1">
+                    {os.cliente.nome || "Cliente"}
+                  </div>
+                )}
                 <div className="text-sm text-gray-600 flex items-center gap-1.5 mt-0.5">
                   <MapPin className="w-3.5 h-3.5 flex-shrink-0 my-auto" />
                   <span className="my-auto">
@@ -373,20 +388,34 @@ const OSCard: React.FC<OSCardProps> = ({
                         Histórico da Máquina
                       </button>
                     )}
-                    {onHistoricoCliente && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onHistoricoCliente(os.cliente);
-                        }}
+                    {clienteHistoricoHref ? (
+                      <Link
+                        href={clienteHistoricoHref}
+                        onClick={(e) => e.stopPropagation()}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 
                                 hover:bg-emerald-100 rounded-md text-xs font-medium transition-colors 
-                                border border-emerald-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                                border border-emerald-200 transform hover:scale-105 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
                         title="Histórico deste cliente"
                       >
                         <History className="w-3.5 h-3.5" />
                         Histórico do Cliente
-                      </button>
+                      </Link>
+                    ) : (
+                      onHistoricoCliente && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onHistoricoCliente(os.cliente);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 
+                                hover:bg-emerald-100 rounded-md text-xs font-medium transition-colors 
+                                border border-emerald-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                          title="Histórico deste cliente"
+                        >
+                          <History className="w-3.5 h-3.5" />
+                          Histórico do Cliente
+                        </button>
+                      )
                     )}
                     {onEditarOS && (
                       <button

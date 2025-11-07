@@ -23,6 +23,7 @@ export interface ClienteMaquina {
   nota_fiscal_venda?: string;
   data_final_garantia?: string;
   situacao?: string;
+  em_garantia?: boolean;
 }
 
 export interface Cliente {

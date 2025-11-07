@@ -2,6 +2,7 @@
 
 import { Filter, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React from "react";
 import { useCadastroPermission } from "@/hooks/useCadastroPermission";
 
@@ -25,8 +26,9 @@ interface ListConfig {
 
 interface FormConfig {
   type: "form";
-  backLink: string;
+  backLink?: string;
   backLabel?: string;
+  useBackNavigation?: boolean;
   actions?: React.ReactNode;
 }
 
@@ -37,6 +39,7 @@ interface PageHeaderProps {
 
 const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
   const { hasPermission } = useCadastroPermission();
+  const router = useRouter();
 
   if (config.type === "list") {
     const filterToggleActive = Boolean(config.showFilters);
@@ -73,7 +76,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
         const requiresPermission =
           config.newButton.requiresPermission !== false;
         const permissionBlocked = requiresPermission && !hasPermission;
-        const isDisabled = Boolean(config.newButton.disabled ?? permissionBlocked);
+        const isDisabled = Boolean(
+          config.newButton.disabled ?? permissionBlocked
+        );
         const commonClasses =
           "px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-sm border";
         const enabledClasses =
@@ -188,17 +193,33 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
     );
   }
 
+  const handleBackClick = () => {
+    if (config.useBackNavigation) {
+      router.back();
+    }
+  };
+
   return (
     <header className="mb-5">
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--primary)]/20 p-5 min-h-[88px] flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <Link
-            href={config.backLink}
-            className="p-2 text-slate-600 hover:text-[var(--primary)] hover:bg-violet-50 rounded-lg transition-colors"
-            aria-label={config.backLabel || "Voltar"}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
+          {config.useBackNavigation ? (
+            <button
+              onClick={handleBackClick}
+              className="p-2 text-slate-600 hover:text-[var(--primary)] hover:bg-violet-50 rounded-lg transition-colors"
+              aria-label={config.backLabel || "Voltar"}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          ) : (
+            <Link
+              href={config.backLink || "/"}
+              className="p-2 text-slate-600 hover:text-[var(--primary)] hover:bg-violet-50 rounded-lg transition-colors"
+              aria-label={config.backLabel || "Voltar"}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          )}
           <div className="flex-1 flex items-center">
             <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center">
               <span className="bg-[var(--primary)] h-6 w-1 rounded-full mr-3"></span>

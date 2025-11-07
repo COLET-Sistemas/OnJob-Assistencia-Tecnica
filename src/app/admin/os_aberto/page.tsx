@@ -583,14 +583,9 @@ const TelaOSAbertas: React.FC = () => {
   const handleOpenHistoricoCliente = useCallback(
     (cliente: OrdemServico["cliente"]) => {
       if (!cliente?.id) return;
-      setHistoricoModal({
-        isOpen: true,
-        tipo: "cliente",
-        targetId: cliente.id,
-        targetLabel: cliente.nome ? `Cliente: ${cliente.nome}` : "Cliente",
-      });
+      router.push(`/admin/clientes_detalhes/${cliente.id}?tab=historico`);
     },
-    []
+    [router]
   );
 
   const handleOpenHistoricoMaquina = useCallback(
