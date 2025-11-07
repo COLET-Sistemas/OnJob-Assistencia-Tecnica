@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { formatarData } from "@/utils/formatters";
 import {
   Clock,
   CloudDrizzle,
@@ -186,9 +185,7 @@ const OsCard: React.FC<OsCardProps> = ({ os }) => {
               <span>ABERTURA</span>
             </div>
             <p className="text-xs font-medium text-gray-700">
-              {os.abertura.data_abertura
-                ? formatarData(os.abertura.data_abertura)
-                : "-"}
+              {os.abertura.data_abertura}
             </p>
           </div>
           {os.data_agendada && (
@@ -198,7 +195,7 @@ const OsCard: React.FC<OsCardProps> = ({ os }) => {
                 <span>AGENDADA</span>
               </div>
               <p className="text-xs font-medium text-gray-700">
-                {formatarData(os.data_agendada)}
+                {os.data_agendada}
               </p>
             </div>
           )}

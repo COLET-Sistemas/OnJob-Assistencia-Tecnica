@@ -26,7 +26,7 @@ import {
   PauseCircle,
   FileX,
 } from "lucide-react";
-import { formatarDataHora, isDataAgendadaPassada } from "@/utils/formatters";
+import { isDataAgendadaPassada } from "@/utils/formatters";
 
 interface OSCardProps {
   os: OrdemServico;
@@ -296,7 +296,7 @@ const OSCard: React.FC<OSCardProps> = ({
                     <Calendar className="w-3.5 h-3.5 flex-shrink-0 text-gray-500 my-auto" />
                     <span className="font-medium my-auto">
                       Abertura:{" "}
-                      {formatarDataHora(os.abertura.data_abertura)?.data}
+                      {os.abertura.data_abertura}
                     </span>
                   </div>
 
@@ -310,7 +310,7 @@ const OSCard: React.FC<OSCardProps> = ({
                     >
                       <Calendar className="w-3.5 h-3.5 flex-shrink-0 my-auto" />
                       <span className="font-medium my-auto">
-                        Agendado: {formatarDataHora(os.data_agendada)?.data}
+                        Agendado: {os.data_agendada}
                       </span>
                     </div>
                   )}
