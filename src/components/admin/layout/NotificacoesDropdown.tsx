@@ -4,10 +4,7 @@ import { Bell, CheckSquare, Eye } from "lucide-react";
 import { notificacoesService } from "@/api/services/notificacoesService";
 import { useNotificacoes } from "@/hooks";
 import { formatRelativeDate } from "@/utils/formatters";
-import {
-  getNotificationTimestamp,
-  parseNotificationDate,
-} from "@/utils/notifications";
+import { parseNotificationDate } from "@/utils/notifications";
 
 // Interface local para o componente, adaptada à nossa UI
 interface Notificacao {
@@ -22,8 +19,6 @@ interface Notificacao {
 interface NotificacoesDropdownProps {
   onNotificationRead?: () => void;
 }
-
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 const NotificacoesDropdown = memo(
   ({ onNotificationRead }: NotificacoesDropdownProps) => {
@@ -233,34 +228,10 @@ const NotificacoesDropdown = memo(
       });
     };
 
-    const notificacoesVisiveis = useMemo(() => {
-      const naoLidas = todasNotificacoes.filter((notif) => !notif.lida);
-
-      if (naoLidas.length >= 5) {
-        return naoLidas;
-      }
-
-      const agora = Date.now();
-      const lidasRecentes = todasNotificacoes
-        .filter((notif) => notif.lida)
-        .map((notif) => ({
-          notif,
-          timestamp: getNotificationTimestamp(notif.data_criacao),
-        }))
-        .filter(
-          ({ timestamp }) =>
-            timestamp !== null && agora - timestamp <= THIRTY_DAYS_MS
-        )
-        .sort((a, b) => {
-          const timeA = a.timestamp ?? 0;
-          const timeB = b.timestamp ?? 0;
-          return timeB - timeA;
-        })
-        .slice(0, 3)
-        .map(({ notif }) => notif);
-
-      return [...naoLidas, ...lidasRecentes];
-    }, [todasNotificacoes]);
+    const notificacoesVisiveis = useMemo(
+      () => todasNotificacoes.filter((notif) => !notif.lida),
+      [todasNotificacoes]
+    );
 
     return (
       <div className="relative" ref={dropdownRef}>

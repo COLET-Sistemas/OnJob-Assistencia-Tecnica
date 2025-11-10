@@ -54,30 +54,6 @@ const situacaoStyles: Record<string, { label: string; className: string }> = {
   },
 };
 
-const formatDateTime = (value?: string | null) => {
-  if (!value) return "-";
-  const normalized = value.includes("T")
-    ? value
-    : value.replace(" ", "T").replace(/Z?$/, "Z");
-  const parsed = new Date(normalized);
-
-  if (!Number.isNaN(parsed.getTime())) {
-    return new Intl.DateTimeFormat("pt-BR", {
-      dateStyle: "short",
-      timeStyle: "short",
-    }).format(parsed);
-  }
-
-  if (/^\d{2}\/\d{2}\/\d{4}/.test(value)) {
-    return value;
-  }
-  if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
-    const [year, month, day] = value.split("T")[0].split("-");
-    return `${day}/${month}/${year}`;
-  }
-
-  return value;
-};
 
 const formatDateOnly = (value?: string | null) => {
   if (!value) return "-";
@@ -311,7 +287,11 @@ const ClientesDetalhesPage = () => {
         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
           {label}
         </p>
-        <p className={`mt-1 text-sm leading-relaxed ${textClasses}`}>{value}</p>
+        <p
+          className={`mt-1 text-sm leading-relaxed whitespace-pre-line ${textClasses}`}
+        >
+          {value}
+        </p>
       </div>
     );
   };
@@ -547,7 +527,7 @@ const ClientesDetalhesPage = () => {
                     {registro.nome_tecnico || "Tecnico nao informado"}
                   </span>
                   <span className="text-xs text-slate-500">
-                    Atendimento em {formatDateTime(registro.data_atendimento)}
+                    Atendimento em {registro.data_atendimento}
                   </span>
                 </div>
               </div>
@@ -615,16 +595,16 @@ const ClientesDetalhesPage = () => {
   const tabConfig = useMemo(
     () => [
       {
-        key: "contatos" as TabKey,
-        label: "Contatos",
-        count: totalContatos,
-        icon: Users,
-      },
-      {
         key: "maquinas" as TabKey,
         label: "Máquinas",
         count: totalMaquinas,
         icon: Settings,
+      },
+      {
+        key: "contatos" as TabKey,
+        label: "Contatos",
+        count: totalContatos,
+        icon: Users,
       },
       {
         key: "historico" as TabKey,

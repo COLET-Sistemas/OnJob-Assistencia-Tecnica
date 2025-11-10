@@ -52,10 +52,7 @@ interface OSCardProps {
   onEditarOS?: (osId: number) => void;
   onCancelarOS?: (osId: number) => void;
   onHistoricoCliente?: (cliente: OrdemServico["cliente"]) => void;
-  onHistoricoMaquina?: (
-    maquina: OrdemServico["maquina"],
-    osId: number
-  ) => void;
+  onHistoricoMaquina?: (maquina: OrdemServico["maquina"], osId: number) => void;
 }
 
 const OSCard: React.FC<OSCardProps> = ({
@@ -145,7 +142,7 @@ const OSCard: React.FC<OSCardProps> = ({
   // Função para verificar se o técnico está indefinido
   const isTecnicoIndefinido = !os.tecnico.nome || os.tecnico.nome.trim() === "";
   const clienteHistoricoHref = os?.cliente?.id
-    ? `/admin/clientes_detalhes/${os.cliente.id}?tab=historico`
+    ? `/admin/clientes_detalhes/${os.cliente.id}`
     : null;
 
   return (
@@ -199,7 +196,7 @@ const OSCard: React.FC<OSCardProps> = ({
                   <Link
                     href={clienteHistoricoHref}
                     onClick={(e) => e.stopPropagation()}
-                    className="font-semibold text-black  truncate text-base mt-1 block transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                    className="font-semibold text-black truncate text-base mt-1 inline transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
                     title="Abrir detalhes do cliente"
                   >
                     {os.cliente.nome || "Cliente"}
@@ -209,6 +206,7 @@ const OSCard: React.FC<OSCardProps> = ({
                     {os.cliente.nome || "Cliente"}
                   </div>
                 )}
+
                 <div className="text-sm text-gray-600 flex items-center gap-1.5 mt-0.5">
                   <MapPin className="w-3.5 h-3.5 flex-shrink-0 my-auto" />
                   <span className="my-auto">
@@ -315,8 +313,7 @@ const OSCard: React.FC<OSCardProps> = ({
                   <div className="flex items-center gap-1.5 text-sm text-gray-600">
                     <Calendar className="w-3.5 h-3.5 flex-shrink-0 text-gray-500 my-auto" />
                     <span className="font-medium my-auto">
-                      Abertura:{" "}
-                      {os.abertura.data_abertura}
+                      Abertura: {os.abertura.data_abertura}
                     </span>
                   </div>
 
@@ -370,7 +367,6 @@ const OSCard: React.FC<OSCardProps> = ({
                     </h4>
                   </div>
                   <div className="flex items-center gap-2">
-               
                     {onEditarOS && (
                       <button
                         onClick={(e) => {
