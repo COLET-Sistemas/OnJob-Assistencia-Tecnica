@@ -28,6 +28,8 @@ import { useFeedback } from "@/context";
 type ClienteOption = {
   id: number;
   label: string;
+  razaoSocial?: string;
+  nomeFantasia?: string;
   cidade?: string;
   uf?: string;
   regiaoId?: number;
@@ -79,6 +81,22 @@ const emptyNewContact = {
   telefone: "",
   whatsapp: "",
   email: "",
+};
+
+const formatClienteSecondaryLine = (option: ClienteOption) => {
+  const baseName = option.nomeFantasia?.trim() || option.label;
+  const cidade = option.cidade?.trim();
+  const uf = option.uf?.trim();
+
+  if (cidade && uf) {
+    return `${baseName} - ${cidade}/${uf}`;
+  }
+
+  if (cidade || uf) {
+    return `${baseName} - ${cidade ?? uf}`;
+  }
+
+  return baseName;
 };
 
 export default function NovaOrdemServicoMobile() {
@@ -177,11 +195,15 @@ export default function NovaOrdemServicoMobile() {
           ?.map((cliente) => {
             const id = cliente.id ?? cliente.id_cliente;
             if (!id) return null;
+            const razaoSocial = cliente.razao_social?.trim() ?? "";
+            const nomeFantasia = cliente.nome_fantasia?.trim() ?? "";
             return {
               id,
-              label: cliente.nome_fantasia || cliente.razao_social || "",
-              cidade: cliente.cidade,
-              uf: cliente.uf,
+              label: nomeFantasia || razaoSocial || "",
+              razaoSocial,
+              nomeFantasia,
+              cidade: cliente.cidade?.trim(),
+              uf: cliente.uf?.trim(),
               regiaoId:
                 cliente.id_regiao ??
                 cliente.regiao?.id ??
@@ -707,14 +729,11 @@ export default function NovaOrdemServicoMobile() {
                         >
                           <div>
                             <p className="font-semibold text-slate-800">
-                              {option.label}
+                              {option.razaoSocial || option.label}
                             </p>
-                            {(option.cidade || option.uf) && (
-                              <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                                <MapPin className="w-3 h-3" />
-                                {option.cidade}, {option.uf}
-                              </p>
-                            )}
+                            <p className="text-xs text-slate-500 mt-1">
+                              {formatClienteSecondaryLine(option)}
+                            </p>
                           </div>
                           <ChevronRight className="w-4 h-4 text-slate-300" />
                         </button>
