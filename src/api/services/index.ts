@@ -10,6 +10,7 @@ export * from "./maquinasService";
 export * from "./cidadesService";
 export * from "./motivosAtendimentoService";
 export * from "./motivosPendenciaService";
+export * from "./parametrosService";
 export * from "./notificacoesService";
 export * from "./ordensServicoService";
 export * from "./pecasService";

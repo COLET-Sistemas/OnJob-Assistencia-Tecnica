@@ -144,6 +144,9 @@ const OSCard: React.FC<OSCardProps> = ({
   const clienteHistoricoHref = os?.cliente?.id
     ? `/admin/clientes_detalhes/${os.cliente.id}`
     : null;
+  const maquinaDetalhesHref = os?.maquina?.id
+    ? `/admin/maquinas_detalhes/${os.maquina.id}`
+    : null;
 
   return (
     <div
@@ -220,21 +223,44 @@ const OSCard: React.FC<OSCardProps> = ({
                 <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   Máquina / Série
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="font-semibold text-gray-900 truncate text-base mt-1">
-                    {os.maquina.descricao}
-                  </div>
-                  <div
-                    className="w-4 h-4 flex items-center justify-center"
-                    title={os.em_garantia ? "Em garantia" : "Fora da garantia"}
+                {maquinaDetalhesHref ? (
+                  <Link
+                    href={maquinaDetalhesHref}
+                    onClick={(e) => e.stopPropagation()}
+                    className="group inline-flex items-center gap-2 mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                    title="Abrir detalhes da máquina"
                   >
-                    {os.em_garantia ? (
-                      <CircleCheck className="w-4 h-4 text-emerald-500" />
-                    ) : (
-                      <CircleX className="w-4 h-4 text-amber-500" />
-                    )}
+                    <span className="font-semibold text-black truncate text-base transition-colors underline-offset-2 group-hover:underline">
+                      {os.maquina.descricao || "Máquina"}
+                    </span>
+                    <div
+                      className="w-4 h-4 flex items-center justify-center"
+                      title={os.em_garantia ? "Em garantia" : "Fora da garantia"}
+                    >
+                      {os.em_garantia ? (
+                        <CircleCheck className="w-4 h-4 text-emerald-500" />
+                      ) : (
+                        <CircleX className="w-4 h-4 text-amber-500" />
+                      )}
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="font-semibold text-gray-900 truncate text-base mt-1">
+                      {os.maquina.descricao || "Máquina"}
+                    </div>
+                    <div
+                      className="w-4 h-4 flex items-center justify-center"
+                      title={os.em_garantia ? "Em garantia" : "Fora da garantia"}
+                    >
+                      {os.em_garantia ? (
+                        <CircleCheck className="w-4 h-4 text-emerald-500" />
+                      ) : (
+                        <CircleX className="w-4 h-4 text-amber-500" />
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="text-sm text-gray-600 flex items-center gap-1.5 mt-0.5">
                   <Settings className="w-3.5 h-3.5 flex-shrink-0 my-auto" />
                   <span className="my-auto">{os.maquina.numero_serie}</span>

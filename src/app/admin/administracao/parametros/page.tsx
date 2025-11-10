@@ -72,7 +72,10 @@ const ParametrizacaoPage = () => {
 
     setSavingId(editingId);
     try {
-      await parametrosService.updateValor(editingId, valorParaSalvar);
+      const response = await parametrosService.updateValor(
+        parametroAtual.chave,
+        valorParaSalvar
+      );
 
       const atualizados = listaParametros.map((parametro) =>
         parametro.id === editingId
@@ -81,7 +84,31 @@ const ParametrizacaoPage = () => {
       );
 
       updateData(atualizados);
-      showSuccess("Parametrização", "Parâmetro atualizado com sucesso!");
+
+      const mensagemRetorno = (() => {
+        if (typeof response === "string") return response;
+
+        if (response && typeof response === "object") {
+          const data = response as Record<string, unknown>;
+
+          if (typeof data.mensagem === "string") return data.mensagem;
+          if (typeof data.sucesso === "string") return data.sucesso;
+
+          try {
+            return JSON.stringify(response);
+          } catch {
+            return "Parâmetro atualizado com sucesso!";
+          }
+        }
+
+        if (response !== undefined && response !== null) {
+          return String(response);
+        }
+
+        return "Parâmetro atualizado com sucesso!";
+      })();
+
+      showSuccess("Parametrização", mensagemRetorno);
       cancelEditing();
     } catch (error) {
       console.error("Erro ao atualizar parâmetro:", error);
@@ -173,7 +200,7 @@ const ParametrizacaoPage = () => {
                         onKeyDown={handleValueKeyDown}
                         disabled={estaSalvando}
                         autoFocus
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30 transition"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-900 placeholder:text-gray-400 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30 transition"
                       />
                     ) : (
                       <div className="text-sm text-gray-900">
@@ -240,6 +267,9 @@ const ParametrizacaoPage = () => {
         config={{
           type: "list",
           itemCount: listaParametros.length,
+          alignTitleCenter: true,
+          compact: true,
+          dense: true,
         }}
       />
 

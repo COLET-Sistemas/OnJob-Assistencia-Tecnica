@@ -24,6 +24,8 @@ import { Maquina } from "@/types/admin/cadastro/maquinas";
 import { Usuario } from "@/types/admin/cadastro/usuarios";
 import { OptionType } from "@/components/admin/form/CustomSelect";
 import useDebouncedCallback from "@/hooks/useDebouncedCallback";
+import MaquinaClienteConfirmModal from "@/app/admin/os_aberto/components/MaquinaClienteConfirmModal";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 
 // Componentes locais
 import CustomContatoForm from "./components/CustomContatoForm";
@@ -68,6 +70,7 @@ interface FormaAberturaOption extends OptionType {
 
 const NovaOrdemServico = () => {
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [clienteInput, setClienteInput] = useState("");
@@ -116,6 +119,14 @@ const NovaOrdemServico = () => {
   const [customContatoCargo, setCustomContatoCargo] = useState("");
   const [customContatoEmail, setCustomContatoEmail] = useState("");
   const [customContatoTelefone, setCustomContatoTelefone] = useState("");
+  const [maquinaConfirmModal, setMaquinaConfirmModal] = useState<{
+    isOpen: boolean;
+    maquina: MaquinaOption | null;
+  }>({
+    isOpen: false,
+    maquina: null,
+  });
+  const [isLinkingMaquina, setIsLinkingMaquina] = useState(false);
   const [customContatoWhatsapp, setCustomContatoWhatsapp] = useState("");
   const [recebeAvisoOS, setRecebeAvisoOS] = useState(false);
   const [useCustomContato, setUseCustomContato] = useState(false);
@@ -158,6 +169,17 @@ const NovaOrdemServico = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  const focusMaquinaField = useCallback(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    const maquinaInputElement =
+      document.querySelector<HTMLInputElement>("#maquina input");
+    if (maquinaInputElement) {
+      setTimeout(() => maquinaInputElement.focus(), 0);
+    }
+  }, []);
+
   // Define handleClienteChange before it's referenced
   const handleClienteChange = useCallback(
     async (selectedOption: ClienteOption | null) => {
@@ -191,6 +213,7 @@ const NovaOrdemServico = () => {
                 descricao: baseDescricao,
                 clienteNomeFantasia:
                   maquina.cliente_atual?.nome_fantasia || "",
+                clienteAtualId: maquina.cliente_atual?.id_cliente ?? null,
               } as MaquinaOption;
             }
           );
@@ -200,6 +223,7 @@ const NovaOrdemServico = () => {
             label: "Buscar outra máquina...",
             isInWarranty: false,
             data_final_garantia: "",
+            clienteAtualId: null,
           } as MaquinaOption);
 
           setMaquinaOptions(machineOptions as MaquinaOption[]);
@@ -260,16 +284,101 @@ const NovaOrdemServico = () => {
     setUseCustomContato(contatoOption?.contato.id === -1 || false);
   }, []);
 
-  const handleMaquinaSelectChange = useCallback((option: OptionType | null) => {
-    const maquinaOption = option as MaquinaOption | null;
-    if (maquinaOption && maquinaOption.value === -1) {
-      // Usuário selecionou "Buscar outra máquina..."
-      setSelectedMaquina(null);
-      setMaquinaInput("");
-    } else {
+  const handleMaquinaSelectChange = useCallback(
+    (option: OptionType | null) => {
+      const maquinaOption = option as MaquinaOption | null;
+
+      if (!maquinaOption) {
+        setSelectedMaquina(null);
+        return;
+      }
+
+      if (maquinaOption.value === -1) {
+        // Usuário selecionou "Buscar outra máquina..."
+        setSelectedMaquina(null);
+        setMaquinaInput("");
+        return;
+      }
+
+      const maquinaClienteId = maquinaOption.clienteAtualId;
+      const isMaquinaDeOutroCliente =
+        selectedCliente !== null &&
+        maquinaClienteId !== null &&
+        maquinaClienteId !== undefined &&
+        maquinaClienteId !== 1 &&
+        maquinaClienteId !== selectedCliente.value;
+
+      if (isMaquinaDeOutroCliente) {
+        setMaquinaConfirmModal({
+          isOpen: true,
+          maquina: maquinaOption,
+        });
+        return;
+      }
+
       setSelectedMaquina(maquinaOption);
+    },
+    [selectedCliente]
+  );
+
+  const handleConfirmMaquinaVinculo = useCallback(async () => {
+    if (!maquinaConfirmModal.maquina || !selectedCliente) {
+      setMaquinaConfirmModal({ isOpen: false, maquina: null });
+      return;
     }
-  }, []);
+
+    setIsLinkingMaquina(true);
+    try {
+      await maquinasService.update(maquinaConfirmModal.maquina.value, {
+        id_cliente_atual: selectedCliente.value,
+      });
+
+      const clienteNome =
+        selectedCliente.nome_fantasia ||
+        selectedCliente.razao_social ||
+        selectedCliente.label ||
+        `ID ${selectedCliente.value}`;
+
+      const updatedMaquina = {
+        ...maquinaConfirmModal.maquina,
+        clienteAtualId: selectedCliente.value,
+        clienteNomeFantasia: clienteNome,
+      } as MaquinaOption;
+
+      setSelectedMaquina(updatedMaquina);
+      setMaquinaOptions((prev) => {
+        const exists = prev.some(
+          (option) => option.value === updatedMaquina.value
+        );
+        if (exists) {
+          return prev.map((option) =>
+            option.value === updatedMaquina.value ? updatedMaquina : option
+          );
+        }
+        return [...prev, updatedMaquina];
+      });
+      showSuccess(
+        "Máquina atualizada",
+        "O vínculo da máquina foi atualizado para este cliente."
+      );
+      setMaquinaConfirmModal({ isOpen: false, maquina: null });
+    } catch (error) {
+      console.error("Erro ao atualizar vínculo da máquina:", error);
+      const message =
+        error instanceof Error ? error.message : undefined;
+      showError("Não foi possível atualizar a máquina", message);
+    } finally {
+      setIsLinkingMaquina(false);
+    }
+  }, [maquinaConfirmModal, selectedCliente, showError, showSuccess]);
+
+  const handleCancelMaquinaVinculo = useCallback(() => {
+    if (isLinkingMaquina) {
+      return;
+    }
+    setMaquinaConfirmModal({ isOpen: false, maquina: null });
+    focusMaquinaField();
+  }, [focusMaquinaField, isLinkingMaquina]);
 
   const handleMotivoPendenciaSelectChange = useCallback(
     (option: OptionType | null) => {
@@ -460,6 +569,7 @@ const NovaOrdemServico = () => {
                 descricao: baseDescricao,
                 clienteNomeFantasia:
                   maquina.cliente_atual?.nome_fantasia || "",
+                clienteAtualId: maquina.cliente_atual?.id_cliente ?? null,
               } as MaquinaOption;
             })
           : [];
@@ -470,6 +580,7 @@ const NovaOrdemServico = () => {
         label: "Buscar outra máquina...",
         isInWarranty: false,
         data_final_garantia: "",
+        clienteAtualId: null,
       } as MaquinaOption);
 
       setMaquinaOptions(machineOptions as MaquinaOption[]);
@@ -1083,6 +1194,24 @@ const NovaOrdemServico = () => {
         </motion.div>
 
         <FormActions isSaving={isSaving} />
+
+        <MaquinaClienteConfirmModal
+          isOpen={maquinaConfirmModal.isOpen}
+          machineName={
+            maquinaConfirmModal.maquina?.numero_serie ||
+            maquinaConfirmModal.maquina?.label ||
+            ""
+          }
+          clienteNome={
+            maquinaConfirmModal.maquina?.clienteNomeFantasia ||
+            (maquinaConfirmModal.maquina?.clienteAtualId
+              ? `ID ${maquinaConfirmModal.maquina?.clienteAtualId}`
+              : "não identificado")
+          }
+          onConfirm={handleConfirmMaquinaVinculo}
+          onCancel={handleCancelMaquinaVinculo}
+          isLoading={isLinkingMaquina}
+        />
       </FormContainer>
     </>
   );

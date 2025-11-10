@@ -26,6 +26,7 @@ import { useToast } from "@/components/admin/ui/ToastContainer";
 interface FotosTabProps {
   osId: number;
   fats: OSDetalhadaV2["fats"];
+  onCountChange?: (count: number) => void;
 }
 
 type FotoState = FATFotoItem & {
@@ -34,7 +35,7 @@ type FotoState = FATFotoItem & {
   tempDescricao: string;
 };
 
-const FotosTab: React.FC<FotosTabProps> = ({ osId, fats }) => {
+const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [photos, setPhotos] = useState<FotoState[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +46,10 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats }) => {
 
   const { showSuccess, showError } = useToast();
   const objectUrlsRef = useRef<Map<number, string>>(new Map());
+
+  useEffect(() => {
+    onCountChange?.(photos.length);
+  }, [onCountChange, photos.length]);
 
   const fatInfoMap = useMemo(() => {
     const map = new Map<number, { dataAtendimento?: string }>();

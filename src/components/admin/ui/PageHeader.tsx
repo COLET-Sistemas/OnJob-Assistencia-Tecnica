@@ -13,6 +13,9 @@ interface ListConfig {
   showFilters?: boolean;
   showFilterToggleShortcut?: boolean;
   activeFiltersCount?: number;
+  alignTitleCenter?: boolean;
+  compact?: boolean;
+  dense?: boolean;
   newButton?: {
     label: string;
     link?: string;
@@ -43,6 +46,21 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
 
   if (config.type === "list") {
     const filterToggleActive = Boolean(config.showFilters);
+    const titleAlignmentClass = config.alignTitleCenter
+      ? "items-center min-h-[64px]"
+      : "items-center";
+    let paddingClass = "p-5";
+    let minHeightClass = "min-h-[88px]";
+
+    if (config.compact) {
+      paddingClass = "px-4 py-3";
+      minHeightClass = "min-h-[64px]";
+    }
+
+    if (config.dense) {
+      paddingClass = "px-4 py-2";
+      minHeightClass = "min-h-[52px]";
+    }
 
     const renderDefaultActions = () => {
       const actionElements: React.ReactNode[] = [];
@@ -159,9 +177,13 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, config }) => {
 
     return (
       <header className="mb-5">
-        <div className="p-5 rounded-xl shadow-sm border border-slate-200 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/20 min-h-[88px]">
+        <div
+          className={`${paddingClass} rounded-xl shadow-sm border border-slate-200 bg-gradient-to-r from-[var(--neutral-white)] to-[var(--secondary-green)]/20 ${minHeightClass}`}
+        >
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-[var(--neutral-graphite)] flex items-center gap-3">
+            <h2
+              className={`text-xl font-bold text-[var(--neutral-graphite)] flex gap-3 ${titleAlignmentClass}`}
+            >
               {config.showFilterToggleShortcut && config.onFilterToggle && (
                 <button
                   type="button"

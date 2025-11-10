@@ -7,6 +7,7 @@ import {
   type OSDeslocamento,
   type OSPecaUtilizada,
 } from "@/api/services/ordensServicoService";
+import { fatFotosService } from "@/api/services/fatFotosService";
 import { LoadingSpinner as Loading } from "@/components/LoadingPersonalizado";
 import PageHeader from "@/components/admin/ui/PageHeaderSimple";
 import {
@@ -54,6 +55,7 @@ export default function OSRevisaoPage() {
   >([]);
   const [pecasOriginais, setPecasOriginais] = useState<PecaOriginal[]>([]);
   const [pecasRevisadas, setPecasRevisadas] = useState<PecaRevisada[]>([]);
+  const [fotosCount, setFotosCount] = useState(0);
   type TabType = "info" | "deslocamentos" | "pecas" | "fotos" | "revisao";
   const [activeTab, setActiveTab] = useState<TabType>("info");
   const [observacoesRevisao, setObservacoesRevisao] = useState("");
@@ -65,6 +67,21 @@ export default function OSRevisaoPage() {
     "save" | "conclude" | null
   >(null);
   const { showSuccess, showError } = useToast();
+
+  const loadFotosCount = useCallback(async (osId: number) => {
+    if (!osId) {
+      setFotosCount(0);
+      return;
+    }
+
+    try {
+      const fotos = await fatFotosService.listar(osId);
+      setFotosCount(fotos.length);
+    } catch (err) {
+      console.error("Erro ao carregar quantidade de fotos:", err);
+      setFotosCount(0);
+    }
+  }, []);
 
   // Carregar dados da OS
   const fetchOS = useCallback(async () => {
@@ -82,6 +99,7 @@ export default function OSRevisaoPage() {
       setObservacoesRevisao(response.revisao_os?.observacoes || "");
       setObservacoesMaquina(response.maquina?.observacoes ?? "");
       setEditarObservacoesMaquina(false);
+      void loadFotosCount(response.id_os);
 
       // Processar deslocamentos de todas as FATs
       let todosDeslocamentosOriginais: DeslocamentoOriginal[] = [];
@@ -186,13 +204,14 @@ export default function OSRevisaoPage() {
       setPecasRevisadas(todasPecasRevisadas);
     } catch (err) {
       console.error("Erro ao carregar OS:", err);
+      setFotosCount(0);
       setError(
         "Não foi possí­vel carregar os detalhes da OS. Por favor, tente novamente."
       );
     } finally {
       setLoading(false);
     }
-  }, [params?.id]);
+  }, [loadFotosCount, params?.id]);
 
   // Carregar dados na inicialização
   useEffect(() => {
@@ -870,6 +889,7 @@ export default function OSRevisaoPage() {
         >
           <Car className="h-4 w-4" />
           Deslocamentos (
+          {deslocamentosOriginais.length} |{" "}
           {deslocamentosRevisados.filter((d) => !d.isDeleted).length})
         </button>
         <button
@@ -881,7 +901,8 @@ export default function OSRevisaoPage() {
           onClick={() => setActiveTab("pecas")}
         >
           <Package className="h-4 w-4" />
-          Peças ({pecasRevisadas.filter((p) => !p.isDeleted).length})
+          Peças ({pecasOriginais.length} |{" "}
+          {pecasRevisadas.filter((p) => !p.isDeleted).length})
         </button>
         <button
           className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
@@ -892,7 +913,7 @@ export default function OSRevisaoPage() {
           onClick={() => setActiveTab("fotos")}
         >
           <Camera className="h-4 w-4" />
-          Fotos
+          Fotos ({fotosCount})
         </button>
         <button
           className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
@@ -949,7 +970,11 @@ export default function OSRevisaoPage() {
         )}
 
         {activeTab === "fotos" && (
-          <FotosTab osId={os.id_os} fats={os.fats ?? []} />
+          <FotosTab
+            osId={os.id_os}
+            fats={os.fats ?? []}
+            onCountChange={setFotosCount}
+          />
         )}
 
         {activeTab === "revisao" && (

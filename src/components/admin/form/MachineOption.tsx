@@ -10,6 +10,7 @@ export interface MachineOptionType extends OptionType {
   numero_serie?: string;
   descricao?: string;
   clienteNomeFantasia?: string;
+  clienteAtualId?: number | null;
 }
 
 // Custom Option component that includes a warranty badge with Lucide icons

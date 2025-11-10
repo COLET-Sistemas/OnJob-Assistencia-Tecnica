@@ -9,10 +9,10 @@ export interface Maquina {
   situacao: string;
   garantia: boolean;
   observacoes?: string;
-  cliente_atual: {
+  cliente_atual?: {
     id_cliente: number;
     nome_fantasia: string;
-  };
+  } | null;
 }
 
 export interface FormData {

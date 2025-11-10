@@ -11,6 +11,7 @@ import {
   Minimize,
   UserCircle,
   MonitorDot,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useEffect, useState, memo } from "react";
 import { useRouter } from "next/navigation";
@@ -316,6 +317,20 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
                         className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
                       />
                       <span className="font-medium">Gestão de Usuários</span>
+                    </button>
+
+                    <button
+                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        router.push("/admin/administracao/parametros");
+                      }}
+                    >
+                      <SlidersHorizontal
+                        size={18}
+                        className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
+                      />
+                      <span className="font-medium">Parametrização</span>
                     </button>
                   </>
                 )}
