@@ -70,6 +70,22 @@ const formatNumber = (value: number | undefined | null) => {
   return new Intl.NumberFormat("pt-BR").format(value);
 };
 
+const normalizePhoneForTel = (value?: string | null) => {
+  if (!value) return "";
+  return value.replace(/[^\d+]/g, "");
+};
+
+const buildTelHref = (value?: string | null) => {
+  const normalized = normalizePhoneForTel(value);
+  return normalized ? `tel:${normalized}` : null;
+};
+
+const buildWhatsAppHref = (value?: string | null) => {
+  if (!value) return null;
+  const digits = value.replace(/\D/g, "");
+  return digits ? `https://wa.me/${digits}` : null;
+};
+
 const ClientesDetalhesPage = () => {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -314,6 +330,9 @@ const ClientesDetalhesPage = () => {
                       ? "bg-rose-50 border-rose-100 text-rose-700"
                       : "bg-emerald-50 border-emerald-100 text-emerald-700",
                 };
+          const emailHref = contato.email ? `mailto:${contato.email}` : null;
+          const telefoneHref = buildTelHref(contato.telefone);
+          const whatsappHref = buildWhatsAppHref(contato.whatsapp);
 
           return (
             <div
@@ -356,22 +375,33 @@ const ClientesDetalhesPage = () => {
 
               <div className="mt-3 flex flex-wrap gap-5 text-sm text-slate-600">
                 {contato.email && (
-                  <p className="flex items-center gap-1.5">
+                  <a
+                    href={emailHref || undefined}
+                    className="flex items-center gap-1.5 rounded-md transition hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40"
+                  >
                     <Mail className="h-4 w-4 text-slate-400" />
                     {contato.email}
-                  </p>
+                  </a>
                 )}
                 {contato.telefone && (
-                  <p className="flex items-center gap-1.5">
+                  <a
+                    href={telefoneHref || undefined}
+                    className="flex items-center gap-1.5 rounded-md transition hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40"
+                  >
                     <Phone className="h-4 w-4 text-slate-400" />
                     {contato.telefone}
-                  </p>
+                  </a>
                 )}
                 {contato.whatsapp && (
-                  <p className="flex items-center gap-1.5">
+                  <a
+                    href={whatsappHref || undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 rounded-md transition hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40"
+                  >
                     <MessageCircle className="h-4 w-4 text-green-500" />
                     {contato.whatsapp}
-                  </p>
+                  </a>
                 )}
               </div>
             </div>
