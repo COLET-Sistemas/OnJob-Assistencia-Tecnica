@@ -54,7 +54,6 @@ const situacaoStyles: Record<string, { label: string; className: string }> = {
   },
 };
 
-
 const formatDateOnly = (value?: string | null) => {
   if (!value) return "-";
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return value;
@@ -286,17 +285,30 @@ const ClientesDetalhesPage = () => {
   const renderHistoricoField = (
     label: string,
     value?: string | number,
-    options?: { variant?: "success" | "default" }
+    options?: { variant?: "success" | "danger" | "default" }
   ) => {
     if (!value) return null;
 
     const variant = options?.variant ?? "default";
-    const containerClasses =
-      variant === "success"
-        ? "border-emerald-100 bg-emerald-50/80"
-        : "border-slate-100 bg-slate-50";
-    const textClasses =
-      variant === "success" ? "text-emerald-700" : "text-slate-700";
+    const { containerClasses, textClasses } = (() => {
+      switch (variant) {
+        case "success":
+          return {
+            containerClasses: "border-emerald-100 bg-emerald-50/80",
+            textClasses: "text-emerald-700",
+          };
+        case "danger":
+          return {
+            containerClasses: "border-rose-100 bg-rose-50",
+            textClasses: "text-rose-700",
+          };
+        default:
+          return {
+            containerClasses: "border-slate-100 bg-slate-50",
+            textClasses: "text-slate-700",
+          };
+      }
+    })();
 
     return (
       <div className={`rounded-lg border p-3 ${containerClasses}`}>
@@ -513,51 +525,40 @@ const ClientesDetalhesPage = () => {
               key={`${registro.id_fat}-${registro.numero_os}-${registro.data_atendimento}`}
               className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm space-y-4"
             >
-              <div className="flex flex-col gap-3 border-b border-slate-100 pb-3 md:flex-row md:items-center md:justify-between">
-                <div className="space-y-2">
-                  <p className="text-base font-semibold text-slate-900 flex flex-wrap items-center gap-3">
-                    {/* OS */}
-                    <span className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                      OS #{registro.numero_os ?? "-"}
-                    </span>
-
-                    {/* FAT */}
-                    <span className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                      FAT #{registro.id_fat ?? "-"}
-                    </span>
-
-                    {/* MOTIVO */}
-                    <span className="text-slate-700 font-medium leading-tight">
-                      {registro.motivo_atendimento}
-                    </span>
-                  </p>
-
-                  <div className="flex items-center gap-2 text-sm text-slate-700 flex-wrap">
-                    {registro.em_garantia ? (
-                      <CircleCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                    ) : (
-                      <CircleX className="w-4 h-4 text-amber-500 shrink-0" />
-                    )}
-
-                    <span className="text-slate-800 font-medium">
-                      {registro.descricao_maquina ||
-                        registro.nome_cliente ||
-                        "Cliente / máquina não informados"}
-                    </span>
-
-                    {registro.numero_serie && (
-                      <span className="text-sm text-slate-500">
-                        / Número de Série: {registro.numero_serie}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1 text-sm text-slate-600 items-start text-left md:items-end md:text-right">
-                  <span className="text-sm font-semibold text-slate-900">
-                    {registro.nome_tecnico || "Tecnico nao informado"}
+              <div className="flex flex-col gap-2 border-b border-slate-100 pb-3">
+                <div className="flex w-full flex-wrap items-center gap-2 text-sm text-slate-700">
+                  <span className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                    OS #{registro.numero_os ?? "-"}
                   </span>
-                  <span className="text-xs text-slate-500">
-                    Atendimento em {registro.data_atendimento}
+
+                  <span className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                    FAT #{registro.id_fat ?? "-"}
+                  </span>
+
+                  <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                    <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
+                    Atendimento: {formatDateOnly(registro.data_atendimento)}
+                  </span>
+
+                  <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-800">
+                    {registro.em_garantia ? (
+                      <CircleCheck className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <CircleX className="h-4 w-4 text-amber-500" />
+                    )}
+                    {registro.descricao_maquina ||
+                      registro.nome_cliente ||
+                      "Cliente / máquina não informados"}
+                  </span>
+
+                  {registro.numero_serie && (
+                    <span className="text-sm text-slate-500">
+                      / {registro.numero_serie}
+                    </span>
+                  )}
+
+                  <span className="ml-auto text-sm font-semibold text-slate-900 whitespace-nowrap">
+                    {registro.nome_tecnico || "Tecnico nao informado"}
                   </span>
                 </div>
               </div>
@@ -565,8 +566,15 @@ const ClientesDetalhesPage = () => {
               <div className="grid gap-4 md:grid-cols-[0.9fr,1.1fr]">
                 <div className="grid gap-3 sm:grid-cols-2">
                   {renderHistoricoField(
+                    registro.motivo_atendimento
+                      ? `Motivo do atendimento: ${registro.motivo_atendimento}`
+                      : "Motivo do atendimento",
+                    registro.motivo_atendimento
+                  )}
+                  {renderHistoricoField(
                     "Descrição do problema",
-                    registro.descricao_problema
+                    registro.descricao_problema,
+                    { variant: "danger" }
                   )}
                   {renderHistoricoField(
                     "Solução encontrada",
