@@ -200,7 +200,6 @@ const EditarOrdemServico = () => {
     isOpen: false,
     maquina: null,
   });
-  const [isLinkingMaquina, setIsLinkingMaquina] = useState(false);
   const [contatoOptions, setContatoOptions] = useState<ContatoOption[]>([]);
   const [selectedContato, setSelectedContato] = useState<ContatoOption | null>(
     null
@@ -898,65 +897,23 @@ const EditarOrdemServico = () => {
     [selectedCliente]
   );
 
-  const handleConfirmMaquinaVinculo = useCallback(async () => {
+  const handleConfirmMaquinaVinculo = useCallback(() => {
     if (!maquinaConfirmModal.maquina || !selectedCliente) {
       setMaquinaConfirmModal({ isOpen: false, maquina: null });
       return;
     }
 
-    setIsLinkingMaquina(true);
-    try {
-      await maquinasService.update(maquinaConfirmModal.maquina.value, {
-        id_cliente_atual: selectedCliente.value,
-      });
-
-      const clienteNome =
-        selectedCliente.nome_fantasia ||
-        selectedCliente.razao_social ||
-        selectedCliente.label ||
-        `ID ${selectedCliente.value}`;
-
-      const updatedMaquina = {
-        ...maquinaConfirmModal.maquina,
-        clienteAtualId: selectedCliente.value,
-        clienteNomeFantasia: clienteNome,
-      } as MaquinaOption;
-
-      setSelectedMaquina(updatedMaquina);
-      setMaquinaOptions((prev) => {
-        const exists = prev.some(
-          (option) => option.value === updatedMaquina.value
-        );
-        if (exists) {
-          return prev.map((option) =>
-            option.value === updatedMaquina.value ? updatedMaquina : option
-          );
-        }
-        return [...prev, updatedMaquina];
-      });
-      setMaquinaInput("");
-      showSuccess(
-        "Máquina atualizada",
-        "O vínculo da máquina foi atualizado para este cliente."
-      );
-      setMaquinaConfirmModal({ isOpen: false, maquina: null });
-    } catch (error) {
-      console.error("Erro ao atualizar vínculo da máquina:", error);
-      const message =
-        error instanceof Error ? error.message : undefined;
-      showError("Não foi possível atualizar a máquina", message);
-    } finally {
-      setIsLinkingMaquina(false);
-    }
-  }, [maquinaConfirmModal, selectedCliente, showError, showSuccess]);
+    setSelectedMaquina(maquinaConfirmModal.maquina);
+    setMaquinaInput("");
+    setMaquinaConfirmModal({ isOpen: false, maquina: null });
+  }, [maquinaConfirmModal, selectedCliente]);
 
   const handleCancelMaquinaVinculo = useCallback(() => {
-    if (isLinkingMaquina) {
-      return;
-    }
+    setSelectedMaquina(null);
+    setMaquinaInput("");
     setMaquinaConfirmModal({ isOpen: false, maquina: null });
     focusMaquinaField();
-  }, [focusMaquinaField, isLinkingMaquina]);
+  }, [focusMaquinaField]);
 
   const handleMotivoPendenciaSelectChange = useCallback(
     (option: OptionType | null) => {
@@ -1873,7 +1830,6 @@ const EditarOrdemServico = () => {
           }
           onConfirm={handleConfirmMaquinaVinculo}
           onCancel={handleCancelMaquinaVinculo}
-          isLoading={isLinkingMaquina}
         />
       </FormContainer>
     </>

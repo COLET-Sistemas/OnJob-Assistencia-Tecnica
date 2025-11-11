@@ -12,6 +12,7 @@ export interface Maquina {
   cliente_atual?: {
     id_cliente: number;
     nome_fantasia: string;
+    razao_social?: string;
   } | null;
 }
 

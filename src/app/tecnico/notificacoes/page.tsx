@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckSquare, Mail, MailOpen } from "lucide-react";
 import MobileHeader from "@/components/tecnico/MobileHeader";
@@ -36,6 +36,87 @@ function parseNotificationDate(dateString: string): Date {
   return new Date(dateString);
 }
 
+type NotificationItemProps = {
+  notificacao: Notificacao;
+  onMarkAsRead: (id: number) => void;
+};
+
+const NotificationItem = memo(
+  ({ notificacao, onMarkAsRead }: NotificationItemProps) => {
+    const formattedDate = useMemo(() => {
+      if (!notificacao.data_criacao) {
+        return "";
+      }
+
+      return formatRelativeDate(
+        parseNotificationDate(notificacao.data_criacao)
+      );
+    }, [notificacao.data_criacao]);
+
+    const handleMarkAsRead = useCallback(() => {
+      onMarkAsRead(notificacao.id);
+    }, [notificacao.id, onMarkAsRead]);
+
+    return (
+      <div
+        className={`border-b border-gray-100 p-4 transition-colors ${
+          notificacao.lida
+            ? "bg-white"
+            : "bg-purple-50/80 border-l-4 border-l-[#7B54BE]"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className={`p-2 rounded-full mt-1 ${
+              notificacao.lida
+                ? "bg-gray-200 text-gray-500"
+                : "bg-[#7B54BE] text-white"
+            }`}
+          >
+            {notificacao.lida ? <MailOpen size={16} /> : <Mail size={16} />}
+          </div>
+
+          <div className="flex-1 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4
+                className={`text-base ${
+                  notificacao.lida
+                    ? "font-medium text-gray-800"
+                    : "font-semibold text-[#7B54BE]"
+                }`}
+              >
+                {notificacao.titulo}
+              </h4>
+
+              {!notificacao.lida ? (
+                <button
+                  type="button"
+                  onClick={handleMarkAsRead}
+                  className="flex items-center gap-1 rounded-full border border-[#7B54BE] px-3 py-1 text-xs font-medium text-[#7B54BE] transition-colors hover:bg-[#7B54BE] hover:text-white"
+                >
+                  <CheckSquare size={14} />
+                  Marcar como lida
+                </button>
+              ) : (
+                <span className="flex items-center gap-1 text-xs font-semibold text-gray-400">
+                  <CheckSquare size={12} />
+                  Lida
+                </span>
+              )}
+            </div>
+
+            <p className="text-sm text-gray-600">{notificacao.mensagem}</p>
+
+            <div className="text-xs text-gray-400">{formattedDate}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+
+NotificationItem.displayName = "NotificationItem";
+
 export default function NotificacoesPage() {
   const router = useRouter();
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
@@ -43,98 +124,105 @@ export default function NotificacoesPage() {
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // removido 'notificacoesCount' pois não é usado
+  // removido 'notificacoesCount' pois nÃƒÆ’Ã‚Â£o ÃƒÆ’Ã‚Â© usado
   const { updateCount, refreshCount, getNotificacoes } = useNotificacoes();
   const { showToast } = useFeedback();
 
-  const hasUnread = notificacoes.some((notif) => !notif.lida);
+  const hasUnread = useMemo(
+    () => notificacoes.some((notif) => !notif.lida),
+    [notificacoes]
+  );
 
-  const fetchNotificacoes = async (
-    pagina: number = 1,
-    forceRefresh: boolean = false
-  ) => {
-    setLoading(true);
-    try {
-      const response = await getNotificacoes(pagina, forceRefresh);
+  const fetchNotificacoes = useCallback(
+    async (pagina: number = 1, forceRefresh: boolean = false) => {
+      setLoading(true);
+      try {
+        const response = await getNotificacoes(pagina, forceRefresh);
 
-      if (!response || Object.keys(response).length === 0) {
+        if (!response || Object.keys(response).length === 0) {
+          setNotificacoes([]);
+          setTotalPaginas(1);
+          setPaginaAtual(1);
+          updateCount(0, 0);
+          return;
+        }
+
+        if (Array.isArray(response.dados)) {
+          const notificacoesAdaptadas = response.dados.map((item) => ({
+            id: item.id,
+            titulo: item.titulo,
+            mensagem: item.mensagem,
+            data_criacao: item.data,
+            lida: item.lido,
+          }));
+
+          setNotificacoes((prev) =>
+            pagina === 1
+              ? notificacoesAdaptadas
+              : [...prev, ...notificacoesAdaptadas]
+          );
+
+          setTotalPaginas(response.total_paginas || 1);
+          setPaginaAtual(response.pagina_atual || pagina);
+
+          updateCount(
+            response.nao_lidas || 0,
+            (response.total_notificacoes as number) ||
+              response.dados.length ||
+              0
+          );
+          return;
+        }
+
         setNotificacoes([]);
         setTotalPaginas(1);
         setPaginaAtual(1);
-        updateCount(0, 0);
-        return;
+      } catch (error) {
+        console.error("Erro ao buscar notificacoes:", error);
+        setNotificacoes([]);
+      } finally {
+        setLoading(false);
       }
-
-      if (Array.isArray(response.dados)) {
-        const notificacoesAdaptadas = response.dados.map((item) => ({
-          id: item.id,
-          titulo: item.titulo,
-          mensagem: item.mensagem,
-          data_criacao: item.data,
-          lida: item.lido,
-        }));
-
-        if (pagina === 1) {
-          setNotificacoes(notificacoesAdaptadas);
-        } else {
-          setNotificacoes((prev) => [...prev, ...notificacoesAdaptadas]);
-        }
-
-        setTotalPaginas(response.total_paginas || 1);
-        setPaginaAtual(response.pagina_atual || pagina);
-
-        updateCount(
-          response.nao_lidas || 0,
-          (response.total_notificacoes as number) || response.dados.length || 0
-        );
-        return;
-      }
-
-      setNotificacoes([]);
-      setTotalPaginas(1);
-      setPaginaAtual(1);
-    } catch (error) {
-      console.error("Erro ao buscar notificacoes:", error);
-      setNotificacoes([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [getNotificacoes, updateCount]
+  );
 
   useEffect(() => {
     fetchNotificacoes(1, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchNotificacoes]);
 
-  const marcarComoLida = async (id: number) => {
-    try {
-      const response = await notificacoesService.marcarComoLida(id);
+  const marcarComoLida = useCallback(
+    async (id: number) => {
+      try {
+        const response = await notificacoesService.marcarComoLida(id);
 
-      setNotificacoes((prev) =>
-        prev.map((notif) =>
-          notif.id === id ? { ...notif, lida: true } : notif
-        )
-      );
+        setNotificacoes((prev) =>
+          prev.map((notif) =>
+            notif.id === id ? { ...notif, lida: true } : notif
+          )
+        );
 
-      if (typeof response?.nao_lidas === "number") {
-        updateCount(response.nao_lidas, response.total_notificacoes);
-      } else {
-        refreshCount();
+        if (typeof response?.nao_lidas === "number") {
+          updateCount(response.nao_lidas, response.total_notificacoes);
+        } else {
+          refreshCount();
+        }
+
+        const toastMessage =
+          response?.mensagem ||
+          response?.message ||
+          "NotificaÃƒÂ§ÃƒÂ£o marcada como lida.";
+        const toastType = response?.sucesso === false ? "error" : "success";
+        showToast(toastMessage, toastType);
+      } catch (error) {
+        console.error(`Erro ao marcar notificaÃƒÂ§ÃƒÂ£o ${id} como lida:`, error);
+        showToast("Erro ao marcar notificaÃƒÂ§ÃƒÂ£o como lida.", "error");
       }
+    },
+    [refreshCount, showToast, updateCount]
+  );
 
-      const toastMessage =
-        response?.mensagem ||
-        response?.message ||
-        "Notificação marcada como lida.";
-      const toastType = response?.sucesso === false ? "error" : "success";
-      showToast(toastMessage, toastType);
-    } catch (error) {
-      console.error(`Erro ao marcar notificação ${id} como lida:`, error);
-      showToast("Erro ao marcar notificação como lida.", "error");
-    }
-  };
-
-  const marcarTodasComoLidas = async () => {
+  const marcarTodasComoLidas = useCallback(async () => {
     if (!hasUnread) return;
 
     try {
@@ -153,24 +241,24 @@ export default function NotificacoesPage() {
       const toastMessage =
         response?.mensagem ||
         response?.message ||
-        "Notificações marcadas como lidas.";
+        "NotificaÃƒÂ§ÃƒÂµes marcadas como lidas.";
       const toastType = response?.sucesso === false ? "error" : "success";
       showToast(toastMessage, toastType);
     } catch (error) {
-      console.error("Erro ao marcar todas notificações como lidas:", error);
-      showToast("Erro ao marcar todas notificações como lidas.", "error");
+      console.error('Erro ao marcar todas notificaÃƒÂ§ÃƒÂµes como lidas:', error);
+      showToast('Erro ao marcar todas notificaÃƒÂ§ÃƒÂµes como lidas.', 'error');
     }
-  };
+  }, [hasUnread, refreshCount, showToast, updateCount]);
 
-  const carregarMaisNotificacoes = () => {
+  const carregarMaisNotificacoes = useCallback(() => {
     if (paginaAtual < totalPaginas && !loading) {
       fetchNotificacoes(paginaAtual + 1, false);
     }
-  };
+  }, [fetchNotificacoes, loading, paginaAtual, totalPaginas]);
 
-  const voltarParaPaginaAnterior = () => {
+  const voltarParaPaginaAnterior = useCallback(() => {
     router.back();
-  };
+  }, [router]);
 
   const renderNotificacoesVazias = () => (
     <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
@@ -178,10 +266,10 @@ export default function NotificacoesPage() {
         <MailOpen className="text-gray-400" size={48} />
       </div>
       <h3 className="text-lg font-medium text-gray-700 mb-2">
-        Nenhuma notificação
+        Nenhuma notificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o
       </h3>
       <p className="text-gray-500">
-        Você não tem nenhuma notificação no momento.
+        VocÃƒÆ’Ã‚Âª nÃƒÆ’Ã‚Â£o tem nenhuma notificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o no momento.
       </p>
     </div>
   );
@@ -189,7 +277,7 @@ export default function NotificacoesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <MobileHeader
-        title="Notificações"
+        title="NotificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes"
         onAddClick={voltarParaPaginaAnterior}
         leftVariant="back"
       />
@@ -219,72 +307,11 @@ export default function NotificacoesPage() {
           {!loading &&
             notificacoes.length > 0 &&
             notificacoes.map((notificacao) => (
-              <div
+              <NotificationItem
                 key={notificacao.id}
-                className={`border-b border-gray-100 p-4 transition-colors ${
-                  notificacao.lida
-                    ? "bg-white"
-                    : "bg-purple-50/80 border-l-4 border-l-[#7B54BE]"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`p-2 rounded-full mt-1 ${
-                      notificacao.lida
-                        ? "bg-gray-200 text-gray-500"
-                        : "bg-[#7B54BE] text-white"
-                    }`}
-                  >
-                    {notificacao.lida ? (
-                      <MailOpen size={16} />
-                    ) : (
-                      <Mail size={16} />
-                    )}
-                  </div>
-
-                  <div className="flex-1 space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h4
-                        className={`text-base ${
-                          notificacao.lida
-                            ? "font-medium text-gray-800"
-                            : "font-semibold text-[#7B54BE]"
-                        }`}
-                      >
-                        {notificacao.titulo}
-                      </h4>
-
-                      {!notificacao.lida ? (
-                        <button
-                          type="button"
-                          onClick={() => marcarComoLida(notificacao.id)}
-                          className="flex items-center gap-1 rounded-full border border-[#7B54BE] px-3 py-1 text-xs font-medium text-[#7B54BE] transition-colors hover:bg-[#7B54BE] hover:text-white"
-                        >
-                          <CheckSquare size={14} />
-                          Marcar como lida
-                        </button>
-                      ) : (
-                        <span className="flex items-center gap-1 text-xs font-semibold text-gray-400">
-                          <CheckSquare size={12} />
-                          Lida
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="text-sm text-gray-600">
-                      {notificacao.mensagem}
-                    </p>
-
-                    <div className="text-xs text-gray-400">
-                      {notificacao.data_criacao
-                        ? formatRelativeDate(
-                            parseNotificationDate(notificacao.data_criacao)
-                          )
-                        : ""}
-                    </div>
-                  </div>
-                </div>
-              </div>
+                notificacao={notificacao}
+                onMarkAsRead={marcarComoLida}
+              />
             ))}
 
           {!loading && paginaAtual < totalPaginas && (
@@ -303,3 +330,4 @@ export default function NotificacoesPage() {
     </div>
   );
 }
+

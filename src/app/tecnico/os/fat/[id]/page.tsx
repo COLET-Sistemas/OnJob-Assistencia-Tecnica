@@ -1,5 +1,11 @@
 "use client";
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useRouter, useParams } from "next/navigation";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import FloatingActionMenuFat from "@/components/tecnico/FloatingActionMenuFat";
@@ -29,7 +35,11 @@ import { Loading } from "@/components/LoadingPersonalizado";
 import Toast from "@/components/tecnico/Toast";
 import StatusBadge from "@/components/tecnico/StatusBadge";
 
-// Botão de ação para FAT
+type FATDeslocamento = NonNullable<FATDetalhada["deslocamentos"]>[number];
+type FATPeca = NonNullable<FATDetalhada["pecas"]>[number];
+type FATFoto = NonNullable<FATDetalhada["fotos"]>[number];
+
+// BotÃ£o de aÃ§Ã£o para FAT
 // type ActionButtonFatProps = {
 //   label: string;
 //   icon: React.ReactNode;
@@ -87,7 +97,7 @@ function SectionActionButton({
   );
 }
 
-// Componente Section reutilizável
+// Componente Section reutilizÃ¡vel
 const Section = React.memo(
   ({
     title,
@@ -140,7 +150,7 @@ const Section = React.memo(
 
 Section.displayName = "Section";
 
-// Componente Field reutilizável
+// Componente Field reutilizÃ¡vel
 const Field = React.memo(
   ({
     label,
@@ -151,7 +161,7 @@ const Field = React.memo(
     value: string | React.ReactNode;
     icon?: React.ReactNode;
   }) => {
-    if (!value || value === "Não informado" || value === "") return null;
+    if (!value || value === "NÃ£o informado" || value === "") return null;
 
     return (
       <div className="flex items-start gap-2 min-w-0">
@@ -170,6 +180,239 @@ const Field = React.memo(
 );
 
 Field.displayName = "Field";
+
+const DeslocamentosSectionContent = React.memo(
+  ({
+    deslocamentos,
+    formatTime,
+    onNavigate,
+  }: {
+    deslocamentos: FATDeslocamento[];
+    formatTime: (minutes: number | null | undefined) => string | null;
+    onNavigate: () => void;
+  }) => {
+    const hasDeslocamentos = deslocamentos.length > 0;
+
+    return (
+      <>
+        {hasDeslocamentos ? (
+          <div className="space-y-2">
+            {deslocamentos.map((desloc, index) => (
+              <div
+                key={desloc.id_deslocamento || index}
+                className="p-3 bg-slate-50 rounded-lg"
+              >
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-slate-500">KM Ida:</span>
+                    <span className="ml-1 text-slate-900">
+                      {desloc.km_ida || 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">KM Volta:</span>
+                    <span className="ml-1 text-slate-900">
+                      {desloc.km_volta || 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Tempo Ida:</span>
+                    <span className="ml-1 text-slate-900">
+                      {formatTime(desloc.tempo_ida_min) || "N/A"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Tempo Volta:</span>
+                    <span className="ml-1 text-slate-900">
+                      {formatTime(desloc.tempo_volta_min) || "N/A"}
+                    </span>
+                  </div>
+                </div>
+                {desloc.observacoes && (
+                  <div className="mt-2">
+                    <p className="text-xs text-slate-500 mb-1">
+                      Observaï¿½ï¿½ï¿½ï¿½es:
+                    </p>
+                    <p className="text-xs text-slate-700">
+                      {desloc.observacoes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500 italic">
+            Nenhum deslocamento registrado
+          </p>
+        )}
+        <div className="mt-4">
+          <SectionActionButton
+            label="Ir para Deslocamento"
+            icon={<Car className="w-4 h-4" />}
+            onClick={onNavigate}
+          />
+        </div>
+      </>
+    );
+  }
+);
+
+DeslocamentosSectionContent.displayName = "DeslocamentosSectionContent";
+
+const PecasSectionContent = React.memo(
+  ({
+    pecas,
+    onNavigate,
+  }: {
+    pecas: FATPeca[];
+    onNavigate: () => void;
+  }) => {
+    const hasPecas = pecas.length > 0;
+
+    return (
+      <>
+        {hasPecas ? (
+          <div className="space-y-2">
+            {pecas.map((peca, index) => (
+              <div
+                key={peca.id_fat_peca || index}
+                className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs text-slate-900 font-medium">
+                      {peca.descricao_peca}
+                    </span>
+                  </div>
+                  {peca.codigo_peca && (
+                    <p className="text-xs text-slate-600">
+                      Cï¿½ï¿½digo: {peca.codigo_peca}
+                    </p>
+                  )}
+                  {peca.observacoes && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      Obs: {peca.observacoes}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-slate-600 bg-white px-2 py-1 rounded">
+                    Qtd: {peca.quantidade}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500 italic">
+            Nenhuma peï¿½ï¿½a cadastrada
+          </p>
+        )}
+        <div className="mt-4">
+          <SectionActionButton
+            label="Ir para Peï¿½ï¿½as"
+            icon={<Package className="w-4 h-4" />}
+            onClick={onNavigate}
+          />
+        </div>
+      </>
+    );
+  }
+);
+
+PecasSectionContent.displayName = "PecasSectionContent";
+
+const FotosSectionContent = React.memo(
+  ({
+    fotos,
+    photoPreviews,
+    loadingPhotoPreviews,
+    photoPreviewError,
+    formatPhotoDate,
+    onOpen,
+    onNavigate,
+  }: {
+    fotos: FATFoto[];
+    photoPreviews: Record<number, string>;
+    loadingPhotoPreviews: boolean;
+    photoPreviewError: string;
+    formatPhotoDate: (value: string | Date | null | undefined) => string;
+    onOpen: (index: number) => void;
+    onNavigate: () => void;
+  }) => {
+    const hasPhotos = fotos.length > 0;
+
+    return (
+      <>
+        {hasPhotos ? (
+          <div className="space-y-3">
+            {photoPreviewError && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+                {photoPreviewError}
+              </div>
+            )}
+            {fotos.map((foto, index) => {
+              const previewUrl = photoPreviews[foto.id_fat_foto];
+              const isLoadingPreview = loadingPhotoPreviews && !previewUrl;
+
+              return (
+                <div
+                  key={foto.id_fat_foto || index}
+                  className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+                >
+                  <button
+                    type="button"
+                    onClick={() => onOpen(index)}
+                    className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100 transition hover:border-[#7B54BE]/60 focus:outline-none focus:ring-2 focus:ring-[#7B54BE] focus:ring-offset-2"
+                  >
+                    {previewUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={previewUrl}
+                        alt={foto.descricao || foto.nome_arquivo}
+                        className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+                      />
+                    ) : isLoadingPreview ? (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <div className="h-6 w-6 rounded-full border-2 border-slate-200 border-t-[#7B54BE] animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-slate-400">
+                        <ImageOff className="h-6 w-6" />
+                      </div>
+                    )}
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-800 line-clamp-2">
+                      {foto.descricao?.trim() || foto.nome_arquivo}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {formatPhotoDate(foto.data_cadastro)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500 italic">
+            Nenhuma foto cadastrada
+          </p>
+        )}
+        <div className="mt-4">
+          <SectionActionButton
+            label="Ir para Fotos"
+            icon={<Camera className="w-4 h-4" />}
+            onClick={onNavigate}
+          />
+        </div>
+      </>
+    );
+  }
+);
+
+FotosSectionContent.displayName = "FotosSectionContent";
 
 export default function FATDetalheMobile() {
   const router = useRouter();
@@ -202,7 +445,7 @@ export default function FATDetalheMobile() {
   const deveMostrarBotoes = situacoesComBotoes.includes(
     String(fat?.situacao?.codigo)
   );
-  // Função auxiliar para mostrar toast com auto-hide
+  // FunÃ§Ã£o auxiliar para mostrar toast com auto-hide
   const showToast = useCallback(
     (message: string, type: "success" | "error" = "success") => {
       setToast({
@@ -292,9 +535,29 @@ export default function FATDetalheMobile() {
     [params?.id, router]
   );
 
-  // Função para extrair mensagem de erro da API
+  const goToDeslocamento = useCallback(
+    () => handleNavigateToSection("deslocamento"),
+    [handleNavigateToSection]
+  );
+
+  const goToAtendimento = useCallback(
+    () => handleNavigateToSection("atendimento"),
+    [handleNavigateToSection]
+  );
+
+  const goToPecas = useCallback(
+    () => handleNavigateToSection("pecas"),
+    [handleNavigateToSection]
+  );
+
+  const goToFotos = useCallback(
+    () => handleNavigateToSection("fotos"),
+    [handleNavigateToSection]
+  );
+
+  // FunÃ§Ã£o para extrair mensagem de erro da API
   const extractErrorMessage = useCallback((error: unknown): string => {
-    let errorMessage = "Ocorreu um erro durante a operação";
+    let errorMessage = "Ocorreu um erro durante a operaÃ§Ã£o";
 
     if (error && typeof error === "object") {
       if (
@@ -317,11 +580,11 @@ export default function FATDetalheMobile() {
     return errorMessage;
   }, []);
 
-  // Função para buscar dados da FAT
+  // FunÃ§Ã£o para buscar dados da FAT
   const fetchFAT = useCallback(
     async (force = false) => {
       if (!params?.id) {
-        setError("ID da FAT não fornecido");
+        setError("ID da FAT nÃ£o fornecido");
         setLoading(false);
         return;
       }
@@ -347,7 +610,7 @@ export default function FATDetalheMobile() {
         }
 
         if (!response) {
-          setError("FAT não encontrada");
+          setError("FAT nÃ£o encontrada");
           return;
         }
         setFat(response);
@@ -396,7 +659,7 @@ export default function FATDetalheMobile() {
   }, [fetchFAT]);
 
   useEffect(() => {
-    // 👇 Capture a snapshot of the ref's current value
+    // ðŸ‘‡ Capture a snapshot of the ref's current value
     const photoUrlsSnapshot = photoObjectUrlsRef.current;
 
     return () => {
@@ -665,7 +928,7 @@ export default function FATDetalheMobile() {
     try {
       setLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      const responseMessage = "Atendimento concluído com sucesso!";
+      const responseMessage = "Atendimento concluÃ­do com sucesso!";
       showToast(responseMessage, "success");
 
       setTimeout(() => {
@@ -680,14 +943,15 @@ export default function FATDetalheMobile() {
     }
   }, [handleNavigateToOS, extractErrorMessage, showToast]);
 
-  const fotos = fat?.fotos ?? [];
+  const fotos = useMemo(() => fat?.fotos ?? [], [fat?.fotos]);
   const hasPhotos = fotos.length > 0;
   const hasMultiplePhotos = fotos.length > 1;
 
-  const pecas = fat?.pecas ?? [];
-  const hasPecas = pecas.length > 0;
-  const deslocamentos = fat?.deslocamentos ?? [];
-  const hasDeslocamentos = deslocamentos.length > 0;
+  const pecas = useMemo(() => fat?.pecas ?? [], [fat?.pecas]);
+  const deslocamentos = useMemo(
+    () => fat?.deslocamentos ?? [],
+    [fat?.deslocamentos]
+  );
 
   const selectedPhoto =
     selectedPhotoIndex !== null && selectedPhotoIndex >= 0
@@ -809,7 +1073,7 @@ export default function FATDetalheMobile() {
           <div className="text-center">
             <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-slate-400" />
             <h2 className="font-semibold text-slate-900 mb-4 text-lg">
-              FAT não encontrada
+              FAT nÃ£o encontrada
             </h2>
             <button
               onClick={handleNavigateToOS}
@@ -881,7 +1145,7 @@ export default function FATDetalheMobile() {
       {/* Content Sections */}
       <div className="px-4 pb-6 space-y-4 mt-4">
         <Section
-          title="Informações Gerais"
+          title="InformaÃ§Ãµes Gerais"
           icon={<FileText className="w-4 h-4" />}
         >
           <Field
@@ -896,26 +1160,26 @@ export default function FATDetalheMobile() {
                 ? `${fat.nome_atendente} ${
                     fat.contato_atendente ? `- ${fat.contato_atendente}` : ""
                   }`
-                : "Não informado"
+                : "NÃ£o informado"
             }
             icon={<User className="w-3 h-3" />}
           />
         </Section>
 
         {fat.maquina?.modelo && fat.maquina.modelo.trim() !== "" && (
-          <Section title="Máquina" icon={<Settings className="w-4 h-4" />}>
+          <Section title="MÃ¡quina" icon={<Settings className="w-4 h-4" />}>
             <Field
               label="Modelo"
               value={fat.maquina.modelo}
               icon={<Settings className="w-3 h-3" />}
             />
             <Field
-              label="Descrição"
+              label="DescriÃ§Ã£o"
               value={fat.maquina.descricao}
               icon={<FileText className="w-3 h-3" />}
             />
             <Field
-              label="Número de Série"
+              label="NÃºmero de SÃ©rie"
               value={fat.maquina.numero_serie}
               icon={<Settings className="w-3 h-3" />}
             />
@@ -935,7 +1199,7 @@ export default function FATDetalheMobile() {
             <>
               {fat.solucao_encontrada && (
                 <Field
-                  label="Solução Encontrada"
+                  label="SoluÃ§Ã£o Encontrada"
                   value={fat.solucao_encontrada}
                   icon={<CheckSquare className="w-3 h-3" />}
                 />
@@ -951,7 +1215,7 @@ export default function FATDetalheMobile() {
 
               {fat.sugestoes && (
                 <Field
-                  label="Sugestões"
+                  label="SugestÃµes"
                   value={fat.sugestoes}
                   icon={<MessageSquare className="w-3 h-3" />}
                 />
@@ -959,7 +1223,7 @@ export default function FATDetalheMobile() {
 
               {fat.observacoes && (
                 <Field
-                  label="Observações"
+                  label="ObservaÃ§Ãµes"
                   value={fat.observacoes}
                   icon={<FileText className="w-3 h-3" />}
                 />
@@ -967,7 +1231,7 @@ export default function FATDetalheMobile() {
 
               {fat.numero_ciclos != null && fat.numero_ciclos > 0 && (
                 <Field
-                  label="Número de Ciclos"
+                  label="NÃºmero de Ciclos"
                   value={fat.numero_ciclos.toString()}
                   icon={<Timer className="w-3 h-3" />}
                 />
@@ -975,14 +1239,14 @@ export default function FATDetalheMobile() {
             </>
           ) : (
             <p className="text-sm text-slate-500 italic">
-              Não há informações sobre o atendimento
+              NÃ£o hÃ¡ informaÃ§Ãµes sobre o atendimento
             </p>
           )}
           <div className="mt-4">
             <SectionActionButton
               label="Ir para Atendimento"
               icon={<Wrench className="w-4 h-4" />}
-              onClick={() => handleNavigateToSection("atendimento")}
+              onClick={goToAtendimento}
             />
           </div>
         </Section>
@@ -994,64 +1258,11 @@ export default function FATDetalheMobile() {
           collapsible={true}
           defaultExpanded={false}
         >
-          {hasDeslocamentos ? (
-            <div className="space-y-2">
-              {deslocamentos.map((desloc, index) => (
-                <div
-                  key={desloc.id_deslocamento || index}
-                  className="p-3 bg-slate-50 rounded-lg"
-                >
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-slate-500">KM Ida:</span>
-                      <span className="ml-1 text-slate-900">
-                        {desloc.km_ida || 0}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">KM Volta:</span>
-                      <span className="ml-1 text-slate-900">
-                        {desloc.km_volta || 0}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Tempo Ida:</span>
-                      <span className="ml-1 text-slate-900">
-                        {formatTime(desloc.tempo_ida_min) || "N/A"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Tempo Volta:</span>
-                      <span className="ml-1 text-slate-900">
-                        {formatTime(desloc.tempo_volta_min) || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                  {desloc.observacoes && (
-                    <div className="mt-2">
-                      <p className="text-xs text-slate-500 mb-1">
-                        Observações:
-                      </p>
-                      <p className="text-xs text-slate-700">
-                        {desloc.observacoes}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500 italic">
-              Nenhum deslocamento registrado
-            </p>
-          )}
-          <div className="mt-4">
-            <SectionActionButton
-              label="Ir para Deslocamento"
-              icon={<Car className="w-4 h-4" />}
-              onClick={() => handleNavigateToSection("deslocamento")}
-            />
-          </div>
+          <DeslocamentosSectionContent
+            deslocamentos={deslocamentos}
+            formatTime={formatTime}
+            onNavigate={goToDeslocamento}
+          />
         </Section>
 
         <Section
@@ -1060,50 +1271,7 @@ export default function FATDetalheMobile() {
           collapsible={true}
           defaultExpanded={false}
         >
-          {hasPecas ? (
-            <div className="space-y-2">
-              {pecas.map((peca, index) => (
-                <div
-                  key={peca.id_fat_peca || index}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-slate-900 font-medium">
-                        {peca.descricao_peca}
-                      </span>
-                    </div>
-                    {peca.codigo_peca && (
-                      <p className="text-xs text-slate-600">
-                        Código: {peca.codigo_peca}
-                      </p>
-                    )}
-                    {peca.observacoes && (
-                      <p className="text-xs text-slate-500 mt-1">
-                        Obs: {peca.observacoes}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs text-slate-600 bg-white px-2 py-1 rounded">
-                      Qtd: {peca.quantidade}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500 italic">
-              Nenhuma peça cadastrada
-            </p>
-          )}
-          <div className="mt-4">
-            <SectionActionButton
-              label="Ir para Peças"
-              icon={<Package className="w-4 h-4" />}
-              onClick={() => handleNavigateToSection("pecas")}
-            />
-          </div>
+          <PecasSectionContent pecas={pecas} onNavigate={goToPecas} />
         </Section>
 
         {/* Fotos */}
@@ -1113,73 +1281,20 @@ export default function FATDetalheMobile() {
           collapsible={true}
           defaultExpanded={false}
         >
-          {hasPhotos ? (
-            <div className="space-y-3">
-              {photoPreviewError && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
-                  {photoPreviewError}
-                </div>
-              )}
-              {fotos.map((foto, index) => {
-                const previewUrl = photoPreviews[foto.id_fat_foto];
-                const isLoadingPreview = loadingPhotoPreviews && !previewUrl;
-
-                return (
-                  <div
-                    key={foto.id_fat_foto || index}
-                    className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => openPhotoViewer(index)}
-                      className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100 transition hover:border-[#7B54BE]/60 focus:outline-none focus:ring-2 focus:ring-[#7B54BE] focus:ring-offset-2"
-                    >
-                      {previewUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={previewUrl}
-                          alt={foto.descricao || foto.nome_arquivo}
-                          className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-                        />
-                      ) : isLoadingPreview ? (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <div className="h-6 w-6 rounded-full border-2 border-slate-200 border-t-[#7B54BE] animate-spin" />
-                        </div>
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-slate-400">
-                          <ImageOff className="h-6 w-6" />
-                        </div>
-                      )}
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-slate-800 line-clamp-2">
-                        {foto.descricao?.trim() || foto.nome_arquivo}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        {formatPhotoDate(foto.data_cadastro)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500 italic">
-              Nenhuma foto cadastrada
-            </p>
-          )}
-          <div className="mt-4">
-            <SectionActionButton
-              label="Ir para Fotos"
-              icon={<Camera className="w-4 h-4" />}
-              onClick={() => handleNavigateToSection("fotos")}
-            />
-          </div>
+          <FotosSectionContent
+            fotos={fotos}
+            photoPreviews={photoPreviews}
+            loadingPhotoPreviews={loadingPhotoPreviews}
+            photoPreviewError={photoPreviewError}
+            formatPhotoDate={formatPhotoDate}
+            onOpen={openPhotoViewer}
+            onNavigate={goToFotos}
+          />
         </Section>
 
         {fat.ocorrencias && fat.ocorrencias.length > 0 && (
           <Section
-            title={`Ocorrências (${fat.ocorrencias.length})`}
+            title={`OcorrÃªncias (${fat.ocorrencias.length})`}
             icon={<History className="w-4 h-4" />}
             collapsible={true}
             defaultExpanded={false}
@@ -1248,7 +1363,7 @@ export default function FATDetalheMobile() {
                 <div className="flex flex-col items-center gap-3 text-slate-200">
                   <ImageOff className="h-8 w-8" />
                   <span className="text-xs uppercase tracking-wide">
-                    Visualização indisponível
+                    VisualizaÃ§Ã£o indisponÃ­vel
                   </span>
                 </div>
               )}
@@ -1292,7 +1407,7 @@ export default function FATDetalheMobile() {
               color="hover:border-blue-300"
             />
             <ActionButtonFat
-              label="Peças"
+              label="PeÃ§as"
               icon={<Package className="w-5 h-5 text-green-600" />}
               onClick={() => handleNavigateToSection("pecas")}
               color="hover:border-green-300"
@@ -1327,3 +1442,8 @@ export default function FATDetalheMobile() {
     </main>
   );
 }
+
+
+
+
+

@@ -80,7 +80,32 @@ class MaquinasService {
   }
 
   async getById(id: number | string): Promise<Maquina> {
-    return await api.get<Maquina>(this.baseUrl, { params: { id } });
+    const response = await api.get<MaquinaResponse | Maquina>(this.baseUrl, {
+      params: { id },
+    });
+
+    // Verifica se a resposta tem a estrutura { dados: [...] }
+    if (response && typeof response === "object") {
+      // Se tem propriedade 'dados' e é um array (formato MaquinaResponse)
+      if (
+        "dados" in response &&
+        Array.isArray(response.dados) &&
+        response.dados.length > 0
+      ) {
+        return response.dados[0];
+      }
+
+      // Se a resposta já é diretamente uma máquina (verificando por propriedades obrigatórias)
+      if (
+        "id" in response ||
+        "numero_serie" in response ||
+        "modelo" in response
+      ) {
+        return response as Maquina;
+      }
+    }
+
+    throw new Error("Máquina não encontrada ou formato de resposta inválido");
   }
 
   async create(data: MaquinaFormData): Promise<Maquina> {

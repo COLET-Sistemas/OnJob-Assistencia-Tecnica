@@ -6,6 +6,7 @@ import React, {
   useRef,
   useMemo,
 } from "react";
+import Link from "next/link";
 import FloatingActionMenu from "@/components/tecnico/FloatingActionMenu";
 import type { ActionSuccessPayload } from "@/components/tecnico/hooks/useOsActions";
 import { useRouter, useParams } from "next/navigation";
@@ -28,6 +29,7 @@ import {
   MessageSquare,
   Package,
   ChevronRight,
+  ArrowUpRight,
   FileText,
 } from "lucide-react";
 import {
@@ -661,7 +663,6 @@ export default function OSDetalheMobile() {
                   <span className="flex-1 text-sm font-semibold leading-snug text-current">
                     {enderecoFormatado}
                   </span>
-                 
                 </button>
               }
               icon={<MapPin className="w-3 h-3" />}
@@ -687,7 +688,6 @@ export default function OSDetalheMobile() {
                   className="inline-flex w-full items-center justify-between gap-2 rounded-lg  text-sm font-semibold text-black transition-colors duration-200 hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
                 >
                   <span className="truncate">{telefoneContato}</span>
-              
                 </a>
               }
               icon={<Phone className="w-3 h-3" />}
@@ -705,7 +705,6 @@ export default function OSDetalheMobile() {
                   className="inline-flex w-full items-center justify-between gap-2 rounded-lg text-sm font-semibold text-black transition-colors duration-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                 >
                   <span className="truncate">{whatsappContato}</span>
-                
                 </a>
               }
               icon={<MessageCircle className="w-3 h-3" />}
@@ -721,11 +720,21 @@ export default function OSDetalheMobile() {
                   className="inline-flex w-full items-center justify-between gap-2 rounded-lg  text-sm font-semibold text-black transition-colors duration-200 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
                 >
                   <span className="truncate">{emailContato}</span>
-                 
                 </a>
               }
               icon={<Mail className="w-3 h-3" />}
             />
+          )}
+          {os.cliente?.id && (
+            <div className="pt-2">
+              <Link
+                href={`/tecnico/clientes_detalhes/${os.cliente.id}`}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#7B54BE] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#6843a4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B54BE]"
+              >
+                Ver histórico do cliente
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </div>
           )}
         </Section>
         {/* Equipamento */}
@@ -747,6 +756,17 @@ export default function OSDetalheMobile() {
 
           <Field label="Descrição" value={os.maquina?.descricao} />
           <Field label="Número de Série" value={os.maquina?.numero_serie} />
+          {os.maquina?.id && (
+            <div className="pt-2">
+              <Link
+                href={`/tecnico/maquinas_detalhes/${os.maquina.id}`}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-[#7B54BE] hover:text-[#7B54BE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B54BE]"
+              >
+                Ver histórico da máquina
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </div>
+          )}
         </Section>
 
         {/* Abertura */}

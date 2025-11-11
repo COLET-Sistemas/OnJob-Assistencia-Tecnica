@@ -1,6 +1,13 @@
-﻿"use client";
+"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   Calendar,
@@ -133,6 +140,12 @@ export default function NovaOrdemServicoMobile() {
   >([]);
   const [searchingMaquinas, setSearchingMaquinas] = useState(false);
   const maquinaSearchTermRef = useRef("");
+  const clienteSearchCacheRef = useRef<Map<string, ClienteOption[]>>(
+    new Map()
+  );
+  const maquinaSearchCacheRef = useRef<Map<string, MaquinaOption[]>>(
+    new Map()
+  );
 
   const [motivosAtendimento, setMotivosAtendimento] = useState<
     MotivoAtendimento[]
@@ -179,49 +192,74 @@ export default function NovaOrdemServicoMobile() {
       })
       .catch((error) => {
         console.error("Erro ao carregar motivos de atendimento:", error);
-        showToast("Não foi possível carregar motivos de atendimento.", "error");
+        showToast("NÃƒÂ£o foi possÃƒÂ­vel carregar motivos de atendimento.", "error");
       });
     return () => {
       active = false;
     };
   }, [showToast]);
 
-  const debouncedSearchClientes = useDebouncedCallback(async (term: string) => {
-    setLoadingClientes(true);
-    try {
-      const response = await clientesService.search(term);
-      const options =
-        response?.dados
-          ?.map((cliente) => {
-            const id = cliente.id ?? cliente.id_cliente;
-            if (!id) return null;
-            const razaoSocial = cliente.razao_social?.trim() ?? "";
-            const nomeFantasia = cliente.nome_fantasia?.trim() ?? "";
-            return {
-              id,
-              label: nomeFantasia || razaoSocial || "",
-              razaoSocial,
-              nomeFantasia,
-              cidade: cliente.cidade?.trim(),
-              uf: cliente.uf?.trim(),
-              regiaoId:
-                cliente.id_regiao ??
-                cliente.regiao?.id ??
-                cliente.regiao?.id_regiao,
-              raw: cliente,
-            } as ClienteOption;
-          })
-          .filter(Boolean) ?? [];
+  const debouncedSearchClientes = useDebouncedCallback(
+    async (term: string) => {
+      const query = term.trim();
 
-      setClienteOptions(options as ClienteOption[]);
-      setClienteDropdownOpen(true);
-    } catch (error) {
-      console.error("Erro ao buscar clientes:", error);
-      showToast("Erro ao buscar clientes.", "error");
-    } finally {
-      setLoadingClientes(false);
-    }
-  }, 400);
+      if (query.length < 3) {
+        setClienteOptions([]);
+        setClienteDropdownOpen(false);
+        setLoadingClientes(false);
+        return;
+      }
+
+      const cacheKey = query.toLowerCase();
+      const cached = clienteSearchCacheRef.current.get(cacheKey);
+      if (cached) {
+        setClienteOptions(cached);
+        setClienteDropdownOpen(cached.length > 0);
+        setLoadingClientes(false);
+        return;
+      }
+
+      setLoadingClientes(true);
+      try {
+        const response = await clientesService.search(query);
+        const options =
+          response?.dados
+            ?.map((cliente) => {
+              const id = cliente.id ?? cliente.id_cliente;
+              if (!id) return null;
+              const razaoSocial = cliente.razao_social?.trim() ?? "";
+              const nomeFantasia = cliente.nome_fantasia?.trim() ?? "";
+              return {
+                id,
+                label: nomeFantasia || razaoSocial || "",
+                razaoSocial,
+                nomeFantasia,
+                cidade: cliente.cidade?.trim(),
+                uf: cliente.uf?.trim(),
+                regiaoId:
+                  cliente.id_regiao ??
+                  cliente.regiao?.id ??
+                  cliente.regiao?.id_regiao,
+                raw: cliente,
+              } as ClienteOption;
+            })
+            .filter(Boolean) ?? [];
+
+        const mapped = options as ClienteOption[];
+        clienteSearchCacheRef.current.set(cacheKey, mapped);
+        setClienteOptions(mapped);
+        setClienteDropdownOpen(mapped.length > 0);
+      } catch (error) {
+        console.error("Erro ao buscar clientes:", error);
+        setClienteOptions([]);
+        setClienteDropdownOpen(false);
+        showToast("Erro ao buscar clientes.", "error");
+      } finally {
+        setLoadingClientes(false);
+      }
+    },
+    400
+  );
   const fetchContatos = useCallback(
     async (clienteId: number): Promise<ContatoOption[]> => {
       setLoadingContatos(true);
@@ -271,6 +309,7 @@ export default function NovaOrdemServicoMobile() {
       setMaquinaSearchResults([]);
       setSearchingMaquinas(false);
       maquinaSearchTermRef.current = "";
+      maquinaSearchCacheRef.current.clear();
       try {
         const maquinasResponse = await maquinasService.getByClienteId(
           clienteId,
@@ -323,11 +362,23 @@ export default function NovaOrdemServicoMobile() {
       setSearchingMaquinas(false);
       maquinaSearchTermRef.current = "";
 
-      if (value.length >= 3) {
-        debouncedSearchClientes(value);
+      const normalized = value.trim();
+
+      if (normalized.length >= 3) {
+        const cached = clienteSearchCacheRef.current.get(
+          normalized.toLowerCase()
+        );
+        if (cached) {
+          setClienteOptions(cached);
+          setClienteDropdownOpen(cached.length > 0);
+          setLoadingClientes(false);
+          return;
+        }
+        debouncedSearchClientes(normalized);
       } else {
         setClienteOptions([]);
         setClienteDropdownOpen(false);
+        setLoadingClientes(false);
       }
     },
     [debouncedSearchClientes]
@@ -354,48 +405,56 @@ export default function NovaOrdemServicoMobile() {
     [contatoOptions]
   );
 
-  const debouncedSearchMaquinas = useDebouncedCallback(async (term: string) => {
-    if (term.length < 3) {
-      if (maquinaSearchTermRef.current === term) {
-        setMaquinaSearchResults([]);
-        setSearchingMaquinas(false);
-      }
-      return;
-    }
+  const debouncedSearchMaquinas = useDebouncedCallback(
+    async (term: string) => {
+      const normalized = term.trim();
 
-    try {
-      const response = await maquinasService.searchByNumeroSerie(term);
-      const mapped =
-        response?.dados?.map((maquina) => ({
-          id: maquina.id,
-          label: `${maquina.numero_serie} - ${
-            maquina.descricao || maquina.modelo || "Maquina"
-          }`,
-          maquina,
-        })) ?? [];
-
-      if (maquinaSearchTermRef.current !== term) {
+      if (normalized.length < 3) {
+        if (maquinaSearchTermRef.current === term) {
+          setMaquinaSearchResults([]);
+          setSearchingMaquinas(false);
+        }
         return;
       }
 
-      const deduped = new Map<number, MaquinaOption>();
-      mapped.forEach((option) => {
-        if (option.id) {
-          deduped.set(option.id, option);
+      const cacheKey = `${selectedCliente?.id ?? "global"}::${normalized.toLowerCase()}`;
+      const cached = maquinaSearchCacheRef.current.get(cacheKey);
+      if (cached) {
+        if (maquinaSearchTermRef.current === term) {
+          setMaquinaSearchResults(cached);
+          setSearchingMaquinas(false);
         }
-      });
-      setMaquinaSearchResults(Array.from(deduped.values()));
-    } catch (error) {
-      console.error("Erro ao buscar maquinas por numero de serie:", error);
-      if (maquinaSearchTermRef.current === term) {
-        showToast("Erro ao buscar maquina pelo numero de serie.", "error");
+        return;
       }
-    } finally {
-      if (maquinaSearchTermRef.current === term) {
-        setSearchingMaquinas(false);
+
+      try {
+        const response = await maquinasService.searchByNumeroSerie(normalized);
+        const mapped =
+          response?.dados?.map((maquina) => ({
+            id: maquina.id,
+            label: `${maquina.numero_serie} - ${
+              maquina.descricao || maquina.modelo || "Maquina"
+            }`,
+            maquina,
+          })) ?? [];
+
+        if (maquinaSearchTermRef.current !== term) {
+          return;
+        }
+
+        maquinaSearchCacheRef.current.set(cacheKey, mapped);
+        setMaquinaSearchResults(mapped);
+      } catch (error) {
+        console.error('Erro ao buscar maquinas por numero de serie:', error);
+        showToast('Erro ao buscar maquinas pelo nÃƒÂºmero de serie.', 'error');
+      } finally {
+        if (maquinaSearchTermRef.current === term) {
+          setSearchingMaquinas(false);
+        }
       }
-    }
-  }, 400);
+    },
+    400
+  );
 
   const handleMaquinaSearchChange = useCallback(
     (value: string) => {
@@ -410,11 +469,20 @@ export default function NovaOrdemServicoMobile() {
       }
 
       if (term.length < 3) {
+        setMaquinaSearchResults([]);
         setSearchingMaquinas(false);
-      } else {
-        setSearchingMaquinas(true);
+        return;
       }
 
+      const cacheKey = `${selectedCliente.id ?? "global"}::${term.toLowerCase()}`;
+      const cached = maquinaSearchCacheRef.current.get(cacheKey);
+      if (cached) {
+        setMaquinaSearchResults(cached);
+        setSearchingMaquinas(false);
+        return;
+      }
+
+      setSearchingMaquinas(true);
       debouncedSearchMaquinas(term);
     },
     [debouncedSearchMaquinas, selectedCliente]
@@ -487,7 +555,7 @@ export default function NovaOrdemServicoMobile() {
         }
       }
 
-      showToast("Contato salvo. Atualize a lista para selecioná-lo.", "info");
+      showToast("Contato salvo. Atualize a lista para selecionÃƒÂ¡-lo.", "info");
     } catch (error) {
       console.error("Erro ao salvar contato:", error);
       showToast("Erro ao salvar contato.", "error");
@@ -496,8 +564,10 @@ export default function NovaOrdemServicoMobile() {
     }
   }, [fetchContatos, newContact, selectedCliente, showToast]);
 
+  const deferredMaquinaSearch = useDeferredValue(maquinaSearch);
+
   const maquinaFiltradas = useMemo(() => {
-    const term = maquinaSearch.trim().toLowerCase();
+    const term = deferredMaquinaSearch.trim().toLowerCase();
 
     if (term.length >= 3) {
       const combined = new Map<number, MaquinaOption>();
@@ -524,7 +594,7 @@ export default function NovaOrdemServicoMobile() {
     return maquinaOptions.filter((option) =>
       option.label.toLowerCase().includes(term)
     );
-  }, [maquinaOptions, maquinaSearch, maquinaSearchResults]);
+  }, [deferredMaquinaSearch, maquinaOptions, maquinaSearchResults]);
 
   const contatoSelecionado = useMemo(() => {
     if (!selectedContato) return null;
@@ -553,7 +623,7 @@ export default function NovaOrdemServicoMobile() {
 
       if (!tecnicoId) {
         validationErrors.tecnico =
-          "Não foi possível identificar o técnico logado.";
+          "NÃƒÂ£o foi possÃƒÂ­vel identificar o tÃƒÂ©cnico logado.";
       }
 
       if (!selectedContato) {
@@ -635,12 +705,12 @@ export default function NovaOrdemServicoMobile() {
 
       try {
         await ordensServicoService.create(payload as never);
-        showToast("Ordem de serviço aberta com sucesso.", "success");
+        showToast("Ordem de serviÃƒÂ§o aberta com sucesso.", "success");
         router.replace("/tecnico/dashboard");
       } catch (error) {
         console.error("Erro ao abrir OS:", error);
         showToast(
-          "Não foi possível abrir a OS. Tente novamente em instantes.",
+          "NÃƒÂ£o foi possÃƒÂ­vel abrir a OS. Tente novamente em instantes.",
           "error"
         );
       } finally {
@@ -677,7 +747,7 @@ export default function NovaOrdemServicoMobile() {
             <header className="flex items-center gap-2 text-slate-700">
               <Users className="w-5 h-5 text-[#7B54BE]" />
               <h2 className="text-base font-semibold">
-                Informações do cliente
+                InformaÃƒÂ§ÃƒÂµes do cliente
               </h2>
             </header>
 
@@ -825,7 +895,7 @@ export default function NovaOrdemServicoMobile() {
                   Salvar novo contato
                 </h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Preencha os dados abaixo para cadastrar o contato e usá-lo na
+                  Preencha os dados abaixo para cadastrar o contato e usÃƒÂ¡-lo na
                   abertura da OS.
                 </p>
                 <div className="grid grid-cols-1 gap-3">
@@ -1017,7 +1087,7 @@ export default function NovaOrdemServicoMobile() {
                       )}
                     </div>
                   ) : (
-                    // Caso nenhuma máquina esteja selecionada, exibe lista
+                    // Caso nenhuma mÃƒÂ¡quina esteja selecionada, exibe lista
                     maquinaFiltradas.map((option) => (
                       <button
                         key={option.id}
@@ -1107,7 +1177,7 @@ export default function NovaOrdemServicoMobile() {
                 htmlFor="descricao"
                 className="text-sm font-medium text-slate-600"
               >
-                Descrição do problema
+                DescriÃƒÂ§ÃƒÂ£o do problema
               </label>
               <textarea
                 id="descricao"
@@ -1154,3 +1224,4 @@ export default function NovaOrdemServicoMobile() {
     </>
   );
 }
+

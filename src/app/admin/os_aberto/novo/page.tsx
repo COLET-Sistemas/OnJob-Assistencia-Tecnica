@@ -25,7 +25,6 @@ import { Usuario } from "@/types/admin/cadastro/usuarios";
 import { OptionType } from "@/components/admin/form/CustomSelect";
 import useDebouncedCallback from "@/hooks/useDebouncedCallback";
 import MaquinaClienteConfirmModal from "@/app/admin/os_aberto/components/MaquinaClienteConfirmModal";
-import { useToast } from "@/components/admin/ui/ToastContainer";
 
 // Componentes locais
 import CustomContatoForm from "./components/CustomContatoForm";
@@ -70,7 +69,6 @@ interface FormaAberturaOption extends OptionType {
 
 const NovaOrdemServico = () => {
   const router = useRouter();
-  const { showSuccess, showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [clienteInput, setClienteInput] = useState("");
@@ -126,7 +124,6 @@ const NovaOrdemServico = () => {
     isOpen: false,
     maquina: null,
   });
-  const [isLinkingMaquina, setIsLinkingMaquina] = useState(false);
   const [customContatoWhatsapp, setCustomContatoWhatsapp] = useState("");
   const [recebeAvisoOS, setRecebeAvisoOS] = useState(false);
   const [useCustomContato, setUseCustomContato] = useState(false);
@@ -321,64 +318,23 @@ const NovaOrdemServico = () => {
     [selectedCliente]
   );
 
-  const handleConfirmMaquinaVinculo = useCallback(async () => {
+  const handleConfirmMaquinaVinculo = useCallback(() => {
     if (!maquinaConfirmModal.maquina || !selectedCliente) {
       setMaquinaConfirmModal({ isOpen: false, maquina: null });
       return;
     }
 
-    setIsLinkingMaquina(true);
-    try {
-      await maquinasService.update(maquinaConfirmModal.maquina.value, {
-        id_cliente_atual: selectedCliente.value,
-      });
-
-      const clienteNome =
-        selectedCliente.nome_fantasia ||
-        selectedCliente.razao_social ||
-        selectedCliente.label ||
-        `ID ${selectedCliente.value}`;
-
-      const updatedMaquina = {
-        ...maquinaConfirmModal.maquina,
-        clienteAtualId: selectedCliente.value,
-        clienteNomeFantasia: clienteNome,
-      } as MaquinaOption;
-
-      setSelectedMaquina(updatedMaquina);
-      setMaquinaOptions((prev) => {
-        const exists = prev.some(
-          (option) => option.value === updatedMaquina.value
-        );
-        if (exists) {
-          return prev.map((option) =>
-            option.value === updatedMaquina.value ? updatedMaquina : option
-          );
-        }
-        return [...prev, updatedMaquina];
-      });
-      showSuccess(
-        "Máquina atualizada",
-        "O vínculo da máquina foi atualizado para este cliente."
-      );
-      setMaquinaConfirmModal({ isOpen: false, maquina: null });
-    } catch (error) {
-      console.error("Erro ao atualizar vínculo da máquina:", error);
-      const message =
-        error instanceof Error ? error.message : undefined;
-      showError("Não foi possível atualizar a máquina", message);
-    } finally {
-      setIsLinkingMaquina(false);
-    }
-  }, [maquinaConfirmModal, selectedCliente, showError, showSuccess]);
+    setSelectedMaquina(maquinaConfirmModal.maquina);
+    setMaquinaInput("");
+    setMaquinaConfirmModal({ isOpen: false, maquina: null });
+  }, [maquinaConfirmModal, selectedCliente]);
 
   const handleCancelMaquinaVinculo = useCallback(() => {
-    if (isLinkingMaquina) {
-      return;
-    }
+    setSelectedMaquina(null);
+    setMaquinaInput("");
     setMaquinaConfirmModal({ isOpen: false, maquina: null });
     focusMaquinaField();
-  }, [focusMaquinaField, isLinkingMaquina]);
+  }, [focusMaquinaField]);
 
   const handleMotivoPendenciaSelectChange = useCallback(
     (option: OptionType | null) => {
@@ -1210,7 +1166,6 @@ const NovaOrdemServico = () => {
           }
           onConfirm={handleConfirmMaquinaVinculo}
           onCancel={handleCancelMaquinaVinculo}
-          isLoading={isLinkingMaquina}
         />
       </FormContainer>
     </>
