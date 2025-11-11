@@ -41,7 +41,7 @@ const isValidTabKey = (value: string | null): value is TabKey =>
   value === "contatos" || value === "maquinas" || value === "historico";
 
 const resolveTabFromParam = (value: string | null): TabKey =>
-  isValidTabKey(value) ? value : "contatos";
+  isValidTabKey(value) ? value : "maquinas";
 
 const situacaoStyles: Record<string, { label: string; className: string }> = {
   A: {

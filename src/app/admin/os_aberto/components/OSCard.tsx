@@ -142,7 +142,7 @@ const OSCard: React.FC<OSCardProps> = ({
   // Função para verificar se o técnico está indefinido
   const isTecnicoIndefinido = !os.tecnico.nome || os.tecnico.nome.trim() === "";
   const clienteHistoricoHref = os?.cliente?.id
-    ? `/admin/clientes_detalhes/${os.cliente.id}`
+    ? `/admin/clientes_detalhes/${os.cliente.id}?tab=maquinas`
     : null;
   const maquinaDetalhesHref = os?.maquina?.id
     ? `/admin/maquinas_detalhes/${os.maquina.id}`
@@ -235,7 +235,9 @@ const OSCard: React.FC<OSCardProps> = ({
                     </span>
                     <div
                       className="w-4 h-4 flex items-center justify-center"
-                      title={os.em_garantia ? "Em garantia" : "Fora da garantia"}
+                      title={
+                        os.em_garantia ? "Em garantia" : "Fora da garantia"
+                      }
                     >
                       {os.em_garantia ? (
                         <CircleCheck className="w-4 h-4 text-emerald-500" />
@@ -251,7 +253,9 @@ const OSCard: React.FC<OSCardProps> = ({
                     </div>
                     <div
                       className="w-4 h-4 flex items-center justify-center"
-                      title={os.em_garantia ? "Em garantia" : "Fora da garantia"}
+                      title={
+                        os.em_garantia ? "Em garantia" : "Fora da garantia"
+                      }
                     >
                       {os.em_garantia ? (
                         <CircleCheck className="w-4 h-4 text-emerald-500" />
