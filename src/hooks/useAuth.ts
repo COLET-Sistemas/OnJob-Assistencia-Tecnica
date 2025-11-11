@@ -17,12 +17,14 @@ interface User {
   perfil_tecnico_proprio: boolean;
   perfil_tecnico_terceirizado: boolean;
   administrador: boolean;
+  super_admin?: boolean;
 }
 
 interface UseAuthReturn {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: User | null;
+  isSuperAdmin: boolean;
   logout: () => Promise<void>;
 }
 
@@ -34,6 +36,7 @@ export const useAuth = (): UseAuthReturn => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [user, setUser] = useState<User | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(false);
   const router = useRouter();
   const { showError } = useToast();
 
@@ -46,6 +49,7 @@ export const useAuth = (): UseAuthReturn => {
         if (!token) {
           setIsAuthenticated(false);
           setUser(null);
+          setIsSuperAdmin(false);
           setIsLoading(false);
           return;
         }
@@ -57,21 +61,26 @@ export const useAuth = (): UseAuthReturn => {
           // Token inválido, limpar dados e atualizar estado
           localStorage.removeItem("token");
           localStorage.removeItem("user");
+          localStorage.removeItem("super_admin");
           document.cookie =
             "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
           setIsAuthenticated(false);
           setUser(null);
+          setIsSuperAdmin(false);
         } else {
           // Token válido
           const userData = authService.getUser();
+          const superAdminStatus = authService.isSuperAdmin();
           setIsAuthenticated(true);
           setUser(userData);
+          setIsSuperAdmin(superAdminStatus);
         }
       } catch (error) {
         console.error("Erro ao verificar autenticação:", error);
         setIsAuthenticated(false);
         setUser(null);
+        setIsSuperAdmin(false);
       } finally {
         setIsLoading(false);
       }
@@ -93,6 +102,7 @@ export const useAuth = (): UseAuthReturn => {
       await authService.logout();
       setIsAuthenticated(false);
       setUser(null);
+      setIsSuperAdmin(false);
       router.push("/");
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
@@ -104,6 +114,7 @@ export const useAuth = (): UseAuthReturn => {
     isAuthenticated,
     isLoading,
     user,
+    isSuperAdmin,
     logout,
   };
 };

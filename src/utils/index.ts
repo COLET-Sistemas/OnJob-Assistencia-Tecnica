@@ -8,3 +8,4 @@ export * from "./formatters";
 export * from "./maps";
 export * from "./printUtils";
 export * from "./errorHandling";
+export * from "./superAdmin";

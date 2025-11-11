@@ -32,6 +32,7 @@ interface AuthResponse {
     perfil_tecnico_terceirizado: boolean;
     administrador: boolean;
     permite_cadastros?: boolean;
+    super_admin?: boolean;
   };
 }
 
@@ -50,6 +51,7 @@ class AuthService {
         // 🔹 Apenas limpeza local (sem chamada à API)
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        localStorage.removeItem("super_admin");
         this.clearActiveModule();
         this.clearRolesCookie();
         clearStoredRoles();
@@ -72,6 +74,10 @@ class AuthService {
     if (typeof window !== "undefined") {
       localStorage.setItem("token", authData.token);
       localStorage.setItem("user", JSON.stringify(authData.user));
+      localStorage.setItem(
+        "super_admin",
+        String(authData.user.super_admin || false)
+      );
       const permiteCadastros =
         typeof authData.user.permite_cadastros === "boolean"
           ? authData.user.permite_cadastros
@@ -119,6 +125,14 @@ class AuthService {
   isAuthenticated(): boolean {
     if (typeof window !== "undefined") {
       return Boolean(localStorage.getItem("token"));
+    }
+    return false;
+  }
+
+  isSuperAdmin(): boolean {
+    if (typeof window !== "undefined") {
+      const superAdmin = localStorage.getItem("super_admin");
+      return superAdmin === "true";
     }
     return false;
   }

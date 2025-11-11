@@ -70,14 +70,13 @@ export class LoginService {
       // Usando o proxy interno para evitar problemas de CORS
       const loginUrl = this.resolveEndpoint("/login");
 
-
       const response = await fetch(loginUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(loginData),
-        credentials: "same-origin", 
+        credentials: "same-origin",
       });
 
       if (!response.ok) {
@@ -108,11 +107,9 @@ export class LoginService {
     }
   }
 
-
   static hasAdminAccess(perfil: LoginResponse["perfil"]): boolean {
     return perfil.interno || perfil.gestor || perfil.admin;
   }
-
 
   static hasTechAccess(perfil: LoginResponse["perfil"]): boolean {
     return perfil.tecnico_proprio || perfil.tecnico_terceirizado;
@@ -125,12 +122,16 @@ export class LoginService {
     if (typeof window === "undefined") return;
 
     try {
-      // Dados principais do usuÃ¡rio
+      // Dados principais do usuário
       localStorage.setItem("email", authData.email);
       localStorage.setItem("id_usuario", String(authData.id_usuario));
       localStorage.setItem("nome_usuario", authData.nome_usuario);
       localStorage.setItem("token", authData.token);
       localStorage.setItem("perfil", JSON.stringify(authData.perfil));
+      localStorage.setItem(
+        "super_admin",
+        String(authData.super_admin || false)
+      );
 
       const permiteCadastros =
         typeof authData.perfil.permite_cadastros === "boolean"
@@ -196,6 +197,7 @@ export class LoginService {
       "versao_api",
       "empresa",
       "active_module",
+      "super_admin",
     ];
 
     keysToRemove.forEach((key) => {
@@ -209,7 +211,7 @@ export class LoginService {
   }
 
   /**
-   * Verifica se hÃ¡ dados de sessÃ£o vÃ¡lidos
+   * Verifica se há dados de sessão válidos
    */
   static hasValidSession(): boolean {
     if (typeof window === "undefined") return false;
@@ -220,8 +222,21 @@ export class LoginService {
     return !!(token && userId);
   }
 
+  /**
+   * Verifica se o usuário é super admin
+   */
+  static isSuperAdmin(): boolean {
+    if (typeof window === "undefined") return false;
+
+    const superAdmin = localStorage.getItem("super_admin");
+    return superAdmin === "true";
+  }
+
   private static resolveEndpoint(path: string): string {
-    if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+    if (
+      typeof window !== "undefined" &&
+      window.location.hostname === "localhost"
+    ) {
       return `/api-proxy${path}`;
     }
 
@@ -328,5 +343,3 @@ export class LoginService {
     };
   }
 }
-
-

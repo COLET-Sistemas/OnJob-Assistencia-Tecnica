@@ -7,6 +7,7 @@ import { useToast } from "@/components/admin/ui/ToastContainer";
 import { parametrosService } from "@/api/services/parametrosService";
 import { ParametroSistema } from "@/types/admin/administracao/parametros";
 import { useDataFetch } from "@/hooks";
+import { isSuperAdmin } from "@/utils/superAdmin";
 import { useCallback, useMemo, useState } from "react";
 import { Loader2, Pencil, Save, X } from "lucide-react";
 
@@ -18,7 +19,10 @@ const ParametrizacaoPage = () => {
 
   const fetchParametros = useCallback(async () => {
     try {
-      const parametros = await parametrosService.getAlteraveis();
+      const isUserSuperAdmin = isSuperAdmin();
+      const parametros = isUserSuperAdmin
+        ? await parametrosService.getAll()
+        : await parametrosService.getAlteraveis();
       return parametros ?? [];
     } catch (error) {
       console.error("Erro ao buscar parâmetros:", error);
@@ -205,7 +209,9 @@ const ParametrizacaoPage = () => {
                     ) : (
                       <div className="text-sm text-gray-900">
                         {valorOriginal || (
-                          <span className="text-gray-400">Sem valor definido</span>
+                          <span className="text-gray-400">
+                            Sem valor definido
+                          </span>
                         )}
                       </div>
                     )}

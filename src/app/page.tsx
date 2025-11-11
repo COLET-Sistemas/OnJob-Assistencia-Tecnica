@@ -331,6 +331,7 @@ export default function LoginPage() {
                 typeof authData.perfil.permite_cadastros === "boolean"
                   ? authData.perfil.permite_cadastros
                   : true,
+              super_admin: authData.super_admin || false,
             },
           },
           module

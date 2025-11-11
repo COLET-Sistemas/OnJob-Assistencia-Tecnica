@@ -27,6 +27,14 @@ const extractData = <T>(response: ApiResponse<T> | T): T => {
 class ParametrosService {
   private baseUrl = "/parametros";
 
+  async getAll(): Promise<ParametroSistema[]> {
+    const response = await api.get<ApiResponse<ParametroSistema[]>>(
+      this.baseUrl
+    );
+
+    return extractData<ParametroSistema[]>(response) ?? [];
+  }
+
   async getAlteraveis(): Promise<ParametroSistema[]> {
     const response = await api.get<ApiResponse<ParametroSistema[]>>(
       this.baseUrl,
