@@ -46,6 +46,22 @@ const formatDateOnly = (value?: string | null) => {
   return value;
 };
 
+const formatClienteEndereco = (cliente?: MaquinaDetalhe["cliente_atual"]) => {
+  if (!cliente) return null;
+  const linha1 = [cliente.endereco, cliente.numero]
+    .filter(Boolean)
+    .join(", ");
+  const linha2 = [
+    cliente.bairro,
+    cliente.cidade && cliente.uf ? `${cliente.cidade}/${cliente.uf}` : cliente.cidade,
+  ]
+    .filter(Boolean)
+    .join(" • ");
+  const cep = cliente.cep?.trim();
+
+  return [linha1, linha2, cep].filter(Boolean).join(" • ") || null;
+};
+
 const formatNumber = (value: number | undefined | null) => {
   if (value === undefined || value === null) return 0;
   return new Intl.NumberFormat("pt-BR").format(value);
@@ -79,6 +95,10 @@ type MaquinaDetalhe = Partial<Maquina> & {
     uf?: string;
     telefone?: string;
     email?: string;
+    endereco?: string;
+    numero?: string;
+    bairro?: string;
+    cep?: string;
   };
 };
 const MaquinaDetalhesPage = () => {
@@ -217,6 +237,10 @@ const MaquinaDetalhesPage = () => {
     clienteRazaoSocial && clienteRazaoSocial !== clienteNomeExibicao
       ? clienteRazaoSocial
       : null;
+  const clienteEnderecoCompleto = useMemo(
+    () => formatClienteEndereco(maquina?.cliente_atual ?? undefined),
+    [maquina?.cliente_atual]
+  );
 
   const headerActions =
     maquinaIdParam !== null ? (
@@ -513,6 +537,15 @@ const MaquinaDetalhesPage = () => {
                     </div>
                   );
                 })}
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-slate-200 bg-white/70 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Endere�o completo
+                </p>
+                <p className="mt-1 text-sm text-slate-700">
+                  {clienteEnderecoCompleto || "Endere�o n�o informado"}
+                </p>
               </div>
 
               <div className="mt-6 rounded-2xl bg-white/70 p-4 shadow-inner">
