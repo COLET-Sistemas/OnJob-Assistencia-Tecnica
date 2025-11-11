@@ -7,7 +7,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import { Loading } from "@/components/LoadingPersonalizado";
@@ -16,17 +15,10 @@ import {
   historicoService,
   HistoricoRegistro,
 } from "@/api/services/historicoService";
-import type { Cliente, ClienteMaquina } from "@/types/admin/cadastro/clientes";
+import type { Cliente } from "@/types/admin/cadastro/clientes";
 import { formatDocumento } from "@/utils/formatters";
 import { formatarCEP } from "@/utils/cepAPI";
-import {
-  AlertTriangle,
-  Building,
-  CalendarDays,
-  ArrowUpRight,
-  ShieldCheck,
-  Wrench,
-} from "lucide-react";
+import { AlertTriangle, Building, CalendarDays } from "lucide-react";
 
 type SectionCardProps = {
   title: string;
@@ -44,13 +36,7 @@ const SectionCard = ({ title, icon, children }: SectionCardProps) => (
   </section>
 );
 
-const InfoItem = ({
-  label,
-  value,
-}: {
-  label: string;
-  value?: ReactNode;
-}) => (
+const InfoItem = ({ label, value }: { label: string; value?: ReactNode }) => (
   <div>
     <p className="text-[11px] uppercase tracking-wide text-slate-400">
       {label}
@@ -61,9 +47,7 @@ const InfoItem = ({
 
 const formatAddress = (cliente: Cliente | null) => {
   if (!cliente) return "";
-  const linha1 = [cliente.endereco, cliente.numero]
-    .filter(Boolean)
-    .join(", ");
+  const linha1 = [cliente.endereco, cliente.numero].filter(Boolean).join(", ");
   const linha2 = [
     cliente.bairro,
     cliente.cidade && cliente.uf
@@ -207,13 +191,6 @@ export default function ClienteDetalheTecnicoPage() {
     fetchHistorico();
   }, [fetchHistorico]);
 
-  const maquinasVisiveis = useMemo(() => {
-    if (!cliente?.maquinas?.length) return [];
-    return [...cliente.maquinas]
-      .filter((item): item is ClienteMaquina => Boolean(item))
-      .slice(0, 3);
-  }, [cliente?.maquinas]);
-
   const documentoFormatado = cliente?.cnpj
     ? formatDocumento(cliente.cnpj)
     : null;
@@ -224,9 +201,6 @@ export default function ClienteDetalheTecnicoPage() {
       : cliente?.situacao === "I"
       ? "Cliente inativo"
       : cliente?.situacao;
-
-  const maquinasTotal =
-    cliente?.qtd_maquinas ?? cliente?.maquinas?.length ?? 0;
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -295,7 +269,10 @@ export default function ClienteDetalheTecnicoPage() {
                   <InfoItem label="Código ERP" value={cliente.codigo_erp} />
                 )}
                 {enderecoFormatado && (
-                  <InfoItem label="Endereço completo" value={enderecoFormatado} />
+                  <InfoItem
+                    label="Endereço completo"
+                    value={enderecoFormatado}
+                  />
                 )}
               </div>
             </SectionCard>
@@ -358,8 +335,14 @@ export default function ClienteDetalheTecnicoPage() {
                             "Testes realizados",
                             registro.testes_realizados
                           )}
-                          {renderHistoricoField("Sugestões", registro.sugestoes)}
-                          {renderHistoricoField("Observações", registro.observacoes)}
+                          {renderHistoricoField(
+                            "Sugestões",
+                            registro.sugestoes
+                          )}
+                          {renderHistoricoField(
+                            "Observações",
+                            registro.observacoes
+                          )}
                           {renderHistoricoField(
                             "Observações do técnico",
                             registro.observacoes_tecnico
@@ -377,17 +360,6 @@ export default function ClienteDetalheTecnicoPage() {
                 </>
               )}
             </SectionCard>
-
-            {cliente?.observacoes && (
-              <SectionCard
-                title="Observações"
-                icon={<ShieldCheck className="h-4 w-4" />}
-              >
-                <p className="text-sm leading-relaxed text-slate-700">
-                  {cliente.observacoes}
-                </p>
-              </SectionCard>
-            )}
           </>
         ) : (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
