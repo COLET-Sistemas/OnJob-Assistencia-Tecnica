@@ -210,8 +210,7 @@ const NovaOrdemServico = () => {
                 data_final_garantia: maquina.data_final_garantia || "",
                 numero_serie: maquina.numero_serie || "",
                 descricao: baseDescricao,
-                clienteNomeFantasia:
-                  maquina.cliente_atual?.nome_fantasia || "",
+                clienteNomeFantasia: maquina.cliente_atual?.nome_fantasia || "",
                 clienteAtualId: maquina.cliente_atual?.id_cliente ?? null,
               } as MaquinaOption;
             }
@@ -529,8 +528,7 @@ const NovaOrdemServico = () => {
                 data_final_garantia: dataFinalGarantia,
                 numero_serie: maquina.numero_serie || "",
                 descricao: baseDescricao,
-                clienteNomeFantasia:
-                  maquina.cliente_atual?.nome_fantasia || "",
+                clienteNomeFantasia: maquina.cliente_atual?.nome_fantasia || "",
                 clienteAtualId: maquina.cliente_atual?.id_cliente ?? null,
               } as MaquinaOption;
             })
@@ -928,7 +926,6 @@ const NovaOrdemServico = () => {
                         email: "",
                         situacao: "A",
                       },
-                    
                     });
 
                     setContatoOptions(options as ContatoOption[]);

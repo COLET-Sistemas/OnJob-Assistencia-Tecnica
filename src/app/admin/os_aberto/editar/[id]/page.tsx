@@ -337,7 +337,8 @@ const EditarOrdemServico = () => {
                           descricao: baseDescricao,
                           clienteNomeFantasia:
                             maquina.cliente_atual?.nome_fantasia || "",
-                          clienteAtualId: maquina.cliente_atual?.id_cliente ?? null,
+                          clienteAtualId:
+                            maquina.cliente_atual?.id_cliente ?? null,
                         };
                       })
                     : [];
