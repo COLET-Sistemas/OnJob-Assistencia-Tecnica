@@ -135,6 +135,7 @@ const NovaOrdemServico = () => {
   );
   const [loadingTecnicos, setLoadingTecnicos] = useState(false);
   const [showNameError, setShowNameError] = useState(false);
+  const [emGarantia, setEmGarantia] = useState(false);
 
   // Estado para controlar validação de campos
   const [errors, setErrors] = useState<{
@@ -183,6 +184,7 @@ const NovaOrdemServico = () => {
       setSelectedCliente(selectedOption);
       setSelectedContato(null);
       setSelectedMaquina(null);
+      setEmGarantia(false);
       setMaquinaInput("");
 
       if (selectedOption) {
@@ -262,6 +264,7 @@ const NovaOrdemServico = () => {
       } else {
         setMaquinaOptions([]);
         setContatoOptions([]);
+        setEmGarantia(false);
       }
     },
     []
@@ -314,6 +317,7 @@ const NovaOrdemServico = () => {
       }
 
       setSelectedMaquina(maquinaOption);
+      setEmGarantia(maquinaOption.isInWarranty || false);
     },
     [selectedCliente]
   );
@@ -325,12 +329,14 @@ const NovaOrdemServico = () => {
     }
 
     setSelectedMaquina(maquinaConfirmModal.maquina);
+    setEmGarantia(maquinaConfirmModal.maquina?.isInWarranty || false);
     setMaquinaInput("");
     setMaquinaConfirmModal({ isOpen: false, maquina: null });
   }, [maquinaConfirmModal, selectedCliente]);
 
   const handleCancelMaquinaVinculo = useCallback(() => {
     setSelectedMaquina(null);
+    setEmGarantia(false);
     setMaquinaInput("");
     setMaquinaConfirmModal({ isOpen: false, maquina: null });
     focusMaquinaField();
@@ -677,7 +683,7 @@ const NovaOrdemServico = () => {
         descricao_problema: descricaoProblema,
         origem_abertura: "I",
         forma_abertura: formaAbertura.value,
-        em_garantia: selectedMaquina.isInWarranty || false,
+        em_garantia: emGarantia,
         id_regiao: 1,
       };
 
@@ -1033,7 +1039,7 @@ const NovaOrdemServico = () => {
             type: "spring",
             stiffness: 100,
           }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-6"
+          className="grid grid-cols-1 md:grid-cols-5 gap-6"
         >
           {/* Máquina */}
           <motion.div className="md:col-span-2">
@@ -1071,6 +1077,28 @@ const NovaOrdemServico = () => {
               }
               isDisabled={!selectedCliente}
             />
+          </motion.div>
+
+          {/* Checkbox Em Garantia */}
+          <motion.div className="flex items-center">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="em-garantia"
+                checked={emGarantia}
+                onChange={(e) => setEmGarantia(e.target.checked)}
+                disabled={!selectedMaquina}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
+              />
+              <label
+                htmlFor="em-garantia"
+                className={`text-sm font-medium ${
+                  !selectedMaquina ? "text-gray-400" : "text-gray-700"
+                }`}
+              >
+                Em Garantia
+              </label>
+            </div>
           </motion.div>
 
           {/* Motivo de Atendimento */}

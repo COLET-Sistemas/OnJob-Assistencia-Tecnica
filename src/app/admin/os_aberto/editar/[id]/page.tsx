@@ -237,6 +237,7 @@ const EditarOrdemServico = () => {
   const [tecnicoError, setTecnicoError] = useState<string | null>(null);
   const [loadingTecnicos, setLoadingTecnicos] = useState(false);
   const [showNameError, setShowNameError] = useState(false);
+  const [emGarantia, setEmGarantia] = useState(false);
 
   // Estado para controlar validação de campos
   const [errors, setErrors] = useState<{
@@ -374,6 +375,7 @@ const EditarOrdemServico = () => {
             clienteAtualId: os.cliente?.id ?? null,
           };
           setSelectedMaquina(maquinaOption);
+          setEmGarantia(os.em_garantia || false);
 
           // Contato
           if (os.contato) {
@@ -810,6 +812,7 @@ const EditarOrdemServico = () => {
         setSelectedTecnico(null);
         setTecnicoError(null);
         setTecnicosLoaded(false);
+        setEmGarantia(false);
       }
     },
     []
@@ -892,6 +895,7 @@ const EditarOrdemServico = () => {
       }
 
       setSelectedMaquina(maquinaOption);
+      setEmGarantia(maquinaOption.isInWarranty || false);
       setMaquinaInput("");
     },
     [selectedCliente]
@@ -904,12 +908,14 @@ const EditarOrdemServico = () => {
     }
 
     setSelectedMaquina(maquinaConfirmModal.maquina);
+    setEmGarantia(maquinaConfirmModal.maquina?.isInWarranty || false);
     setMaquinaInput("");
     setMaquinaConfirmModal({ isOpen: false, maquina: null });
   }, [maquinaConfirmModal, selectedCliente]);
 
   const handleCancelMaquinaVinculo = useCallback(() => {
     setSelectedMaquina(null);
+    setEmGarantia(false);
     setMaquinaInput("");
     setMaquinaConfirmModal({ isOpen: false, maquina: null });
     focusMaquinaField();
@@ -1251,7 +1257,7 @@ const EditarOrdemServico = () => {
         descricao_problema: descricaoProblema,
         origem_abertura: "I",
         forma_abertura: formaAbertura.value,
-        em_garantia: selectedMaquina.isInWarranty || false,
+        em_garantia: emGarantia,
         id_regiao: clienteRegiaoId ?? 1,
       };
 
@@ -1690,8 +1696,8 @@ const EditarOrdemServico = () => {
             </div>
           </div>
 
-          {/* Terceira linha: Máquina / Motivo de Atendimento / Técnico */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          {/* Terceira linha: Máquina / Em Garantia / Motivo de Atendimento / Técnico */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             {/* Máquina */}
             <div>
               <CustomSelect
@@ -1722,6 +1728,28 @@ const EditarOrdemServico = () => {
                   Selecione uma máquina
                 </div>
               )}
+            </div>
+
+            {/* Checkbox Em Garantia */}
+            <div className="flex items-center">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="em-garantia"
+                  checked={emGarantia}
+                  onChange={(e) => setEmGarantia(e.target.checked)}
+                  disabled={!selectedMaquina}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
+                />
+                <label
+                  htmlFor="em-garantia"
+                  className={`text-sm font-medium ${
+                    !selectedMaquina ? "text-gray-400" : "text-gray-700"
+                  }`}
+                >
+                  Em Garantia
+                </label>
+              </div>
             </div>
 
             {/* Motivo de Atendimento */}
