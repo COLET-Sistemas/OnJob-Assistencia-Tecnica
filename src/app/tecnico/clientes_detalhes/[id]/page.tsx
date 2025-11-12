@@ -320,11 +320,9 @@ export default function ClienteDetalheTecnicoPage() {
                         </div>
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                           {renderHistoricoField(
-                            "Motivo do atendimento",
-                            registro.motivo_atendimento
-                          )}
-                          {renderHistoricoField(
-                            "Descrição do problema",
+                            `Motivo do atendimento: ${
+                              registro.motivo_atendimento ?? "-"
+                            }`,
                             registro.descricao_problema
                           )}
                           {renderHistoricoField(
