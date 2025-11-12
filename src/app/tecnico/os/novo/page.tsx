@@ -192,7 +192,7 @@ export default function NovaOrdemServicoMobile() {
       })
       .catch((error) => {
         console.error("Erro ao carregar motivos de atendimento:", error);
-        showToast("NÃƒÂ£o foi possÃƒÂ­vel carregar motivos de atendimento.", "error");
+        showToast("Não foi possí­vel carregar motivos de atendimento.", "error");
       });
     return () => {
       active = false;
@@ -319,7 +319,7 @@ export default function NovaOrdemServicoMobile() {
           maquinasResponse?.dados?.map((maquina) => ({
             id: maquina.id,
             label: `${maquina.numero_serie} - ${
-              maquina.descricao || maquina.modelo || "Maquina"
+              maquina.descricao || maquina.modelo || "Máquina"
             }`,
             maquina,
           })) ?? [];
@@ -327,8 +327,8 @@ export default function NovaOrdemServicoMobile() {
         setMaquinaOptions(options);
         setSelectedMaquina(null);
       } catch (error) {
-        console.error("Erro ao carregar maquinas:", error);
-        showToast("Erro ao carregar maquinas do cliente.", "error");
+        console.error("Erro ao carregar máquinas:", error);
+        showToast("Erro ao carregar máquinas do cliente.", "error");
       } finally {
         setLoadingMaquinas(false);
       }
@@ -433,7 +433,7 @@ export default function NovaOrdemServicoMobile() {
           response?.dados?.map((maquina) => ({
             id: maquina.id,
             label: `${maquina.numero_serie} - ${
-              maquina.descricao || maquina.modelo || "Maquina"
+              maquina.descricao || maquina.modelo || "Máquina"
             }`,
             maquina,
           })) ?? [];
@@ -445,8 +445,8 @@ export default function NovaOrdemServicoMobile() {
         maquinaSearchCacheRef.current.set(cacheKey, mapped);
         setMaquinaSearchResults(mapped);
       } catch (error) {
-        console.error('Erro ao buscar maquinas por numero de serie:', error);
-        showToast('Erro ao buscar maquinas pelo nÃƒÂºmero de serie.', 'error');
+        console.error('Erro ao buscar máquinas por número de série:', error);
+        showToast('Erro ao buscar máquinas pelo número de série.', 'error');
       } finally {
         if (maquinaSearchTermRef.current === term) {
           setSearchingMaquinas(false);
@@ -555,7 +555,7 @@ export default function NovaOrdemServicoMobile() {
         }
       }
 
-      showToast("Contato salvo. Atualize a lista para selecionÃƒÂ¡-lo.", "info");
+      showToast("Contato salvo. Atualize a lista para selecioná-lo.", "info");
     } catch (error) {
       console.error("Erro ao salvar contato:", error);
       showToast("Erro ao salvar contato.", "error");
@@ -614,7 +614,7 @@ export default function NovaOrdemServicoMobile() {
       }
 
       if (!selectedMaquina) {
-        validationErrors.maquina = "Selecione uma maquina.";
+        validationErrors.maquina = "Selecione uma máquina.";
       }
 
       if (!descricaoProblema.trim()) {
@@ -623,7 +623,7 @@ export default function NovaOrdemServicoMobile() {
 
       if (!tecnicoId) {
         validationErrors.tecnico =
-          "NÃƒÂ£o foi possÃƒÂ­vel identificar o tÃƒÂ©cnico logado.";
+          "Não foi possí­vel identificar o técnico logado.";
       }
 
       if (!selectedContato) {
@@ -705,12 +705,12 @@ export default function NovaOrdemServicoMobile() {
 
       try {
         await ordensServicoService.create(payload as never);
-        showToast("Ordem de serviÃƒÂ§o aberta com sucesso.", "success");
+        showToast("Ordem de serviço aberta com sucesso.", "success");
         router.replace("/tecnico/dashboard");
       } catch (error) {
         console.error("Erro ao abrir OS:", error);
         showToast(
-          "NÃƒÂ£o foi possÃƒÂ­vel abrir a OS. Tente novamente em instantes.",
+          "Não foi possí­vel abrir a OS. Tente novamente em instantes.",
           "error"
         );
       } finally {
@@ -747,7 +747,7 @@ export default function NovaOrdemServicoMobile() {
             <header className="flex items-center gap-2 text-slate-700">
               <Users className="w-5 h-5 text-[#7B54BE]" />
               <h2 className="text-base font-semibold">
-                InformaÃƒÂ§ÃƒÂµes do cliente
+                Informações do cliente
               </h2>
             </header>
 
@@ -895,7 +895,7 @@ export default function NovaOrdemServicoMobile() {
                   Salvar novo contato
                 </h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Preencha os dados abaixo para cadastrar o contato e usÃƒÂ¡-lo na
+                  Preencha os dados abaixo para cadastrar o contato e usá-lo na
                   abertura da OS.
                 </p>
                 <div className="grid grid-cols-1 gap-3">
@@ -1087,7 +1087,7 @@ export default function NovaOrdemServicoMobile() {
                       )}
                     </div>
                   ) : (
-                    // Caso nenhuma mÃƒÂ¡quina esteja selecionada, exibe lista
+                    // Caso nenhuma máquina esteja selecionada, exibe lista
                     maquinaFiltradas.map((option) => (
                       <button
                         key={option.id}
@@ -1177,7 +1177,7 @@ export default function NovaOrdemServicoMobile() {
                 htmlFor="descricao"
                 className="text-sm font-medium text-slate-600"
               >
-                DescriÃƒÂ§ÃƒÂ£o do problema
+                Descrição do problema
               </label>
               <textarea
                 id="descricao"

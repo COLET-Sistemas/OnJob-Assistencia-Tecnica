@@ -254,7 +254,7 @@ export default function MaquinaDetalheTecnicoPage() {
 
             {maquina?.observacoes && (
               <SectionCard
-                title="Observações"
+                title="Observações da Máquina"
                 icon={<FileText className="h-4 w-4" />}
               >
                 <p className="text-sm leading-relaxed text-slate-700">
@@ -289,10 +289,11 @@ export default function MaquinaDetalheTecnicoPage() {
                       <div className="mb-3 flex items-start justify-between">
                         <div>
                           <p className="font-semibold text-slate-900">
-                            OS #{registro.numero_os}
+                            OS #{registro.numero_os} - FAT #{registro.id_fat}
                           </p>
                           <p className="text-sm text-slate-500">
-                            {formatDateOnly(registro.data_atendimento)}
+                            {formatDateOnly(registro.data_atendimento)} -{" "}
+                            {registro.nome_tecnico}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -312,15 +313,9 @@ export default function MaquinaDetalheTecnicoPage() {
 
                       <div className="space-y-2 text-sm">
                         <InfoItem
-                          label="Motivo do atendimento"
-                          value={registro.motivo_atendimento}
-                        />
-                        <InfoItem
-                          label="Técnico responsável"
-                          value={registro.nome_tecnico}
-                        />
-                        <InfoItem
-                          label="Descrição do problema"
+                          label={`Motivo do atendimento: ${
+                            registro.motivo_atendimento ?? "-"
+                          }`}
                           value={registro.descricao_problema}
                         />
                         {registro.solucao_encontrada && (
