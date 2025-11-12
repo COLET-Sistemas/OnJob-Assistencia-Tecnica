@@ -46,22 +46,6 @@ const formatDateOnly = (value?: string | null) => {
   return value;
 };
 
-const formatClienteEndereco = (cliente?: MaquinaDetalhe["cliente_atual"]) => {
-  if (!cliente) return null;
-  const linha1 = [cliente.endereco, cliente.numero]
-    .filter(Boolean)
-    .join(", ");
-  const linha2 = [
-    cliente.bairro,
-    cliente.cidade && cliente.uf ? `${cliente.cidade}/${cliente.uf}` : cliente.cidade,
-  ]
-    .filter(Boolean)
-    .join(" • ");
-  const cep = cliente.cep?.trim();
-
-  return [linha1, linha2, cep].filter(Boolean).join(" • ") || null;
-};
-
 const formatNumber = (value: number | undefined | null) => {
   if (value === undefined || value === null) return 0;
   return new Intl.NumberFormat("pt-BR").format(value);
@@ -237,10 +221,6 @@ const MaquinaDetalhesPage = () => {
     clienteRazaoSocial && clienteRazaoSocial !== clienteNomeExibicao
       ? clienteRazaoSocial
       : null;
-  const clienteEnderecoCompleto = useMemo(
-    () => formatClienteEndereco(maquina?.cliente_atual ?? undefined),
-    [maquina?.cliente_atual]
-  );
 
   const headerActions =
     maquinaIdParam !== null ? (
@@ -425,15 +405,11 @@ const MaquinaDetalhesPage = () => {
                     registro.motivo_atendimento
                       ? `Motivo do atendimento: ${registro.motivo_atendimento}`
                       : "Motivo do atendimento",
-                    registro.motivo_atendimento
-                  )}
-                  {renderHistoricoField(
-                    "Descricao do problema",
                     registro.descricao_problema,
                     { variant: "danger" }
                   )}
                   {renderHistoricoField(
-                    "Solucao encontrada",
+                    "Solução encontrada",
                     registro.solucao_encontrada,
                     { variant: "success" }
                   )}
@@ -441,16 +417,16 @@ const MaquinaDetalhesPage = () => {
                     "Testes realizados",
                     registro.testes_realizados
                   )}
-                  {renderHistoricoField("Sugestoes", registro.sugestoes)}
-                  {renderHistoricoField("Observacoes", registro.observacoes)}
+                  {renderHistoricoField("Sugestões", registro.sugestoes)}
+                  {renderHistoricoField("Observações", registro.observacoes)}
                 </div>
                 <div className="grid gap-3">
                   {renderHistoricoField(
-                    "Observacoes do tecnico",
+                    "Observações do técnico",
                     registro.observacoes_tecnico
                   )}
                   {renderHistoricoField(
-                    "Observacoes da revisao",
+                    "Observações da revisão",
                     registro.observacoes_revisao
                   )}
                 </div>
@@ -537,15 +513,6 @@ const MaquinaDetalhesPage = () => {
                     </div>
                   );
                 })}
-              </div>
-
-              <div className="mt-6 rounded-2xl border border-slate-200 bg-white/70 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Endere�o completo
-                </p>
-                <p className="mt-1 text-sm text-slate-700">
-                  {clienteEnderecoCompleto || "Endere�o n�o informado"}
-                </p>
               </div>
 
               <div className="mt-6 rounded-2xl bg-white/70 p-4 shadow-inner">

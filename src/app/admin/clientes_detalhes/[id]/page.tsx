@@ -569,10 +569,6 @@ const ClientesDetalhesPage = () => {
                     registro.motivo_atendimento
                       ? `Motivo do atendimento: ${registro.motivo_atendimento}`
                       : "Motivo do atendimento",
-                    registro.motivo_atendimento
-                  )}
-                  {renderHistoricoField(
-                    "Descrição do problema",
                     registro.descricao_problema,
                     { variant: "danger" }
                   )}
