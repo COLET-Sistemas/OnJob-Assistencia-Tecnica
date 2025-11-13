@@ -22,8 +22,8 @@ import {
   Tag,
 } from "lucide-react";
 
-const HISTORICO_PAGE_SIZE_OPTIONS = [10, 25, 50];
-const DEFAULT_HISTORICO_PAGE_SIZE = 50;
+const HISTORICO_PAGE_SIZE_OPTIONS = [10, 15, 25, 50];
+const DEFAULT_HISTORICO_PAGE_SIZE = 15;
 
 const situacaoStyles: Record<string, { label: string; className: string }> = {
   A: {
@@ -118,7 +118,7 @@ const MaquinaDetalhesPage = () => {
     const requestId: number | string | null = maquinaIdNumber ?? maquinaIdParam;
     if (!requestId) {
       setMaquina(null);
-      setMaquinaError("Identificador da maquina invalido.");
+      setMaquinaError("Identificador da máquina invalido.");
       setMaquinaLoading(false);
       return;
     }
@@ -134,17 +134,17 @@ const MaquinaDetalhesPage = () => {
 
       if (!maquinaEncontrada) {
         setMaquina(null);
-        setMaquinaError("Maquina nao encontrada.");
+        setMaquinaError("Máquina não encontrada.");
         return;
       }
 
       setMaquina(maquinaEncontrada);
     } catch (error) {
-      console.error("Erro ao carregar maquina:", error);
+      console.error("Erro ao carregar máquina:", error);
       setMaquina(null);
-      setMaquinaError("Nao foi possivel carregar os dados da maquina.");
+      setMaquinaError("Não foi possivel carregar os dados da máquina.");
       showError(
-        "Erro ao carregar maquina",
+        "Erro ao carregar máquina",
         "Verifique sua conexao e tente novamente."
       );
     } finally {
@@ -158,7 +158,7 @@ const MaquinaDetalhesPage = () => {
       setHistoricoTotalPaginas(1);
       setHistoricoTotalRegistros(0);
       setHistoricoLoading(false);
-      setHistoricoError("Nao foi possivel carregar o historico desta maquina.");
+      setHistoricoError("Não foi possivel carregar o historico desta máquina.");
       return;
     }
 
@@ -175,11 +175,11 @@ const MaquinaDetalhesPage = () => {
       setHistoricoTotalRegistros(response?.total_registros ?? 0);
       setHistoricoTotalPaginas(Math.max(response?.total_paginas ?? 1, 1));
     } catch (error) {
-      console.error("Erro ao carregar historico da maquina:", error);
+      console.error("Erro ao carregar histórico da máquina:", error);
       setHistoricoRegistros([]);
       setHistoricoTotalRegistros(0);
       setHistoricoTotalPaginas(1);
-      setHistoricoError("Nao foi possivel carregar o historico desta maquina.");
+      setHistoricoError("Não foi possivel carregar o historico desta máquina.");
     } finally {
       setHistoricoLoading(false);
     }
@@ -216,7 +216,7 @@ const MaquinaDetalhesPage = () => {
     clienteRazaoSocial ||
     (clienteAtualId
       ? `Cliente #${clienteAtualId}`
-      : "Cliente nao identificado");
+      : "Cliente não identificado");
   const clienteRazaoExibicao =
     clienteRazaoSocial && clienteRazaoSocial !== clienteNomeExibicao
       ? clienteRazaoSocial
@@ -229,7 +229,7 @@ const MaquinaDetalhesPage = () => {
           href={`/admin/cadastro/maquinas/editar/${maquinaIdParam}`}
           className="inline-flex items-center gap-2 rounded-2xl border border-transparent bg-gradient-to-r from-[var(--primary)] to-[#6541D3] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[var(--primary)]/20 transition hover:opacity-90"
         >
-          Editar maquina
+          Editar máquina
         </Link>
       </div>
     ) : undefined;
@@ -239,7 +239,7 @@ const MaquinaDetalhesPage = () => {
       return situacaoStyles[maquina.situacao];
     }
     return {
-      label: maquina?.situacao || "Nao informado",
+      label: maquina?.situacao || "Não informado",
       className: "bg-slate-100 border-slate-200 text-slate-600",
     };
   }, [maquina?.situacao]);
@@ -344,7 +344,7 @@ const MaquinaDetalhesPage = () => {
     if (historicoLoading) {
       return (
         <div className="rounded-2xl border border-slate-100 bg-slate-50">
-          <Loading text="Buscando historico da maquina..." />
+          <Loading text="Buscando historico da máquina..." />
         </div>
       );
     }
@@ -388,7 +388,7 @@ const MaquinaDetalhesPage = () => {
                 <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-800">
                   {registro.descricao_maquina ||
                     registro.nome_cliente ||
-                    "Cliente / maquina nao informados"}
+                    "Cliente / máquina não informados"}
                 </span>
                 {registro.numero_serie && (
                   <span className="text-sm text-slate-500">
@@ -396,7 +396,7 @@ const MaquinaDetalhesPage = () => {
                   </span>
                 )}
                 <span className="ml-auto text-sm font-semibold text-slate-900 whitespace-nowrap">
-                  {registro.nome_tecnico || "Tecnico nao informado"}
+                  {registro.nome_tecnico || "Técnico não informado"}
                 </span>
               </div>
               <div className="grid gap-4 md:grid-cols-[0.9fr,1.1fr]">
@@ -453,7 +453,7 @@ const MaquinaDetalhesPage = () => {
   return (
     <div>
       <PageHeader
-        title="Detalhes da Maquina"
+        title="Detalhes da Máquina"
         config={{
           type: "form",
           useBackNavigation: true,
@@ -464,7 +464,7 @@ const MaquinaDetalhesPage = () => {
 
       {maquinaLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white">
-          <Loading text="Carregando dados da maquina..." />
+          <Loading text="Carregando dados da máquina..." />
         </div>
       ) : maquina && !maquinaError ? (
         <div className="space-y-6">
@@ -472,13 +472,13 @@ const MaquinaDetalhesPage = () => {
             <div className="rounded-2xl border border-transparent bg-gradient-to-br from-white via-white to-violet-50 p-6 shadow-lg ring-1 ring-violet-100 lg:col-span-2">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm text-slate-500">Maquina</p>
+                  <p className="text-sm text-slate-500">Máquina</p>
                   <h2 className="text-3xl font-semibold text-slate-900">
-                    {maquina.descricao || maquina.modelo || "Maquina"}
+                    {maquina.descricao || maquina.modelo || "Máquina"}
                   </h2>
                   {maquina.numero_serie && (
                     <p className="text-sm text-slate-500">
-                      No de serie: {maquina.numero_serie}
+                      Número de Série: {maquina.numero_serie}
                     </p>
                   )}
                 </div>
@@ -534,7 +534,7 @@ const MaquinaDetalhesPage = () => {
                   </div>
                 ) : (
                   <p className="mt-2 text-sm text-slate-500">
-                    Nenhum cliente esta vinculado a esta maquina no momento.
+                    Nenhum cliente esta vinculado a esta máquina no momento.
                   </p>
                 )}
               </div>
@@ -584,24 +584,16 @@ const MaquinaDetalhesPage = () => {
                 <p className="mt-1 text-sm text-slate-700">
                   {maquina?.observacoes?.trim()
                     ? maquina.observacoes
-                    : "Nenhuma observacao foi registrada para esta maquina."}
+                    : "Nenhuma observação foi registrada para esta máquina."}
                 </p>
               </div>
             </div>
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-xl ring-1 ring-slate-100">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-end justify-between gap-2">
               <div>
-                <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">
-                  Dados vinculados a máquina
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-wrap items-end justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold text-slate-700">
+                <p className="text-md font-semibold text-slate-700">
                   Histórico de atendimentos
                 </p>
                 <p className="text-xs text-slate-500">

@@ -34,8 +34,8 @@ import {
   Users,
 } from "lucide-react";
 
-const HISTORICO_PAGE_SIZE_OPTIONS = [10, 25, 50];
-const DEFAULT_HISTORICO_PAGE_SIZE = 25;
+const HISTORICO_PAGE_SIZE_OPTIONS = [10, 15, 25, 50];
+const DEFAULT_HISTORICO_PAGE_SIZE = 15;
 
 type TabKey = "contatos" | "maquinas" | "historico";
 
@@ -327,7 +327,7 @@ const ClientesDetalhesPage = () => {
           return (
             <div
               key={`${contato.id ?? contato.id_contato}-${contato.email}`}
-              className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm"
+              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="space-y-1">
@@ -424,7 +424,7 @@ const ClientesDetalhesPage = () => {
               key={`${maquina.id ?? maquina.id_maquina}-${
                 maquina.numero_serie
               }`}
-              className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm"
+              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -528,7 +528,7 @@ const ClientesDetalhesPage = () => {
           {historicoRegistros.map((registro) => (
             <div
               key={`${registro.id_fat}-${registro.numero_os}-${registro.data_atendimento}`}
-              className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm space-y-4"
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4"
             >
               <div className="flex flex-col gap-2 border-b border-slate-100 pb-3">
                 <div className="flex w-full flex-wrap items-center gap-2 text-sm text-slate-700">
@@ -746,7 +746,7 @@ const ClientesDetalhesPage = () => {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-2 flex flex-wrap gap-3">
               {tabConfig.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.key;
@@ -795,7 +795,7 @@ const ClientesDetalhesPage = () => {
               })}
             </div>
 
-            <div className="mt-8">{renderTabContent()}</div>
+            <div className="mt-6 ">{renderTabContent()}</div>
           </section>
         </div>
       ) : (
