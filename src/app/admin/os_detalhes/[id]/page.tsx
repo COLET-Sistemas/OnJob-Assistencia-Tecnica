@@ -50,6 +50,10 @@ import {
   CameraOff,
   Eye,
   X,
+  ShieldCheck,
+  ShieldX,
+  CircleCheck,
+  CircleX,
 } from "lucide-react";
 
 // Status mapping como constante fora do componente para máxima estabilidade
@@ -573,10 +577,12 @@ const OSDetalhesPage: React.FC = () => {
   const clienteData = useMemo(() => osData?.cliente, [osData]);
   const contatoData = useMemo(() => osData?.contato, [osData]);
   const maquinaData = useMemo(() => osData?.maquina, [osData]);
-  const clienteDetalhesHref =
-    clienteData?.id ? `/admin/clientes_detalhes/${clienteData.id}` : undefined;
-  const maquinaDetalhesHref =
-    maquinaData?.id ? `/admin/maquinas_detalhes/${maquinaData.id}` : undefined;
+  const clienteDetalhesHref = clienteData?.id
+    ? `/admin/clientes_detalhes/${clienteData.id}`
+    : undefined;
+  const maquinaDetalhesHref = maquinaData?.id
+    ? `/admin/maquinas_detalhes/${maquinaData.id}`
+    : undefined;
   type FatType = {
     id_fat: number;
     situacao?: string | number;
@@ -972,7 +978,9 @@ const OSDetalhesPage: React.FC = () => {
                           className="group inline-flex items-center gap-2 mt-1 text-gray-800 font-semibold transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
                         >
                           <span className="flex items-center gap-1">
-                            <span className="font-bold">{clienteData.nome}</span>
+                            <span className="font-bold">
+                              {clienteData.nome}
+                            </span>
                             <span className="text-sm text-gray-600">
                               ({clienteData.codigo_erp})
                             </span>
@@ -1100,25 +1108,20 @@ const OSDetalhesPage: React.FC = () => {
                         <p className="font-semibold text-gray-800">
                           {maquinaData.numero_serie}
                         </p>
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                            osData.em_garantia
-                              ? "bg-green-100 text-green-700"
-                              : "bg-orange-100 text-orange-700"
-                          }`}
+                        <div
+                          className="w-4 h-4 flex items-center justify-center shrink-0 transform"
+                          title={
+                            maquinaData.em_garantia
+                              ? "Em garantia"
+                              : "Fora da garantia"
+                          }
                         >
-                          {osData.em_garantia ? (
-                            <>
-                              <CheckCircle className="h-3.5 w-3.5" />
-                              Garantia
-                            </>
+                          {maquinaData.em_garantia ? (
+                            <CircleCheck className="w-4 h-4 text-emerald-500" />
                           ) : (
-                            <>
-                              <XCircle className="h-3.5 w-3.5" />
-                              Sem Garantia
-                            </>
+                            <CircleX className="w-4 h-4 text-amber-500" />
                           )}
-                        </span>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1247,6 +1250,34 @@ const OSDetalhesPage: React.FC = () => {
                         )}
                       </div>
                     )}
+
+                    {/* Status de Garantia da OS */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-gray-500">
+                        Status da Garantia
+                      </p>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                          osData.em_garantia
+                            ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                            : "border-amber-100 bg-amber-50 text-amber-700"
+                        }`}
+                        title={
+                          osData.em_garantia
+                            ? "OS em garantia"
+                            : "OS fora da garantia"
+                        }
+                      >
+                        {osData.em_garantia ? (
+                          <ShieldCheck className="h-4 w-4" />
+                        ) : (
+                          <ShieldX className="h-4 w-4" />
+                        )}
+                        {osData.em_garantia
+                          ? "OS Em garantia"
+                          : "OS Fora da garantia"}
+                      </span>
+                    </div>
 
                     {/* Datas importantes */}
                     <div className="space-y-2">
