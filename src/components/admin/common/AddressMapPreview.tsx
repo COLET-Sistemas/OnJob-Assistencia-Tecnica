@@ -48,7 +48,7 @@ const AddressMapPreview: React.FC<AddressMapPreviewProps> = ({
     if (!hasAddress) {
       return (
         <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-500">
-          Endereco do cliente incompleto. Atualize os dados para visualizar o
+          Endereço do cliente incompleto. Atualize os dados para visualizar o
           mapa.
         </div>
       );
@@ -57,11 +57,11 @@ const AddressMapPreview: React.FC<AddressMapPreviewProps> = ({
     if (!staticMapUrl) {
       return (
         <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-500">
-          Chave publica do Google Maps nao configurada. Adicione
+          Chave publica do Google Maps não configurada. Adicione
           <code className="rounded bg-slate-100 px-1 text-[11px] text-slate-600">
             NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
           </code>{" "}
-          para visualizar o mapa estatico.
+          para visualizar o mapa estático.
         </div>
       );
     }
@@ -69,7 +69,7 @@ const AddressMapPreview: React.FC<AddressMapPreviewProps> = ({
     return (
       <Image
         src={staticMapUrl}
-        alt="Visualizacao do endereco no mapa"
+        alt="Visualização do endereço no mapa"
         fill
         className="object-cover"
         priority={false}
