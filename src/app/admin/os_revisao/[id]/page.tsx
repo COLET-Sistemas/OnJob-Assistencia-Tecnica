@@ -24,6 +24,10 @@ import {
   Camera,
   MapPin,
   X,
+  CircleCheck,
+  CircleX,
+  ShieldCheck,
+  ShieldX,
 } from "lucide-react";
 
 import StatusBadge from "@/components/tecnico/StatusBadge";
@@ -62,6 +66,7 @@ export default function OSRevisaoPage() {
   const [observacoesMaquina, setObservacoesMaquina] = useState("");
   const [editarObservacoesMaquina, setEditarObservacoesMaquina] =
     useState(false);
+  const [emGarantia, setEmGarantia] = useState(false);
   const [isSubmittingRevisao, setIsSubmittingRevisao] = useState(false);
   const [submittingAction, setSubmittingAction] = useState<
     "save" | "conclude" | null
@@ -99,6 +104,7 @@ export default function OSRevisaoPage() {
       setObservacoesRevisao(response.revisao_os?.observacoes || "");
       setObservacoesMaquina(response.maquina?.observacoes ?? "");
       setEditarObservacoesMaquina(false);
+      setEmGarantia(response.em_garantia || false);
       void loadFotosCount(response.id_os);
 
       // Processar deslocamentos de todas as FATs
@@ -665,6 +671,7 @@ export default function OSRevisaoPage() {
         pecas: pecasParaEnvio,
         deslocamentos: deslocamentosParaEnvio,
         concluir_os: concluirOs,
+        em_garantia: emGarantia,
       });
 
       const successTitle = concluirOs ? "Revisao concluida" : "Revisao salva";
@@ -802,14 +809,49 @@ export default function OSRevisaoPage() {
                   </span>
                 )}
                 {os.maquina?.descricao && (
-                  <span className="text-xs text-gray-500 truncate">
-                    {os.maquina.descricao}
-                  </span>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 truncate">
+                    <div
+                      className="w-4 h-4 flex items-center justify-center shrink-0  transform"
+                      title={
+                        os.maquina.em_garantia
+                          ? "Em garantia"
+                          : "Fora da garantia"
+                      }
+                    >
+                      {os.maquina.em_garantia ? (
+                        <CircleCheck className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <CircleX className="w-3.5 h-3.5 text-amber-500" />
+                      )}
+                    </div>
+                    <span className="truncate">{os.maquina.descricao}</span>
+                  </div>
                 )}
               </div>
             </div>
 
-            <StatusBadge status={os.situacao_os.codigo.toString()} />
+            <div className="flex items-center gap-2">
+              {/* Badge de garantia da OS */}
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                  os.em_garantia
+                    ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                    : "border-amber-100 bg-amber-50 text-amber-700"
+                }`}
+                title={
+                  os.em_garantia ? "OS em garantia" : "OS fora da garantia"
+                }
+              >
+                {os.em_garantia ? (
+                  <ShieldCheck className="h-4 w-4" />
+                ) : (
+                  <ShieldX className="h-4 w-4" />
+                )}
+                {os.em_garantia ? "OS Em garantia" : "OS Fora da garantia"}
+              </span>
+
+              <StatusBadge status={os.situacao_os.codigo.toString()} />
+            </div>
           </div>
         </div>
 
@@ -888,8 +930,7 @@ export default function OSRevisaoPage() {
           onClick={() => setActiveTab("deslocamentos")}
         >
           <Car className="h-4 w-4" />
-          Deslocamentos (
-          {deslocamentosOriginais.length} |{" "}
+          Deslocamentos ({deslocamentosOriginais.length} |{" "}
           {deslocamentosRevisados.filter((d) => !d.isDeleted).length})
         </button>
         <button
@@ -930,10 +971,7 @@ export default function OSRevisaoPage() {
 
       <div className="bg-white rounded-lg shadow mb-6">
         {activeTab === "info" && (
-          <InfoTab
-            os={os}
-            machineObservations={observacoesMaquina}
-          />
+          <InfoTab os={os} machineObservations={observacoesMaquina} />
         )}
 
         {activeTab === "deslocamentos" && (
@@ -985,6 +1023,8 @@ export default function OSRevisaoPage() {
             isEditandoObservacoesMaquina={editarObservacoesMaquina}
             onToggleEditarObservacoesMaquina={setEditarObservacoesMaquina}
             onObservacoesMaquinaChange={setObservacoesMaquina}
+            emGarantia={emGarantia}
+            onEmGarantiaChange={setEmGarantia}
             onSubmit={handleSubmitRevisao}
             onCancel={handleCancelarRevisao}
             isSubmitting={isSubmittingRevisao}

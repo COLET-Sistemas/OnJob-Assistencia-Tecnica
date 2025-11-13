@@ -209,7 +209,6 @@ export interface OSDetalhada {
     numero_serie: string;
     descricao?: string;
     modelo?: string;
-    
   };
   tecnico?: {
     id: number;
@@ -343,6 +342,7 @@ export interface OSDetalhadaV2 {
     ultima_manutencao?: string;
     data_1a_venda?: string;
     data_final_garantia?: string;
+    em_garantia?: boolean;
   };
   // Situação da OS expandida
   situacao_os: {
@@ -795,34 +795,38 @@ class OrdensServicoService {
       pecas: OSPecaUtilizada[];
       deslocamentos: OSDeslocamento[];
       concluir_os: boolean;
+      em_garantia?: boolean;
     }
   ): Promise<{ success: boolean; message: string; mensagem: string }> {
     // Obter ID do usuário atual do localStorage
     const id_usuario_revisor = Number(localStorage.getItem("id_usuario"));
 
     // Formatar dados para envio à API
-      const requestData = {
-        id_os: id_os,
-        id_usuario_revisor: id_usuario_revisor,
-        observacoes_revisao: dados.observacoesRevisao,
-        concluir_os: dados.concluir_os,
-        ...(dados.observacoesMaquina !== undefined
-          ? { observacoes_maquina: dados.observacoesMaquina }
-          : {}),
-        pecas_corrigidas: dados.pecas.map((peca) => ({
-          codigo: peca.codigo || "",
-          descricao: peca.descricao || peca.nome || "",
-          quantidade: peca.quantidade,
-          unidade: String(peca.unidade ?? peca.unidade_medida ?? "").trim(),
-        })),
-        deslocamentos_corrigidos: dados.deslocamentos.map((desl) => ({
-          km_ida: desl.km_ida,
-          km_volta: desl.km_volta,
-          tempo_ida_min: desl.tempo_ida_min,
-          tempo_volta_min: desl.tempo_volta_min,
-          observacao: desl.observacoes,
-        })),
-      };
+    const requestData = {
+      id_os: id_os,
+      id_usuario_revisor: id_usuario_revisor,
+      observacoes_revisao: dados.observacoesRevisao,
+      concluir_os: dados.concluir_os,
+      ...(dados.observacoesMaquina !== undefined
+        ? { observacoes_maquina: dados.observacoesMaquina }
+        : {}),
+      ...(dados.em_garantia !== undefined
+        ? { em_garantia: dados.em_garantia }
+        : {}),
+      pecas_corrigidas: dados.pecas.map((peca) => ({
+        codigo: peca.codigo || "",
+        descricao: peca.descricao || peca.nome || "",
+        quantidade: peca.quantidade,
+        unidade: String(peca.unidade ?? peca.unidade_medida ?? "").trim(),
+      })),
+      deslocamentos_corrigidos: dados.deslocamentos.map((desl) => ({
+        km_ida: desl.km_ida,
+        km_volta: desl.km_volta,
+        tempo_ida_min: desl.tempo_ida_min,
+        tempo_volta_min: desl.tempo_volta_min,
+        observacao: desl.observacoes,
+      })),
+    };
 
     const response = await api.put<{
       mensagem?: string;

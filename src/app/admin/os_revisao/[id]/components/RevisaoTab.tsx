@@ -7,6 +7,8 @@ interface RevisaoTabProps {
   isEditandoObservacoesMaquina: boolean;
   onToggleEditarObservacoesMaquina: (checked: boolean) => void;
   onObservacoesMaquinaChange: (value: string) => void;
+  emGarantia: boolean;
+  onEmGarantiaChange: (checked: boolean) => void;
   onSubmit: (concluirOs: boolean) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
@@ -21,6 +23,8 @@ const RevisaoTab: React.FC<RevisaoTabProps> = ({
   isEditandoObservacoesMaquina,
   onToggleEditarObservacoesMaquina,
   onObservacoesMaquinaChange,
+  emGarantia,
+  onEmGarantiaChange,
   onSubmit,
   onCancel,
   isSubmitting = false,
@@ -52,23 +56,42 @@ const RevisaoTab: React.FC<RevisaoTabProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            id="editar-observacao-maquina"
-            type="checkbox"
-            className="h-4 w-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
-            checked={isEditandoObservacoesMaquina}
-            onChange={(event) =>
-              onToggleEditarObservacoesMaquina(event.target.checked)
-            }
-            disabled={isSubmitting}
-          />
-          <label
-            htmlFor="editar-observacao-maquina"
-            className="text-sm font-medium text-gray-700"
-          >
-            Editar observação da máquina
-          </label>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+          <div className="flex items-center gap-2">
+            <input
+              id="editar-observacao-maquina"
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+              checked={isEditandoObservacoesMaquina}
+              onChange={(event) =>
+                onToggleEditarObservacoesMaquina(event.target.checked)
+              }
+              disabled={isSubmitting}
+            />
+            <label
+              htmlFor="editar-observacao-maquina"
+              className="text-sm font-medium text-gray-700"
+            >
+              Editar observação da máquina
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              id="os-em-garantia"
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+              checked={emGarantia}
+              onChange={(event) => onEmGarantiaChange(event.target.checked)}
+              disabled={isSubmitting}
+            />
+            <label
+              htmlFor="os-em-garantia"
+              className="text-sm font-medium text-gray-700"
+            >
+              OS em garantia
+            </label>
+          </div>
         </div>
 
         {isEditandoObservacoesMaquina && (
