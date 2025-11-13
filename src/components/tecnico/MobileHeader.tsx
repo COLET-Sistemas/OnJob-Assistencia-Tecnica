@@ -91,6 +91,11 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
     router.push("/tecnico/os/novo");
   };
 
+  const handleHistorico = () => {
+    setMenuOpen(false);
+    router.push("/tecnico/historico");
+  };
+
   const handleSobre = () => {
     setMenuOpen(false);
     router.push("/tecnico/sobre");
@@ -107,6 +112,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   const menuOptions: MenuOption[] = [
     { label: "Nova OS", onClick: handleNovaOS },
     { label: "Lista de OS's", onClick: handleInicial },
+    { label: "Histórico", onClick: handleHistorico },
     { label: "Sobre", onClick: handleSobre },
     { label: "Sair", onClick: handleSair },
   ];

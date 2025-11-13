@@ -39,7 +39,7 @@ type FATDeslocamento = NonNullable<FATDetalhada["deslocamentos"]>[number];
 type FATPeca = NonNullable<FATDetalhada["pecas"]>[number];
 type FATFoto = NonNullable<FATDetalhada["fotos"]>[number];
 
-// BotÃ£o de aÃ§Ã£o para FAT
+// Botão de ação para FAT
 // type ActionButtonFatProps = {
 //   label: string;
 //   icon: React.ReactNode;
@@ -97,7 +97,7 @@ function SectionActionButton({
   );
 }
 
-// Componente Section reutilizÃ¡vel
+// Componente Section reutilizável
 const Section = React.memo(
   ({
     title,
@@ -150,7 +150,7 @@ const Section = React.memo(
 
 Section.displayName = "Section";
 
-// Componente Field reutilizÃ¡vel
+// Componente Field reutilizável
 const Field = React.memo(
   ({
     label,
@@ -161,7 +161,7 @@ const Field = React.memo(
     value: string | React.ReactNode;
     icon?: React.ReactNode;
   }) => {
-    if (!value || value === "NÃ£o informado" || value === "") return null;
+    if (!value || value === "Não informado" || value === "") return null;
 
     return (
       <div className="flex items-start gap-2 min-w-0">
@@ -230,9 +230,7 @@ const DeslocamentosSectionContent = React.memo(
                 </div>
                 {desloc.observacoes && (
                   <div className="mt-2">
-                    <p className="text-xs text-slate-500 mb-1">
-                      Observaï¿½ï¿½ï¿½ï¿½es:
-                    </p>
+                    <p className="text-xs text-slate-500 mb-1">Observações:</p>
                     <p className="text-xs text-slate-700">
                       {desloc.observacoes}
                     </p>
@@ -261,13 +259,7 @@ const DeslocamentosSectionContent = React.memo(
 DeslocamentosSectionContent.displayName = "DeslocamentosSectionContent";
 
 const PecasSectionContent = React.memo(
-  ({
-    pecas,
-    onNavigate,
-  }: {
-    pecas: FATPeca[];
-    onNavigate: () => void;
-  }) => {
+  ({ pecas, onNavigate }: { pecas: FATPeca[]; onNavigate: () => void }) => {
     const hasPecas = pecas.length > 0;
 
     return (
@@ -287,7 +279,7 @@ const PecasSectionContent = React.memo(
                   </div>
                   {peca.codigo_peca && (
                     <p className="text-xs text-slate-600">
-                      Cï¿½ï¿½digo: {peca.codigo_peca}
+                      Código: {peca.codigo_peca}
                     </p>
                   )}
                   {peca.observacoes && (
@@ -306,12 +298,12 @@ const PecasSectionContent = React.memo(
           </div>
         ) : (
           <p className="text-sm text-slate-500 italic">
-            Nenhuma peï¿½ï¿½a cadastrada
+            Nenhuma peça cadastrada
           </p>
         )}
         <div className="mt-4">
           <SectionActionButton
-            label="Ir para Peï¿½ï¿½as"
+            label="Ir para Peças"
             icon={<Package className="w-4 h-4" />}
             onClick={onNavigate}
           />
@@ -445,7 +437,7 @@ export default function FATDetalheMobile() {
   const deveMostrarBotoes = situacoesComBotoes.includes(
     String(fat?.situacao?.codigo)
   );
-  // FunÃ§Ã£o auxiliar para mostrar toast com auto-hide
+  // Função auxiliar para mostrar toast com auto-hide
   const showToast = useCallback(
     (message: string, type: "success" | "error" = "success") => {
       setToast({
@@ -555,9 +547,9 @@ export default function FATDetalheMobile() {
     [handleNavigateToSection]
   );
 
-  // FunÃ§Ã£o para extrair mensagem de erro da API
+  // Função para extrair mensagem de erro da API
   const extractErrorMessage = useCallback((error: unknown): string => {
-    let errorMessage = "Ocorreu um erro durante a operaÃ§Ã£o";
+    let errorMessage = "Ocorreu um erro durante a operação";
 
     if (error && typeof error === "object") {
       if (
@@ -580,11 +572,11 @@ export default function FATDetalheMobile() {
     return errorMessage;
   }, []);
 
-  // FunÃ§Ã£o para buscar dados da FAT
+  // Função para buscar dados da FAT
   const fetchFAT = useCallback(
     async (force = false) => {
       if (!params?.id) {
-        setError("ID da FAT nÃ£o fornecido");
+        setError("ID da FAT não fornecido");
         setLoading(false);
         return;
       }
@@ -610,7 +602,7 @@ export default function FATDetalheMobile() {
         }
 
         if (!response) {
-          setError("FAT nÃ£o encontrada");
+          setError("FAT não encontrada");
           return;
         }
         setFat(response);
@@ -928,7 +920,7 @@ export default function FATDetalheMobile() {
     try {
       setLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      const responseMessage = "Atendimento concluÃ­do com sucesso!";
+      const responseMessage = "Atendimento concluí­do com sucesso!";
       showToast(responseMessage, "success");
 
       setTimeout(() => {
@@ -1073,7 +1065,7 @@ export default function FATDetalheMobile() {
           <div className="text-center">
             <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-slate-400" />
             <h2 className="font-semibold text-slate-900 mb-4 text-lg">
-              FAT nÃ£o encontrada
+              FAT não encontrada
             </h2>
             <button
               onClick={handleNavigateToOS}
@@ -1145,7 +1137,7 @@ export default function FATDetalheMobile() {
       {/* Content Sections */}
       <div className="px-4 pb-6 space-y-4 mt-4">
         <Section
-          title="InformaÃ§Ãµes Gerais"
+          title="Informações Gerais"
           icon={<FileText className="w-4 h-4" />}
         >
           <Field
@@ -1160,26 +1152,26 @@ export default function FATDetalheMobile() {
                 ? `${fat.nome_atendente} ${
                     fat.contato_atendente ? `- ${fat.contato_atendente}` : ""
                   }`
-                : "NÃ£o informado"
+                : "Não informado"
             }
             icon={<User className="w-3 h-3" />}
           />
         </Section>
 
         {fat.maquina?.modelo && fat.maquina.modelo.trim() !== "" && (
-          <Section title="MÃ¡quina" icon={<Settings className="w-4 h-4" />}>
+          <Section title="Máquina" icon={<Settings className="w-4 h-4" />}>
             <Field
               label="Modelo"
               value={fat.maquina.modelo}
               icon={<Settings className="w-3 h-3" />}
             />
             <Field
-              label="DescriÃ§Ã£o"
+              label="Descrição"
               value={fat.maquina.descricao}
               icon={<FileText className="w-3 h-3" />}
             />
             <Field
-              label="NÃºmero de SÃ©rie"
+              label="Número de Série"
               value={fat.maquina.numero_serie}
               icon={<Settings className="w-3 h-3" />}
             />
@@ -1199,7 +1191,7 @@ export default function FATDetalheMobile() {
             <>
               {fat.solucao_encontrada && (
                 <Field
-                  label="SoluÃ§Ã£o Encontrada"
+                  label="Solução Encontrada"
                   value={fat.solucao_encontrada}
                   icon={<CheckSquare className="w-3 h-3" />}
                 />
@@ -1215,7 +1207,7 @@ export default function FATDetalheMobile() {
 
               {fat.sugestoes && (
                 <Field
-                  label="SugestÃµes"
+                  label="Sugestões"
                   value={fat.sugestoes}
                   icon={<MessageSquare className="w-3 h-3" />}
                 />
@@ -1223,7 +1215,7 @@ export default function FATDetalheMobile() {
 
               {fat.observacoes && (
                 <Field
-                  label="ObservaÃ§Ãµes"
+                  label="Observações"
                   value={fat.observacoes}
                   icon={<FileText className="w-3 h-3" />}
                 />
@@ -1231,7 +1223,7 @@ export default function FATDetalheMobile() {
 
               {fat.numero_ciclos != null && fat.numero_ciclos > 0 && (
                 <Field
-                  label="NÃºmero de Ciclos"
+                  label="Número de Ciclos"
                   value={fat.numero_ciclos.toString()}
                   icon={<Timer className="w-3 h-3" />}
                 />
@@ -1239,7 +1231,7 @@ export default function FATDetalheMobile() {
             </>
           ) : (
             <p className="text-sm text-slate-500 italic">
-              NÃ£o hÃ¡ informaÃ§Ãµes sobre o atendimento
+              Não há informações sobre o atendimento
             </p>
           )}
           <div className="mt-4">
@@ -1294,7 +1286,7 @@ export default function FATDetalheMobile() {
 
         {fat.ocorrencias && fat.ocorrencias.length > 0 && (
           <Section
-            title={`OcorrÃªncias (${fat.ocorrencias.length})`}
+            title={`Ocorrências (${fat.ocorrencias.length})`}
             icon={<History className="w-4 h-4" />}
             collapsible={true}
             defaultExpanded={false}
@@ -1363,7 +1355,7 @@ export default function FATDetalheMobile() {
                 <div className="flex flex-col items-center gap-3 text-slate-200">
                   <ImageOff className="h-8 w-8" />
                   <span className="text-xs uppercase tracking-wide">
-                    VisualizaÃ§Ã£o indisponÃ­vel
+                    Visualização indisponí­vel
                   </span>
                 </div>
               )}
@@ -1407,7 +1399,7 @@ export default function FATDetalheMobile() {
               color="hover:border-blue-300"
             />
             <ActionButtonFat
-              label="PeÃ§as"
+              label="Peças"
               icon={<Package className="w-5 h-5 text-green-600" />}
               onClick={() => handleNavigateToSection("pecas")}
               color="hover:border-green-300"
@@ -1442,8 +1434,3 @@ export default function FATDetalheMobile() {
     </main>
   );
 }
-
-
-
-
-

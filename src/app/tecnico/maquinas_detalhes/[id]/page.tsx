@@ -10,6 +10,7 @@ import {
   type HistoricoRegistro,
 } from "@/api/services/historicoService";
 import type { Maquina } from "@/types/admin/cadastro/maquinas";
+import { MAQUINA_PREVIEW_CACHE_KEY } from "@/constants/storageKeys";
 import {
   AlertTriangle,
   Settings,
@@ -74,6 +75,9 @@ export default function MaquinaDetalheTecnicoPage() {
   >([]);
   const [historicoLoading, setHistoricoLoading] = useState(false);
   const [historicoError, setHistoricoError] = useState<string | null>(null);
+  const [prefetchedMaquina, setPrefetchedMaquina] = useState<
+    Partial<Maquina> | null
+  >(null);
 
   useEffect(() => {
     let active = true;
@@ -150,16 +154,42 @@ export default function MaquinaDetalheTecnicoPage() {
     };
   }, [maquinaId]);
 
-  const situacaoLabel =
-    maquina?.situacao === "A"
-      ? "Máquina ativa"
-      : maquina?.situacao === "I"
-      ? "Máquina inativa"
-      : maquina?.situacao;
+  useEffect(() => {
+    if (!maquinaId || typeof window === "undefined") {
+      setPrefetchedMaquina(null);
+      return;
+    }
 
-  const garantiaLabel = maquina?.garantia
+    try {
+      const storedValue = window.localStorage.getItem(
+        `${MAQUINA_PREVIEW_CACHE_KEY}_${maquinaId}`
+      );
+
+      if (storedValue) {
+        setPrefetchedMaquina(JSON.parse(storedValue) as Partial<Maquina>);
+      } else {
+        setPrefetchedMaquina(null);
+      }
+    } catch (previewError) {
+      console.error("Erro ao carregar preview de mǭquina:", previewError);
+      setPrefetchedMaquina(null);
+    }
+  }, [maquinaId]);
+
+  const maquinaParaExibir = maquina ?? prefetchedMaquina;
+
+  const situacaoLabel =
+    maquinaParaExibir?.situacao === "A"
+      ? "Máquina ativa"
+      : maquinaParaExibir?.situacao === "I"
+      ? "Máquina inativa"
+      : maquinaParaExibir?.situacao;
+
+  const garantiaLabel = maquinaParaExibir?.garantia
     ? "Em garantia"
     : "Garantia encerrada";
+
+  const shouldShowLoading = loading && !prefetchedMaquina;
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -170,7 +200,7 @@ export default function MaquinaDetalheTecnicoPage() {
       />
 
       <main className="px-4 py-4 space-y-4">
-        {loading ? (
+        {shouldShowLoading ? (
           <div className="flex h-[60vh] items-center justify-center">
             <Loading />
           </div>
@@ -188,7 +218,7 @@ export default function MaquinaDetalheTecnicoPage() {
               Tentar novamente
             </button>
           </div>
-        ) : maquina ? (
+        ) : maquinaParaExibir ? (
           <>
             <SectionCard
               title="Informações principais"
@@ -196,16 +226,19 @@ export default function MaquinaDetalheTecnicoPage() {
             >
               <div className="rounded-2xl bg-slate-50 p-3">
                 <p className="text-base font-semibold text-slate-900">
-                  {maquina.numero_serie}
+                  {maquinaParaExibir.numero_serie}
                 </p>
-                <p className="text-sm text-slate-500">{maquina.descricao}</p>
+                <p className="text-sm text-slate-500">
+                  {maquinaParaExibir.descricao}
+                </p>
               </div>
               <div className="grid grid-cols-1 gap-3">
                 <InfoItem
                   label="Modelo"
                   value={
-                    maquina.modelo && maquina.modelo.trim() !== ""
-                      ? maquina.modelo
+                    maquinaParaExibir.modelo &&
+                    maquinaParaExibir.modelo.trim() !== ""
+                      ? maquinaParaExibir.modelo
                       : "N/A"
                   }
                 />
@@ -214,7 +247,7 @@ export default function MaquinaDetalheTecnicoPage() {
                 {situacaoLabel && (
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      maquina?.situacao === "A"
+                      maquinaParaExibir?.situacao === "A"
                         ? "bg-emerald-50 text-emerald-700"
                         : "bg-amber-50 text-amber-700"
                     }`}
@@ -224,7 +257,7 @@ export default function MaquinaDetalheTecnicoPage() {
                 )}
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    maquina?.garantia
+                    maquinaParaExibir?.garantia
                       ? "bg-sky-50 text-sky-700"
                       : "bg-slate-200 text-slate-700"
                   }`}
@@ -234,31 +267,31 @@ export default function MaquinaDetalheTecnicoPage() {
               </div>
             </SectionCard>
 
-            {maquina?.cliente_atual && (
+            {maquinaParaExibir?.cliente_atual && (
               <SectionCard
                 title="Cliente atual"
                 icon={<Building className="h-4 w-4" />}
               >
                 <div className="rounded-2xl border border-slate-100 p-3">
                   <p className="font-semibold text-slate-900">
-                    {maquina.cliente_atual.nome_fantasia}
+                    {maquinaParaExibir.cliente_atual?.nome_fantasia}
                   </p>
-                  {maquina.cliente_atual.razao_social && (
+                  {maquinaParaExibir.cliente_atual?.razao_social && (
                     <p className="text-sm text-slate-600 mt-1">
-                      {maquina.cliente_atual.razao_social}
+                      {maquinaParaExibir.cliente_atual?.razao_social}
                     </p>
                   )}
                 </div>
               </SectionCard>
             )}
 
-            {maquina?.observacoes && (
+            {maquinaParaExibir?.observacoes && (
               <SectionCard
                 title="Observações da Máquina"
                 icon={<FileText className="h-4 w-4" />}
               >
                 <p className="text-sm leading-relaxed text-slate-700">
-                  {maquina.observacoes}
+                  {maquinaParaExibir.observacoes}
                 </p>
               </SectionCard>
             )}

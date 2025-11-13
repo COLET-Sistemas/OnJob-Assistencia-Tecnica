@@ -9,11 +9,7 @@ import {
   Trash2,
   Pencil,
 } from "lucide-react";
-import {
-  TableList,
-  TableStatusColumn,
-  LocationPicker,
-} from "@/components/admin/common";
+import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { useDataFetch } from "@/hooks";
@@ -26,8 +22,6 @@ import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
 import { services } from "@/api";
 import { useCadastroPermission } from "@/hooks/useCadastroPermission";
-import LocationButton from "@/components/admin/ui/LocationButton";
-import api from "@/api/api";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import ConfirmModal from "@/components/admin/ui/ConfirmModal";
@@ -115,9 +109,6 @@ const CadastroClientes = () => {
   });
   const expandedClienteId = expandedState.id;
   const expandedSection = expandedState.section;
-  // Estados para o modal de localização
-  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
-  const [showLocationModal, setShowLocationModal] = useState(false);
   const [regioes, setRegioes] = useState<Regiao[]>([]);
   const [cidadeOptions, setCidadeOptions] = useState<
     { value: string; label: string }[]
@@ -255,7 +246,10 @@ const CadastroClientes = () => {
     async (uf?: string) => {
       try {
         const cidades = await cidadesService.getAll(uf);
-        const uniqueOptions = new Map<string, { value: string; label: string }>();
+        const uniqueOptions = new Map<
+          string,
+          { value: string; label: string }
+        >();
 
         cidades.forEach(({ cidade, uf }) => {
           const nome = (cidade || "").trim();
@@ -294,8 +288,7 @@ const CadastroClientes = () => {
   useEffect(() => {
     let isSubscribed = true;
     const selectedCity = parseCidadeFilterValue(filtrosPainel.cidade);
-    const ufSource =
-      filtrosPainel.uf?.trim() || selectedCity?.uf?.trim() || "";
+    const ufSource = filtrosPainel.uf?.trim() || selectedCity?.uf?.trim() || "";
     const normalizedUf =
       ufSource.length > 0 ? ufSource.toUpperCase() : undefined;
     const requestKey = normalizedUf ?? CITY_ALL_KEY;
@@ -375,9 +368,7 @@ const CadastroClientes = () => {
       };
 
       if (filtrosAplicados.nome) params.nome = filtrosAplicados.nome;
-      const cidadeSelecionada = parseCidadeFilterValue(
-        filtrosAplicados.cidade
-      );
+      const cidadeSelecionada = parseCidadeFilterValue(filtrosAplicados.cidade);
 
       if (cidadeSelecionada) {
         params.cidade = cidadeSelecionada.cidade;
@@ -641,64 +632,6 @@ const CadastroClientes = () => {
     getSectionDomId,
   ]);
 
-  const openLocationModal = useCallback(
-    (cliente: Cliente) => {
-      if (!canManageCadastros) {
-        showError("Acesso negado", cadastroDeniedMessage);
-        return;
-      }
-
-      setSelectedCliente(cliente);
-      setShowLocationModal(true);
-    },
-    [canManageCadastros, showError, cadastroDeniedMessage]
-  );
-
-  const saveClienteLocation = useCallback(
-    async (latitude: number, longitude: number) => {
-      if (!selectedCliente) return;
-      if (!canManageCadastros) {
-        showError("Acesso negado", cadastroDeniedMessage);
-        return;
-      }
-      try {
-        const clientId = getClienteId(selectedCliente);
-
-        await api.patch(`/clientes/geo?id=${clientId}`, {
-          latitude: Number(latitude),
-          longitude: Number(longitude),
-        });
-
-        setShowLocationModal(false);
-        await refetch();
-        showSuccess("Sucesso", "Localização atualizada com sucesso");
-      } catch (error) {
-        console.error("Error updating location:", error);
-        showError(
-          "Erro ao atualizar localização",
-          error as Record<string, unknown>
-        );
-      }
-    },
-    [
-      selectedCliente,
-      refetch,
-      showSuccess,
-      showError,
-      getClienteId,
-      canManageCadastros,
-      cadastroDeniedMessage,
-    ]
-  );
-
-  // Recupera o endereço da empresa do localStorage
-  const getEnderecoEmpresa = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("endereco_empresa") || "";
-    }
-    return "";
-  };
-
   if (loading) {
     return (
       <Loading
@@ -729,39 +662,13 @@ const CadastroClientes = () => {
       header: "Endereço",
       accessor: "cidade" as keyof Cliente,
       render: (cliente: Cliente) => {
-        const hasValidCoordinates =
-          cliente.latitude !== undefined &&
-          cliente.latitude !== null &&
-          cliente.latitude !== 0 &&
-          String(cliente.latitude) !== "0" &&
-          String(cliente.latitude) !== "";
         return (
           <div>
-            {hasValidCoordinates ? (
-              <div className="text-sm text-[var(--primary)] flex items-center gap-1.5">
-                <a
-                  href={`https://www.google.com/maps/place/${cliente.latitude},${cliente.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Ver no Google Maps"
-                >
-                  <MapPin
-                    size={16}
-                    className="text-[var(--primary)] hover:opacity-80"
-                  />
-                </a>
-                <span>
-                  {cliente.endereco}, {cliente.numero}
-                  {cliente.complemento && ` - ${cliente.complemento}`}
-                </span>
-              </div>
-            ) : (
-              <div className="text-sm text-[var(--neutral-graphite)] flex items-center gap-1.5">
-                <MapPin size={16} className="text-gray-400" />
-                {cliente.endereco}, {cliente.numero}
-                {cliente.complemento && ` - ${cliente.complemento}`}
-              </div>
-            )}
+            <div className="text-sm text-[var(--neutral-graphite)] flex items-center gap-1.5">
+              <MapPin size={16} className="text-gray-400" />
+              {cliente.endereco}, {cliente.numero}
+              {cliente.complemento && ` - ${cliente.complemento}`}
+            </div>
             <div className="text-xs text-gray-500 mt-0.5">
               {cliente.bairro} - {cliente.cep}
             </div>
@@ -1077,14 +984,6 @@ const CadastroClientes = () => {
 
     return (
       <div className="flex gap-2">
-        <LocationButton
-          cliente={cliente}
-          onDefineLocation={openLocationModal}
-          enderecoEmpresa={getEnderecoEmpresa()}
-          canDefine={canManageCadastros}
-          disabledTooltip={cadastroDeniedMessage}
-        />
-
         <EditButton
           id={clientId}
           editRoute="/admin/cadastro/clientes/editar"
@@ -1679,23 +1578,6 @@ const CadastroClientes = () => {
           onRecordsPerPageChange={handleRecordsPerPageChange}
           recordsPerPageOptions={[10, 20, 25, 50, 100]}
           showRecordsPerPage={true}
-        />
-      )}
-
-      {/* Modal de Localização */}
-      {selectedCliente && (
-        <LocationPicker
-          isOpen={showLocationModal}
-          onClose={() => setShowLocationModal(false)}
-          initialLat={selectedCliente.latitude || null}
-          initialLng={selectedCliente.longitude || null}
-          address={`${selectedCliente.endereco}, ${selectedCliente.numero}, ${
-            selectedCliente.cidade
-          }, ${selectedCliente.uf}, ${selectedCliente.cep || ""}`}
-          clientName={
-            selectedCliente.nome_fantasia || selectedCliente.razao_social
-          }
-          onLocationSelected={saveClienteLocation}
         />
       )}
 

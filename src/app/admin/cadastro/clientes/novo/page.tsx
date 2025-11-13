@@ -2,8 +2,6 @@
 
 import { clientesService, regioesService } from "@/api/services";
 import { Loading } from "@/components/LoadingPersonalizado";
-import LocationPicker from "@/components/admin/common/LocationPicker";
-import StaticMap from "@/components/admin/common/StaticMap";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import {
@@ -15,7 +13,6 @@ import { FormData as ClienteFormData } from "@/types/admin/cadastro/clientes";
 import { formatDocumento, validarDocumento } from "@/utils/formatters";
 import { buscarCEP, formatarCEP } from "@/utils/cepAPI";
 import { ESTADOS } from "@/utils/constants";
-import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useRef } from "react";
@@ -101,8 +98,6 @@ const CadastrarCliente: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [regioes, setRegioes] = useState<Regiao[]>([]);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [mapOpen, setMapOpen] = useState(false);
-  const [showMapPreview, setShowMapPreview] = useState(false);
 
   const nomeRazaoSocialRef = useRef<HTMLInputElement>(null!);
 
@@ -122,8 +117,6 @@ const CadastrarCliente: React.FC = () => {
     cep: "",
     cidade: "",
     uf: "RS",
-    latitude: undefined,
-    longitude: undefined,
     situacao: "A",
     id_regiao: undefined,
     regiao: undefined,
@@ -221,49 +214,6 @@ const CadastrarCliente: React.FC = () => {
     carregarRegioesPorUF(formData.uf);
   }, [carregarRegioesPorUF, formData.uf]);
 
-  useEffect(() => {
-    if (formData.latitude && formData.longitude) {
-      setShowMapPreview(true);
-    }
-  }, [formData.latitude, formData.longitude]);
-
-  const buscarCoordenadas = async (
-    endereco: string,
-    numero: string,
-    cidade: string,
-    uf: string,
-    cep: string
-  ) => {
-    try {
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-      if (!apiKey) {
-        console.warn("Chave de API do Google Maps não encontrada");
-        return null;
-      }
-
-      const enderecoCompleto = `${endereco}, ${numero}, ${cidade}, ${uf}, ${cep}, Brasil`;
-      const enderecoEncoded = encodeURIComponent(enderecoCompleto);
-
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${enderecoEncoded}&key=${apiKey}`
-      );
-      const data = await response.json();
-
-      // Verifica se a requisição foi bem-sucedida e se há resultados
-      if (data.status === "OK" && data.results.length > 0) {
-        const { lat, lng } = data.results[0].geometry.location;
-        return { latitude: lat.toString(), longitude: lng.toString() };
-      } else {
-        console.warn("Não foi possível obter as coordenadas:", data.status);
-        return null;
-      }
-    } catch (error) {
-      console.error("Erro ao buscar coordenadas:", error);
-      return null;
-    }
-  };
-
   // Função para buscar CEP usando o utilitário com múltiplas APIs
   const buscarCEPFormulario = useCallback(
     async (cep: string) => {
@@ -320,61 +270,6 @@ const CadastrarCliente: React.FC = () => {
     return formatDocumento(value);
   };
 
-  // Função para atualizar as coordenadas usando o Google Maps
-  const atualizarCoordenadas = async () => {
-    // Verificar se tem os dados necessários para buscar as coordenadas
-    if (
-      !formData.endereco ||
-      !formData.numero ||
-      !formData.cidade ||
-      !formData.uf
-    ) {
-      showError(
-        "Campos obrigatórios",
-        "Preencha o cep, endereço, número, cidade e UF para obter as coordenadas."
-      );
-      return;
-    }
-
-    try {
-      // Buscar coordenadas apenas quando o usuário clicar no botão
-      const coordenadas = await buscarCoordenadas(
-        formData.endereco,
-        formData.numero,
-        formData.cidade,
-        formData.uf,
-        formData.cep
-      );
-
-      // Se encontramos coordenadas, atualizamos o formulário
-      if (coordenadas) {
-        setFormData((prev) => ({
-          ...prev,
-          latitude: coordenadas.latitude,
-          longitude: coordenadas.longitude,
-        }));
-        setShowMapPreview(true);
-      }
-
-      // Abrir o mapa para ajuste fino
-      setMapOpen(true);
-    } catch (error) {
-      console.error("Erro ao atualizar coordenadas:", error);
-      showError("Erro ao buscar coordenadas", error as Record<string, unknown>);
-    }
-  };
-
-  // Função chamada quando o usuário confirma a localização no mapa
-  const handleLocationSelected = (lat: number, lng: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      latitude: lat,
-      longitude: lng,
-    }));
-    setShowMapPreview(true);
-    showSuccess("Sucesso", "Coordenadas atualizadas com sucesso!");
-  };
-
   // Manipular mudanças nos campos do formulário de forma otimizada
   const handleInputChange = useCallback(
     (
@@ -427,9 +322,6 @@ const CadastrarCliente: React.FC = () => {
         }
       } else if (name === "numero") {
         setFormData((prev) => ({ ...prev, [name]: value }));
-
-        // Removido: busca automática de coordenadas
-        // As coordenadas agora são buscadas apenas quando o usuário clicar em "Definir Localização no Mapa"
       } else {
         setFormData((prev) => ({ ...prev, [name]: value }));
       } // Limpar erro do campo quando usuário digitar (apenas se já existe erro)
@@ -478,14 +370,6 @@ const CadastrarCliente: React.FC = () => {
           cidade: formData.cidade,
           uf: formData.uf,
           id_regiao: formData.id_regiao ?? formData.regiao?.id,
-          latitude:
-            typeof formData.latitude === "string"
-              ? parseFloat(formData.latitude)
-              : formData.latitude,
-          longitude:
-            typeof formData.longitude === "string"
-              ? parseFloat(formData.longitude)
-              : formData.longitude,
           situacao: formData.situacao,
         };
 
@@ -531,25 +415,6 @@ const CadastrarCliente: React.FC = () => {
       />
     );
   }
-
-  const clientDisplayName =
-    [formData.nome_fantasia, formData.razao_social].find(
-      (value) => value && value.trim()
-    ) || "";
-  const addressParts = [
-    formData.endereco,
-    formData.numero,
-    formData.complemento,
-    formData.bairro,
-    formData.cidade,
-    formData.uf,
-    formData.cep,
-  ].filter(
-    (part): part is string => typeof part === "string" && part.trim().length > 0
-  );
-  const fullAddress = addressParts.length
-    ? `${addressParts.join(", ")}, Brasil`
-    : "";
 
   const regiaoPlaceholder = regioesLoading
     ? "Carregando regiões..."
@@ -740,64 +605,6 @@ const CadastrarCliente: React.FC = () => {
                 </div>
               </div>
             </section>
-
-            {/* Localização */}
-            <section className="space-y-6">
-              <h2 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-3">
-                Localização Geográfica
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <button
-                    type="button"
-                    onClick={atualizarCoordenadas}
-                    className="w-full px-4 py-3 bg-[var(--primary)] text-white rounded-lg hover:bg-violet-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    <MapPin className="h-5 w-5" />
-                    Definir Localização no Mapa
-                  </button>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <InputField
-                      label="Latitude"
-                      name="latitude"
-                      value={formData.latitude?.toString() || ""}
-                      placeholder="Ex: -30.0346"
-                      onChange={handleInputChange}
-                      readOnly
-                    />
-
-                    <InputField
-                      label="Longitude"
-                      name="longitude"
-                      value={formData.longitude?.toString() || ""}
-                      placeholder="Ex: -51.2177"
-                      onChange={handleInputChange}
-                      readOnly
-                    />
-                  </div>
-
-                  {formData.latitude && formData.longitude && (
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-sm text-green-700 font-medium mb-1">
-                        ✅ Coordenadas definidas
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {showMapPreview && formData.latitude && formData.longitude && (
-                  <div className="flex flex-col gap-2">
-                    <StaticMap
-                      latitude={parseFloat(formData.latitude.toString())}
-                      longitude={parseFloat(formData.longitude.toString())}
-                      className="w-full h-[300px]"
-                    />
-                  </div>
-                )}
-              </div>
-            </section>
           </div>
 
           {/* Footer com botões */}
@@ -821,25 +628,6 @@ const CadastrarCliente: React.FC = () => {
           </footer>
         </form>
       </main>
-
-      {/* Seletor de Localização no Mapa */}
-      <LocationPicker
-        isOpen={mapOpen}
-        onClose={() => setMapOpen(false)}
-        initialLat={
-          typeof formData.latitude === "string"
-            ? parseFloat(formData.latitude)
-            : formData.latitude ?? null
-        }
-        initialLng={
-          typeof formData.longitude === "string"
-            ? parseFloat(formData.longitude)
-            : formData.longitude ?? null
-        }
-        clientName={clientDisplayName}
-        address={fullAddress}
-        onLocationSelected={handleLocationSelected}
-      />
     </>
   );
 };
