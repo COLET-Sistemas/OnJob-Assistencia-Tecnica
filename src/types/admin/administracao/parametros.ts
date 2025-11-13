@@ -6,5 +6,6 @@ export interface ParametroSistema {
   valor_padrao?: string;
   tipo?: string;
   alteravel?: "S" | "N";
+  admin_pode_alterar?: boolean;
   atualizado_em?: string;
 }

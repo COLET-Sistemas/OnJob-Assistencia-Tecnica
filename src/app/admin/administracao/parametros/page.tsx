@@ -16,6 +16,7 @@ const ParametrizacaoPage = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedValue, setEditedValue] = useState("");
   const [savingId, setSavingId] = useState<number | null>(null);
+  const userIsSuperAdmin = isSuperAdmin();
 
   const fetchParametros = useCallback(async () => {
     try {
@@ -41,8 +42,11 @@ const ParametrizacaoPage = () => {
   } = useDataFetch<ParametroSistema[]>(fetchParametros, [fetchParametros], []);
 
   const listaParametros = useMemo(() => parametros ?? [], [parametros]);
+  const parametroEmEdicao =
+    editingId !== null
+      ? listaParametros.find((parametro) => parametro.id === editingId) ?? null
+      : null;
   const isInitialLoading = loading && listaParametros.length === 0;
-  const isEditing = (id: number) => editingId === id;
 
   const startEditing = (parametro: ParametroSistema) => {
     if (savingId !== null) return;
@@ -125,12 +129,9 @@ const ParametrizacaoPage = () => {
     }
   };
 
-  const handleValueKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      handleSave();
-    }
-
+  const handleModalValueKeyDown = (
+    event: React.KeyboardEvent<HTMLTextAreaElement>
+  ) => {
     if (event.key === "Escape") {
       event.preventDefault();
       cancelEditing();
@@ -177,17 +178,21 @@ const ParametrizacaoPage = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
             {listaParametros.map((parametro) => {
-              const emEdicao = isEditing(parametro.id);
               const estaSalvando = savingId === parametro.id;
-              const valorOriginal = parametro.valor ?? "";
-              const valorAtual = emEdicao ? editedValue : valorOriginal;
-              const possuiAlteracao = emEdicao && valorAtual !== valorOriginal;
+              const adminNaoPodeAlterar =
+                userIsSuperAdmin && parametro.admin_pode_alterar === false;
+              const rowBackgroundClass = adminNaoPodeAlterar
+                ? "bg-red-50 hover:bg-red-50"
+                : "bg-white hover:bg-gray-50";
 
               return (
-                <tr key={parametro.id}>
+                <tr
+                  key={parametro.id}
+                  className={`transition-colors ${rowBackgroundClass}`}
+                >
                   <td className="px-6 py-4 align-top">
                     <div className="flex flex-col gap-1">
-                      <span className="text-sm font-semibold text-gray-900">
+                      <span className="text-sm font-semibold text-gray-900 whitespace-pre-wrap break-words">
                         {parametro.descricao}
                       </span>
                       <span className="text-xs font-mono text-gray-500 uppercase tracking-wide">
@@ -196,72 +201,143 @@ const ParametrizacaoPage = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    {emEdicao ? (
-                      <input
-                        type="text"
-                        value={valorAtual}
-                        onChange={(event) => setEditedValue(event.target.value)}
-                        onKeyDown={handleValueKeyDown}
-                        disabled={estaSalvando}
-                        autoFocus
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-900 placeholder:text-gray-400 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30 transition"
-                      />
-                    ) : (
-                      <div className="text-sm text-gray-900">
-                        {valorOriginal || (
-                          <span className="text-gray-400">
-                            Sem valor definido
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    <div className="text-sm text-gray-900 whitespace-pre-wrap break-words">
+                      {parametro.valor ? (
+                        parametro.valor
+                      ) : (
+                        <span className="text-gray-400">
+                          Sem valor definido
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {emEdicao ? (
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={handleSave}
-                          disabled={estaSalvando || !possuiAlteracao}
-                          className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition ${
-                            estaSalvando || !possuiAlteracao
-                              ? "bg-gray-300 cursor-not-allowed"
-                              : "bg-[var(--primary)] hover:bg-[var(--primary)]/90"
-                          }`}
-                        >
-                          {estaSalvando ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Save className="h-4 w-4" />
-                          )}
-                          {estaSalvando ? "Salvando..." : "Salvar"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelEditing}
-                          disabled={estaSalvando}
-                          className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 transition disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          <X className="h-4 w-4" />
-                          Cancelar
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => startEditing(parametro)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
-                      >
-                        <Pencil className="h-4 w-4" />
-                        Editar
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => startEditing(parametro)}
+                      disabled={estaSalvando}
+                      className={`inline-flex cursor-pointer items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+                        estaSalvando
+                          ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                      }`}
+                    >
+                      {estaSalvando ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <Pencil className="h-4 w-4" />
+                          Editar
+                        </>
+                      )}
+                    </button>
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+      </div>
+    );
+  };
+
+  const renderEditModal = () => {
+    if (!parametroEmEdicao) return null;
+
+    const estaSalvando = savingId === parametroEmEdicao.id;
+    const valorOriginal = parametroEmEdicao.valor ?? "";
+    const possuiAlteracao = editedValue !== valorOriginal;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          onClick={estaSalvando ? undefined : cancelEditing}
+          aria-hidden
+        />
+
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="editar-parametro-title"
+          className="relative w-full max-w-2xl rounded-2xl border border-gray-200 bg-white shadow-xl animate-in fade-in-0 zoom-in-95 duration-200"
+        >
+          <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-8 py-2">
+            <div>
+              <h3
+                id="editar-parametro-title"
+                className="mt-3 text-lg font-semibold text-[var(--primary)] whitespace-pre-wrap break-words"
+              >
+                {parametroEmEdicao.descricao}
+              </h3>
+              <p className="text-xs font-mono uppercase tracking-wide text-gray-500">
+                {parametroEmEdicao.chave}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={cancelEditing}
+              disabled={estaSalvando}
+              className="text-gray-400 hover:text-gray-900 transition cursor-pointer rounded-full "
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+
+          <form
+            className="space-y-5 px-8 py-8"
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleSave();
+            }}
+          >
+            <textarea
+              value={editedValue}
+              onChange={(event) => setEditedValue(event.target.value)}
+              onKeyDown={handleModalValueKeyDown}
+              disabled={estaSalvando}
+              rows={5}
+              autoFocus
+              placeholder="Informe o novo valor do parâmetro"
+              className="w-full rounded border border-gray-200 bg-white px-4 py-3 text-sm font-mono text-gray-900 placeholder:text-gray-400 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30 transition resize-none whitespace-pre-wrap shadow-sm"
+            />
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={cancelEditing}
+                disabled={estaSalvando}
+                className="flex-1 px-4 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded  cursor-pointer hover:border-gray-300 transition disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={estaSalvando || !possuiAlteracao}
+                className={`flex-1 px-4 py-3 text-sm font-semibold text-white rounded transition ${
+                  estaSalvando || !possuiAlteracao
+                    ? "bg-gray-300 cursor-not-allowed opacity-80"
+                    : "bg-[var(--primary)] hover:bg-[var(--primary)]/90 cursor-pointer"
+                }`}
+              >
+                {estaSalvando ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processando...
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <Save className="h-4 w-4" />
+                    Salvar alterações
+                  </div>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     );
   };
@@ -288,6 +364,7 @@ const ParametrizacaoPage = () => {
         </div>
         {renderTableContent()}
       </section>
+      {renderEditModal()}
     </AdminAuthGuard>
   );
 };

@@ -7,7 +7,7 @@ import {
   AlertOctagon,
   MapPin,
   AlertCircle,
-  Settings,
+  Eye,
   Phone,
   Mail,
   ChevronDown,
@@ -195,18 +195,29 @@ const OSCard: React.FC<OSCardProps> = ({
                 <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   Cliente / Cidade
                 </div>
+
                 {clienteHistoricoHref ? (
                   <Link
                     href={clienteHistoricoHref}
                     onClick={(e) => e.stopPropagation()}
-                    className="font-semibold text-black truncate text-base mt-1 inline transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                    className="group inline-flex items-center gap-2 mt-1 font-semibold text-black truncate text-base transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
                     title="Abrir detalhes do cliente"
                   >
-                    {os.cliente.nome || "Cliente"}
+                    <span className="truncate">
+                      {os.cliente.nome || "Cliente"}
+                    </span>
+
+                    {/* Ícone de olho (roxo) igual ao da máquina */}
+                    <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 group-hover:opacity-100 transition relative -top-1" />
                   </Link>
                 ) : (
-                  <div className="font-semibold text-gray-900 truncate text-base mt-1">
-                    {os.cliente.nome || "Cliente"}
+                  <div className="flex items-center gap-2 mt-1 font-semibold text-gray-900 truncate text-base">
+                    <span className="truncate">
+                      {os.cliente.nome || "Cliente"}
+                    </span>
+
+                    {/* Mesmo ícone, mas sem link */}
+                    <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 relative -top-1" />
                   </div>
                 )}
 
@@ -223,6 +234,7 @@ const OSCard: React.FC<OSCardProps> = ({
                 <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   Máquina / Série
                 </div>
+
                 {maquinaDetalhesHref ? (
                   <Link
                     href={maquinaDetalhesHref}
@@ -233,40 +245,28 @@ const OSCard: React.FC<OSCardProps> = ({
                     <span className="font-semibold text-black truncate text-base transition-colors underline-offset-2 group-hover:underline">
                       {os.maquina.descricao || "Máquina"}
                     </span>
-                    <div
-                      className="w-4 h-4 flex items-center justify-center"
-                      title={
-                        os.em_garantia ? "Em garantia" : "Fora da garantia"
-                      }
-                    >
-                      {os.em_garantia ? (
-                        <CircleCheck className="w-4 h-4 text-emerald-500" />
-                      ) : (
-                        <CircleX className="w-4 h-4 text-amber-500" />
-                      )}
-                    </div>
+
+                    {/* Ícone de olho mais para cima */}
+                    <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 group-hover:opacity-100 transition relative -top-1" />
                   </Link>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <div className="font-semibold text-gray-900 truncate text-base mt-1">
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="font-semibold text-gray-900 truncate text-base">
                       {os.maquina.descricao || "Máquina"}
                     </div>
-                    <div
-                      className="w-4 h-4 flex items-center justify-center"
-                      title={
-                        os.em_garantia ? "Em garantia" : "Fora da garantia"
-                      }
-                    >
-                      {os.em_garantia ? (
-                        <CircleCheck className="w-4 h-4 text-emerald-500" />
-                      ) : (
-                        <CircleX className="w-4 h-4 text-amber-500" />
-                      )}
-                    </div>
+
+                    {/* Ícone de olho mais para cima */}
+                    <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 relative -top-1" />
                   </div>
                 )}
+
+                {/* Linha da série agora com ÍCONE DE GARANTIA apenas aqui */}
                 <div className="text-sm text-gray-600 flex items-center gap-1.5 mt-0.5">
-                  <Settings className="w-3.5 h-3.5 flex-shrink-0 my-auto" />
+                  {os.em_garantia ? (
+                    <CircleCheck className="w-4.5 h-4.5 flex-shrink-0 text-emerald-500" />
+                  ) : (
+                    <CircleX className="w-4.5 h-4.5 flex-shrink-0 text-amber-500" />
+                  )}
                   <span className="my-auto">{os.maquina.numero_serie}</span>
                 </div>
               </div>

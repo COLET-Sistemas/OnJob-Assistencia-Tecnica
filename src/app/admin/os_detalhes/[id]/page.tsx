@@ -7,6 +7,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   ordensServicoService,
@@ -47,6 +48,7 @@ import {
   Camera,
   ListChecks,
   CameraOff,
+  Eye,
   X,
 } from "lucide-react";
 
@@ -571,6 +573,10 @@ const OSDetalhesPage: React.FC = () => {
   const clienteData = useMemo(() => osData?.cliente, [osData]);
   const contatoData = useMemo(() => osData?.contato, [osData]);
   const maquinaData = useMemo(() => osData?.maquina, [osData]);
+  const clienteDetalhesHref =
+    clienteData?.id ? `/admin/clientes_detalhes/${clienteData.id}` : undefined;
+  const maquinaDetalhesHref =
+    maquinaData?.id ? `/admin/maquinas_detalhes/${maquinaData.id}` : undefined;
   type FatType = {
     id_fat: number;
     situacao?: string | number;
@@ -958,12 +964,29 @@ const OSDetalhesPage: React.FC = () => {
               <div className="p-6">
                 <div className="space-y-4">
                   {clienteData?.nome && (
-                    <div>
+                    <div className="space-y-1">
                       <p className="text-sm font-medium text-gray-500">Nome</p>
-                      <p className="text-gray-800">
-                        <span className="font-bold">{clienteData.nome}</span> (
-                        {clienteData.codigo_erp})
-                      </p>
+                      {clienteDetalhesHref ? (
+                        <Link
+                          href={clienteDetalhesHref}
+                          className="group inline-flex items-center gap-2 mt-1 text-gray-800 font-semibold transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                        >
+                          <span className="flex items-center gap-1">
+                            <span className="font-bold">{clienteData.nome}</span>
+                            <span className="text-sm text-gray-600">
+                              ({clienteData.codigo_erp})
+                            </span>
+                          </span>
+                          <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 group-hover:opacity-100 transition relative -top-1" />
+                        </Link>
+                      ) : (
+                        <p className="text-gray-800 mt-1 flex items-center gap-1.5">
+                          <span className="font-bold">{clienteData.nome}</span>
+                          <span className="text-sm text-gray-600">
+                            ({clienteData.codigo_erp})
+                          </span>
+                        </p>
+                      )}
                       {clienteData && "razao_social" in clienteData && (
                         <p className="text-gray-800">
                           {String(
@@ -1105,7 +1128,21 @@ const OSDetalhesPage: React.FC = () => {
                       <p className="text-sm font-medium text-gray-500">
                         Descrição
                       </p>
-                      <p className="text-gray-800">{maquinaData.descricao}</p>
+                      {maquinaDetalhesHref ? (
+                        <Link
+                          href={maquinaDetalhesHref}
+                          className="group inline-flex items-center gap-2 mt-1 text-gray-800 font-semibold transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                        >
+                          <span className="font-semibold">
+                            {maquinaData.descricao}
+                          </span>
+                          <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 group-hover:opacity-100 transition relative -top-1" />
+                        </Link>
+                      ) : (
+                        <p className="text-gray-800 mt-1">
+                          {maquinaData.descricao}
+                        </p>
+                      )}
                     </div>
                   )}
 
