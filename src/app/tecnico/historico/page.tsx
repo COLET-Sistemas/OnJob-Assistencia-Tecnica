@@ -114,7 +114,7 @@ export default function HistoricoPage() {
         title="Histórico"
         showNotifications={false}
         leftVariant="back"
-        onAddClick={() => router.push("/tecnico/dashboard")}
+        onAddClick={() => router.back()}
       />
 
       <div className="px-4 pb-6 pt-3 space-y-4">
@@ -223,9 +223,6 @@ export default function HistoricoPage() {
                       </div>
                       <p className="mt-1 text-xs text-gray-500 line-clamp-2">
                         {maquina.descricao}
-                      </p>
-                      <p className="mt-2 text-xs text-gray-600">
-                        {maquina.modelo}
                       </p>
                       {maquina.cliente_atual?.nome_fantasia && (
                         <p className="mt-2 text-xs text-gray-500">

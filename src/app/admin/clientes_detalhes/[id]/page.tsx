@@ -30,7 +30,6 @@ import {
   CircleX,
   MessageCircle,
   Phone,
-  ShieldCheck,
   Users,
 } from "lucide-react";
 
@@ -429,20 +428,22 @@ const ClientesDetalhesPage = () => {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    {machineDetailsHref && (
-                      <Link
-                        href={machineDetailsHref}
-                        aria-label={`Ver detalhes da máquina ${machineLabel}`}
-                        className="group inline-flex items-center gap-2 mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
-                        title="Abrir detalhes da máquina"
-                      >
-                        <span className="font-semibold text-black truncate text-base transition-colors underline-offset-2 group-hover:underline">
-                          {maquina.descricao || maquina.modelo || "Máquina"}
-                        </span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="font-semibold text-black truncate text-base">
+                        {maquina.descricao || maquina.modelo || "Máquina"}
+                      </span>
 
-                        <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 group-hover:opacity-100 transition relative -top-1" />
-                      </Link>
-                    )}
+                      {machineDetailsHref && (
+                        <Link
+                          href={machineDetailsHref}
+                          aria-label={`Ver detalhes da máquina ${machineLabel}`}
+                          title="Abrir detalhes da máquina"
+                          className="inline-flex items-center p-1 rounded-full hover:bg-slate-100 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                        >
+                          <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 hover:opacity-100 transition relative" />
+                        </Link>
+                      )}
+                    </div>
                   </div>
 
                   <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
@@ -483,9 +484,29 @@ const ClientesDetalhesPage = () => {
                   </span>
                 )}
                 {maquina.data_final_garantia && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-emerald-700">
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                    Garantia até: {formatDateOnly(maquina.data_final_garantia)}
+                  <span
+                    title={
+                      maquina.em_garantia ? "Em garantia" : "Fora da garantia"
+                    }
+                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 ${
+                      maquina.em_garantia
+                        ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                        : "border-rose-100 bg-amber-50 text-amber-700"
+                    }`}
+                  >
+                    {maquina.em_garantia ? (
+                      <CircleCheck className="h-3.5 w-3.5" />
+                    ) : (
+                      <CircleX className="h-3.5 w-3.5" />
+                    )}
+
+                    {maquina.em_garantia
+                      ? `Garantia até: ${formatDateOnly(
+                          maquina.data_final_garantia
+                        )}`
+                      : `Fora da garantia desde: ${formatDateOnly(
+                          maquina.data_final_garantia
+                        )}`}
                   </span>
                 )}
               </div>

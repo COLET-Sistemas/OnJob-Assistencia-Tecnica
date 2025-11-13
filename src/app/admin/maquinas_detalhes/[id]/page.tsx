@@ -516,20 +516,20 @@ const MaquinaDetalhesPage = () => {
                   <div className="bg-gradient-to-r from-slate-50 to-white p-4 rounded-xl">
                     <div className="flex flex-col space-y-1">
                       <div className="flex items-center gap-2">
+                        <span className="font-semibold text-black truncate text-lg">
+                          {clienteNomeExibicao}
+                        </span>
+
                         <Link
                           href={`/admin/clientes_detalhes/${clienteAtualId}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="group inline-flex items-center gap-2 font-semibold text-black truncate text-lg transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
                           title="Abrir detalhes do cliente"
+                          className="inline-flex items-center p-1 rounded-full hover:bg-slate-100 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                         >
-                          <span className="truncate">
-                            {clienteNomeExibicao}
-                          </span>
-
-                          {/* Ícone de olho (roxo) igual ao da máquina */}
-                          <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 group-hover:opacity-100 transition relative -top-1" />
+                          <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 hover:opacity-100 transition relative -top-1" />
                         </Link>
                       </div>
+
                       {clienteRazaoExibicao && (
                         <span className="text-sm text-slate-600 ">
                           {clienteRazaoExibicao}
