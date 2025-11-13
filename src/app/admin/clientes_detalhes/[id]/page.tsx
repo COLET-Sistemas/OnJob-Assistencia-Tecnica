@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useParams, useSearchParams } from "next/navigation";
 import PageHeader from "@/components/admin/ui/PageHeader";
+import AddressMapPreview from "@/components/admin/common/AddressMapPreview";
 import { clientesService } from "@/api/services/clientesService";
 import {
   HistoricoRegistro,
@@ -214,21 +214,18 @@ const ClientesDetalhesPage = () => {
     cliente && cliente.id_cliente ? (
       <Link
         href={`/admin/cadastro/clientes/editar/${cliente.id_cliente}`}
-        className="inline-flex items-center gap-2 rounded-2xl border border-transparent bg-gradient-to-r from-[var(--primary)] to-[#6541D3] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[var(--primary)]/20 transition hover:opacity-90"
+        className="inline-flex items-center gap-2 rounded border border-transparent bg-gradient-to-r from-[var(--primary)] to-[#6541D3] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[var(--primary)]/20 transition hover:opacity-90"
       >
         Editar cliente
       </Link>
     ) : undefined;
 
-  const enderecoPrincipal = useMemo(() => {
-    if (!cliente) return "";
-    const partes = [
-      cliente.endereco,
-      cliente.numero,
-      cliente.bairro,
-      cliente.cidade && cliente.uf ? `${cliente.cidade} - ${cliente.uf}` : "",
-    ].filter(Boolean);
-    return partes.join(", ");
+  const enderecoLinha = useMemo(() => {
+    if (!cliente) return "-";
+    const partes = [cliente.endereco, cliente.numero, cliente.bairro].filter(
+      Boolean
+    );
+    return partes.join(", ") || "-";
   }, [cliente]);
 
   const situacaoInfo =
@@ -238,28 +235,6 @@ const ClientesDetalhesPage = () => {
           label: cliente?.situacao || "Não informado",
           className: "bg-slate-100 border-slate-200 text-slate-600",
         };
-
-  const hasCoordinates =
-    cliente?.latitude !== undefined &&
-    cliente?.longitude !== undefined &&
-    cliente?.latitude !== null &&
-    cliente?.longitude !== null;
-  const mapsViewUrl =
-    hasCoordinates && cliente?.latitude && cliente.longitude
-      ? `https://www.google.com/maps/search/?api=1&query=${cliente.latitude},${cliente.longitude}`
-      : null;
-  const mapsDirectionsUrl =
-    hasCoordinates && cliente?.latitude && cliente.longitude
-      ? `https://www.google.com/maps/dir/?api=1&destination=${cliente.latitude},${cliente.longitude}`
-      : null;
-  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const staticMapUrl =
-    hasCoordinates &&
-    googleMapsApiKey &&
-    cliente?.latitude &&
-    cliente?.longitude
-      ? `https://maps.googleapis.com/maps/api/staticmap?center=${cliente.latitude},${cliente.longitude}&zoom=17&size=640x360&scale=2&maptype=roadmap&markers=color:red%7C${cliente.latitude},${cliente.longitude}&key=${googleMapsApiKey}`
-      : null;
 
   const handleHistoricoPageChange = (page: number) => {
     if (page === historicoPagina) return;
@@ -687,7 +662,26 @@ const ClientesDetalhesPage = () => {
                 </span>
               </div>
 
-              <dl className="mt-6 grid gap-4 md:grid-cols-2">
+              <dl className="mt-6 grid gap-4 md:grid-cols-3">
+                <div className="md:col-span-3 mb-5 mt-2">
+                  <dt className="text-sm text-slate-500">Endereço</dt>
+                  <dd className="text-base font-medium text-slate-900">
+                    {enderecoLinha}
+                  </dd>
+                  <dd className="text-base font-medium text-slate-900">
+                    CEP: {cliente.cep ? formatarCEP(cliente.cep) : "-"}
+                    {" - "}
+                    {cliente.cidade} {" - "}
+                    {cliente.uf}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-sm text-slate-500">Região</dt>
+                  <dd className="text-base font-medium text-slate-900">
+                    {cliente.regiao?.nome || cliente.regiao?.nome_regiao || "-"}
+                  </dd>
+                </div>
                 <div>
                   <dt className="text-sm text-slate-500">CNPJ</dt>
                   <dd className="text-base font-medium text-slate-900">
@@ -700,101 +694,17 @@ const ClientesDetalhesPage = () => {
                     {cliente.codigo_erp || "-"}
                   </dd>
                 </div>
-                <div>
-                  <dt className="text-sm text-slate-500">Região</dt>
-                  <dd className="text-base font-medium text-slate-900">
-                    {cliente.regiao?.nome || cliente.regiao?.nome_regiao || "-"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm text-slate-500">Cidade / UF</dt>
-                  <dd className="text-base font-medium text-slate-900">
-                    {cliente.cidade && cliente.uf
-                      ? `${cliente.cidade} - ${cliente.uf}`
-                      : "-"}
-                  </dd>
-                </div>
               </dl>
-
-              <div className="mt-6 space-y-2 rounded-2xl bg-white/70 p-4 shadow-inner">
-                <p className="text-sm font-semibold text-slate-700">Endereço</p>
-                <p className="text-sm text-slate-600">
-                  {enderecoPrincipal || "Não informado"}
-                </p>
-                <div className="flex flex-wrap gap-4 text-xs text-slate-500">
-                  {cliente.cep && <span>CEP {formatarCEP(cliente.cep)}</span>}
-                  {cliente.complemento && <span>{cliente.complemento}</span>}
-                </div>
-              </div>
             </div>
 
-            <div className="rounded-2xl border border-transparent bg-gradient-to-br from-white via-white to-slate-50 p-6 shadow-lg ring-1 ring-slate-100">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-700">
-                    Localização
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    Pré-visualização do endereço cadastrado
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 h-64 relative">
-                {staticMapUrl ? (
-                  <Image
-                    src={staticMapUrl}
-                    alt="Localização no mapa"
-                    fill
-                    className="object-cover"
-                    priority={false}
-                    unoptimized
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-500">
-                    Coordenadas do cliente indisponíveis. Atualize o endereço do
-                    cliente para visualizar o mapa.
-                  </div>
-                )}
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {mapsViewUrl ? (
-                  <a
-                    href={mapsViewUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center rounded-2xl border border-[var(--primary)]/30 bg-white px-4 py-2 text-sm font-semibold text-[var(--primary)] shadow-sm transition hover:border-[var(--primary)] hover:bg-[var(--primary)]/10"
-                  >
-                    Ver mapa
-                  </a>
-                ) : (
-                  <button
-                    type="button"
-                    disabled
-                    className="inline-flex cursor-not-allowed items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-400"
-                  >
-                    Ver mapa
-                  </button>
-                )}
-                {mapsDirectionsUrl ? (
-                  <a
-                    href={mapsDirectionsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center rounded-2xl border border-transparent bg-gradient-to-r from-[var(--primary)] to-[#6541D3] px-4 py-2 text-sm font-semibold text-white shadow-md shadow-[var(--primary)]/25 transition hover:opacity-90"
-                  >
-                    Traçar rota
-                  </a>
-                ) : (
-                  <button
-                    type="button"
-                    disabled
-                    className="inline-flex cursor-not-allowed items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-400"
-                  >
-                    Traçar rota
-                  </button>
-                )}
-              </div>
-            </div>
+            <AddressMapPreview
+              endereco={cliente.endereco}
+              numero={cliente.numero}
+              bairro={cliente.bairro}
+              cidade={cliente.cidade}
+              uf={cliente.uf}
+              cep={cliente.cep}
+            />
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-xl ring-1 ring-slate-100">

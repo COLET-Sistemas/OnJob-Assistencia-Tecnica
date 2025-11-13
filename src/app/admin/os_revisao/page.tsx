@@ -167,10 +167,10 @@ export default function RevisaoPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div className="flex items-center gap-2">
+                      <WarrantyBadge inWarranty={ordem.em_garantia} />
                       <span>
                         {ordem.maquina.numero_serie} - {ordem.maquina.descricao}
                       </span>
-                      <WarrantyBadge inWarranty={ordem.em_garantia} />
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

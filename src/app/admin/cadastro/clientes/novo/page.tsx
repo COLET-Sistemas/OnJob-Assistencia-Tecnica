@@ -132,55 +132,52 @@ const CadastrarCliente: React.FC = () => {
   // Carregar as regiões disponíveis - usando useRef para evitar duplo disparo no Strict Mode
   const regioesCache = useRef<Record<string, Regiao[]>>({});
 
-  const aplicarRegioes = useCallback(
-    (listaRegioes: Regiao[]) => {
-      setRegioes(listaRegioes);
+  const aplicarRegioes = useCallback((listaRegioes: Regiao[]) => {
+    setRegioes(listaRegioes);
 
-      setFormData((prev) => {
-        const regiaoAtual = listaRegioes.find(
-          (regiao) => regiao.id === prev.id_regiao
-        );
-
-        if (listaRegioes.length === 1) {
-          const unicaRegiao = listaRegioes[0];
-
-          if (prev.id_regiao === unicaRegiao.id) {
-            return prev.regiao?.id === unicaRegiao.id
-              ? prev
-              : { ...prev, regiao: unicaRegiao };
-          }
-
-          return {
-            ...prev,
-            id_regiao: unicaRegiao.id,
-            regiao: unicaRegiao,
-          };
-        }
-
-        if (regiaoAtual) {
-          return prev.regiao?.id === regiaoAtual.id
-            ? prev
-            : { ...prev, regiao: regiaoAtual };
-        }
-
-        if (prev.id_regiao || prev.regiao) {
-          return { ...prev, id_regiao: undefined, regiao: undefined };
-        }
-
-        return prev;
-      });
+    setFormData((prev) => {
+      const regiaoAtual = listaRegioes.find(
+        (regiao) => regiao.id === prev.id_regiao
+      );
 
       if (listaRegioes.length === 1) {
-        setFormErrors((prev) => {
-          if (!prev.id_regiao) return prev;
-          const updated = { ...prev };
-          delete updated.id_regiao;
-          return updated;
-        });
+        const unicaRegiao = listaRegioes[0];
+
+        if (prev.id_regiao === unicaRegiao.id) {
+          return prev.regiao?.id === unicaRegiao.id
+            ? prev
+            : { ...prev, regiao: unicaRegiao };
+        }
+
+        return {
+          ...prev,
+          id_regiao: unicaRegiao.id,
+          regiao: unicaRegiao,
+        };
       }
-    },
-    []
-  );
+
+      if (regiaoAtual) {
+        return prev.regiao?.id === regiaoAtual.id
+          ? prev
+          : { ...prev, regiao: regiaoAtual };
+      }
+
+      if (prev.id_regiao || prev.regiao) {
+        return { ...prev, id_regiao: undefined, regiao: undefined };
+      }
+
+      return prev;
+    });
+
+    if (listaRegioes.length === 1) {
+      setFormErrors((prev) => {
+        if (!prev.id_regiao) return prev;
+        const updated = { ...prev };
+        delete updated.id_regiao;
+        return updated;
+      });
+    }
+  }, []);
 
   const carregarRegioesPorUF = useCallback(
     async (uf: string) => {
