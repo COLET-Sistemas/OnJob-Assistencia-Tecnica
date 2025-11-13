@@ -16,10 +16,11 @@ import type { Maquina } from "@/types/admin/cadastro/maquinas";
 import {
   AlertCircle,
   CalendarDays,
-  FileText,
-  Settings,
   ShieldCheck,
-  Tag,
+  CircleCheck,
+  CircleX,
+  Pencil,
+  Eye,
 } from "lucide-react";
 
 const HISTORICO_PAGE_SIZE_OPTIONS = [10, 15, 25, 50];
@@ -71,6 +72,7 @@ type MaquinaDetalhe = Partial<Maquina> & {
   id_cliente_atual?: number;
   numero_patrimonio?: string;
   data_instalacao?: string;
+  regiao?: string;
   cliente_atual?: {
     id_cliente?: number;
     nome_fantasia?: string;
@@ -207,8 +209,9 @@ const MaquinaDetalhesPage = () => {
     setHistoricoPageSize(size);
   };
 
-  const clienteAtualId =
+  const rawClienteId =
     maquina?.cliente_atual?.id_cliente ?? maquina?.id_cliente_atual ?? null;
+  const clienteAtualId = rawClienteId === 1 ? null : rawClienteId;
   const clienteNomeFantasia = maquina?.cliente_atual?.nome_fantasia?.trim();
   const clienteRazaoSocial = maquina?.cliente_atual?.razao_social?.trim();
   const clienteNomeExibicao =
@@ -227,9 +230,10 @@ const MaquinaDetalhesPage = () => {
       <div className="flex flex-wrap gap-2">
         <Link
           href={`/admin/cadastro/maquinas/editar/${maquinaIdParam}`}
-          className="inline-flex items-center gap-2 rounded-2xl border border-transparent bg-gradient-to-r from-[var(--primary)] to-[#6541D3] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[var(--primary)]/20 transition hover:opacity-90"
+          className="px-5 py-2.5 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all duration-300 shadow-sm border bg-[var(--primary)] text-white border-[var(--primary)] hover:shadow-lg hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
         >
-          Editar máquina
+          <Pencil size={18} />
+          Editar Máquina
         </Link>
       </div>
     ) : undefined;
@@ -258,39 +262,6 @@ const MaquinaDetalhesPage = () => {
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }, [garantiaExpirationDate]);
 
-  const highlightItems = useMemo(
-    () =>
-      [
-        {
-          label: "Número de série",
-          value: maquina?.numero_serie,
-          icon: Tag,
-        },
-        {
-          label: "Modelo",
-          value: maquina?.modelo,
-          icon: Settings,
-        },
-        {
-          label: "Nota fiscal de venda",
-          value: maquina?.nota_fiscal_venda,
-          icon: FileText,
-        },
-        {
-          label: "1° venda",
-          value: maquina?.data_1a_venda
-            ? formatDateOnly(maquina.data_1a_venda)
-            : null,
-          icon: CalendarDays,
-        },
-      ].filter((item) => Boolean(item.value)),
-    [
-      maquina?.data_1a_venda,
-      maquina?.modelo,
-      maquina?.nota_fiscal_venda,
-      maquina?.numero_serie,
-    ]
-  );
   const renderEmptyState = (message: string) => (
     <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-200 bg-gradient-to-b from-white to-slate-50 px-6 py-8 text-center">
       <AlertCircle className="h-5 w-5 text-slate-400" />
@@ -473,9 +444,21 @@ const MaquinaDetalhesPage = () => {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-sm text-slate-500">Máquina</p>
-                  <h2 className="text-3xl font-semibold text-slate-900">
-                    {maquina.descricao || maquina.modelo || "Máquina"}
-                  </h2>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-3xl font-semibold text-slate-900">
+                      {maquina.descricao || maquina.modelo || "Máquina"}
+                    </h2>
+                    <div
+                      className="w-6 h-6 flex items-center justify-center shrink-0 transform"
+                      title={garantiaAtiva ? "Em garantia" : "Fora da garantia"}
+                    >
+                      {garantiaAtiva ? (
+                        <CircleCheck className="w-6 h-6 text-emerald-500" />
+                      ) : (
+                        <CircleX className="w-6 h-6 text-amber-500" />
+                      )}
+                    </div>
+                  </div>
                   {maquina.numero_serie && (
                     <p className="text-sm text-slate-500">
                       Número de Série: {maquina.numero_serie}
@@ -491,51 +474,85 @@ const MaquinaDetalhesPage = () => {
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-3 md:grid-cols-2">
-                {highlightItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <div
-                      key={item.label}
-                      className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 shadow-inner shadow-white/40"
-                    >
-                      <span className="rounded-2xl bg-white p-2 shadow">
-                        <Icon className="h-4 w-4 text-[var(--primary)]" />
-                      </span>
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          {item.label}
-                        </p>
-                        <p className="text-sm font-medium text-slate-900">
-                          {item.value}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="mt-6 grid gap-3 sm:grid-cols-4">
+                <div>
+                  <dt className="text-sm text-slate-500">Modelo</dt>
+                  <dd className="text-base font-medium text-slate-900">
+                    {maquina.modelo || "-"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-sm text-slate-500">Data 1ª Venda</dt>
+                  <dd className="text-base font-medium text-slate-900">
+                    {formatDateOnly(maquina.data_1a_venda)}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-sm text-slate-500">Nota Fiscal Venda</dt>
+                  <dd className="text-base font-medium text-slate-900">
+                    {maquina.nota_fiscal_venda || "-"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-sm text-slate-500">
+                    Data Final Garantia
+                  </dt>
+                  <dd className="text-base font-medium text-slate-900">
+                    {formatDateOnly(maquina.data_final_garantia)}
+                  </dd>
+                </div>
               </div>
 
-              <div className="mt-6 rounded-2xl bg-white/70 p-4 shadow-inner">
-                <p className="text-sm font-semibold text-slate-700">
-                  Cliente atual
-                </p>
+              <div className="mt-4 pt-6 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-base font-semibold text-slate-800">
+                    Cliente atual
+                  </h3>
+                </div>
                 {clienteAtualId ? (
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-600">
-                    <div className="flex flex-col">
-                      <span className="text-base font-semibold text-slate-900">
-                        {clienteNomeExibicao}
-                      </span>
+                  <div className="bg-gradient-to-r from-slate-50 to-white p-4 rounded-xl">
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/admin/clientes_detalhes/${clienteAtualId}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="group inline-flex items-center gap-2 font-semibold text-black truncate text-lg transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                          title="Abrir detalhes do cliente"
+                        >
+                          <span className="truncate">
+                            {clienteNomeExibicao}
+                          </span>
+
+                          {/* Ícone de olho (roxo) igual ao da máquina */}
+                          <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 group-hover:opacity-100 transition relative -top-1" />
+                        </Link>
+                      </div>
                       {clienteRazaoExibicao && (
-                        <span className="text-xs text-slate-500">
+                        <span className="text-sm text-slate-600 ">
                           {clienteRazaoExibicao}
                         </span>
                       )}
+                      {maquina?.cliente_atual?.cidade &&
+                        maquina?.cliente_atual?.uf && (
+                          <span className="text-xs text-slate-500 ml-4">
+                            {maquina.cliente_atual.cidade},{" "}
+                            {maquina.cliente_atual.uf}
+                          </span>
+                        )}
                     </div>
                   </div>
                 ) : (
-                  <p className="mt-2 text-sm text-slate-500">
-                    Nenhum cliente esta vinculado a esta máquina no momento.
-                  </p>
+                  <div className="bg-gradient-to-r from-slate-50 to-white p-4 rounded-xl">
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <div className="w-2 h-2 bg-slate-300 rounded-full"></div>
+                      <span className="text-sm">
+                        Nenhum cliente está vinculado a esta máquina no momento
+                      </span>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -546,7 +563,7 @@ const MaquinaDetalhesPage = () => {
                     Status da garantia
                   </p>
                   <p className="text-sm text-slate-500">
-                    Acompanhe o ciclo de vida da máquina
+                    Acompanhe o ciclo de garantia da máquina
                   </p>
                 </div>
                 <ShieldCheck
@@ -568,13 +585,12 @@ const MaquinaDetalhesPage = () => {
                     Valida até {formatDateOnly(maquina.data_final_garantia)}
                   </p>
                 )}
-                {diasRestantesGarantia !== null && (
-                  <p className="text-xs text-slate-500">
-                    {diasRestantesGarantia > 0
-                      ? `${diasRestantesGarantia} dia(s) restante(s)`
-                      : "Garantia vencida"}
-                  </p>
-                )}
+                {diasRestantesGarantia !== null &&
+                  diasRestantesGarantia > 0 && (
+                    <p className="text-xs text-slate-500">
+                      {diasRestantesGarantia} dia(s) restante(s)
+                    </p>
+                  )}
               </div>
 
               <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3">

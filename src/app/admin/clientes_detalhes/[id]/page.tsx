@@ -219,7 +219,7 @@ const ClientesDetalhesPage = () => {
         className="px-5 py-2.5 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all duration-300 shadow-sm border bg-[var(--primary)] text-white border-[var(--primary)] hover:shadow-lg hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
       >
         <Pencil size={18} />
-        Editar cliente
+        Editar Cliente
       </Link>
     ) : undefined;
 
