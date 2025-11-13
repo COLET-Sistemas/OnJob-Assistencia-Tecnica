@@ -21,6 +21,7 @@ import {
   Bell,
   BellOff,
   CalendarDays,
+  Eye,
   History,
   Settings,
   Mail,
@@ -405,29 +406,56 @@ const ClientesDetalhesPage = () => {
 
     return (
       <div className="grid gap-3 lg:grid-cols-2">
-        {cliente.maquinas.map((maquina) => (
-          <div
-            key={`${maquina.id ?? maquina.id_maquina}-${maquina.numero_serie}`}
-            className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">
-                  {maquina.descricao || maquina.modelo || "Máquina"}
-                </p>
-                <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                  {maquina.modelo && (
-                    <span className="text-slate-700">
-                      Modelo: {maquina.modelo}
-                    </span>
-                  )}
-                  {maquina.numero_serie && (
-                    <span>{`Número de Série: ${maquina.numero_serie}`}</span>
-                  )}
+        {cliente.maquinas.map((maquina) => {
+          const machineId = maquina.id_maquina ?? maquina.id;
+          const machineLabel =
+            maquina.descricao ||
+            maquina.modelo ||
+            maquina.numero_serie ||
+            "máquina vinculada";
+          const machineDetailsHref = machineId
+            ? `/admin/maquinas_detalhes/${machineId}`
+            : undefined;
+
+          return (
+            <div
+              key={`${maquina.id ?? maquina.id_maquina}-${
+                maquina.numero_serie
+              }`}
+              className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    {machineDetailsHref && (
+                      <Link
+                        href={machineDetailsHref}
+                        aria-label={`Ver detalhes da máquina ${machineLabel}`}
+                        className="group inline-flex items-center gap-2 mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                        title="Abrir detalhes da máquina"
+                      >
+                        <span className="font-semibold text-black truncate text-base transition-colors underline-offset-2 group-hover:underline">
+                          {maquina.descricao || maquina.modelo || "Máquina"}
+                        </span>
+
+                        <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 group-hover:opacity-100 transition relative -top-1" />
+                      </Link>
+                    )}
+                  </div>
+
+                  <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                    {maquina.modelo && (
+                      <span className="text-slate-700">
+                        Modelo: {maquina.modelo}
+                      </span>
+                    )}
+                    {maquina.numero_serie && (
+                      <span>{`Número de Série: ${maquina.numero_serie}`}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              {maquina.situacao && (
-                <div className="flex items-center gap-2">
+
+                {maquina.situacao && (
                   <span
                     className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
                       maquina.situacao === "I"
@@ -437,31 +465,31 @@ const ClientesDetalhesPage = () => {
                   >
                     {maquina.situacao === "I" ? "Inativa" : "Ativa"}
                   </span>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            <div className="mt-3 flex flex-wrap gap-2 text-[12px] font-semibold text-slate-600">
-              {maquina.data_1a_venda && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
-                  <CalendarDays className="h-3.5 w-3.5 text-slate-500" />
-                  1ª venda: {formatDateOnly(maquina.data_1a_venda)}
-                </span>
-              )}
-              {maquina.nota_fiscal_venda && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
-                  NF: {maquina.nota_fiscal_venda}
-                </span>
-              )}
-              {maquina.data_final_garantia && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-emerald-700">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  Garantia até: {formatDateOnly(maquina.data_final_garantia)}
-                </span>
-              )}
+              <div className="mt-3 flex flex-wrap gap-2 text-[12px] font-semibold text-slate-600">
+                {maquina.data_1a_venda && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                    <CalendarDays className="h-3.5 w-3.5 text-slate-500" />
+                    1ª venda: {formatDateOnly(maquina.data_1a_venda)}
+                  </span>
+                )}
+                {maquina.nota_fiscal_venda && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                    NF: {maquina.nota_fiscal_venda}
+                  </span>
+                )}
+                {maquina.data_final_garantia && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-emerald-700">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Garantia até: {formatDateOnly(maquina.data_final_garantia)}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };
