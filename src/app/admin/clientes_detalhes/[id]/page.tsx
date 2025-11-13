@@ -23,6 +23,7 @@ import {
   CalendarDays,
   Eye,
   History,
+  Pencil,
   Settings,
   Mail,
   CircleCheck,
@@ -215,8 +216,9 @@ const ClientesDetalhesPage = () => {
     cliente && cliente.id_cliente ? (
       <Link
         href={`/admin/cadastro/clientes/editar/${cliente.id_cliente}`}
-        className="inline-flex items-center gap-2 rounded border border-transparent bg-gradient-to-r from-[var(--primary)] to-[#6541D3] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[var(--primary)]/20 transition hover:opacity-90"
+        className="px-5 py-2.5 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all duration-300 shadow-sm border bg-[var(--primary)] text-white border-[var(--primary)] hover:shadow-lg hover:bg-[var(--primary)]/90 hover:border-[var(--primary)]/90"
       >
+        <Pencil size={18} />
         Editar cliente
       </Link>
     ) : undefined;

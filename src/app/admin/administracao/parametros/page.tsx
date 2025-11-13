@@ -176,7 +176,7 @@ const ParametrizacaoPage = () => {
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
+          <tbody className="bg-white divide-y divide-gray-300">
             {listaParametros.map((parametro) => {
               const estaSalvando = savingId === parametro.id;
               const adminNaoPodeAlterar =
