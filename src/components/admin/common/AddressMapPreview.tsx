@@ -123,7 +123,7 @@ const AddressMapPreview: React.FC<AddressMapPreviewProps> = ({
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {renderButton(mapsViewUrl, "Ver mapa", "neutral")}
-        {renderButton(mapsDirectionsUrl, "Tracar rota", "primary")}
+        {renderButton(mapsDirectionsUrl, "Traçar rota", "primary")}
       </div>
     </div>
   );
