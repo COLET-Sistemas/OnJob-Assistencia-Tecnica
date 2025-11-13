@@ -86,7 +86,9 @@ const renderHistoricoField = (
       <p className="text-[11px] uppercase tracking-wide text-slate-400">
         {label}
       </p>
-      <p className="text-sm text-slate-700">{normalizedValue}</p>
+      <div className="text-sm text-slate-700 whitespace-pre-wrap">
+        {normalizedValue}
+      </div>
     </div>
   );
 };
