@@ -102,7 +102,7 @@ class FATFotosService {
     };
 
     const response = await fetch(
-      this.buildUrl(`/fat_fotos?id=${id_fat_foto}`),
+      this.buildUrl(`/fats_fotos?id=${id_fat_foto}`),
       {
         method: "PUT",
         headers,
@@ -158,7 +158,7 @@ class FATFotosService {
     };
 
     const response = await fetch(
-      this.buildUrl(`/fat_fotos?id=${id_fat_foto}`),
+      this.buildUrl(`/fats_fotos?id=${id_fat_foto}`),
       {
         method: "DELETE",
         headers,
