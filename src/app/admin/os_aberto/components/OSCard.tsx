@@ -12,8 +12,8 @@ import {
   Mail,
   ChevronDown,
   ChevronUp,
-  CircleCheck,
-  CircleX,
+  ShieldCheck,
+  ShieldX,
   AlertTriangle,
   MessageCircle,
   ExternalLink,
@@ -184,8 +184,21 @@ const OSCard: React.FC<OSCardProps> = ({
               {/* OS Number - Left aligned */}
               <div className="md:col-span-1 flex items-center">
                 <div className="flex flex-col">
-                  <div className="text-lg font-semibold text-gray-700">
+                  <div className="text-lg font-semibold text-gray-700 flex items-center gap-2">
                     #{os.id_os}
+                    <span
+                      title={
+                        os.em_garantia
+                          ? "OS em garantia"
+                          : "OS fora da garantia"
+                      }
+                    >
+                      {os.em_garantia ? (
+                        <ShieldCheck className="w-5 h-5 flex-shrink-0 text-emerald-500" />
+                      ) : (
+                        <ShieldX className="w-5 h-5 flex-shrink-0 text-amber-500" />
+                      )}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -196,30 +209,22 @@ const OSCard: React.FC<OSCardProps> = ({
                   Cliente / Cidade
                 </div>
 
-                {clienteHistoricoHref ? (
-                  <Link
-                    href={clienteHistoricoHref}
-                    onClick={(e) => e.stopPropagation()}
-                    className="group inline-flex items-center gap-2 mt-1 font-semibold text-black truncate text-base transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
-                    title="Abrir detalhes do cliente"
-                  >
-                    <span className="truncate">
-                      {os.cliente.nome || "Cliente"}
-                    </span>
+                <div className="flex items-center gap-2 mt-1 font-semibold text-black truncate text-base">
+                  <span className="truncate">
+                    {os.cliente.nome || "Cliente"}
+                  </span>
 
-                    {/* Ícone de olho (roxo) igual ao da máquina */}
-                    <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 group-hover:opacity-100 transition relative -top-1" />
-                  </Link>
-                ) : (
-                  <div className="flex items-center gap-2 mt-1 font-semibold text-gray-900 truncate text-base">
-                    <span className="truncate">
-                      {os.cliente.nome || "Cliente"}
-                    </span>
-
-                    {/* Mesmo ícone, mas sem link */}
-                    <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 relative -top-1" />
-                  </div>
-                )}
+                  {clienteHistoricoHref && (
+                    <Link
+                      href={clienteHistoricoHref}
+                      onClick={(e) => e.stopPropagation()}
+                      title="Abrir detalhes do cliente"
+                      className="inline-flex items-center p-1 rounded-full hover:bg-slate-100 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                    >
+                      <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 hover:opacity-100 transition relative " />
+                    </Link>
+                  )}
+                </div>
 
                 <div className="text-sm text-gray-600 flex items-center gap-1.5 mt-0.5">
                   <MapPin className="w-3.5 h-3.5 flex-shrink-0 my-auto" />
@@ -235,38 +240,24 @@ const OSCard: React.FC<OSCardProps> = ({
                   Máquina / Série
                 </div>
 
-                {maquinaDetalhesHref ? (
-                  <Link
-                    href={maquinaDetalhesHref}
-                    onClick={(e) => e.stopPropagation()}
-                    className="group inline-flex items-center gap-2 mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
-                    title="Abrir detalhes da máquina"
-                  >
-                    <span className="font-semibold text-black truncate text-base transition-colors underline-offset-2 group-hover:underline">
-                      {os.maquina.descricao || "Máquina"}
-                    </span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="font-semibold text-black truncate text-base">
+                    {os.maquina.descricao || "Máquina"}
+                  </span>
 
-                    {/* Ícone de olho mais para cima */}
-                    <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 group-hover:opacity-100 transition relative -top-1" />
-                  </Link>
-                ) : (
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="font-semibold text-gray-900 truncate text-base">
-                      {os.maquina.descricao || "Máquina"}
-                    </div>
-
-                    {/* Ícone de olho mais para cima */}
-                    <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 relative -top-1" />
-                  </div>
-                )}
-
-                {/* Linha da série agora com ÍCONE DE GARANTIA apenas aqui */}
-                <div className="text-sm text-gray-600 flex items-center gap-1.5 mt-0.5">
-                  {os.em_garantia ? (
-                    <CircleCheck className="w-4.5 h-4.5 flex-shrink-0 text-emerald-500" />
-                  ) : (
-                    <CircleX className="w-4.5 h-4.5 flex-shrink-0 text-amber-500" />
+                  {maquinaDetalhesHref && (
+                    <Link
+                      href={maquinaDetalhesHref}
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center p-1 rounded-full hover:bg-slate-100 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                      title="Abrir detalhes da máquina"
+                    >
+                      <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 hover:opacity-100 transition relative" />
+                    </Link>
                   )}
+                </div>
+
+                <div className="text-sm text-gray-600 flex items-center gap-1.5 mt-0.5">
                   <span className="my-auto">{os.maquina.numero_serie}</span>
                 </div>
               </div>

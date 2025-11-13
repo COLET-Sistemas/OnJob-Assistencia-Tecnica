@@ -38,7 +38,6 @@ import {
 } from "@/api/services/ordensServicoService";
 import FATCard from "@/components/tecnico/FATCard";
 import { Loading } from "@/components/LoadingPersonalizado";
-import type { Maquina } from "@/types/admin/cadastro/maquinas";
 import { MAQUINA_PREVIEW_CACHE_KEY } from "@/constants/storageKeys";
 
 // import OSActionModal from "@/components/tecnico/OSActionModal";
@@ -503,28 +502,21 @@ export default function OSDetalheMobile() {
   }, [fetchOS, params?.id]);
 
   useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      !os?.maquina?.id
-    ) {
+    if (typeof window === "undefined" || !os?.maquina?.id) {
       return;
     }
 
     try {
-      const previewPayload: Partial<Maquina> = {
+      const previewPayload = {
         id: os.maquina.id,
         numero_serie: os.maquina.numero_serie,
         modelo: os.maquina.modelo,
         descricao: os.maquina.descricao,
         observacoes: os.maquina.observacoes,
-        marca: os.maquina.marca,
-        ano_fabricacao: os.maquina.ano_fabricacao,
-        horas_trabalhadas: os.maquina.horas_trabalhadas,
-        ultima_manutencao: os.maquina.ultima_manutencao,
-        data_1a_venda: os.maquina.data_1a_venda,
-        data_final_garantia: os.maquina.data_final_garantia,
+        data_1a_venda: os.maquina.data_1a_venda || "",
+        data_final_garantia: os.maquina.data_final_garantia || "",
         garantia: Boolean(os.em_garantia),
-        situacao: os.maquina.situacao,
+        nota_fiscal_venda: "", 
       };
 
       window.localStorage.setItem(

@@ -29,8 +29,8 @@ import {
   XCircle,
   UserX,
   RefreshCw,
-  CircleCheck,
-  CircleX,
+  ShieldCheck,
+  ShieldX,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -1775,7 +1775,7 @@ const ConsultaOSPage: React.FC = () => {
             <div className="col-span-1">OS</div>
             <div className="col-span-3 md:col-span-2">Cliente / Cidade</div>
             <div className="col-span-5 md:col-span-5 lg:col-span-4">
-              Série / Descrição
+              Descrição / Série
             </div>
             <div className="hidden md:block md:col-span-1 text-center">
               Data
@@ -1804,9 +1804,23 @@ const ConsultaOSPage: React.FC = () => {
                 <div className="grid grid-cols-12 gap-x-1 items-center">
                   {/* OS */}
                   <div className="col-span-1">
-                    <span className="text-sm font-bold text-[var(--primary)]">
-                      #{item.id_os}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-bold text-[var(--primary)]">
+                        #{item.id_os}
+                      </span>
+                      <div
+                        className="w-5 h-5 flex items-center justify-center shrink-0 ml-2"
+                        title={
+                          item.em_garantia ? "OS em garantia" : "OS fora da garantia"
+                        }
+                      >
+                        {item.em_garantia ? (
+                          <ShieldCheck className="w-4.5 h-4.5 text-emerald-500" />
+                        ) : (
+                          <ShieldX className="w-4.5 h-4.5 text-amber-500" />
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Cliente */}
@@ -1828,27 +1842,11 @@ const ConsultaOSPage: React.FC = () => {
                   {/* Série / Descrição */}
                   <div className="col-span-5 md:col-span-5 lg:col-span-4">
                     <div className="flex flex-col">
-                      <div className="flex items-center gap-1 text-xs font-medium text-gray-700 min-w-0">
-                        <div
-                          className="w-4 h-4 flex items-center justify-center shrink-0 -translate-y-0.5 transform"
-                          title={
-                            item.em_garantia
-                              ? "Em garantia"
-                              : "Fora da garantia"
-                          }
-                        >
-                          {item.em_garantia ? (
-                            <CircleCheck className="w-4 h-4 text-emerald-500" />
-                          ) : (
-                            <CircleX className="w-4 h-4 text-amber-500" />
-                          )}
-                        </div>
-                        <span className="truncate">
-                          {item.maquina?.numero_serie || "-"}
-                        </span>
-                      </div>
-                      <span className="text-xs text-gray-500 truncate">
+                      <span className="text-xs font-medium text-gray-700 truncate">
                         {(item.maquina?.descricao || "-").substring(0, 80)}
+                      </span>
+                      <span className="text-xs text-gray-500 truncate">
+                        {item.maquina?.numero_serie || "-"}
                       </span>
                     </div>
                   </div>
