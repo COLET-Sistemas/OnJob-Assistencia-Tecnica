@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import { Loading } from "@/components/LoadingPersonalizado";
@@ -15,10 +21,11 @@ import {
   AlertTriangle,
   Settings,
   FileText,
-  Building,
   History,
   CircleCheck,
   CircleX,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 type SectionCardProps = {
@@ -57,6 +64,27 @@ const formatDateOnly = (value?: string | null) => {
   return value;
 };
 
+const HISTORICO_PAGE_SIZE = 10;
+
+const renderHistoricoField = (
+  label: string,
+  value?: string | number | null
+): ReactNode => {
+  const normalizedValue = value?.toString().trim();
+  if (!normalizedValue) return null;
+
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-wide text-slate-400">
+        {label}
+      </p>
+      <div className="text-sm text-slate-700 whitespace-pre-wrap">
+        {normalizedValue}
+      </div>
+    </div>
+  );
+};
+
 export default function MaquinaDetalheTecnicoPage() {
   const router = useRouter();
   const params = useParams();
@@ -77,6 +105,8 @@ export default function MaquinaDetalheTecnicoPage() {
   >([]);
   const [historicoLoading, setHistoricoLoading] = useState(false);
   const [historicoError, setHistoricoError] = useState<string | null>(null);
+  const [historicoTotalRegistros, setHistoricoTotalRegistros] = useState(0);
+  const [historicoPagina, setHistoricoPagina] = useState(1);
   const [prefetchedMaquina, setPrefetchedMaquina] =
     useState<Partial<Maquina> | null>(null);
 
@@ -117,42 +147,42 @@ export default function MaquinaDetalheTecnicoPage() {
     };
   }, [maquinaId, refreshKey]);
 
-  useEffect(() => {
-    let active = true;
-
+  const fetchHistorico = useCallback(async () => {
     if (!maquinaId) {
       setHistoricoRegistros([]);
+      setHistoricoTotalRegistros(0);
       setHistoricoError(null);
       setHistoricoLoading(false);
-
-      return () => {
-        active = false;
-      };
+      return;
     }
 
-    setHistoricoLoading(true);
-    setHistoricoError(null);
-
-    historicoService
-      .getHistorico({ id_maquina: maquinaId })
-      .then((response) => {
-        if (!active) return;
-        setHistoricoRegistros(response.dados ?? []);
-      })
-      .catch(() => {
-        if (!active) return;
-        setHistoricoError("Não foi possível carregar o histórico da máquina.");
-        setHistoricoRegistros([]);
-      })
-      .finally(() => {
-        if (active) {
-          setHistoricoLoading(false);
-        }
+    try {
+      setHistoricoLoading(true);
+      setHistoricoError(null);
+      const response = await historicoService.getHistorico({
+        id_maquina: maquinaId,
+        nro_pagina: historicoPagina,
+        qtde_registros: HISTORICO_PAGE_SIZE,
       });
 
-    return () => {
-      active = false;
-    };
+      setHistoricoRegistros(response?.dados ?? []);
+      setHistoricoTotalRegistros(response?.total_registros ?? 0);
+    } catch (fetchError) {
+      console.error("Erro ao carregar historico da maquina:", fetchError);
+      setHistoricoRegistros([]);
+      setHistoricoTotalRegistros(0);
+      setHistoricoError("Não foi possível carregar o histórico da máquina.");
+    } finally {
+      setHistoricoLoading(false);
+    }
+  }, [maquinaId, historicoPagina]);
+
+  useEffect(() => {
+    fetchHistorico();
+  }, [fetchHistorico]);
+
+  useEffect(() => {
+    setHistoricoPagina(1);
   }, [maquinaId]);
 
   useEffect(() => {
@@ -186,11 +216,12 @@ export default function MaquinaDetalheTecnicoPage() {
       ? "Máquina inativa"
       : maquinaParaExibir?.situacao;
 
-  const garantiaLabel = maquinaParaExibir?.garantia
-    ? "Em garantia"
-    : "Garantia encerrada";
-
   const shouldShowLoading = loading && !prefetchedMaquina;
+  const historicoTotalPaginas = Math.max(
+    1,
+    Math.ceil(historicoTotalRegistros / HISTORICO_PAGE_SIZE)
+  );
+  const historicoTemMultiplasPaginas = historicoTotalPaginas > 1;
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -225,15 +256,36 @@ export default function MaquinaDetalheTecnicoPage() {
               title="Informações principais"
               icon={<Settings className="h-4 w-4" />}
             >
-              <div className="rounded-2xl bg-slate-50 p-3">
-                <p className="text-base font-semibold text-slate-900">
-                  {maquinaParaExibir.numero_serie}
-                </p>
-                <p className="text-sm text-slate-500">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-base font-semibold text-slate-900 truncate">
+                    {maquinaParaExibir.numero_serie}
+                  </p>
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full ${
+                      maquinaParaExibir?.situacao === "A"
+                        ? "bg-emerald-500"
+                        : maquinaParaExibir?.situacao === "I"
+                        ? "bg-rose-500"
+                        : "bg-slate-400"
+                    }`}
+                    title={situacaoLabel}
+                    aria-label={situacaoLabel}
+                  />
+                  <div className="flex items-start ml-auto mt-[-6px]">
+                    {maquinaParaExibir?.garantia ? (
+                      <CircleCheck className="w-5 h-5 text-emerald-500" />
+                    ) : (
+                      <CircleX className="w-5 h-5 text-amber-500" />
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 truncate">
                   {maquinaParaExibir.descricao}
                 </p>
               </div>
-              <div className="grid grid-cols-1 gap-3">
+
+              <div className="grid grid-cols-2 gap-3">
                 <InfoItem
                   label="Modelo"
                   value={
@@ -243,153 +295,192 @@ export default function MaquinaDetalheTecnicoPage() {
                       : "N/A"
                   }
                 />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {situacaoLabel && (
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      maquinaParaExibir?.situacao === "A"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-amber-50 text-amber-700"
-                    }`}
-                  >
-                    {situacaoLabel}
-                  </span>
+                {maquinaParaExibir?.data_1a_venda && (
+                  <InfoItem
+                    label="Data 1ª Venda"
+                    value={formatDateOnly(maquinaParaExibir.data_1a_venda)}
+                  />
                 )}
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    maquinaParaExibir?.garantia
-                      ? "bg-sky-50 text-sky-700"
-                      : "bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  {garantiaLabel}
-                </span>
               </div>
-            </SectionCard>
 
-            {maquinaParaExibir?.cliente_atual && (
-              <SectionCard
-                title="Cliente atual"
-                icon={<Building className="h-4 w-4" />}
-              >
-                <div className="rounded-2xl border border-slate-100 p-3">
-                  <p className="font-semibold text-slate-900">
-                    {maquinaParaExibir.cliente_atual?.nome_fantasia}
-                  </p>
-                  {maquinaParaExibir.cliente_atual?.razao_social && (
-                    <p className="text-sm text-slate-600 mt-1">
-                      {maquinaParaExibir.cliente_atual?.razao_social}
-                    </p>
+              {(maquinaParaExibir?.nota_fiscal_venda ||
+                maquinaParaExibir?.data_final_garantia) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {maquinaParaExibir?.nota_fiscal_venda && (
+                    <InfoItem
+                      label="Nota Fiscal Venda"
+                      value={maquinaParaExibir.nota_fiscal_venda}
+                    />
+                  )}
+                  {maquinaParaExibir?.data_final_garantia && (
+                    <InfoItem
+                      label="Data Final Garantia"
+                      value={formatDateOnly(
+                        maquinaParaExibir.data_final_garantia
+                      )}
+                    />
                   )}
                 </div>
-              </SectionCard>
-            )}
+              )}
+
+              {(maquinaParaExibir?.cliente_atual?.nome_fantasia ||
+                maquinaParaExibir?.cliente_atual?.razao_social) && (
+                <div className="grid grid-cols-1 gap-3">
+                  {maquinaParaExibir?.cliente_atual?.razao_social && (
+                    <InfoItem
+                      label="Razão Social"
+                      value={maquinaParaExibir.cliente_atual.razao_social}
+                    />
+                  )}
+                </div>
+              )}
+            </SectionCard>
 
             {maquinaParaExibir?.observacoes && (
               <SectionCard
                 title="Observações da Máquina"
                 icon={<FileText className="h-4 w-4" />}
               >
-                <p className="text-sm leading-relaxed text-slate-700">
-                  {maquinaParaExibir.observacoes}
-                </p>
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">
+                    {maquinaParaExibir.observacoes}
+                  </p>
+                </div>
               </SectionCard>
             )}
 
-            {/* Seção de Histórico */}
             <SectionCard
-              title="Histórico de Atendimentos"
+              title="Histórico de atendimentos"
               icon={<History className="h-4 w-4" />}
             >
               {historicoLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loading />
+                <div className="rounded-2xl border border-slate-100 bg-slate-50">
+                  <Loading text="Buscando histórico da máquina..." />
                 </div>
               ) : historicoError ? (
-                <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-rose-700">
-                  <div className="flex items-center gap-2 text-sm font-medium">
+                <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-rose-700">
+                  <div className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
                     <span>{historicoError}</span>
                   </div>
                 </div>
-              ) : historicoRegistros.length > 0 ? (
-                <div className="space-y-3">
-                  {historicoRegistros.map((registro) => (
-                    <div
-                      key={registro.id_fat}
-                      className="rounded-2xl border border-slate-100 bg-slate-50 p-4"
-                    >
-                      <div className="mb-3 flex items-start justify-between">
+              ) : historicoRegistros.length === 0 ? (
+                <p className="text-sm text-slate-500">
+                  Nenhum atendimento registrado para esta máquina.
+                </p>
+              ) : (
+                <>
+                  <div className="space-y-0">
+                    {historicoRegistros.map((registro) => (
+                      <article
+                        key={`${registro.id_fat}-${registro.numero_os}-${registro.data_atendimento}`}
+                        className="mb-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm
+             grid gap-4 md:grid-cols-2"
+                      >
+                        {/* COLUNA ESQUERDA */}
                         <div>
-                          <p className="font-semibold text-slate-900">
-                            OS #{registro.numero_os} - FAT #{registro.id_fat}
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            {formatDateOnly(registro.data_atendimento)} -{" "}
-                            {registro.nome_tecnico}
-                          </p>
+                          <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3 text-sm text-slate-700">
+                            <span className="font-semibold text-slate-900">
+                              OS #{registro.numero_os ?? "-"}
+                            </span>
+                            <span className="font-semibold text-slate-900">
+                              FAT #{registro.id_fat ?? "-"}
+                            </span>
+                            <span className="font-semibold text-slate-900">
+                              {formatDateOnly(registro.data_atendimento)}
+                            </span>
+                            <span className="ml-auto text-xs text-slate-500">
+                              {registro.nome_tecnico || "Tecnico nao informado"}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1 pt-2 text-sm text-slate-600">
+                            <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+                              {registro.numero_ciclos > 0 && (
+                                <span>
+                                  Ciclos:{" "}
+                                  {registro.numero_ciclos.toLocaleString()}
+                                </span>
+                              )}
+                              <div className="flex items-center gap-2">
+                                {registro.em_garantia ? (
+                                  <CircleCheck className="w-4 h-4 text-emerald-500" />
+                                ) : (
+                                  <CircleX className="w-4 h-4 text-amber-500" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {registro.em_garantia ? (
-                            <div className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
-                              <CircleCheck className="h-3 w-3" />
-                              Garantia
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
-                              <CircleX className="h-3 w-3" />
-                              Sem garantia
-                            </div>
+
+                        {/* COLUNA DIREITA */}
+                        <div className="grid gap-3">
+                          {renderHistoricoField(
+                            `Motivo do atendimento: ${
+                              registro.motivo_atendimento ?? "-"
+                            }`,
+                            registro.descricao_problema
+                          )}
+                          {renderHistoricoField(
+                            "Solução encontrada",
+                            registro.solucao_encontrada
+                          )}
+                          {renderHistoricoField(
+                            "Testes realizados",
+                            registro.testes_realizados
+                          )}
+                          {renderHistoricoField(
+                            "Observações",
+                            registro.observacoes
                           )}
                         </div>
+                      </article>
+                    ))}
+                  </div>
+                  {historicoTotalRegistros > 0 && (
+                    <div className="mt-5 rounded-2xl border border-slate-100 bg-gradient-to-r from-white via-slate-50 to-white p-4 shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] uppercase tracking-wide text-slate-400">
+                        <span>
+                          Exibindo {historicoRegistros.length} de{" "}
+                          {historicoTotalRegistros}
+                        </span>
+                        <span className="font-semibold text-slate-700">
+                          Página {historicoPagina} de {historicoTotalPaginas}
+                        </span>
                       </div>
-
-                      <div className="space-y-2 text-sm">
-                        <InfoItem
-                          label={`Motivo do atendimento: ${
-                            registro.motivo_atendimento ?? "-"
-                          }`}
-                          value={registro.descricao_problema}
-                        />
-                        {registro.solucao_encontrada && (
-                          <InfoItem
-                            label="Solução encontrada"
-                            value={registro.solucao_encontrada}
-                          />
-                        )}
-                        {registro.testes_realizados && (
-                          <InfoItem
-                            label="Testes realizados"
-                            value={registro.testes_realizados}
-                          />
-                        )}
-                        {registro.numero_ciclos > 0 && (
-                          <InfoItem
-                            label="Número de ciclos"
-                            value={registro.numero_ciclos.toLocaleString()}
-                          />
-                        )}
-                        {registro.observacoes && (
-                          <InfoItem
-                            label="Observações"
-                            value={registro.observacoes}
-                          />
-                        )}
-                      </div>
+                      {historicoTemMultiplasPaginas && (
+                        <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setHistoricoPagina((page) =>
+                                Math.max(1, page - 1)
+                              )
+                            }
+                            disabled={historicoPagina <= 1}
+                            className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
+                          >
+                            <ChevronLeft className="h-3 w-3" />
+                            Anterior
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setHistoricoPagina((page) =>
+                                Math.min(historicoTotalPaginas, page + 1)
+                              )
+                            }
+                            disabled={historicoPagina >= historicoTotalPaginas}
+                            className="flex items-center gap-1 rounded-full border border-slate-200 bg-slate-900 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-700"
+                          >
+                            Próxima
+                            <ChevronRight className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center text-slate-500">
-                  <History className="mx-auto mb-2 h-8 w-8" />
-                  <p className="text-sm font-medium">
-                    Nenhum histórico de atendimento encontrado
-                  </p>
-                  <p className="text-xs">
-                    Esta máquina ainda não possui registros de atendimento
-                  </p>
-                </div>
+                  )}
+                </>
               )}
             </SectionCard>
           </>
