@@ -401,11 +401,13 @@ export default function MaquinaDetalheTecnicoPage() {
                             <div className="flex items-center justify-between text-xs text-slate-500">
                               {/* ESQUERDA: Técnico + Ciclos */}
                               <div className="flex items-center gap-3">
+                                <span>{registro.nome_cliente ?? "-"}</span>
+                                {" - "}
                                 <span>
                                   Ciclos: {registro.numero_ciclos ?? "-"}
                                 </span>
 
-                                <span className="text-slate-400">•</span>
+                                {" - "}
 
                                 <span>
                                   {registro.nome_tecnico ||

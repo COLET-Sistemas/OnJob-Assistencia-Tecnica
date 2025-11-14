@@ -27,6 +27,7 @@ import {
   maquinasService,
   motivosAtendimentoService,
   ordensServicoService,
+  parametrosService,
   usuariosService,
 } from "@/api/services";
 import useDebouncedCallback from "@/hooks/useDebouncedCallback";
@@ -92,6 +93,8 @@ interface ApiError {
   };
   message?: string;
 }
+
+type NumeroCiclosConfig = "S" | "N" | "O";
 
 const DETAIL_FIELDS: Array<keyof FormState> = [
   "solucaoEncontrada",
@@ -176,6 +179,8 @@ const NovaOSRetroativa = () => {
     numeroInterno: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [numeroCiclosConfig, setNumeroCiclosConfig] =
+    useState<NumeroCiclosConfig>("S");
 
   const [clienteOptions, setClienteOptions] = useState<ClienteOption[]>([]);
   const [clienteInput, setClienteInput] = useState("");
@@ -282,6 +287,29 @@ const NovaOSRetroativa = () => {
     };
   }, [showError]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadNumeroCiclos = async () => {
+      try {
+        const parametro = await parametrosService.getByChave("USA-CICLOS");
+        if (!active) return;
+
+        const valor = parametro?.valor?.trim().toUpperCase();
+        if (valor === "S" || valor === "N" || valor === "O") {
+          setNumeroCiclosConfig(valor as NumeroCiclosConfig);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar parametro USA-CICLOS:", error);
+      }
+    };
+
+    loadNumeroCiclos();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const setFormField = useCallback((field: keyof FormState, value: string) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => {
@@ -297,6 +325,12 @@ const NovaOSRetroativa = () => {
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    if (numeroCiclosConfig === "N") {
+      setFormField("numeroCiclos", "");
+    }
+  }, [numeroCiclosConfig, setFormField]);
 
   const resetContatoFields = useCallback(() => {
     setFormState((prev) => ({
@@ -648,10 +682,15 @@ const NovaOSRetroativa = () => {
         "Informe se o equipamento esta em garantia.";
     }
 
-    if (!formState.numeroCiclos.trim()) {
-      validationErrors.numeroCiclos = "Informe o numero de ciclos.";
-    } else if (Number.isNaN(Number(formState.numeroCiclos))) {
-      validationErrors.numeroCiclos = "Informe um numero valido.";
+    if (numeroCiclosConfig !== "N") {
+      const valorNumeroCiclos = formState.numeroCiclos.trim();
+      if (!valorNumeroCiclos) {
+        if (numeroCiclosConfig === "S") {
+          validationErrors.numeroCiclos = "Informe o numero de ciclos.";
+        }
+      } else if (Number.isNaN(Number(valorNumeroCiclos))) {
+        validationErrors.numeroCiclos = "Informe um numero valido.";
+      }
     }
 
     const hasDetailFieldFilled = Boolean(
@@ -682,6 +721,7 @@ const NovaOSRetroativa = () => {
     formState.nomeContato,
     formState.nomeCompleto,
     formState.numeroCiclos,
+    numeroCiclosConfig,
     formState.observacoes,
     formState.observacoesTecnico,
     formState.solucaoEncontrada,
@@ -789,6 +829,9 @@ const NovaOSRetroativa = () => {
       isSubmitting,
     ]
   );
+
+  const shouldRenderNumeroCiclos = numeroCiclosConfig !== "N";
+  const isNumeroCiclosRequired = numeroCiclosConfig === "S";
 
   return (
     <>
@@ -1151,16 +1194,18 @@ const NovaOSRetroativa = () => {
                 )}
 
                 {/* 4ª linha: Número de ciclos | Data de conclusão */}
-                <InputField
-                  label="Número de ciclos"
-                  name="numeroCiclos"
-                  value={formState.numeroCiclos}
-                  onChange={handleInputChange}
-                  placeholder="Ex.: 18250"
-                  type="number"
-                  required
-                  error={errors.numeroCiclos}
-                />
+                {shouldRenderNumeroCiclos && (
+                  <InputField
+                    label="Número de ciclos"
+                    name="numeroCiclos"
+                    value={formState.numeroCiclos}
+                    onChange={handleInputChange}
+                    placeholder="Ex.: 18250"
+                    type="number"
+                    required={isNumeroCiclosRequired}
+                    error={errors.numeroCiclos}
+                  />
+                )}
 
                 <div>
                   <InputField

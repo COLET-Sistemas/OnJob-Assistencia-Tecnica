@@ -48,6 +48,20 @@ class ParametrosService {
     return extractData<ParametroSistema[]>(response) ?? [];
   }
 
+  async getByChave(chave: string): Promise<ParametroSistema | null> {
+    const queryParam = encodeURIComponent(chave);
+    const response = await api.get<
+      ApiResponse<ParametroSistema | ParametroSistema[]>
+    >(`${this.baseUrl}?chave=${queryParam}`);
+
+    const data = extractData<ParametroSistema | ParametroSistema[]>(response);
+    if (Array.isArray(data)) {
+      return data[0] ?? null;
+    }
+
+    return data ?? null;
+  }
+
   async updateValor(
     chave: string,
     valor: string

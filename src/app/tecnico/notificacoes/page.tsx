@@ -124,7 +124,7 @@ export default function NotificacoesPage() {
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // removido 'notificacoesCount' pois nÃƒÆ’Ã‚Â£o ÃƒÆ’Ã‚Â© usado
+  // removido 'notificacoesCount' pois não é usado
   const { updateCount, refreshCount, getNotificacoes } = useNotificacoes();
   const { showToast } = useFeedback();
 
@@ -189,7 +189,8 @@ export default function NotificacoesPage() {
 
   useEffect(() => {
     fetchNotificacoes(1, true);
-  }, [fetchNotificacoes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const marcarComoLida = useCallback(
     async (id: number) => {
@@ -211,12 +212,12 @@ export default function NotificacoesPage() {
         const toastMessage =
           response?.mensagem ||
           response?.message ||
-          "NotificaÃƒÂ§ÃƒÂ£o marcada como lida.";
+          "Notificação marcada como lida.";
         const toastType = response?.sucesso === false ? "error" : "success";
         showToast(toastMessage, toastType);
       } catch (error) {
-        console.error(`Erro ao marcar notificaÃƒÂ§ÃƒÂ£o ${id} como lida:`, error);
-        showToast("Erro ao marcar notificaÃƒÂ§ÃƒÂ£o como lida.", "error");
+        console.error(`Erro ao marcar notificação ${id} como lida:`, error);
+        showToast("Erro ao marcar notificação como lida.", "error");
       }
     },
     [refreshCount, showToast, updateCount]
@@ -241,12 +242,12 @@ export default function NotificacoesPage() {
       const toastMessage =
         response?.mensagem ||
         response?.message ||
-        "NotificaÃƒÂ§ÃƒÂµes marcadas como lidas.";
+        "Notificações marcadas como lidas.";
       const toastType = response?.sucesso === false ? "error" : "success";
       showToast(toastMessage, toastType);
     } catch (error) {
-      console.error('Erro ao marcar todas notificaÃƒÂ§ÃƒÂµes como lidas:', error);
-      showToast('Erro ao marcar todas notificaÃƒÂ§ÃƒÂµes como lidas.', 'error');
+      console.error('Erro ao marcar todas notificações como lidas:', error);
+      showToast('Erro ao marcar todas notificações como lidas.', 'error');
     }
   }, [hasUnread, refreshCount, showToast, updateCount]);
 
@@ -266,10 +267,10 @@ export default function NotificacoesPage() {
         <MailOpen className="text-gray-400" size={48} />
       </div>
       <h3 className="text-lg font-medium text-gray-700 mb-2">
-        Nenhuma notificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o
+        Nenhuma notificação
       </h3>
       <p className="text-gray-500">
-        VocÃƒÆ’Ã‚Âª nÃƒÆ’Ã‚Â£o tem nenhuma notificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o no momento.
+        Você não tem nenhuma notificação no momento.
       </p>
     </div>
   );
@@ -277,7 +278,7 @@ export default function NotificacoesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <MobileHeader
-        title="NotificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes"
+        title="Notificações"
         onAddClick={voltarParaPaginaAnterior}
         leftVariant="back"
       />
@@ -330,4 +331,3 @@ export default function NotificacoesPage() {
     </div>
   );
 }
-
