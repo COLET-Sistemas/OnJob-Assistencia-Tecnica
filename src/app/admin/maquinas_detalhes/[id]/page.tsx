@@ -354,16 +354,15 @@ const MaquinaDetalhesPage = () => {
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-600">
                   <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
-                  Atendimento: {formatDateOnly(registro.data_atendimento)}
+                  {registro.data_atendimento}
                 </span>
                 {registro.numero_ciclos > 0 && (
                   <span className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-600">
-                    Ciclo: {registro.numero_ciclos}
+                    Ciclos: {registro.numero_ciclos}
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-800">
-                  {registro.nome_cliente ||
-                    "Cliente não informados"}
+                  {registro.nome_cliente || "Cliente não informados"}
                 </span>
                 {registro.numero_serie && (
                   <span className="text-sm text-slate-500">

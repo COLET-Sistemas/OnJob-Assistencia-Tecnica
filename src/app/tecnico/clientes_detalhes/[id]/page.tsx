@@ -23,6 +23,8 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  CircleCheck,
+  CircleX,
 } from "lucide-react";
 
 type SectionCardProps = {
@@ -330,25 +332,35 @@ export default function ClienteDetalheTecnicoPage() {
                             <span className="font-semibold text-slate-900">
                               FAT #{registro.id_fat ?? "-"}
                             </span>
-                            <span className="font-semibold text-slate-900">
+                            <span className="ml-auto font-semibold text-slate-900">
                               {registro.data_atendimento}
-                            </span>
-                            <span className="ml-auto text-xs  text-slate-500">
-                              {registro.nome_tecnico || "Tecnico nao informado"}
                             </span>
                           </div>
 
                           <div className="space-y-1 pt-2 text-sm text-slate-600">
-                            <p className="text-xs font-semibold text-slate-900">
-                              {registro.descricao_maquina ||
-                                "Máquina não informada"}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              {registro.em_garantia ? (
+                                <CircleCheck className="w-4 h-4 text-emerald-500" />
+                              ) : (
+                                <CircleX className="w-4 h-4 text-amber-500" />
+                              )}
+                              <p className="text-xs font-semibold text-slate-900">
+                                {registro.descricao_maquina ||
+                                  "Máquina não informada"}
+                              </p>
+                            </div>
                             <div className="flex flex-wrap gap-3 text-xs text-slate-500">
                               {registro.numero_serie && (
-                                <span>Série: {registro.numero_serie}</span>
+                                <span>{registro.numero_serie}</span>
                               )}
+                              {"-"}
                               <span>
                                 Ciclos: {registro.numero_ciclos ?? "-"}
+                              </span>
+                              {"-"}
+                              <span>
+                                {registro.nome_tecnico ||
+                                  "Tecnico nao informado"}
                               </span>
                             </div>
                           </div>

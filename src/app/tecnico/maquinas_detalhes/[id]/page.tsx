@@ -274,9 +274,15 @@ export default function MaquinaDetalheTecnicoPage() {
                   />
                   <div className="flex items-start ml-auto mt-[-6px]">
                     {maquinaParaExibir?.garantia ? (
-                      <CircleCheck className="w-5 h-5 text-emerald-500" />
+                      <CircleCheck
+                        className="w-5 h-5 text-emerald-500"
+                        aria-label="Em garantia"
+                      />
                     ) : (
-                      <CircleX className="w-5 h-5 text-amber-500" />
+                      <CircleX
+                        className="w-5 h-5 text-amber-500"
+                        aria-label="Garantia vencida"
+                      />
                     )}
                   </div>
                 </div>
@@ -386,27 +392,39 @@ export default function MaquinaDetalheTecnicoPage() {
                             <span className="font-semibold text-slate-900">
                               FAT #{registro.id_fat ?? "-"}
                             </span>
-                            <span className="font-semibold text-slate-900">
-                              {formatDateOnly(registro.data_atendimento)}
-                            </span>
-                            <span className="ml-auto text-xs text-slate-500">
-                              {registro.nome_tecnico || "Tecnico nao informado"}
+                            <span className="ml-auto font-semibold text-slate-900">
+                              {registro.data_atendimento}
                             </span>
                           </div>
 
-                          <div className="space-y-1 pt-2 text-sm text-slate-600">
-                            <div className="flex flex-wrap gap-3 text-xs text-slate-500">
-                              {registro.numero_ciclos > 0 && (
+                          <div className="pt-2 text-sm text-slate-600">
+                            <div className="flex items-center justify-between text-xs text-slate-500">
+                              {/* ESQUERDA: Técnico + Ciclos */}
+                              <div className="flex items-center gap-3">
                                 <span>
-                                  Ciclos:{" "}
-                                  {registro.numero_ciclos.toLocaleString()}
+                                  Ciclos: {registro.numero_ciclos ?? "-"}
                                 </span>
-                              )}
-                              <div className="flex items-center gap-2">
+
+                                <span className="text-slate-400">•</span>
+
+                                <span>
+                                  {registro.nome_tecnico ||
+                                    "Técnico não informado"}
+                                </span>
+                              </div>
+
+                              {/* DIREITA: Ícone de garantia */}
+                              <div>
                                 {registro.em_garantia ? (
-                                  <CircleCheck className="w-4 h-4 text-emerald-500" />
+                                  <CircleCheck
+                                    className="w-4 h-4 text-emerald-500"
+                                    aria-label="Em garantia"
+                                  />
                                 ) : (
-                                  <CircleX className="w-4 h-4 text-amber-500" />
+                                  <CircleX
+                                    className="w-4 h-4 text-amber-500"
+                                    aria-label="Garantia vencida"
+                                  />
                                 )}
                               </div>
                             </div>
