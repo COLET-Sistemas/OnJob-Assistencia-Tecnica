@@ -83,6 +83,8 @@ export default function FATCard({ fat }: { fat: any; index: number }) {
   ) => {
     // Prevenir múltiplos cliques
     if (isNavigating) {
+      e.preventDefault();
+      e.stopPropagation();
       return;
     }
 
@@ -92,20 +94,15 @@ export default function FATCard({ fat }: { fat: any; index: number }) {
 
     setIsNavigating(true);
 
-
-
     const targetUrl = `/tecnico/os/fat/${fat.id_fat}`;
 
     try {
-
       // Tentar usar router.push primeiro
       router.push(targetUrl);
-   
 
       // Como fallback, também tentar com window.location após um delay
       setTimeout(() => {
         if (window.location.pathname !== targetUrl) {
-       
           window.location.href = targetUrl;
         }
         setIsNavigating(false);
@@ -190,7 +187,7 @@ export default function FATCard({ fat }: { fat: any; index: number }) {
       {/* Versão com Link do Next.js como fallback */}
       <Link href={fatUrl} className="block" prefetch={false}>
         <div
-          className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors duration-200 ${
+          className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors duration-200 touch-manipulation ${
             isNavigating ? "opacity-50 pointer-events-none" : ""
           }`}
           onClick={handleMouseClick}

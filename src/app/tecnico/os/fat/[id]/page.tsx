@@ -7,8 +7,8 @@ import React, {
   useMemo,
 } from "react";
 import { useRouter, useParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import MobileHeader from "@/components/tecnico/MobileHeader";
-import FloatingActionMenuFat from "@/components/tecnico/FloatingActionMenuFat";
 import {
   User,
   Settings,
@@ -35,42 +35,18 @@ import { Loading } from "@/components/LoadingPersonalizado";
 import Toast from "@/components/tecnico/Toast";
 import StatusBadge from "@/components/tecnico/StatusBadge";
 
+// Lazy load components para melhor performance
+const FloatingActionMenuFat = dynamic(
+  () => import("@/components/tecnico/FloatingActionMenuFat"),
+  {
+    ssr: false,
+    loading: () => null,
+  }
+);
+
 type FATDeslocamento = NonNullable<FATDetalhada["deslocamentos"]>[number];
 type FATPeca = NonNullable<FATDetalhada["pecas"]>[number];
 type FATFoto = NonNullable<FATDetalhada["fotos"]>[number];
-
-// Botão de ação para FAT
-// type ActionButtonFatProps = {
-//   label: string;
-//   icon: React.ReactNode;
-//   onClick: () => void;
-//   color: string;
-// };
-// function ActionButtonFat({
-//   label,
-//   icon,
-//   onClick,
-//   color,
-// }: ActionButtonFatProps) {
-//   return (
-//     <button
-//       onClick={onClick}
-//       className={`
-//         group relative flex flex-col items-center gap-1.5 p-2
-//         rounded-xl border transition-all duration-200 ease-out
-//         w-28 flex-shrink-0 bg-white hover:bg-gray-50
-//         ${color}
-//         hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 border-gray-200 hover:border-gray-300
-//       `}
-//       type="button"
-//     >
-//       <div className="flex items-center justify-center w-6 h-6">{icon}</div>
-//       <span className="text-xs font-medium text-gray-700 text-center">
-//         {label}
-//       </span>
-//     </button>
-//   );
-// }
 
 type SectionActionButtonProps = {
   label: string;
@@ -87,7 +63,7 @@ function SectionActionButton({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#7B54BE] bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#7B54BE] bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 active:scale-95 active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 touch-manipulation"
     >
       <span className="flex items-center justify-center text-slate-500">
         {icon}
@@ -97,7 +73,7 @@ function SectionActionButton({
   );
 }
 
-// Componente Section reutilizável
+// Componente Section reutilizável com melhor performance para mobile
 const Section = React.memo(
   ({
     title,
@@ -121,12 +97,26 @@ const Section = React.memo(
     }, [collapsible, expanded]);
 
     return (
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
         <div
           className={`flex items-center justify-between p-4 ${
-            collapsible ? "cursor-pointer hover:bg-slate-50" : ""
-          } transition-colors duration-200`}
+            collapsible
+              ? "cursor-pointer hover:bg-slate-50 active:bg-slate-100 touch-manipulation select-none"
+              : ""
+          } transition-all duration-200`}
           onClick={handleToggle}
+          role={collapsible ? "button" : undefined}
+          tabIndex={collapsible ? 0 : undefined}
+          onKeyDown={
+            collapsible
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleToggle();
+                  }
+                }
+              : undefined
+          }
         >
           <div className="flex items-center gap-2">
             <div className="text-slate-600">{icon}</div>
@@ -134,15 +124,21 @@ const Section = React.memo(
           </div>
           {collapsible && (
             <ChevronRight
-              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+              className={`w-4 h-4 text-slate-400 transition-transform duration-300 ease-out ${
                 expanded ? "rotate-90" : ""
               }`}
             />
           )}
         </div>
-        {(!collapsible || expanded) && (
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-out ${
+            !collapsible || expanded
+              ? "max-h-[2000px] opacity-100"
+              : "max-h-0 opacity-0"
+          }`}
+        >
           <div className="px-4 pb-4 space-y-3">{children}</div>
-        )}
+        </div>
       </div>
     );
   }
@@ -150,7 +146,7 @@ const Section = React.memo(
 
 Section.displayName = "Section";
 
-// Componente Field reutilizável
+// Componente Field reutilizável com otimização
 const Field = React.memo(
   ({
     label,
@@ -175,6 +171,14 @@ const Field = React.memo(
           </div>
         </div>
       </div>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Comparação customizada para evitar re-renders desnecessários
+    return (
+      prevProps.label === nextProps.label &&
+      prevProps.value === nextProps.value &&
+      prevProps.icon === nextProps.icon
     );
   }
 );
@@ -356,7 +360,7 @@ const FotosSectionContent = React.memo(
                   <button
                     type="button"
                     onClick={() => onOpen(index)}
-                    className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100 transition hover:border-[#7B54BE]/60 focus:outline-none focus:ring-2 focus:ring-[#7B54BE] focus:ring-offset-2"
+                    className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100 transition-all duration-200 hover:border-[#7B54BE]/60 active:scale-95 touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#7B54BE] focus:ring-offset-2"
                   >
                     {previewUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -364,6 +368,8 @@ const FotosSectionContent = React.memo(
                         src={previewUrl}
                         alt={foto.descricao || foto.nome_arquivo}
                         className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+                        loading="lazy"
+                        decoding="async"
                       />
                     ) : isLoadingPreview ? (
                       <div className="flex h-full w-full items-center justify-center">
@@ -432,11 +438,51 @@ export default function FATDetalheMobile() {
     null
   );
 
+  // Estados para controle de gestos touch
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
   const situacoesComBotoes = ["3", "4", "5"];
 
   const deveMostrarBotoes = situacoesComBotoes.includes(
     String(fat?.situacao?.codigo)
   );
+
+  // Debounce para navegação para evitar múltiplos cliques
+  const [navigationDebounce, setNavigationDebounce] = useState(false);
+
+  const debouncedNavigate = useCallback(
+    (navigateFunction: () => void) => {
+      if (navigationDebounce) return;
+
+      setNavigationDebounce(true);
+      navigateFunction();
+
+      setTimeout(() => {
+        setNavigationDebounce(false);
+      }, 300);
+    },
+    [navigationDebounce]
+  );
+
+  // Prevenção de scroll body quando modal está aberto
+  useEffect(() => {
+    if (isPhotoModalOpen) {
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+    };
+  }, [isPhotoModalOpen]);
   // Função auxiliar para mostrar toast com auto-hide
   const showToast = useCallback(
     (message: string, type: "success" | "error" = "success") => {
@@ -528,23 +574,23 @@ export default function FATDetalheMobile() {
   );
 
   const goToDeslocamento = useCallback(
-    () => handleNavigateToSection("deslocamento"),
-    [handleNavigateToSection]
+    () => debouncedNavigate(() => handleNavigateToSection("deslocamento")),
+    [handleNavigateToSection, debouncedNavigate]
   );
 
   const goToAtendimento = useCallback(
-    () => handleNavigateToSection("atendimento"),
-    [handleNavigateToSection]
+    () => debouncedNavigate(() => handleNavigateToSection("atendimento")),
+    [handleNavigateToSection, debouncedNavigate]
   );
 
   const goToPecas = useCallback(
-    () => handleNavigateToSection("pecas"),
-    [handleNavigateToSection]
+    () => debouncedNavigate(() => handleNavigateToSection("pecas")),
+    [handleNavigateToSection, debouncedNavigate]
   );
 
   const goToFotos = useCallback(
-    () => handleNavigateToSection("fotos"),
-    [handleNavigateToSection]
+    () => debouncedNavigate(() => handleNavigateToSection("fotos")),
+    [handleNavigateToSection, debouncedNavigate]
   );
 
   // Função para extrair mensagem de erro da API
@@ -984,6 +1030,41 @@ export default function FATDetalheMobile() {
     });
   }, [fotos.length, hasMultiplePhotos]);
 
+  // Distância mínima para swipe
+  const minSwipeDistance = 50;
+
+  // Handlers para gestos touch
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && hasMultiplePhotos) {
+      showNextPhoto();
+    }
+    if (isRightSwipe && hasMultiplePhotos) {
+      showPreviousPhoto();
+    }
+  }, [
+    touchStart,
+    touchEnd,
+    hasMultiplePhotos,
+    showNextPhoto,
+    showPreviousPhoto,
+    minSwipeDistance,
+  ]);
+
   useEffect(() => {
     if (selectedPhotoIndex === null) return;
 
@@ -1036,13 +1117,13 @@ export default function FATDetalheMobile() {
             <div className="flex gap-3">
               <button
                 onClick={handleNavigateToOS}
-                className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors"
+                className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 active:scale-95 transition-all duration-200 touch-manipulation"
               >
                 Voltar
               </button>
               <button
                 onClick={() => fetchFAT(true)}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-colors"
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 active:scale-95 transition-all duration-200 touch-manipulation"
               >
                 Tentar novamente
               </button>
@@ -1069,7 +1150,7 @@ export default function FATDetalheMobile() {
             </h2>
             <button
               onClick={handleNavigateToOS}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 active:scale-95 transition-all duration-200 touch-manipulation"
             >
               Voltar
             </button>
@@ -1080,357 +1161,365 @@ export default function FATDetalheMobile() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-5">
-      <MobileHeader
-        title={fat.id_fat ? `FAT #${fat.id_fat}` : "Detalhes da FAT"}
-        onAddClick={handleNavigateToOS}
-        leftVariant="back"
-      />
+    <>
 
-      {toast.visible && (
-        <div className="fixed inset-x-0 bottom-20 z-[9999] flex items-center justify-center pointer-events-none">
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast((prev) => ({ ...prev, visible: false }))}
-          />
-        </div>
-      )}
+      <main className="min-h-screen bg-slate-50 pb-4 overflow-x-hidden">
+        <MobileHeader
+          title={fat.id_fat ? `FAT #${fat.id_fat}` : "Detalhes da FAT"}
+          onAddClick={handleNavigateToOS}
+          leftVariant="back"
+        />
 
-      {loading && fat && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[100]">
-          <div className="bg-white p-4 rounded-xl shadow-lg">
-            <Loading fullScreen={false} size="medium" text="Processando..." />
+        {toast.visible && (
+          <div className="fixed inset-x-0 bottom-20 z-[9999] flex items-center justify-center pointer-events-none">
+            <Toast
+              message={toast.message}
+              type={toast.type}
+              onClose={() => setToast((prev) => ({ ...prev, visible: false }))}
+            />
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="bg-white border-b border-slate-100">
-        {fat.descricao_problema && (
-          <div className="p-4">
-            <div className="text-md text-slate-700 leading-relaxed bg-slate-100 p-3 rounded-lg break-words whitespace-pre-wrap max-h-[200px] overflow-y-auto custom-scrollbar">
-              <span className="font-medium">
-                {fat.motivo_atendimento.descricao}:
-              </span>{" "}
-              {fat.descricao_problema}
+        {loading && fat && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[100] backdrop-blur-sm">
+            <div className="bg-white p-6 rounded-xl shadow-2xl max-w-xs w-full mx-4 animate-in fade-in zoom-in-95 duration-300">
+              <Loading fullScreen={false} size="medium" text="Processando..." />
+              <div className="mt-3 w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                <div className="bg-[#7B54BE] h-1.5 rounded-full animate-pulse"></div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Status e Data */}
-        <div className="px-4 pb-4 flex items-center justify-between">
-          <StatusBadge
-            status={String(fat.situacao.codigo)}
-            descricao={fat.situacao.descricao}
-          />
-
-          {fat.data_atendimento && (
-            <div className="flex items-center gap-1 text-sm text-gray-600">
-              <Calendar className="w-3 h-3" />
-              <span>Atendimento:</span>
-              {formatDate(fat.data_atendimento) || fat.data_atendimento}
+        <div className="border-b border-slate-100 sticky top-[60px] z-10 backdrop-blur-sm bg-white/95">
+          {fat.descricao_problema && (
+            <div className="p-4">
+              <div className="text-md text-slate-700 leading-relaxed bg-slate-100 p-3 rounded-lg break-words whitespace-pre-wrap max-h-[200px] overflow-y-auto custom-scrollbar overscroll-contain">
+                <span className="font-medium">
+                  {fat.motivo_atendimento.descricao}:
+                </span>{" "}
+                {fat.descricao_problema}
+              </div>
             </div>
           )}
+
+          {/* Status e Data */}
+          <div className="px-4 pb-4 flex items-center justify-between flex-wrap gap-2">
+            <StatusBadge
+              status={String(fat.situacao.codigo)}
+              descricao={fat.situacao.descricao}
+            />
+
+            {fat.data_atendimento && (
+              <div className="flex items-center gap-1 text-sm text-gray-600 min-w-0">
+                <Calendar className="w-3 h-3 flex-shrink-0" />
+                <span className="whitespace-nowrap">Atendimento:</span>
+                <span className="truncate">
+                  {formatDate(fat.data_atendimento) || fat.data_atendimento}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Content Sections */}
-      <div className="px-4 pb-6 space-y-4 mt-4">
-        <Section
-          title="Informações Gerais"
-          icon={<FileText className="w-4 h-4" />}
-        >
-          <Field
-            label="OS Vinculada"
-            value={`#${fat.id_os}`}
-            icon={<FileSearch className="w-3 h-3" />}
-          />
-          <Field
-            label="Nome do Atendente"
-            value={
-              fat.nome_atendente
-                ? `${fat.nome_atendente} ${
-                    fat.contato_atendente ? `- ${fat.contato_atendente}` : ""
-                  }`
-                : "Não informado"
-            }
-            icon={<User className="w-3 h-3" />}
-          />
-        </Section>
-
-        {fat.maquina?.modelo && fat.maquina.modelo.trim() !== "" && (
-          <Section title="Máquina" icon={<Settings className="w-4 h-4" />}>
+        {/* Content Sections */}
+        <div className="px-4 pb-20 space-y-4 mt-4 will-change-scroll overscroll-contain">
+          <Section
+            title="Informações Gerais"
+            icon={<FileText className="w-4 h-4" />}
+          >
             <Field
-              label="Modelo"
-              value={fat.maquina.modelo}
-              icon={<Settings className="w-3 h-3" />}
+              label="OS Vinculada"
+              value={`#${fat.id_os}`}
+              icon={<FileSearch className="w-3 h-3" />}
             />
             <Field
-              label="Descrição"
-              value={fat.maquina.descricao}
-              icon={<FileText className="w-3 h-3" />}
-            />
-            <Field
-              label="Número de Série"
-              value={fat.maquina.numero_serie}
-              icon={<Settings className="w-3 h-3" />}
+              label="Nome do Atendente"
+              value={
+                fat.nome_atendente
+                  ? `${fat.nome_atendente} ${
+                      fat.contato_atendente ? `- ${fat.contato_atendente}` : ""
+                    }`
+                  : "Não informado"
+              }
+              icon={<User className="w-3 h-3" />}
             />
           </Section>
-        )}
 
-        {/* Detalhes do Atendimento */}
-        <Section
-          title="Detalhes do Atendimento"
-          icon={<Wrench className="w-4 h-4" />}
-        >
-          {(fat.solucao_encontrada && fat.solucao_encontrada !== "") ||
-          (fat.testes_realizados && fat.testes_realizados !== "") ||
-          (fat.sugestoes && fat.sugestoes !== "") ||
-          (fat.observacoes && fat.observacoes !== "") ||
-          (fat.numero_ciclos != null && fat.numero_ciclos > 0) ? (
-            <>
-              {fat.solucao_encontrada && (
-                <Field
-                  label="Solução Encontrada"
-                  value={fat.solucao_encontrada}
-                  icon={<CheckSquare className="w-3 h-3" />}
-                />
-              )}
-
-              {fat.testes_realizados && (
-                <Field
-                  label="Testes Realizados"
-                  value={fat.testes_realizados}
-                  icon={<Eye className="w-3 h-3" />}
-                />
-              )}
-
-              {fat.sugestoes && (
-                <Field
-                  label="Sugestões"
-                  value={fat.sugestoes}
-                  icon={<MessageSquare className="w-3 h-3" />}
-                />
-              )}
-
-              {fat.observacoes && (
-                <Field
-                  label="Observações"
-                  value={fat.observacoes}
-                  icon={<FileText className="w-3 h-3" />}
-                />
-              )}
-
-              {fat.numero_ciclos != null && fat.numero_ciclos > 0 && (
-                <Field
-                  label="Número de Ciclos"
-                  value={fat.numero_ciclos.toString()}
-                  icon={<Timer className="w-3 h-3" />}
-                />
-              )}
-            </>
-          ) : (
-            <p className="text-sm text-slate-500 italic">
-              Não há informações sobre o atendimento
-            </p>
+          {fat.maquina?.modelo && fat.maquina.modelo.trim() !== "" && (
+            <Section title="Máquina" icon={<Settings className="w-4 h-4" />}>
+              <Field
+                label="Modelo"
+                value={fat.maquina.modelo}
+                icon={<Settings className="w-3 h-3" />}
+              />
+              <Field
+                label="Descrição"
+                value={fat.maquina.descricao}
+                icon={<FileText className="w-3 h-3" />}
+              />
+              <Field
+                label="Número de Série"
+                value={fat.maquina.numero_serie}
+                icon={<Settings className="w-3 h-3" />}
+              />
+            </Section>
           )}
-          <div className="mt-4">
-            <SectionActionButton
-              label="Ir para Atendimento"
-              icon={<Wrench className="w-4 h-4" />}
-              onClick={goToAtendimento}
-            />
-          </div>
-        </Section>
 
-        {/* Deslocamentos */}
-        <Section
-          title={`Deslocamentos (${deslocamentos.length})`}
-          icon={<Car className="w-4 h-4" />}
-          collapsible={true}
-          defaultExpanded={false}
-        >
-          <DeslocamentosSectionContent
-            deslocamentos={deslocamentos}
-            formatTime={formatTime}
-            onNavigate={goToDeslocamento}
-          />
-        </Section>
-
-        <Section
-          title={`Peças Utilizadas (${pecas.length})`}
-          icon={<Package className="w-4 h-4" />}
-          collapsible={true}
-          defaultExpanded={false}
-        >
-          <PecasSectionContent pecas={pecas} onNavigate={goToPecas} />
-        </Section>
-
-        {/* Fotos */}
-        <Section
-          title={`Fotos (${fotos.length})`}
-          icon={<Camera className="w-4 h-4" />}
-          collapsible={true}
-          defaultExpanded={false}
-        >
-          <FotosSectionContent
-            fotos={fotos}
-            photoPreviews={photoPreviews}
-            loadingPhotoPreviews={loadingPhotoPreviews}
-            photoPreviewError={photoPreviewError}
-            formatPhotoDate={formatPhotoDate}
-            onOpen={openPhotoViewer}
-            onNavigate={goToFotos}
-          />
-        </Section>
-
-        {fat.ocorrencias && fat.ocorrencias.length > 0 && (
+          {/* Detalhes do Atendimento */}
           <Section
-            title={`Ocorrências (${fat.ocorrencias.length})`}
-            icon={<History className="w-4 h-4" />}
+            title="Detalhes do Atendimento"
+            icon={<Wrench className="w-4 h-4" />}
+          >
+            {(fat.solucao_encontrada && fat.solucao_encontrada !== "") ||
+            (fat.testes_realizados && fat.testes_realizados !== "") ||
+            (fat.sugestoes && fat.sugestoes !== "") ||
+            (fat.observacoes && fat.observacoes !== "") ||
+            (fat.numero_ciclos != null && fat.numero_ciclos > 0) ? (
+              <>
+                {fat.solucao_encontrada && (
+                  <Field
+                    label="Solução Encontrada"
+                    value={fat.solucao_encontrada}
+                    icon={<CheckSquare className="w-3 h-3" />}
+                  />
+                )}
+
+                {fat.testes_realizados && (
+                  <Field
+                    label="Testes Realizados"
+                    value={fat.testes_realizados}
+                    icon={<Eye className="w-3 h-3" />}
+                  />
+                )}
+
+                {fat.sugestoes && (
+                  <Field
+                    label="Sugestões"
+                    value={fat.sugestoes}
+                    icon={<MessageSquare className="w-3 h-3" />}
+                  />
+                )}
+
+                {fat.observacoes && (
+                  <Field
+                    label="Observações"
+                    value={fat.observacoes}
+                    icon={<FileText className="w-3 h-3" />}
+                  />
+                )}
+
+                {fat.numero_ciclos != null && fat.numero_ciclos > 0 && (
+                  <Field
+                    label="Número de Ciclos"
+                    value={fat.numero_ciclos.toString()}
+                    icon={<Timer className="w-3 h-3" />}
+                  />
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-slate-500 italic">
+                Não há informações sobre o atendimento
+              </p>
+            )}
+            <div className="mt-4">
+              <SectionActionButton
+                label="Ir para Atendimento"
+                icon={<Wrench className="w-4 h-4" />}
+                onClick={goToAtendimento}
+              />
+            </div>
+          </Section>
+
+          {/* Deslocamentos */}
+          <Section
+            title={`Deslocamentos (${deslocamentos.length})`}
+            icon={<Car className="w-4 h-4" />}
             collapsible={true}
             defaultExpanded={false}
           >
-            <div className="space-y-3">
-              {fat.ocorrencias.map((ocorrencia, index) => (
-                <div
-                  key={ocorrencia.id_ocorrencia || index}
-                  className="border-l-2 border-blue-200 pl-3"
-                >
-                  <div className="flex justify-end">
-                    <span className="text-xs text-slate-500">
-                      {formatDate(ocorrencia.data_ocorrencia) ||
-                        ocorrencia.data_ocorrencia}
+            <DeslocamentosSectionContent
+              deslocamentos={deslocamentos}
+              formatTime={formatTime}
+              onNavigate={goToDeslocamento}
+            />
+          </Section>
+
+          <Section
+            title={`Peças Utilizadas (${pecas.length})`}
+            icon={<Package className="w-4 h-4" />}
+            collapsible={true}
+            defaultExpanded={false}
+          >
+            <PecasSectionContent pecas={pecas} onNavigate={goToPecas} />
+          </Section>
+
+          {/* Fotos */}
+          <Section
+            title={`Fotos (${fotos.length})`}
+            icon={<Camera className="w-4 h-4" />}
+            collapsible={true}
+            defaultExpanded={false}
+          >
+            <FotosSectionContent
+              fotos={fotos}
+              photoPreviews={photoPreviews}
+              loadingPhotoPreviews={loadingPhotoPreviews}
+              photoPreviewError={photoPreviewError}
+              formatPhotoDate={formatPhotoDate}
+              onOpen={openPhotoViewer}
+              onNavigate={goToFotos}
+            />
+          </Section>
+
+          {fat.ocorrencias && fat.ocorrencias.length > 0 && (
+            <Section
+              title={`Ocorrências (${fat.ocorrencias.length})`}
+              icon={<History className="w-4 h-4" />}
+              collapsible={true}
+              defaultExpanded={false}
+            >
+              <div className="space-y-3">
+                {fat.ocorrencias.map((ocorrencia, index) => (
+                  <div
+                    key={ocorrencia.id_ocorrencia || index}
+                    className="border-l-2 border-blue-200 pl-3"
+                  >
+                    <div className="flex justify-end">
+                      <span className="text-xs text-slate-500">
+                        {formatDate(ocorrencia.data_ocorrencia) ||
+                          ocorrencia.data_ocorrencia}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-slate-900 leading-snug">
+                      {ocorrencia.descricao_ocorrencia}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Por: {ocorrencia.usuario.nome}
+                    </p>
+                    <div className="mt-2">
+                      <StatusBadge
+                        status={String(ocorrencia.nova_situacao.codigo)}
+                        descricao={ocorrencia.nova_situacao?.descricao}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+        </div>
+
+        {isPhotoModalOpen && selectedPhoto && (
+          <div
+            className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+            onClick={closePhotoViewer}
+            role="dialog"
+            aria-modal="true"
+            onTouchStart={(e) => e.stopPropagation()}
+          >
+            <div
+              className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-300"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div
+                className="relative flex items-center justify-center bg-slate-950/95 px-4 py-6 sm:px-10 sm:py-10 min-h-[200px]"
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+              >
+                {hasMultiplePhotos && (
+                  <button
+                    type="button"
+                    onClick={showPreviousPhoto}
+                    className="absolute left-2 sm:left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow transition-all duration-200 hover:bg-white active:scale-95 touch-manipulation z-10"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                )}
+
+                {selectedPhotoPreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={selectedPhotoPreview}
+                    alt={selectedPhoto.descricao || selectedPhoto.nome_arquivo}
+                    className="max-h-[60vh] sm:max-h-[70vh] w-full max-w-[85%] sm:max-w-[90%] rounded-xl object-contain shadow-xl"
+                    loading="eager"
+                    decoding="async"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-3 text-slate-200">
+                    <ImageOff className="h-8 w-8" />
+                    <span className="text-xs uppercase tracking-wide">
+                      Visualização indisponível
                     </span>
                   </div>
-                  <p className="text-sm font-medium text-slate-900 leading-snug">
-                    {ocorrencia.descricao_ocorrencia}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Por: {ocorrencia.usuario.nome}
-                  </p>
-                  <div className="mt-2">
-                    <StatusBadge
-                      status={String(ocorrencia.nova_situacao.codigo)}
-                      descricao={ocorrencia.nova_situacao?.descricao}
+                )}
+
+                {hasMultiplePhotos && (
+                  <button
+                    type="button"
+                    onClick={showNextPhoto}
+                    className="absolute right-2 sm:right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow transition-all duration-200 hover:bg-white active:scale-95 touch-manipulation z-10"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                )}
+
+                {/* Botão de fechar no mobile */}
+                <button
+                  type="button"
+                  onClick={closePhotoViewer}
+                  className="absolute top-2 right-2 sm:top-4 sm:right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-all duration-200 active:scale-95 touch-manipulation z-10"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
                     />
-                  </div>
-                </div>
-              ))}
+                  </svg>
+                </button>
+              </div>
+
+              <div className="border-t border-slate-100 bg-white px-4 py-3 sm:px-6 sm:py-4 max-h-[120px] overflow-y-auto">
+                <p className="text-sm font-medium text-slate-900 line-clamp-2">
+                  {selectedPhoto.descricao?.trim() ||
+                    selectedPhoto.nome_arquivo}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {formatPhotoDate(selectedPhoto.data_cadastro)}
+                </p>
+                {hasMultiplePhotos && (
+                  <p className="text-xs text-slate-400 mt-1">
+                    {(selectedPhotoIndex ?? 0) + 1} de {fotos.length}
+                  </p>
+                )}
+              </div>
             </div>
-          </Section>
+          </div>
         )}
-      </div>
 
-      {isPhotoModalOpen && selectedPhoto && (
-        <div
-          className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/80 p-4"
-          onClick={closePhotoViewer}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="relative w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="relative flex items-center justify-center bg-slate-950/95 px-10 py-10">
-              {hasMultiplePhotos && (
-                <button
-                  type="button"
-                  onClick={showPreviousPhoto}
-                  className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow transition hover:bg-white"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-              )}
-
-              {selectedPhotoPreview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={selectedPhotoPreview}
-                  alt={selectedPhoto.descricao || selectedPhoto.nome_arquivo}
-                  className="max-h-[70vh] w-full max-w-[90%] rounded-xl object-contain shadow-xl"
-                />
-              ) : (
-                <div className="flex flex-col items-center gap-3 text-slate-200">
-                  <ImageOff className="h-8 w-8" />
-                  <span className="text-xs uppercase tracking-wide">
-                    Visualização indisponí­vel
-                  </span>
-                </div>
-              )}
-
-              {hasMultiplePhotos && (
-                <button
-                  type="button"
-                  onClick={showNextPhoto}
-                  className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow transition hover:bg-white"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              )}
-            </div>
-
-            <div className="border-t border-slate-100 bg-white px-6 py-4">
-              <p className="text-sm font-medium text-slate-900">
-                {selectedPhoto.descricao?.trim() || selectedPhoto.nome_arquivo}
-              </p>
-              <p className="text-xs text-slate-500 mt-1">
-                {formatPhotoDate(selectedPhoto.data_cadastro)}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50">
-        <div className="px-3 py-2">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <ActionButtonFat
-              label="Deslocamento"
-              icon={<Car className="w-5 h-5 text-emerald-600" />}
-              onClick={() => handleNavigateToSection("deslocamento")}
-              color="hover:border-emerald-300"
-            />
-            <ActionButtonFat
-              label="Atendimento"
-              icon={<Wrench className="w-5 h-5 text-blue-600" />}
-              onClick={() => handleNavigateToSection("atendimento")}
-              color="hover:border-blue-300"
-            />
-            <ActionButtonFat
-              label="Peças"
-              icon={<Package className="w-5 h-5 text-green-600" />}
-              onClick={() => handleNavigateToSection("pecas")}
-              color="hover:border-green-300"
-            />
-            <ActionButtonFat
-              label="Fotos"
-              icon={<Camera className="w-5 h-5 text-purple-600" />}
-              onClick={() => {
-                if (params?.id) {
-                  router.push(`/tecnico/os/fat/${params.id}/fotos`);
-                }
-              }}
-              color="hover:border-purple-300"
-            />
-          </div>
-        </div>
-      </div> */}
-
-      {deveMostrarBotoes && (
-        <FloatingActionMenuFat
-          fat={fat}
-          id_os={fat.id_os}
-          onIniciarAtendimento={handleIniciarAtendimento}
-          onPausarAtendimento={handlePausarAtendimento}
-          onRetomarAtendimento={handleRetomarAtendimento}
-          onInterromperAtendimento={handleInterromperAtendimento}
-          onCancelarAtendimento={handleCancelarAtendimento}
-          onConcluirAtendimento={handleConcluirAtendimento}
-          onActionSuccess={() => fetchFAT(true)}
-        />
-      )}
-    </main>
+        {deveMostrarBotoes && (
+          <FloatingActionMenuFat
+            fat={fat}
+            id_os={fat.id_os}
+            onIniciarAtendimento={handleIniciarAtendimento}
+            onPausarAtendimento={handlePausarAtendimento}
+            onRetomarAtendimento={handleRetomarAtendimento}
+            onInterromperAtendimento={handleInterromperAtendimento}
+            onCancelarAtendimento={handleCancelarAtendimento}
+            onConcluirAtendimento={handleConcluirAtendimento}
+            onActionSuccess={() => fetchFAT(true)}
+          />
+        )}
+      </main>
+    </>
   );
 }

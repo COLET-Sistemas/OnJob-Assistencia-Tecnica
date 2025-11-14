@@ -40,8 +40,6 @@ import FATCard from "@/components/tecnico/FATCard";
 import { Loading } from "@/components/LoadingPersonalizado";
 import { MAQUINA_PREVIEW_CACHE_KEY } from "@/constants/storageKeys";
 
-// import OSActionModal from "@/components/tecnico/OSActionModal";
-
 const Section = React.memo(
   ({
     title,
@@ -60,30 +58,42 @@ const Section = React.memo(
 
     const handleToggle = useCallback(() => {
       if (collapsible) {
-        setExpanded(!expanded);
+        setExpanded((value) => !value);
       }
-    }, [collapsible, expanded]);
+    }, [collapsible]);
+
+    const headerContent = (
+      <>
+        <div className="flex items-center gap-2">
+          <div className="text-slate-600">{icon}</div>
+          <h3 className="font-medium text-slate-900 text-sm">{title}</h3>
+        </div>
+        {collapsible && (
+          <ChevronRight
+            className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+              expanded ? "rotate-90" : ""
+            }`}
+          />
+        )}
+      </>
+    );
 
     return (
       <div className="bg-white rounded-lg  shadow-sm">
-        <div
-          className={`flex items-center justify-between p-4 ${
-            collapsible ? "cursor-pointer hover:bg-slate-50" : ""
-          } transition-colors duration-200`}
-          onClick={handleToggle}
-        >
-          <div className="flex items-center gap-2">
-            <div className="text-slate-600">{icon}</div>
-            <h3 className="font-medium text-slate-900 text-sm">{title}</h3>
+        {collapsible ? (
+          <button
+            type="button"
+            className="flex items-center justify-between p-4 w-full cursor-pointer bg-transparent border-0 hover:bg-slate-50 transition-colors duration-200 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7B54BE]"
+            onClick={handleToggle}
+            aria-expanded={expanded}
+          >
+            {headerContent}
+          </button>
+        ) : (
+          <div className="flex items-center justify-between p-4 transition-colors duration-200">
+            {headerContent}
           </div>
-          {collapsible && (
-            <ChevronRight
-              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                expanded ? "rotate-90" : ""
-              }`}
-            />
-          )}
-        </div>
+        )}
         {(!collapsible || expanded) && (
           <div className="px-4 pb-4 space-y-3">{children}</div>
         )}
@@ -516,7 +526,7 @@ export default function OSDetalheMobile() {
         data_1a_venda: os.maquina.data_1a_venda || "",
         data_final_garantia: os.maquina.data_final_garantia || "",
         garantia: Boolean(os.em_garantia),
-        nota_fiscal_venda: "", 
+        nota_fiscal_venda: "",
       };
 
       window.localStorage.setItem(
@@ -631,7 +641,7 @@ export default function OSDetalheMobile() {
 
   return (
     <main
-      className="min-h-screen bg-slate-50 flex flex-col relative pb-8"
+      className="min-h-screen bg-slate-50 flex flex-col relative pb-2"
       key={`os-${os.id_os}-${refreshCount}`}
     >
       <MobileHeader
@@ -640,251 +650,253 @@ export default function OSDetalheMobile() {
         leftVariant="back"
       />
 
-      {/* Status Header */}
-      <div className="bg-white">
-        {os.descricao_problema && (
-          <div className="text-md text-slate-700 leading-relaxed bg-slate-100 p-3 rounded-lg break-words whitespace-pre-wrap max-h-[200px] overflow-y-auto custom-scrollbar">
-            {os.abertura.motivo_atendimento}: {os.descricao_problema}
-          </div>
-        )}
-      </div>
+      <div className="w-full max-w-4xl space-y-4 pb-8">
+        <div className="bg-white">
+          {os.descricao_problema && (
+            <div className="text-md text-slate-700 leading-relaxed bg-slate-100 p-3 rounded-lg break-words whitespace-pre-wrap max-h-[200px] overflow-y-auto custom-scrollbar">
+              {os.abertura.motivo_atendimento}: {os.descricao_problema}
+            </div>
+          )}
+        </div>
 
-      {/* Content Sections */}
-      <div className="px-4 pb-2 space-y-4 mt-2">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <StatusBadge status={os.situacao_os?.codigo?.toString()} />
+        {/* Content Sections */}
+        <div className="px-4 pb-6 space-y-4 mt-2">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <StatusBadge status={os.situacao_os?.codigo?.toString()} />
 
-            {os.data_agendada && (
-              <div className="flex items-center gap-1 text-sm text-gray-600">
-                <Calendar className="w-3 h-3" />
-                <span>Agendada:</span>
-                {formatDate(os.data_agendada)}
+              {os.data_agendada && (
+                <div className="flex items-center gap-1 text-sm text-gray-600">
+                  <Calendar className="w-3 h-3" />
+                  <span>Agendada:</span>
+                  {formatDate(os.data_agendada)}
+                </div>
+              )}
+            </div>
+
+            {os.liberacao_financeira?.liberada === false && (
+              <div className="w-full bg-red-600 text-white text-sm font-medium text-center py-1.5 rounded-md">
+                Aguardando Liberação Financeira
               </div>
             )}
           </div>
 
-          {os.liberacao_financeira?.liberada === false && (
-            <div className="w-full bg-red-600 text-white text-sm font-medium text-center py-1.5 rounded-md">
-              Aguardando Liberação Financeira
+          {/* Cliente */}
+          <Section title="Cliente" icon={<Building className="w-4 h-4" />}>
+            <Field
+              label="Nome Empresa"
+              value={os.cliente?.nome}
+              icon={<Briefcase className="w-3 h-3" />}
+            />
+            {enderecoFormatado && (
+              <Field
+                label="Endereço"
+                value={
+                  <button
+                    type="button"
+                    onClick={showNavigationModal}
+                    disabled={isLocationLoading}
+                    className="group flex w-full items-center gap-2 rounded-lg text-left text-black transition-colors duration-200 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:text-slate-400"
+                    aria-busy={isLocationLoading}
+                    title="Abrir navegação"
+                  >
+                    <span className="flex-1 text-sm font-semibold leading-snug text-current">
+                      {enderecoFormatado}
+                    </span>
+                  </button>
+                }
+                icon={<MapPin className="w-3 h-3" />}
+              />
+            )}
+
+            <Field
+              label="Região"
+              value={os.cliente?.nome_regiao}
+              icon={<MapPin className="w-3 h-3" />}
+            />
+            <Field
+              label="Contato"
+              value={os.contato?.nome}
+              icon={<User className="w-3 h-3" />}
+            />
+            {telefoneContato && telefoneHref && (
+              <Field
+                label="Telefone"
+                value={
+                  <a
+                    href={`tel:${telefoneHref}`}
+                    className="inline-flex w-full items-center justify-between gap-2 rounded-lg  text-sm font-semibold text-black transition-colors duration-200 hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+                  >
+                    <span className="truncate">{telefoneContato}</span>
+                  </a>
+                }
+                icon={<Phone className="w-3 h-3" />}
+              />
+            )}
+
+            {whatsappContato && whatsappSanitized && (
+              <Field
+                label="WhatsApp"
+                value={
+                  <a
+                    href={`https://wa.me/${whatsappSanitized}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex w-full items-center justify-between gap-2 rounded-lg text-sm font-semibold text-black transition-colors duration-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                  >
+                    <span className="truncate">{whatsappContato}</span>
+                  </a>
+                }
+                icon={<MessageCircle className="w-3 h-3" />}
+              />
+            )}
+
+            {emailContato && (
+              <Field
+                label="E-mail"
+                value={
+                  <a
+                    href={`mailto:${emailContato}`}
+                    className="inline-flex w-full items-center justify-between gap-2 rounded-lg  text-sm font-semibold text-black transition-colors duration-200 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+                  >
+                    <span className="truncate">{emailContato}</span>
+                  </a>
+                }
+                icon={<Mail className="w-3 h-3" />}
+              />
+            )}
+            {os.cliente?.id && (
+              <div className="pt-2">
+                <Link
+                  href={`/tecnico/clientes_detalhes/${os.cliente.id}`}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#7B54BE] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#6843a4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B54BE]"
+                >
+                  Ver histórico do cliente
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
+          </Section>
+          {/* Equipamento */}
+          <Section title="Máquina" icon={<Settings className="w-4 h-4" />}>
+            <div className="flex items-center gap-1">
+              <Field label="Modelo" value={os.maquina?.modelo} />
+
+              <div
+                className="w-4 h-4 flex items-center justify-center"
+                title={os.em_garantia ? "Em garantia" : "Fora da garantia"}
+              >
+                {os.em_garantia ? (
+                  <CircleCheck className="w-4 h-4 text-emerald-500 relative top-[8px]" />
+                ) : (
+                  <CircleX className="w-4 h-4 text-amber-500 relative top-[8px]" />
+                )}
+              </div>
+            </div>
+
+            <Field label="Descrição" value={os.maquina?.descricao} />
+            <Field label="Número de Série" value={os.maquina?.numero_serie} />
+            {os.maquina?.id && (
+              <div className="pt-2">
+                <Link
+                  href={`/tecnico/maquinas_detalhes/${os.maquina.id}`}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-[#7B54BE] hover:text-[#7B54BE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B54BE]"
+                >
+                  Ver histórico da máquina
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
+          </Section>
+
+          {/* Abertura */}
+          {os.abertura && (
+            <Section
+              title="Abertura"
+              icon={<FileSearch className="w-4 h-4" />}
+              collapsible={true}
+              defaultExpanded={false}
+            >
+              <Field
+                label="Aberto por"
+                value={os.abertura.nome_usuario}
+                icon={<User className="w-3 h-3" />}
+              />
+              <Field
+                label="Data abertura"
+                value={os.abertura.data_abertura}
+                icon={<User className="w-3 h-3" />}
+              />
+              <Field
+                label="Forma de abertura"
+                value={os.abertura.forma_abertura}
+                icon={<MessageSquare className="w-3 h-3" />}
+              />
+              <Field
+                label="Origem"
+                icon={<MessageSquare className="w-3 h-3" />}
+                value={
+                  os.abertura.origem_abertura === "I"
+                    ? "Interno"
+                    : os.abertura.origem_abertura === "T"
+                    ? "Terceiro"
+                    : os.abertura.origem_abertura === "C"
+                    ? "Cliente"
+                    : os.abertura.origem_abertura
+                }
+              />
+              <Field
+                label="Motivo do Atendimento"
+                icon={<MessageSquare className="w-3 h-3" />}
+                value={os.abertura.motivo_atendimento}
+              />
+            </Section>
+          )}
+
+          {/* Peças */}
+          {os.pecas_corrigidas && os.pecas_corrigidas.length > 0 && (
+            <Section
+              title={`Peças Utilizadas (${os.pecas_corrigidas.length})`}
+              icon={<Package className="w-4 h-4" />}
+              collapsible={true}
+              defaultExpanded={false}
+            >
+              <div className="space-y-2">
+                {os.pecas_corrigidas.map((peca, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Package className="w-3 h-3 text-slate-400" />
+                      <span className="text-sm text-slate-900 font-medium">
+                        {peca.nome}
+                      </span>
+                    </div>
+                    <span className="text-xs text-slate-600 bg-white px-2 py-1 rounded">
+                      Qty: {peca.quantidade}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {/* FATs */}
+          {os.fats && os.fats.length > 0 && (
+            <div className="space-y-4 mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <FileText className="w-5 h-5 text-slate-600" />
+                <h3 className="font-semibold text-slate-900 text-base">
+                  Fichas de Atendimento ({os.fats.length})
+                </h3>
+              </div>
+              {os.fats.map((fat, index) => (
+                <FATCard key={fat.id_fat} fat={fat} index={index} />
+              ))}
             </div>
           )}
         </div>
-        {/* Cliente */}
-        <Section title="Cliente" icon={<Building className="w-4 h-4" />}>
-          <Field
-            label="Nome Empresa"
-            value={os.cliente?.nome}
-            icon={<Briefcase className="w-3 h-3" />}
-          />
-          {enderecoFormatado && (
-            <Field
-              label="Endereço"
-              value={
-                <button
-                  type="button"
-                  onClick={showNavigationModal}
-                  disabled={isLocationLoading}
-                  className="group flex w-full items-center gap-2 rounded-lg text-left text-black transition-colors duration-200 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:text-slate-400"
-                  aria-busy={isLocationLoading}
-                  title="Abrir navegação"
-                >
-                  <span className="flex-1 text-sm font-semibold leading-snug text-current">
-                    {enderecoFormatado}
-                  </span>
-                </button>
-              }
-              icon={<MapPin className="w-3 h-3" />}
-            />
-          )}
-
-          <Field
-            label="Região"
-            value={os.cliente?.nome_regiao}
-            icon={<MapPin className="w-3 h-3" />}
-          />
-          <Field
-            label="Contato"
-            value={os.contato?.nome}
-            icon={<User className="w-3 h-3" />}
-          />
-          {telefoneContato && telefoneHref && (
-            <Field
-              label="Telefone"
-              value={
-                <a
-                  href={`tel:${telefoneHref}`}
-                  className="inline-flex w-full items-center justify-between gap-2 rounded-lg  text-sm font-semibold text-black transition-colors duration-200 hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
-                >
-                  <span className="truncate">{telefoneContato}</span>
-                </a>
-              }
-              icon={<Phone className="w-3 h-3" />}
-            />
-          )}
-
-          {whatsappContato && whatsappSanitized && (
-            <Field
-              label="WhatsApp"
-              value={
-                <a
-                  href={`https://wa.me/${whatsappSanitized}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex w-full items-center justify-between gap-2 rounded-lg text-sm font-semibold text-black transition-colors duration-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-                >
-                  <span className="truncate">{whatsappContato}</span>
-                </a>
-              }
-              icon={<MessageCircle className="w-3 h-3" />}
-            />
-          )}
-
-          {emailContato && (
-            <Field
-              label="E-mail"
-              value={
-                <a
-                  href={`mailto:${emailContato}`}
-                  className="inline-flex w-full items-center justify-between gap-2 rounded-lg  text-sm font-semibold text-black transition-colors duration-200 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
-                >
-                  <span className="truncate">{emailContato}</span>
-                </a>
-              }
-              icon={<Mail className="w-3 h-3" />}
-            />
-          )}
-          {os.cliente?.id && (
-            <div className="pt-2">
-              <Link
-                href={`/tecnico/clientes_detalhes/${os.cliente.id}`}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#7B54BE] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#6843a4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B54BE]"
-              >
-                Ver histórico do cliente
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </div>
-          )}
-        </Section>
-        {/* Equipamento */}
-        <Section title="Máquina" icon={<Settings className="w-4 h-4" />}>
-          <div className="flex items-center gap-1">
-            <Field label="Modelo" value={os.maquina?.modelo} />
-
-            <div
-              className="w-4 h-4 flex items-center justify-center"
-              title={os.em_garantia ? "Em garantia" : "Fora da garantia"}
-            >
-              {os.em_garantia ? (
-                <CircleCheck className="w-4 h-4 text-emerald-500 relative top-[8px]" />
-              ) : (
-                <CircleX className="w-4 h-4 text-amber-500 relative top-[8px]" />
-              )}
-            </div>
-          </div>
-
-          <Field label="Descrição" value={os.maquina?.descricao} />
-          <Field label="Número de Série" value={os.maquina?.numero_serie} />
-          {os.maquina?.id && (
-            <div className="pt-2">
-              <Link
-                href={`/tecnico/maquinas_detalhes/${os.maquina.id}`}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-[#7B54BE] hover:text-[#7B54BE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B54BE]"
-              >
-                Ver histórico da máquina
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </div>
-          )}
-        </Section>
-
-        {/* Abertura */}
-        {os.abertura && (
-          <Section
-            title="Abertura"
-            icon={<FileSearch className="w-4 h-4" />}
-            collapsible={true}
-            defaultExpanded={false}
-          >
-            <Field
-              label="Aberto por"
-              value={os.abertura.nome_usuario}
-              icon={<User className="w-3 h-3" />}
-            />
-            <Field
-              label="Data abertura"
-              value={os.abertura.data_abertura}
-              icon={<User className="w-3 h-3" />}
-            />
-            <Field
-              label="Forma de abertura"
-              value={os.abertura.forma_abertura}
-              icon={<MessageSquare className="w-3 h-3" />}
-            />
-            <Field
-              label="Origem"
-              icon={<MessageSquare className="w-3 h-3" />}
-              value={
-                os.abertura.origem_abertura === "I"
-                  ? "Interno"
-                  : os.abertura.origem_abertura === "T"
-                  ? "Terceiro"
-                  : os.abertura.origem_abertura === "C"
-                  ? "Cliente"
-                  : os.abertura.origem_abertura
-              }
-            />
-            <Field
-              label="Motivo do Atendimento"
-              icon={<MessageSquare className="w-3 h-3" />}
-              value={os.abertura.motivo_atendimento}
-            />
-          </Section>
-        )}
-
-        {/* Peças */}
-        {os.pecas_corrigidas && os.pecas_corrigidas.length > 0 && (
-          <Section
-            title={`Peças Utilizadas (${os.pecas_corrigidas.length})`}
-            icon={<Package className="w-4 h-4" />}
-            collapsible={true}
-            defaultExpanded={false}
-          >
-            <div className="space-y-2">
-              {os.pecas_corrigidas.map((peca, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-2">
-                    <Package className="w-3 h-3 text-slate-400" />
-                    <span className="text-sm text-slate-900 font-medium">
-                      {peca.nome}
-                    </span>
-                  </div>
-                  <span className="text-xs text-slate-600 bg-white px-2 py-1 rounded">
-                    Qty: {peca.quantidade}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* FATs */}
-        {os.fats && os.fats.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="w-5 h-5 text-slate-600" />
-              <h3 className="font-semibold text-slate-900 text-base">
-                Fichas de Atendimento ({os.fats.length})
-              </h3>
-            </div>
-            {os.fats.map((fat, index) => (
-              <FATCard key={fat.id_fat} fat={fat} index={index} />
-            ))}
-          </div>
-        )}
       </div>
 
       <FloatingActionMenu

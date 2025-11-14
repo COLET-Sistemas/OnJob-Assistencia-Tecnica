@@ -377,11 +377,11 @@ const FloatingActionMenuFat: React.FC<FloatingActionMenuFatProps> = ({
         />
       )}
 
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
+      <div className="fixed bottom-8 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
         <div
           className={`flex flex-col items-end gap-2 transition-all duration-200 ${
             open
-              ? "translate-y-0 opacity-100"
+              ? "pointer-events-auto translate-y-0 opacity-100"
               : "pointer-events-none translate-y-2 opacity-0"
           }`}
         >
@@ -394,9 +394,9 @@ const FloatingActionMenuFat: React.FC<FloatingActionMenuFatProps> = ({
                   setOpen(false);
                   onClick();
                 }}
-                className={`${optionBaseClasses} ${
-                  buttonClassName ?? ""
-                } ${modalLoading ? disabledClasses : ""}`}
+                className={`${optionBaseClasses} ${buttonClassName ?? ""} ${
+                  modalLoading ? disabledClasses : ""
+                }`}
                 disabled={modalLoading}
               >
                 <IconComponent className={`h-4 w-4 ${iconClass}`} />
@@ -408,9 +408,9 @@ const FloatingActionMenuFat: React.FC<FloatingActionMenuFatProps> = ({
 
         <button
           type="button"
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-[#7B54BE] text-white shadow-xl transition hover:scale-105 hover:shadow-2xl active:scale-95"
+          className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#7B54BE] text-white shadow-xl transition hover:scale-105 hover:shadow-2xl active:scale-95"
           onClick={() => setOpen((prev) => !prev)}
-          aria-label={open ? "Fechar ações" : "Abrir ações"}
+          aria-label={open ? "Fechar as ações" : "Abrir as ações"}
         >
           {open ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
         </button>
