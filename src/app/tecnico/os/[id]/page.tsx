@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useRef,
   useMemo,
+  startTransition,
 } from "react";
 import Link from "next/link";
 import FloatingActionMenu from "@/components/tecnico/FloatingActionMenu";
@@ -134,6 +135,133 @@ const Field = React.memo(
 
 Field.displayName = "Field";
 
+type HistoryActionVariant = "primary" | "secondary";
+
+const HistoryActionButton = React.memo(
+  ({
+    href,
+    label,
+    variant = "primary",
+  }: {
+    href: string;
+    label: string;
+    variant?: HistoryActionVariant;
+  }) => {
+    const router = useRouter();
+    const [isPending, setIsPending] = useState(false);
+    const isMountedRef = useRef(true);
+
+    useEffect(() => {
+      isMountedRef.current = true;
+      return () => {
+        isMountedRef.current = false;
+      };
+    }, []);
+
+    useEffect(() => {
+      setIsPending(false);
+    }, [href]);
+
+    const handleClick = useCallback(
+      (event: React.MouseEvent<HTMLAnchorElement>) => {
+        if (
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.metaKey ||
+          event.altKey ||
+          event.ctrlKey ||
+          event.shiftKey
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+
+        if (isPending) {
+          return;
+        }
+
+        setIsPending(true);
+
+        startTransition(() => {
+          router.push(href);
+          // Reset pending state after navigation
+          if (isMountedRef.current) {
+            setIsPending(false);
+          }
+        });
+      },
+      [href, isPending, router]
+    );
+
+    const baseClasses =
+      "inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B54BE]";
+    const variantClasses =
+      variant === "primary"
+        ? "bg-[#7B54BE] text-white hover:bg-[#6843a4]"
+        : "border border-slate-200 bg-white text-slate-800 hover:border-[#7B54BE] hover:text-[#7B54BE]";
+    const stateClasses = isPending
+      ? "cursor-wait opacity-70"
+      : "cursor-pointer";
+
+    return (
+      <Link
+        href={href}
+        onClick={handleClick}
+        className={`${baseClasses} ${variantClasses} ${stateClasses}`}
+        prefetch={false}
+        aria-label={label}
+        aria-busy={isPending}
+        aria-disabled={isPending}
+      >
+        <span className="truncate">{isPending ? `${label}…` : label}</span>
+        <ArrowUpRight className="h-4 w-4" />
+      </Link>
+    );
+  }
+);
+
+HistoryActionButton.displayName = "HistoryActionButton";
+
+// Componente memoizado para lista de peças
+const PartsSection = React.memo(
+  ({ parts }: { parts: Array<{ nome?: string; quantidade?: number }> }) => (
+    <div className="space-y-2">
+      {parts.map((peca, index) => (
+        <div
+          key={`peca-${index}-${peca.nome}`}
+          className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+        >
+          <div className="flex items-center gap-2">
+            <Package className="w-3 h-3 text-slate-400" />
+            <span className="text-sm text-slate-900 font-medium">
+              {peca.nome}
+            </span>
+          </div>
+          <span className="text-xs text-slate-600 bg-white px-2 py-1 rounded">
+            Qty: {peca.quantidade}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+);
+
+PartsSection.displayName = "PartsSection";
+
+// Componente memoizado para lista de FATs
+const FATsSection = React.memo(
+  ({ fats }: { fats: Array<{ id_fat: number }> }) => (
+    <>
+      {fats.map((fat, index) => (
+        <FATCard key={`fat-${fat.id_fat}`} fat={fat} index={index} />
+      ))}
+    </>
+  )
+);
+
+FATsSection.displayName = "FATsSection";
+
 export default function OSDetalheMobile() {
   const router = useRouter();
   const params = useParams();
@@ -156,16 +284,23 @@ export default function OSDetalheMobile() {
     return dateStr;
   }, []);
 
+  // Usar useRef para controlar se já tentou buscar localização
+  const hasAttemptedLocationRef = useRef(false);
+
   const getCurrentLocation = useCallback(() => {
     if (
       typeof navigator === "undefined" ||
       !navigator.geolocation ||
-      isLocationLoading
+      isLocationLoading ||
+      currentLocation ||
+      hasAttemptedLocationRef.current
     ) {
       return;
     }
 
+    hasAttemptedLocationRef.current = true;
     setIsLocationLoading(true);
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setCurrentLocation({
@@ -178,12 +313,23 @@ export default function OSDetalheMobile() {
         console.error("Erro ao obter localização:", error);
         setIsLocationLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 300000 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
     );
-  }, [isLocationLoading]);
+  }, [isLocationLoading, currentLocation]);
 
+  // Executar busca de localização apenas uma vez após um delay
   useEffect(() => {
-    getCurrentLocation();
+    let mounted = true;
+    const timer = setTimeout(() => {
+      if (mounted && !hasAttemptedLocationRef.current) {
+        getCurrentLocation();
+      }
+    }, 1500);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
   }, [getCurrentLocation]);
 
   const openNavigation = useCallback(
@@ -258,23 +404,29 @@ export default function OSDetalheMobile() {
     [os, currentLocation]
   );
 
+  // Detectar se é mobile uma vez e armazenar em ref
+  const isMobileRef = useRef<boolean | null>(null);
+
+  const checkIsMobile = useCallback(() => {
+    if (isMobileRef.current === null) {
+      const userAgent =
+        typeof navigator !== "undefined" ? navigator.userAgent : "";
+      isMobileRef.current =
+        /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          userAgent
+        );
+    }
+    return isMobileRef.current;
+  }, []);
+
   const showNavigationModal = useCallback(() => {
     if (typeof window === "undefined") {
       return;
     }
 
-    const userAgent =
-      typeof navigator !== "undefined" ? navigator.userAgent : "";
-    const isMobile =
-      /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        userAgent
-      );
+    const isMobile = checkIsMobile();
 
-    if (
-      isMobile &&
-      typeof document !== "undefined" &&
-      typeof document.createElement === "function"
-    ) {
+    if (isMobile && typeof document !== "undefined") {
       const modal = document.createElement("div");
       modal.className = `
         fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4
@@ -377,7 +529,7 @@ export default function OSDetalheMobile() {
     } else {
       openNavigation("google");
     }
-  }, [openNavigation]);
+  }, [openNavigation, checkIsMobile]);
 
   const enderecoFormatado = useMemo(() => {
     if (!os?.cliente?.endereco) {
@@ -398,14 +550,47 @@ export default function OSDetalheMobile() {
     os?.cliente?.cep,
   ]);
 
-  const fetchOS = useCallback(
-    async (force = false) => {
-      if (!params?.id) {
-        setError("ID da OS não fornecido");
-        setLoading(false);
-        return;
-      }
+  // Otimizar campos de contato com useMemo
+  const contactInfo = useMemo(() => {
+    const telefoneContato =
+      typeof os?.contato?.telefone === "string"
+        ? os.contato.telefone.trim()
+        : "";
+    const telefoneHref = telefoneContato
+      ? telefoneContato.replace(/[^+\d]/g, "")
+      : "";
+    const whatsappContato =
+      typeof os?.contato?.whatsapp === "string"
+        ? os.contato.whatsapp.trim()
+        : "";
+    const whatsappSanitized = whatsappContato
+      ? whatsappContato.replace(/\D/g, "")
+      : "";
+    const emailContato =
+      typeof os?.contato?.email === "string" ? os.contato.email.trim() : "";
 
+    return {
+      telefoneContato,
+      telefoneHref,
+      whatsappContato,
+      whatsappSanitized,
+      emailContato,
+    };
+  }, [os?.contato?.telefone, os?.contato?.whatsapp, os?.contato?.email]);
+
+  const {
+    telefoneContato,
+    telefoneHref,
+    whatsappContato,
+    whatsappSanitized,
+    emailContato,
+  } = contactInfo;
+
+  // Usar useRef para debounce da fetchOS
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const fetchOSImmediate = useCallback(
+    async (osId: string | string[], force = false) => {
       if (isLoadingRef.current) {
         return;
       }
@@ -417,7 +602,6 @@ export default function OSDetalheMobile() {
 
       // Criar novo AbortController
       abortControllerRef.current = new AbortController();
-
       isLoadingRef.current = true;
 
       // Sempre mostrar loading para feedback visual
@@ -425,15 +609,14 @@ export default function OSDetalheMobile() {
       setError("");
 
       try {
+        const numericId = Number(osId);
+
         // Se for force=true, invalidar cache antes da requisição
         if (force) {
-          ordensServicoService.invalidateOSCache(Number(params.id));
+          ordensServicoService.invalidateOSCache(numericId);
         }
 
-        const response = await ordensServicoService.getById(
-          Number(params.id),
-          force
-        );
+        const response = await ordensServicoService.getById(numericId, force);
 
         // Verificar se a requisição foi cancelada
         if (abortControllerRef.current?.signal.aborted) {
@@ -452,9 +635,12 @@ export default function OSDetalheMobile() {
           _lastUpdated: Date.now(),
         } as OSDetalhadaV2);
 
-        // Limpar erro se houver
         setError("");
       } catch (error) {
+        // Não mostrar erro se foi cancelado
+        if (abortControllerRef.current?.signal.aborted) {
+          return;
+        }
         console.error("Erro ao carregar dados da OS:", error);
         setError("Falha ao carregar dados da OS. Tente novamente.");
       } finally {
@@ -462,7 +648,34 @@ export default function OSDetalheMobile() {
         setLoading(false);
       }
     },
-    [params?.id]
+    []
+  );
+
+  const fetchOS = useCallback(
+    async (force = false) => {
+      const osId = params?.id;
+      if (!osId) {
+        setError("ID da OS não fornecido");
+        setLoading(false);
+        return;
+      }
+
+      // Cancelar timeout anterior se existir
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+
+      // Debounce para evitar chamadas muito rápidas
+      if (!force) {
+        fetchTimeoutRef.current = setTimeout(() => {
+          fetchOSImmediate(osId, force);
+        }, 100);
+        return;
+      }
+
+      fetchOSImmediate(osId, force);
+    },
+    [params?.id, fetchOSImmediate]
   );
 
   const handleActionSuccess = useCallback(
@@ -472,20 +685,34 @@ export default function OSDetalheMobile() {
         typeof payload.idFat === "number" &&
         Number.isFinite(payload.idFat)
       ) {
-        router.push(`/tecnico/os/fat/${payload.idFat}`);
+        startTransition(() => {
+          router.push(`/tecnico/os/fat/${payload.idFat}`);
+        });
         return;
       }
 
-      setRefreshCount((prev) => {
-        const newCount = prev + 1;
-        return newCount;
-      });
-
+      setRefreshCount((prev) => prev + 1);
       // Chamar fetchOS com force=true - apenas uma vez
       fetchOS(true);
     },
     [fetchOS, router]
   );
+
+  // Otimizar dados computados pesados
+  const computedData = useMemo(() => {
+    if (!os) return null;
+
+    return {
+      statusCode: os.situacao_os?.codigo?.toString(),
+      isFinancialBlocked: os.liberacao_financeira?.liberada === false,
+      hasScheduledDate: Boolean(os.data_agendada),
+      hasWarranty: Boolean(os.em_garantia),
+      hasParts: os.pecas_corrigidas && os.pecas_corrigidas.length > 0,
+      hasFats: os.fats && os.fats.length > 0,
+      partsCount: os.pecas_corrigidas?.length || 0,
+      fatsCount: os.fats?.length || 0,
+    };
+  }, [os]);
 
   // Effect otimizado com cleanup
   useEffect(() => {
@@ -538,12 +765,22 @@ export default function OSDetalheMobile() {
     }
   }, [os]);
 
-  // Cleanup no unmount
+  // Cleanup completo no unmount
   useEffect(() => {
     return () => {
+      // Cancelar requisições
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+
+      // Cancelar timeouts
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+
+      // Limpar refs
+      isLoadingRef.current = false;
+      hasAttemptedLocationRef.current = false;
     };
   }, []);
 
@@ -626,19 +863,6 @@ export default function OSDetalheMobile() {
     );
   }
 
-  const telefoneContato =
-    typeof os.contato?.telefone === "string" ? os.contato.telefone.trim() : "";
-  const telefoneHref = telefoneContato
-    ? telefoneContato.replace(/[^+\d]/g, "")
-    : "";
-  const whatsappContato =
-    typeof os.contato?.whatsapp === "string" ? os.contato.whatsapp.trim() : "";
-  const whatsappSanitized = whatsappContato
-    ? whatsappContato.replace(/\D/g, "")
-    : "";
-  const emailContato =
-    typeof os.contato?.email === "string" ? os.contato.email.trim() : "";
-
   return (
     <main
       className="min-h-screen bg-slate-50 flex flex-col relative pb-2"
@@ -663,9 +887,9 @@ export default function OSDetalheMobile() {
         <div className="px-4 pb-6 space-y-4 mt-2">
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <StatusBadge status={os.situacao_os?.codigo?.toString()} />
+              <StatusBadge status={computedData?.statusCode || ""} />
 
-              {os.data_agendada && (
+              {computedData?.hasScheduledDate && (
                 <div className="flex items-center gap-1 text-sm text-gray-600">
                   <Calendar className="w-3 h-3" />
                   <span>Agendada:</span>
@@ -674,7 +898,7 @@ export default function OSDetalheMobile() {
               )}
             </div>
 
-            {os.liberacao_financeira?.liberada === false && (
+            {computedData?.isFinancialBlocked && (
               <div className="w-full bg-red-600 text-white text-sm font-medium text-center py-1.5 rounded-md">
                 Aguardando Liberação Financeira
               </div>
@@ -767,13 +991,11 @@ export default function OSDetalheMobile() {
             )}
             {os.cliente?.id && (
               <div className="pt-2">
-                <Link
+                <HistoryActionButton
                   href={`/tecnico/clientes_detalhes/${os.cliente.id}`}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#7B54BE] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#6843a4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B54BE]"
-                >
-                  Ver histórico do cliente
-                  <ArrowUpRight className="h-4 w-4" />
-                </Link>
+                  label="Ver histórico do cliente"
+                  variant="primary"
+                />
               </div>
             )}
           </Section>
@@ -784,9 +1006,11 @@ export default function OSDetalheMobile() {
 
               <div
                 className="w-4 h-4 flex items-center justify-center"
-                title={os.em_garantia ? "Em garantia" : "Fora da garantia"}
+                title={
+                  computedData?.hasWarranty ? "Em garantia" : "Fora da garantia"
+                }
               >
-                {os.em_garantia ? (
+                {computedData?.hasWarranty ? (
                   <CircleCheck className="w-4 h-4 text-emerald-500 relative top-[8px]" />
                 ) : (
                   <CircleX className="w-4 h-4 text-amber-500 relative top-[8px]" />
@@ -798,13 +1022,11 @@ export default function OSDetalheMobile() {
             <Field label="Número de Série" value={os.maquina?.numero_serie} />
             {os.maquina?.id && (
               <div className="pt-2">
-                <Link
+                <HistoryActionButton
                   href={`/tecnico/maquinas_detalhes/${os.maquina.id}`}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-[#7B54BE] hover:text-[#7B54BE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B54BE]"
-                >
-                  Ver histórico da máquina
-                  <ArrowUpRight className="h-4 w-4" />
-                </Link>
+                  label="Ver histórico da máquina"
+                  variant="secondary"
+                />
               </div>
             )}
           </Section>
@@ -854,46 +1076,27 @@ export default function OSDetalheMobile() {
           )}
 
           {/* Peças */}
-          {os.pecas_corrigidas && os.pecas_corrigidas.length > 0 && (
+          {computedData?.hasParts && (
             <Section
-              title={`Peças Utilizadas (${os.pecas_corrigidas.length})`}
+              title={`Peças Utilizadas (${computedData.partsCount})`}
               icon={<Package className="w-4 h-4" />}
               collapsible={true}
               defaultExpanded={false}
             >
-              <div className="space-y-2">
-                {os.pecas_corrigidas.map((peca, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Package className="w-3 h-3 text-slate-400" />
-                      <span className="text-sm text-slate-900 font-medium">
-                        {peca.nome}
-                      </span>
-                    </div>
-                    <span className="text-xs text-slate-600 bg-white px-2 py-1 rounded">
-                      Qty: {peca.quantidade}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <PartsSection parts={os.pecas_corrigidas || []} />
             </Section>
           )}
 
           {/* FATs */}
-          {os.fats && os.fats.length > 0 && (
+          {computedData?.hasFats && (
             <div className="space-y-4 mb-8">
               <div className="flex items-center gap-2 mb-4">
                 <FileText className="w-5 h-5 text-slate-600" />
                 <h3 className="font-semibold text-slate-900 text-base">
-                  Fichas de Atendimento ({os.fats.length})
+                  Fichas de Atendimento ({computedData.fatsCount})
                 </h3>
               </div>
-              {os.fats.map((fat, index) => (
-                <FATCard key={fat.id_fat} fat={fat} index={index} />
-              ))}
+              <FATsSection fats={os.fats || []} />
             </div>
           )}
         </div>

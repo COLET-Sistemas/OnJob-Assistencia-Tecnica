@@ -17,8 +17,13 @@ import {
 } from "@/api/services/historicoService";
 import type { Cliente } from "@/types/admin/cadastro/clientes";
 import { formatDocumento } from "@/utils/formatters";
-import { formatarCEP } from "@/utils/cepAPI";
-import { AlertTriangle, Building, CalendarDays } from "lucide-react";
+import {
+  AlertTriangle,
+  Building,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 type SectionCardProps = {
   title: string;
@@ -41,38 +46,29 @@ const InfoItem = ({ label, value }: { label: string; value?: ReactNode }) => (
     <p className="text-[11px] uppercase tracking-wide text-slate-400">
       {label}
     </p>
-    <div className="text-sm font-medium text-slate-900">{value ?? "-"}</div>
+    <div className="text-sm font-medium text-slate-900 break-words">
+      {value ?? "-"}
+    </div>
   </div>
 );
 
 const formatAddress = (cliente: Cliente | null) => {
   if (!cliente) return "";
-  const linha1 = [cliente.endereco, cliente.numero].filter(Boolean).join(", ");
-  const linha2 = [
+
+  const partes = [
+    cliente.endereco && cliente.numero
+      ? `${cliente.endereco}, ${cliente.numero}`
+      : cliente.endereco,
     cliente.bairro,
     cliente.cidade && cliente.uf
       ? `${cliente.cidade}/${cliente.uf}`
       : cliente.cidade,
-  ]
-    .filter(Boolean)
-    .join(" • ");
-  const cep = cliente.cep ? formatarCEP(cliente.cep) : null;
+  ];
 
-  return [linha1, linha2, cep].filter(Boolean).join(" • ");
+  return partes.filter(Boolean).join(" • ");
 };
 
-const HISTORICO_PAGE_SIZE = 5;
-
-const formatDateOnly = (value?: string | null) => {
-  if (!value) return "-";
-  if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
-    const [year, month, day] = value.split("T")[0].split("-");
-    if (day && month && year) {
-      return `${day}/${month}/${year}`;
-    }
-  }
-  return value;
-};
+const HISTORICO_PAGE_SIZE = 10;
 
 const renderHistoricoField = (
   label: string,
@@ -114,6 +110,7 @@ export default function ClienteDetalheTecnicoPage() {
   const [historicoLoading, setHistoricoLoading] = useState(false);
   const [historicoError, setHistoricoError] = useState<string | null>(null);
   const [historicoTotalRegistros, setHistoricoTotalRegistros] = useState(0);
+  const [historicoPagina, setHistoricoPagina] = useState(1);
 
   useEffect(() => {
     let active = true;
@@ -173,7 +170,7 @@ export default function ClienteDetalheTecnicoPage() {
       setHistoricoError(null);
       const response = await historicoService.getHistorico({
         id_cliente: clienteId,
-        nro_pagina: 1,
+        nro_pagina: historicoPagina,
         qtde_registros: HISTORICO_PAGE_SIZE,
       });
 
@@ -187,22 +184,37 @@ export default function ClienteDetalheTecnicoPage() {
     } finally {
       setHistoricoLoading(false);
     }
-  }, [clienteId]);
+  }, [clienteId, historicoPagina]);
 
   useEffect(() => {
     fetchHistorico();
   }, [fetchHistorico]);
 
+  useEffect(() => {
+    setHistoricoPagina(1);
+  }, [clienteId]);
+
   const documentoFormatado = cliente?.cnpj
     ? formatDocumento(cliente.cnpj)
     : null;
   const enderecoFormatado = formatAddress(cliente);
-  const statusLabel =
-    cliente?.situacao === "A"
+  const situacaoCliente = cliente?.situacao;
+  const historicoTotalPaginas = Math.max(
+    1,
+    Math.ceil(historicoTotalRegistros / HISTORICO_PAGE_SIZE)
+  );
+  const historicoTemMultiplasPaginas = historicoTotalPaginas > 1;
+  const isClienteAtivo = situacaoCliente === "A";
+  const statusIndicatorColor = situacaoCliente
+    ? isClienteAtivo
+      ? "bg-emerald-500"
+      : "bg-rose-500"
+    : "bg-slate-400";
+  const statusIndicatorTitle = situacaoCliente
+    ? isClienteAtivo
       ? "Cliente ativo"
-      : cliente?.situacao === "I"
-      ? "Cliente inativo"
-      : cliente?.situacao;
+      : "Cliente inativo"
+    : "Situação não informada";
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -237,44 +249,46 @@ export default function ClienteDetalheTecnicoPage() {
               title="Informações principais"
               icon={<Building className="h-4 w-4" />}
             >
-              <div className="rounded-2xl bg-slate-50 p-3">
-                <p className="text-base font-semibold text-slate-900">
-                  {cliente.nome_fantasia}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-base font-semibold text-slate-900 truncate">
+                    {cliente.nome_fantasia}
+                  </p>
+
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full ${statusIndicatorColor}`}
+                    title={statusIndicatorTitle}
+                    aria-label={statusIndicatorTitle}
+                  />
+                </div>
+
+                <p className="text-xs text-slate-500 truncate">
+                  {cliente.razao_social}
                 </p>
-                <p className="text-sm text-slate-500">{cliente.razao_social}</p>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                {statusLabel && (
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      cliente?.situacao === "A"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-amber-50 text-amber-700"
-                    }`}
-                  >
-                    {statusLabel}
-                  </span>
-                )}
-                {cliente?.regiao?.nome && (
+              {cliente?.regiao?.nome && (
+                <div className="flex flex-wrap gap-2">
                   <span className="rounded-full bg-slate-200/60 px-3 py-1 text-xs font-semibold text-slate-700">
                     {cliente.regiao.nome}
                   </span>
-                )}
-              </div>
+                </div>
+              )}
 
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {documentoFormatado && (
-                  <InfoItem label="Documento" value={documentoFormatado} />
+                  <InfoItem label="CNPJ" value={documentoFormatado} />
                 )}
                 {cliente?.codigo_erp && (
                   <InfoItem label="Código ERP" value={cliente.codigo_erp} />
                 )}
                 {enderecoFormatado && (
-                  <InfoItem
-                    label="Endereço completo"
-                    value={enderecoFormatado}
-                  />
+                  <div className="col-span-2">
+                    <InfoItem
+                      label="Endereço completo"
+                      value={enderecoFormatado}
+                    />
+                  </div>
                 )}
               </div>
             </SectionCard>
@@ -300,27 +314,48 @@ export default function ClienteDetalheTecnicoPage() {
                 </p>
               ) : (
                 <>
-                  <div className="space-y-3">
+                  <div className="space-y-0">
                     {historicoRegistros.map((registro) => (
                       <article
                         key={`${registro.id_fat}-${registro.numero_os}-${registro.data_atendimento}`}
-                        className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
+                        className="mb-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm
+             grid gap-4 md:grid-cols-2"
                       >
-                        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3 text-sm text-slate-700">
-                          <span className="font-semibold text-slate-900">
-                            OS #{registro.numero_os ?? "-"}
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            FAT #{registro.id_fat ?? "-"}
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            {formatDateOnly(registro.data_atendimento)}
-                          </span>
-                          <span className="ml-auto text-xs font-semibold text-slate-900">
-                            {registro.nome_tecnico || "Tecnico nao informado"}
-                          </span>
+                        {/* COLUNA ESQUERDA */}
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3 text-sm text-slate-700">
+                            <span className="font-semibold text-slate-900">
+                              OS #{registro.numero_os ?? "-"}
+                            </span>
+                            <span className="font-semibold text-slate-900">
+                              FAT #{registro.id_fat ?? "-"}
+                            </span>
+                            <span className="font-semibold text-slate-900">
+                              {registro.data_atendimento}
+                            </span>
+                            <span className="ml-auto text-xs  text-slate-500">
+                              {registro.nome_tecnico || "Tecnico nao informado"}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1 pt-2 text-sm text-slate-600">
+                            <p className="text-xs font-semibold text-slate-900">
+                              {registro.descricao_maquina ||
+                                "Máquina não informada"}
+                            </p>
+                            <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+                              {registro.numero_serie && (
+                                <span>Série: {registro.numero_serie}</span>
+                              )}
+                              <span>
+                                Ciclos: {registro.numero_ciclos ?? "-"}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+
+                        {/* COLUNA DIREITA */}
+                        <div className="grid gap-3">
                           {renderHistoricoField(
                             `Motivo do atendimento: ${
                               registro.motivo_atendimento ?? "-"
@@ -351,11 +386,48 @@ export default function ClienteDetalheTecnicoPage() {
                       </article>
                     ))}
                   </div>
-                  {historicoTotalRegistros > HISTORICO_PAGE_SIZE && (
-                    <p className="text-xs text-slate-500">
-                      Mostrando {historicoRegistros.length} dos{" "}
-                      {historicoTotalRegistros} atendimentos mais recentes.
-                    </p>
+                  {historicoTotalRegistros > 0 && (
+                    <div className="mt-5 rounded-2xl border border-slate-100 bg-gradient-to-r from-white via-slate-50 to-white p-4 shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] uppercase tracking-wide text-slate-400">
+                        <span>
+                          Exibindo {historicoRegistros.length} de{" "}
+                          {historicoTotalRegistros}
+                        </span>
+                        <span className="font-semibold text-slate-700">
+                          Página {historicoPagina} de {historicoTotalPaginas}
+                        </span>
+                      </div>
+                      {historicoTemMultiplasPaginas && (
+                        <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setHistoricoPagina((page) =>
+                                Math.max(1, page - 1)
+                              )
+                            }
+                            disabled={historicoPagina <= 1}
+                            className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
+                          >
+                            <ChevronLeft className="h-3 w-3" />
+                            Anterior
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setHistoricoPagina((page) =>
+                                Math.min(historicoTotalPaginas, page + 1)
+                              )
+                            }
+                            disabled={historicoPagina >= historicoTotalPaginas}
+                            className="flex items-center gap-1 rounded-full border border-slate-200 bg-slate-900 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-700"
+                          >
+                            Próxima
+                            <ChevronRight className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </>
               )}

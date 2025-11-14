@@ -19,7 +19,7 @@ const InfoItem: React.FC<InfoItemProps> = ({ label, value, icon }) => {
         {icon && <span className="mr-1 text-gray-400">{icon}</span>}
         {label}
       </div>
-      <div className="mt-1 group-hover:text-[var(--primary-dark)] transition-colors duration-200">
+      <div className="mt-1 group-hover:text-[var(--primary-dark)] transition-colors duration-200 whitespace-pre-wrap">
         {value || "-"}
       </div>
     </motion.div>

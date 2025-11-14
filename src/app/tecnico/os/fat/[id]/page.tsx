@@ -166,7 +166,7 @@ const Field = React.memo(
         )}
         <div className="min-w-0 flex-1">
           <p className="text-xs text-slate-500 mb-0.5 font-medium">{label}</p>
-          <div className="text-sm text-slate-900 break-words leading-relaxed">
+          <div className="text-sm text-slate-900 break-words leading-relaxed whitespace-pre-wrap">
             {value}
           </div>
         </div>
@@ -1162,7 +1162,6 @@ export default function FATDetalheMobile() {
 
   return (
     <>
-
       <main className="min-h-screen bg-slate-50 pb-4 overflow-x-hidden">
         <MobileHeader
           title={fat.id_fat ? `FAT #${fat.id_fat}` : "Detalhes da FAT"}

@@ -42,7 +42,9 @@ const InfoItem = ({ label, value }: { label: string; value?: ReactNode }) => (
     <p className="text-[11px] uppercase tracking-wide text-slate-400">
       {label}
     </p>
-    <div className="text-sm font-medium text-slate-900">{value ?? "-"}</div>
+    <div className="text-sm font-medium text-slate-900 whitespace-pre-wrap">
+      {value ?? "-"}
+    </div>
   </div>
 );
 
@@ -75,9 +77,8 @@ export default function MaquinaDetalheTecnicoPage() {
   >([]);
   const [historicoLoading, setHistoricoLoading] = useState(false);
   const [historicoError, setHistoricoError] = useState<string | null>(null);
-  const [prefetchedMaquina, setPrefetchedMaquina] = useState<
-    Partial<Maquina> | null
-  >(null);
+  const [prefetchedMaquina, setPrefetchedMaquina] =
+    useState<Partial<Maquina> | null>(null);
 
   useEffect(() => {
     let active = true;
