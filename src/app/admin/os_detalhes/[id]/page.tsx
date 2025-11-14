@@ -972,29 +972,23 @@ const OSDetalhesPage: React.FC = () => {
                   {clienteData?.nome && (
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-gray-500">Nome</p>
-                      {clienteDetalhesHref ? (
-                        <Link
-                          href={clienteDetalhesHref}
-                          className="group inline-flex items-center gap-2 mt-1 text-gray-800 font-semibold transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
-                        >
-                          <span className="flex items-center gap-1">
-                            <span className="font-bold">
-                              {clienteData.nome}
-                            </span>
-                            <span className="text-sm text-gray-600">
-                              ({clienteData.codigo_erp})
-                            </span>
-                          </span>
-                          <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 group-hover:opacity-100 transition relative -top-1" />
-                        </Link>
-                      ) : (
-                        <p className="text-gray-800 mt-1 flex items-center gap-1.5">
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-gray-800 flex items-center gap-1.5">
                           <span className="font-bold">{clienteData.nome}</span>
                           <span className="text-sm text-gray-600">
                             ({clienteData.codigo_erp})
                           </span>
                         </p>
-                      )}
+                        {clienteDetalhesHref && (
+                          <Link
+                            href={clienteDetalhesHref}
+                            className="flex items-center text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                            title="Ver detalhes do cliente"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                        )}
+                      </div>
                       {clienteData && "razao_social" in clienteData && (
                         <p className="text-gray-800">
                           {String(
@@ -1131,21 +1125,20 @@ const OSDetalhesPage: React.FC = () => {
                       <p className="text-sm font-medium text-gray-500">
                         Descrição
                       </p>
-                      {maquinaDetalhesHref ? (
-                        <Link
-                          href={maquinaDetalhesHref}
-                          className="group inline-flex items-center gap-2 mt-1 text-gray-800 font-semibold transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
-                        >
-                          <span className="font-semibold">
-                            {maquinaData.descricao}
-                          </span>
-                          <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 group-hover:opacity-100 transition relative -top-1" />
-                        </Link>
-                      ) : (
-                        <p className="text-gray-800 mt-1">
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-gray-800 font-semibold">
                           {maquinaData.descricao}
                         </p>
-                      )}
+                        {maquinaDetalhesHref && (
+                          <Link
+                            href={maquinaDetalhesHref}
+                            className="flex items-center text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                            title="Ver detalhes da máquina"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   )}
 

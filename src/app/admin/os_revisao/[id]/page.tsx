@@ -1,6 +1,7 @@
 ﻿"use client";
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ordensServicoService,
   type OSDetalhadaV2,
@@ -28,6 +29,7 @@ import {
   CircleX,
   ShieldCheck,
   ShieldX,
+  Eye,
 } from "lucide-react";
 
 import StatusBadge from "@/components/tecnico/StatusBadge";
@@ -771,9 +773,20 @@ export default function OSRevisaoPage() {
               </div>
 
               <div className="flex flex-col">
-                <span className="text-sm text-gray-700 font-medium">
-                  {os.cliente.nome}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700 font-medium">
+                    {os.cliente.nome}
+                  </span>
+                  {os.cliente.id && (
+                    <Link
+                      href={`/admin/clientes_detalhes/${os.cliente.id}`}
+                      className="flex items-center text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                      title="Ver detalhes do cliente"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Link>
+                  )}
+                </div>
                 <div className="flex items-center gap-1 text-xs text-gray-500">
                   <button
                     onClick={() => {
@@ -825,6 +838,15 @@ export default function OSRevisaoPage() {
                       )}
                     </div>
                     <span className="truncate">{os.maquina.descricao}</span>
+                    {os.maquina?.id && (
+                      <Link
+                        href={`/admin/maquinas_detalhes/${os.maquina.id}`}
+                        className="flex items-center text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded ml-1"
+                        title="Ver detalhes da máquina"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>
