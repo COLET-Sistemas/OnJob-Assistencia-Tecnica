@@ -566,6 +566,12 @@ const ClientesDetalhesPage = () => {
                     Atendimento: {formatDateOnly(registro.data_atendimento)}
                   </span>
 
+                  {registro.numero_ciclos > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-600">
+                      Ciclo: {registro.numero_ciclos}
+                    </span>
+                  )}
+
                   <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-800">
                     {registro.em_garantia ? (
                       <CircleCheck className="h-4 w-4 text-emerald-500" />

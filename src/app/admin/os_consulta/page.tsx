@@ -1774,14 +1774,13 @@ const ConsultaOSPage: React.FC = () => {
           <div className="grid grid-cols-12 gap-x-1 px-3 py-2 bg-gray-50 rounded-md text-xs font-semibold text-gray-600 mb-0 shadow-sm">
             <div className="col-span-1">OS</div>
             <div className="col-span-3 md:col-span-2">Cliente / Cidade</div>
-            <div className="col-span-5 md:col-span-5 lg:col-span-4">
+            <div className="col-span-4 md:col-span-4 lg:col-span-3">
               Descrição / Série
             </div>
-            <div className="hidden md:block md:col-span-1 text-center">
+            <div className="hidden md:block md:col-span-2 text-center">
               Data
             </div>
-            <div className="col-span-2">Técnico</div>
-            {/* Base: 1 col; md+: 1 col; lg+: 2 cols (compensado reduzindo Série) */}
+            <div className="col-span-3 md:col-span-2">Técnico</div>
             <div className="col-span-1 md:col-span-1 lg:col-span-2 text-right">
               Status
             </div>
@@ -1811,7 +1810,9 @@ const ConsultaOSPage: React.FC = () => {
                       <div
                         className="w-5 h-5 flex items-center justify-center shrink-0 ml-2"
                         title={
-                          item.em_garantia ? "OS em garantia" : "OS fora da garantia"
+                          item.em_garantia
+                            ? "OS em garantia"
+                            : "OS fora da garantia"
                         }
                       >
                         {item.em_garantia ? (
@@ -1840,7 +1841,7 @@ const ConsultaOSPage: React.FC = () => {
                   </div>
 
                   {/* Série / Descrição */}
-                  <div className="col-span-5 md:col-span-5 lg:col-span-4">
+                  <div className="col-span-4 md:col-span-4 lg:col-span-3">
                     <div className="flex flex-col">
                       <span className="text-xs font-medium text-gray-700 truncate">
                         {(item.maquina?.descricao || "-").substring(0, 80)}
@@ -1852,7 +1853,7 @@ const ConsultaOSPage: React.FC = () => {
                   </div>
 
                   {/* Data (só md+) */}
-                  <div className="hidden md:block md:col-span-1 text-center">
+                  <div className="hidden md:block md:col-span-2 text-center">
                     <span className="text-xs text-gray-700 whitespace-nowrap">
                       {item.abertura?.data_abertura
                         ? item.abertura.data_abertura
@@ -1863,13 +1864,17 @@ const ConsultaOSPage: React.FC = () => {
                   </div>
 
                   {/* Técnico */}
-                  <div className="col-span-2">
-                    <span className="text-xs text-gray-700 flex items-center gap-1 truncate">
-                      {item.tecnico?.nome || "-"}
+                  <div className="col-span-3 md:col-span-2">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-gray-700 truncate">
+                        {item.tecnico?.nome || "-"}
+                      </span>
                       {item.tecnico?.tipo && (
-                        <TecnicoBadge tipo={item.tecnico.tipo} />
+                        <div className="mt-0.5">
+                          <TecnicoBadge tipo={item.tecnico.tipo} />
+                        </div>
                       )}
-                    </span>
+                    </div>
                   </div>
 
                   {/* Status sempre na direita */}
