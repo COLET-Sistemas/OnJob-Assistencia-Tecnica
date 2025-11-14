@@ -144,7 +144,6 @@ export default function DashboardPage() {
 
         const response = await dashboardService.getGestorData(params);
 
-
         // Processar cards data
         const newCardsData = {
           os_abertas_total: response.cards.os_abertas_total || 0,
@@ -384,7 +383,8 @@ export default function DashboardPage() {
           autoSkip: false,
           maxRotation: 0,
           font: {
-            size: 11,
+            size: 12,
+            family: "system-ui, -apple-system, sans-serif",
           },
           color: "#666",
         },
@@ -822,30 +822,36 @@ export default function DashboardPage() {
                       }}
                     />
                     {/* Adicionar rótulos em divs absolutas no final das barras */}
-                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-                      {dashboardData.graficos.top_clientes
-                        .slice(0, 20)
-                        .map((item, idx) => {
-                          // Calcular a posição vertical aproximada para cada item
-                          const totalItems = Math.min(
-                            20,
-                            dashboardData.graficos.top_clientes.length
-                          );
-                          const heightPerItem = 100 / totalItems;
-                          const topPosition = `${
-                            heightPerItem * idx + heightPerItem / 2
-                          }%`;
-
-                          return (
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ paddingTop: "20px", paddingBottom: "20px" }}
+                    >
+                      <div className="h-full flex flex-col justify-between items-end pr-2">
+                        {dashboardData.graficos.top_clientes
+                          .slice(0, 20)
+                          .map((item, idx) => (
                             <div
                               key={idx}
-                              className="absolute right-2 transform -translate-y-1/2 text-xs font-bold text-gray-700"
-                              style={{ top: topPosition }}
+                              className="flex items-center justify-center text-gray-700"
+                              style={{
+                                fontSize: "12px",
+                                fontFamily:
+                                  "system-ui, -apple-system, sans-serif",
+                                fontWeight: "normal",
+                                height: `${
+                                  100 /
+                                  Math.min(
+                                    20,
+                                    dashboardData.graficos.top_clientes.length
+                                  )
+                                }%`,
+                                minHeight: "20px",
+                              }}
                             >
                               {item.quantidade}
                             </div>
-                          );
-                        })}
+                          ))}
+                      </div>
                     </div>
                   </div>
                 ) : (
