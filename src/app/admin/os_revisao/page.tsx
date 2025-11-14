@@ -7,7 +7,7 @@ import {
 } from "@/api/services/ordensServicoService";
 import { LoadingSpinner as Loading } from "@/components/LoadingPersonalizado";
 import PageHeader from "@/components/admin/ui/PageHeaderSimple";
-import { AlertCircle, CheckCircle, XCircle, RefreshCcw } from "lucide-react";
+import { AlertCircle, ShieldCheck, ShieldX, RefreshCcw } from "lucide-react";
 import Pagination from "@/components/admin/ui/Pagination";
 
 // Componente para exibir badge de garantia
@@ -17,12 +17,12 @@ const WarrantyBadge = ({ inWarranty }: { inWarranty: boolean }) => {
       className={`flex items-center gap-1 px-1 py-1 rounded-md ${
         inWarranty ? "text-green-500" : "text-amber-500"
       }`}
-      title={inWarranty ? "Em Garantia" : "Fora da Garantia"}
+      title={inWarranty ? "OS em garantia" : "OS fora da garantiaa"}
     >
       {inWarranty ? (
-        <CheckCircle className="w-5 h-5" />
+        <ShieldCheck className="w-5 h-5" />
       ) : (
-        <XCircle className="w-5 h-5" />
+        <ShieldX className="w-5 h-5" />
       )}
     </div>
   );
@@ -160,18 +160,16 @@ export default function RevisaoPage() {
                   onClick={() => handleViewDetails(ordem.id_os)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    #{ordem.id_os}
+                    <div className="flex items-center gap-2">
+                      <span>#{ordem.id_os}</span>
+                      <WarrantyBadge inWarranty={ordem.em_garantia} />
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {ordem.cliente.nome}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="flex items-center gap-2">
-                      <WarrantyBadge inWarranty={ordem.em_garantia} />
-                      <span>
-                        {ordem.maquina.numero_serie} - {ordem.maquina.descricao}
-                      </span>
-                    </div>
+                    {ordem.maquina.numero_serie} - {ordem.maquina.descricao}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {ordem.tecnico ? (
