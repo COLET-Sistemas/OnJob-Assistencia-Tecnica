@@ -1,22 +1,26 @@
-"use client";
+﻿"use client";
 
 import AdminAuthGuard from "@/components/admin/common/AdminAuthGuard";
-import { Loading } from "@/components/LoadingPersonalizado";
+import { LoadingSpinner as LoadingPersonalizado } from "@/components/LoadingPersonalizado";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { parametrosService } from "@/api/services/parametrosService";
 import { ParametroSistema } from "@/types/admin/administracao/parametros";
 import { useDataFetch } from "@/hooks";
 import { isSuperAdmin } from "@/utils/superAdmin";
-import { useCallback, useMemo, useState } from "react";
-import { Loader2, Pencil, Save, X } from "lucide-react";
+import { ChangeEvent, useCallback, useMemo, useState } from "react";
+import { Loader2, Search, Pencil, Save, X } from "lucide-react";
 
 const ParametrizacaoPage = () => {
   const { showError, showSuccess } = useToast();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedValue, setEditedValue] = useState("");
   const [savingId, setSavingId] = useState<number | null>(null);
+  const [searchValue, setSearchValue] = useState("");
   const userIsSuperAdmin = isSuperAdmin();
+  const clearSearchValue = () => setSearchValue("");
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) =>
+    setSearchValue(event.target.value);
 
   const fetchParametros = useCallback(async () => {
     try {
@@ -29,7 +33,7 @@ const ParametrizacaoPage = () => {
       console.error("Erro ao buscar parâmetros:", error);
       showError(
         "Parametrização",
-        "Não foi possível carregar os parâmetros disponíveis."
+        "Não foi possí­vel carregar os parâmetros disponí­veis."
       );
       return [];
     }
@@ -42,6 +46,23 @@ const ParametrizacaoPage = () => {
   } = useDataFetch<ParametroSistema[]>(fetchParametros, [fetchParametros], []);
 
   const listaParametros = useMemo(() => parametros ?? [], [parametros]);
+  const hasActiveFilter = searchValue.trim().length > 0;
+  const parametrosFiltrados = useMemo(() => {
+    const termo = searchValue.trim().toLowerCase();
+    if (!termo) {
+      return listaParametros;
+    }
+
+    return listaParametros.filter((parametro) => {
+      const descricao = parametro.descricao ?? "";
+      const chave = parametro.chave ?? "";
+
+      return (
+        descricao.toLowerCase().includes(termo) ||
+        chave.toLowerCase().includes(termo)
+      );
+    });
+  }, [listaParametros, searchValue]);
   const parametroEmEdicao =
     editingId !== null
       ? listaParametros.find((parametro) => parametro.id === editingId) ?? null
@@ -142,7 +163,11 @@ const ParametrizacaoPage = () => {
     if (isInitialLoading) {
       return (
         <div className="py-10">
-          <Loading text="Carregando parâmetros..." fullScreen={false} />
+          <LoadingPersonalizado
+            text="Carregando parâmetros..."
+            fullScreen={false}
+            className="w-full"
+          />
         </div>
       );
     }
@@ -156,6 +181,23 @@ const ParametrizacaoPage = () => {
           <p className="mt-2 text-sm text-gray-500">
             Certifique-se de que existem parâmetros com permissão de edição.
           </p>
+        </div>
+      );
+    }
+
+    if (!loading && parametrosFiltrados.length === 0) {
+      return (
+        <div className="py-12 text-center">
+          <p className="text-lg font-semibold text-gray-800">
+            {hasActiveFilter
+              ? "Nenhum parÇ½metro corresponde ao filtro."
+              : "Nenhum parÇ½metro alterÇ­vel foi encontrado."}
+          </p>
+          {hasActiveFilter && (
+            <p className="mt-2 text-sm text-gray-500">
+              Ajuste o filtro ou limpe a pesquisa para ver outros registros.
+            </p>
+          )}
         </div>
       );
     }
@@ -177,7 +219,7 @@ const ParametrizacaoPage = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-300">
-            {listaParametros.map((parametro) => {
+            {parametrosFiltrados.map((parametro) => {
               const estaSalvando = savingId === parametro.id;
               const adminNaoPodeAlterar =
                 userIsSuperAdmin && parametro.admin_pode_alterar === false;
@@ -243,6 +285,34 @@ const ParametrizacaoPage = () => {
       </div>
     );
   };
+
+  const renderSearchInput = () => (
+    <div className="min-w-[260px]">
+      <div className="relative w-full">
+        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          <Search className="h-4 w-4 text-gray-400" />
+        </div>
+        <input
+          type="text"
+          value={searchValue}
+          onChange={handleSearchChange}
+          placeholder="Chave ou descrição"
+          aria-label="Pesquisar parâmetros"
+          className="w-full rounded-2xl border border-gray-200 bg-white/90 px-3 py-2 pl-10 text-sm font-medium text-gray-900 placeholder:text-gray-400 shadow-sm transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/50 focus:outline-none"
+        />
+        {hasActiveFilter && (
+          <button
+            type="button"
+            onClick={clearSearchValue}
+            aria-label="Limpar pesquisa"
+            className="absolute inset-y-0 right-2 flex items-center justify-center cursor-pointer  px-2 text-gray-500 transition hover:text-gray-700 hover:border-gray-300 focus-visible:outline focus-visible:outline-[var(--primary)] focus-visible:outline-offset-0"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   const renderEditModal = () => {
     if (!parametroEmEdicao) return null;
@@ -348,10 +418,11 @@ const ParametrizacaoPage = () => {
         title="Parametrização"
         config={{
           type: "list",
-          itemCount: listaParametros.length,
+          itemCount: parametrosFiltrados.length,
           alignTitleCenter: true,
           compact: true,
           dense: true,
+          actions: renderSearchInput(),
         }}
       />
 
