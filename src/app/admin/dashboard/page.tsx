@@ -662,7 +662,7 @@ export default function DashboardPage() {
 
             {/* Pie Chart - Distribuição de OSs por Motivo */}
             <div
-              className={`bg-white p-4 rounded-xl shadow-sm h-[350px] sm:h-[400px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-1 chart-container ${
+              className={`bg-white p-4 rounded-xl shadow-sm h-[420px] sm:h-[480px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-1 chart-container ${
                 isRefreshing && !isLoading ? "chart-refreshing" : ""
               }`}
               style={{ borderLeft: "3px solid #7B54BE" }}
@@ -707,7 +707,7 @@ export default function DashboardPage() {
 
             {/* Bar Chart - OSs por Técnico */}
             <div
-              className={`bg-white p-4 rounded-xl shadow-sm h-[350px] sm:h-[400px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-2 chart-container ${
+              className={`bg-white p-4 rounded-xl shadow-sm h-[420px] sm:h-[480px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-2 chart-container ${
                 isRefreshing && !isLoading ? "chart-refreshing" : ""
               }`}
               style={{ borderLeft: "3px solid #75f9bd" }}
@@ -784,7 +784,7 @@ export default function DashboardPage() {
 
             {/* Horizontal Bar Chart - Top 20 Clientes */}
             <div
-              className={`bg-white p-4 rounded-xl shadow-sm h-[350px] sm:h-[400px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] md:col-span-2 lg:col-span-1 animate-fadeIn card-delay-3 chart-container ${
+              className={`bg-white p-4 rounded-xl shadow-sm h-[420px] sm:h-[480px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] md:col-span-2 lg:col-span-1 animate-fadeIn card-delay-3 chart-container ${
                 isRefreshing && !isLoading ? "chart-refreshing" : ""
               }`}
               style={{ borderLeft: "3px solid #abc7e0" }}

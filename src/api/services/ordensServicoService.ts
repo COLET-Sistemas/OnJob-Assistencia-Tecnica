@@ -246,6 +246,7 @@ export interface OSPecaCorrigida {
   valor_total?: number;
   id_fat?: number;
   data_correcao?: string;
+  observacoes?: string;
 }
 
 // Interface para deslocamentos corrigidos

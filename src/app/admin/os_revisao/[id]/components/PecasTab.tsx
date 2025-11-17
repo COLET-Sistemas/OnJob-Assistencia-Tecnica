@@ -47,6 +47,9 @@ const MIN_SEARCH_TERM_LENGTH: Record<SearchMode, number> = {
   descricao: 3,
 };
 
+const parseNumberInputValue = (value: string): number | undefined =>
+  value === "" ? undefined : Number(value);
+
 interface PecasTabProps {
   originais: PecaOriginal[];
   revisadas: PecaRevisada[];
@@ -56,7 +59,7 @@ interface PecasTabProps {
   onChange: (
     index: number,
     field: keyof OSPecaUtilizada,
-    value: number | string
+    value: number | string | undefined
   ) => void;
   onSelectCatalogItem: (index: number, item: PecaCatalogo) => void;
   onEdit: (index: number) => void;
@@ -837,12 +840,12 @@ const PecasTab: React.FC<PecasTabProps> = ({
                               <input
                                 type="number"
                                 className="w-20 border border-gray-300 rounded-md px-2 py-1"
-                                value={peca.quantidade ?? 0}
+                                value={peca.quantidade ?? ""}
                                 onChange={(e) =>
                                   onChange(
                                     index,
                                     "quantidade",
-                                    Number(e.target.value)
+                                    parseNumberInputValue(e.target.value)
                                   )
                                 }
                                 min={1}

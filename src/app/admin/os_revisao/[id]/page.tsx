@@ -277,10 +277,6 @@ export default function OSRevisaoPage() {
     setDeslocamentosRevisados((prev) => {
       const newDeslocamento: DeslocamentoRevisado = {
         id_deslocamento: Math.floor(Math.random() * -1000),
-        km_ida: 0,
-        km_volta: 0,
-        tempo_ida_min: 0,
-        tempo_volta_min: 0,
         observacoes: "",
         isEditing: true,
         isNew: true,
@@ -292,7 +288,7 @@ export default function OSRevisaoPage() {
   const handleDeslocamentoChange = (
     index: number,
     field: keyof OSDeslocamento,
-    value: number | string
+    value: number | string | undefined
   ) => {
     setDeslocamentosRevisados((prev) => {
       const updated = prev.map((d, i) =>
@@ -560,7 +556,7 @@ export default function OSRevisaoPage() {
   const handlePecaChange = (
     index: number,
     field: keyof OSPecaUtilizada,
-    value: number | string
+    value: number | string | undefined
   ) => {
     setPecasRevisadas((prev) => {
       const updated = prev.map((p, i) => {

@@ -596,6 +596,19 @@ const OSDetalhesPage: React.FC = () => {
     // ...other FAT properties as needed
   };
   const fatsData: FatType[] = useMemo(() => osData?.fats || [], [osData]);
+  const partesCorrigidas = osData?.pecas_corrigidas ?? [];
+  const deslocamentosCorrigidos = osData?.deslocamentos_corrigidos ?? [];
+  const hasPartesCorrigidas = partesCorrigidas.length > 0;
+  const hasDeslocamentosCorrigidos = deslocamentosCorrigidos.length > 0;
+  const revisaoData = osData?.revisao_os;
+  const hasRevisaoData = Boolean(
+    revisaoData &&
+      [revisaoData.nome, revisaoData.data, revisaoData.observacoes].some(
+        (value) => typeof value === "string" && value.trim().length > 0
+      )
+  );
+  const shouldShowCorrecoesCard =
+    hasRevisaoData || hasPartesCorrigidas || hasDeslocamentosCorrigidos;
 
   const parseCodigo = (value: unknown): number | null => {
     if (typeof value === "number") {
@@ -1592,6 +1605,143 @@ const OSDetalhesPage: React.FC = () => {
                       </tbody>
                     </table>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {shouldShowCorrecoesCard && (
+              <div
+                className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 mt-8 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
+                style={{ animationDelay: "0.7s" }}
+              >
+                <div className="py-3 px-6 border-b border-gray-100">
+                  <h3 className="text-base font-semibold text-gray-800 flex flex-wrap items-center gap-2">
+                    <ListChecks
+                      className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
+                      style={{ animationDelay: "0.6s" }}
+                    />
+                    Revisão e Correções aplicadas
+                  </h3>
+                </div>
+                <div className="p-6 space-y-6">
+                  {hasRevisaoData && revisaoData && (
+                    <div className="space-y-2 rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 text-sm text-gray-700">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <FileSearch className="h-4 w-4 text-[var(--primary)]" />
+                          <div>
+                            <p className="text-sm font-semibold text-gray-800">
+                              {revisaoData.nome || "Usuário não informado"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Revisão registrada
+                            </p>
+                          </div>
+                        </div>
+                        {revisaoData.data && (
+                          <span className="text-xs text-gray-500">
+                            {revisaoData.data}
+                          </span>
+                        )}
+                      </div>
+                      {!!revisaoData.observacoes?.trim() && (
+                        <p className="text-xs text-gray-600 whitespace-pre-line">
+                          {revisaoData.observacoes}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {hasPartesCorrigidas && (
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-gray-700">
+                        Peças Corrigidas ({partesCorrigidas.length})
+                      </h4>
+                      <div className="space-y-3">
+                        {partesCorrigidas.map((peca) => {
+                          const descricao =
+                            peca.descricao?.trim() ||
+                            peca.nome?.trim() ||
+                            "Peça não informada";
+                          const codigoOuId = peca.codigo
+                            ? `Código ${peca.codigo}`
+                            : `ID ${peca.id}`;
+                          const observacoes = peca.observacoes?.trim();
+
+                          return (
+                            <div
+                              key={peca.id}
+                              className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3"
+                            >
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="space-y-0.5">
+                                  <p className="text-sm font-semibold text-gray-800">
+                                    {descricao}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {codigoOuId}
+                                  </p>
+                                </div>
+                                <div className="text-right text-gray-700 text-sm">
+                                  <span className="block font-semibold">
+                                    {peca.quantidade || "-"}{" "}
+                                    {peca.unidade_medida}
+                                  </span>
+                                </div>
+                              </div>
+                              {observacoes && (
+                                <p className="mt-2 text-xs text-gray-600 whitespace-pre-line">
+                                  {observacoes}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {hasDeslocamentosCorrigidos && (
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-gray-700">
+                        Deslocamentos Corrigidos (
+                        {deslocamentosCorrigidos.length})
+                      </h4>
+                      <div className="space-y-3">
+                        {deslocamentosCorrigidos.map((deslocamento) => {
+                          const observacoes = deslocamento.observacoes?.trim();
+                          return (
+                            <div
+                              key={deslocamento.id}
+                              className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-800">
+                                <span>
+                                  Ida: {deslocamento.km_ida || "—"} km
+                                </span>
+                                <span>
+                                  Volta: {deslocamento.km_volta || "—"} km
+                                </span>
+                                <span>
+                                  Tempo ida: {deslocamento.tempo_ida_min ?? "—"}{" "}
+                                  min
+                                </span>
+                                <span>
+                                  Tempo volta:{" "}
+                                  {deslocamento.tempo_volta_min ?? "—"} min
+                                </span>
+                              </div>
+                              {observacoes && (
+                                <p className="mt-2 text-xs text-gray-600 whitespace-pre-line">
+                                  {observacoes}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

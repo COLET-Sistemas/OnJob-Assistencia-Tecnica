@@ -204,7 +204,12 @@ const ParametrizacaoPage = () => {
 
     return (
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-gray-200 table-fixed">
+          <colgroup>
+            <col style={{ width: "40%" }} />
+            <col style={{ width: "50%" }} />
+            <col style={{ width: "10%" }} />
+          </colgroup>
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -232,7 +237,7 @@ const ParametrizacaoPage = () => {
                   key={parametro.id}
                   className={`transition-colors ${rowBackgroundClass}`}
                 >
-                  <td className="px-6 py-4 align-top">
+                  <td className="px-6 py-4 align-top min-w-0 max-w-[28rem]">
                     <div className="flex flex-col gap-1">
                       <span className="text-sm font-semibold text-gray-900 whitespace-pre-wrap break-words">
                         {parametro.descricao}
@@ -242,8 +247,8 @@ const ParametrizacaoPage = () => {
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900 whitespace-pre-wrap break-words">
+                  <td className="px-6 py-4 min-w-0 max-w-[30rem]">
+                    <div className="text-sm text-gray-900 whitespace-pre-wrap break-words break-all">
                       {parametro.valor ? (
                         parametro.valor
                       ) : (

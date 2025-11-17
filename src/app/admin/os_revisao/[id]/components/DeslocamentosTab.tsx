@@ -23,7 +23,7 @@ interface DeslocamentosTabProps {
   onChange: (
     index: number,
     field: keyof OSDeslocamento,
-    value: number | string
+    value: number | string | undefined
   ) => void;
   onEdit: (index: number) => void;
   onSave: (index: number) => void;
@@ -31,6 +31,9 @@ interface DeslocamentosTabProps {
   onDelete: (index: number) => void;
   onRestore: (index: number) => void;
 }
+
+const parseNumberInputValue = (value: string): number | undefined =>
+  value === "" ? undefined : Number(value);
 
 const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
   originais,
@@ -288,9 +291,13 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                         <input
                           type="number"
                           className="w-20 border border-gray-300 rounded-md px-2 py-1"
-                          value={deslocamento.km_ida ?? 0}
+                          value={deslocamento.km_ida ?? ""}
                           onChange={(e) =>
-                            onChange(index, "km_ida", Number(e.target.value))
+                            onChange(
+                              index,
+                              "km_ida",
+                              parseNumberInputValue(e.target.value)
+                            )
                           }
                         />
                       ) : (
@@ -302,9 +309,13 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                         <input
                           type="number"
                           className="w-20 border border-gray-300 rounded-md px-2 py-1"
-                          value={deslocamento.km_volta ?? 0}
+                          value={deslocamento.km_volta ?? ""}
                           onChange={(e) =>
-                            onChange(index, "km_volta", Number(e.target.value))
+                            onChange(
+                              index,
+                              "km_volta",
+                              parseNumberInputValue(e.target.value)
+                            )
                           }
                         />
                       ) : (
@@ -316,12 +327,12 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                         <input
                           type="number"
                           className="w-20 border border-gray-300 rounded-md px-2 py-1"
-                          value={deslocamento.tempo_ida_min ?? 0}
+                          value={deslocamento.tempo_ida_min ?? ""}
                           onChange={(e) =>
                             onChange(
                               index,
                               "tempo_ida_min",
-                              Number(e.target.value)
+                              parseNumberInputValue(e.target.value)
                             )
                           }
                         />
@@ -338,12 +349,12 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                         <input
                           type="number"
                           className="w-20 border border-gray-300 rounded-md px-2 py-1"
-                          value={deslocamento.tempo_volta_min ?? 0}
+                          value={deslocamento.tempo_volta_min ?? ""}
                           onChange={(e) =>
                             onChange(
                               index,
                               "tempo_volta_min",
-                              Number(e.target.value)
+                              parseNumberInputValue(e.target.value)
                             )
                           }
                         />
