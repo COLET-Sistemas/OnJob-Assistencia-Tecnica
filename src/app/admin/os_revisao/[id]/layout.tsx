@@ -1,4 +1,4 @@
-// Required by Next.js for dynamic routes
+
 export default function OSRevisaoIdLayout({
   children,
 }: {
