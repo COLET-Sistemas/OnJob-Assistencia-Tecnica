@@ -5,7 +5,7 @@ import { LoadingSpinner } from "@/components/LoadingPersonalizado";
 import {
   RefreshCcw,
   PieChart,
-  User,
+  UserRoundCog,
   BarChartHorizontal,
   Filter,
   AlertCircle,
@@ -710,7 +710,7 @@ export default function DashboardPage() {
               className={`bg-white p-4 rounded-xl shadow-sm h-[520px] sm:h-[580px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-2 chart-container ${
                 isRefreshing && !isLoading ? "chart-refreshing" : ""
               }`}
-              style={{ borderLeft: "3px solid #75f9bd" }}
+              style={{ borderLeft: "3px solid #9CBEDA" }}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3
@@ -719,11 +719,11 @@ export default function DashboardPage() {
                 >
                   OSs por Técnico
                 </h3>
-                <div className="p-1.5 rounded-md bg-[#E6FFF2]">
-                  <User
+                <div className="p-1.5 rounded-md bg-[#9CBEDA]">
+                  <UserRoundCog
                     size={18}
                     strokeWidth={1.5}
-                    className="text-[#75f9bd]"
+                    className="text-[#fff]"
                   />
                 </div>
               </div>
@@ -768,7 +768,7 @@ export default function DashboardPage() {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full w-full">
                     <div className="p-4 rounded-full bg-gray-100">
-                      <User
+                      <UserRoundCog
                         size={30}
                         strokeWidth={1.5}
                         className="text-gray-400"
@@ -787,7 +787,7 @@ export default function DashboardPage() {
               className={`bg-white p-4 rounded-xl shadow-sm h-[520px] sm:h-[580px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] md:col-span-2 lg:col-span-1 animate-fadeIn card-delay-3 chart-container ${
                 isRefreshing && !isLoading ? "chart-refreshing" : ""
               }`}
-              style={{ borderLeft: "3px solid #abc7e0" }}
+              style={{ borderLeft: "3px solid #FDAD15" }}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3
@@ -796,11 +796,11 @@ export default function DashboardPage() {
                 >
                   Top 20 Clientes com OSs
                 </h3>
-                <div className="p-1.5 rounded-md bg-[#E6F0F9]">
+                <div className="p-1.5 rounded-md bg-[#FDAD15]">
                   <BarChartHorizontal
                     size={18}
                     strokeWidth={1.5}
-                    className="text-[#abc7e0]"
+                    className="text-[#fff]"
                   />
                 </div>
               </div>
@@ -828,7 +828,7 @@ export default function DashboardPage() {
                       <BarChartHorizontal
                         size={30}
                         strokeWidth={1.5}
-                        className="text-gray-400"
+                        className="text-gray-200"
                       />
                     </div>
                     <p className="text-gray-500 text-center text-sm mt-3">
