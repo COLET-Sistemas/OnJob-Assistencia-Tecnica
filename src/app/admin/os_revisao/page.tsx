@@ -56,9 +56,6 @@ export default function RevisaoPage() {
       setCurrentPage(page);
     } catch (err) {
       console.error("Erro ao buscar ordens de serviço:", err);
-      setError(
-        "Não foi possível carregar as ordens de serviço. Por favor, tente novamente."
-      );
     } finally {
       setLoading(false);
     }
