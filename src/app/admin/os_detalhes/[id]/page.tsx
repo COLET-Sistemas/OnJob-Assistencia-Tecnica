@@ -28,6 +28,7 @@ import {
   Car,
   Wrench,
   PauseCircle,
+  UserRoundCog,
   FileSearch,
   CheckCircle,
   XCircle,
@@ -1376,7 +1377,7 @@ const OSDetalhesPage: React.FC = () => {
                           Técnico Responsável
                         </p>
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          <UserRoundCog className="h-4 w-4 text-gray-400 flex-shrink-0" />
                           <span className="text-sm text-gray-800">
                             {osData.tecnico.nome}
                           </span>
