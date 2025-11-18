@@ -1,17 +1,8 @@
 "use client";
 
 import React from "react";
-import {
-  Clock,
-  CloudDrizzle,
-  Check,
-  X,
-  Eye,
-  MapPin,
-  Cpu,
-  User,
-  Calendar,
-} from "lucide-react";
+import { MapPin, Cpu, User, Calendar } from "lucide-react";
+import { getStatusInfo } from "@/utils/statusMapping";
 
 interface OrdemServico {
   id_os: number;
@@ -70,49 +61,10 @@ interface OsCardProps {
 }
 
 const OsCard: React.FC<OsCardProps> = ({ os }) => {
-  // Função para obter a cor baseada na situação
-  const getStatusColor = (codigo: number): string => {
-    switch (codigo) {
-      case 1: // Pendente
-        return "#F6C647";
-      case 2: // Em Andamento
-        return "#75FABD";
-      case 3: // Concluída
-        return "#4ADE80";
-      case 4: // Cancelada
-        return "#FF5757";
-      case 5: // Em Espera
-        return "#7C54BD";
-      default:
-        return "#6B7280";
-    }
-  };
-
-  // Função para determinar o ícone da situação
-  const getSituacaoIcon = () => {
-    switch (os.situacao_os.codigo) {
-      case 1: // Pendente
-        return <Clock className="h-4 w-4" />;
-      case 2: // Em Andamento
-        return <CloudDrizzle className="h-4 w-4" />;
-      case 3: // Concluída
-        return <Check className="h-4 w-4" />;
-      case 4: // Cancelada
-        return <X className="h-4 w-4" />;
-      case 5: // Em Espera
-        return <Eye className="h-4 w-4" />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100 h-full flex flex-col">
       {/* Cabeçalho com informações principais */}
-      <div
-        className="p-3 relative border-b"
-        style={{ borderColor: `${getStatusColor(os.situacao_os.codigo)}40` }}
-      >
+      <div className="p-3 relative border-b border-gray-200">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <span className="font-bold text-gray-700 text-lg">#{os.id_os}</span>
@@ -125,14 +77,13 @@ const OsCard: React.FC<OsCardProps> = ({ os }) => {
           </div>
 
           <span
-            className="px-2.5 py-1 rounded-md text-xs font-medium flex items-center"
-            style={{
-              backgroundColor: `${getStatusColor(os.situacao_os.codigo)}20`,
-              color: getStatusColor(os.situacao_os.codigo),
-              borderLeft: `3px solid ${getStatusColor(os.situacao_os.codigo)}`,
-            }}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center ${
+              getStatusInfo(os.situacao_os.codigo).className
+            }`}
           >
-            <span className="mr-1.5">{getSituacaoIcon()}</span>
+            <span className="mr-1.5">
+              {getStatusInfo(os.situacao_os.codigo).icon}
+            </span>
             {os.situacao_os.descricao}
           </span>
         </div>
