@@ -328,9 +328,9 @@ const NovaOSRetroativa = () => {
 
   useEffect(() => {
     if (numeroCiclosConfig === "N") {
-      setFormField("numeroCiclos", "");
+      setFormState((prev) => ({ ...prev, numeroCiclos: "" }));
     }
-  }, [numeroCiclosConfig, setFormField]);
+  }, [numeroCiclosConfig]);
 
   const resetContatoFields = useCallback(() => {
     setFormState((prev) => ({
@@ -437,6 +437,47 @@ const NovaOSRetroativa = () => {
       }
     },
     [resetContatoFields, showError]
+  );
+
+  // Callbacks estáveis para o CustomContatoForm
+  const handleSetCustomContatoNome = useCallback((v: string) => {
+    setFormState((prev) => ({ ...prev, nomeContato: v }));
+    setErrors((prev) => ({ ...prev, nomeContato: "" }));
+  }, []);
+
+  const handleSetCustomContatoNomeCompleto = useCallback((v: string) => {
+    setFormState((prev) => ({ ...prev, nomeCompleto: v }));
+  }, []);
+
+  const handleSetCustomContatoCargo = useCallback((v: string) => {
+    setFormState((prev) => ({ ...prev, cargo: v }));
+  }, []);
+
+  const handleSetCustomContatoEmail = useCallback((v: string) => {
+    setFormState((prev) => ({ ...prev, emailContato: v }));
+  }, []);
+
+  const handleSetCustomContatoTelefone = useCallback((v: string) => {
+    setFormState((prev) => ({ ...prev, telefoneContato: v }));
+  }, []);
+
+  const handleSetCustomContatoWhatsapp = useCallback((v: string) => {
+    setFormState((prev) => ({ ...prev, whatsappContato: v }));
+  }, []);
+
+  const handleContactSaved = useCallback(
+    (savedContact: ClienteContato) => {
+      if (selectedCliente) {
+        loadContatos(selectedCliente.value);
+        setSelectedContato({
+          value: Number(savedContact.id) || 0,
+          label: savedContact.nome || savedContact.nome_completo || "Contato",
+          contato: savedContact,
+        });
+        showSuccess("Contato salvo e selecionado automaticamente.");
+      }
+    },
+    [selectedCliente, loadContatos, showSuccess]
   );
 
   const buildMaquinaOptions = useCallback((lista: Maquina[]) => {
@@ -798,7 +839,11 @@ const NovaOSRetroativa = () => {
 
         // ✅ Exibe a mensagem retornada
         showSuccess(response.mensagem);
-        router.push("/admin/cadastro/os_retroativas");
+
+        // Aguarda um pouco antes de redirecionar para garantir que o toast seja exibido
+        setTimeout(() => {
+          router.push("/admin/cadastro/os_retroativas");
+        }, 1000);
       } catch (err) {
         const error = err as ApiError;
         console.error("Erro ao cadastrar OS retroativa:", error);
@@ -959,25 +1004,19 @@ const NovaOSRetroativa = () => {
                 <div className="col-span-full w-full mt-4 border rounded-lg p-4 bg-slate-50">
                   <CustomContatoForm
                     customContatoNome={formState.nomeContato}
-                    setCustomContatoNome={(v) => setFormField("nomeContato", v)}
+                    setCustomContatoNome={handleSetCustomContatoNome}
                     customContatoNomeCompleto={formState.nomeCompleto ?? ""}
-                    setCustomContatoNomeCompleto={(v) =>
-                      setFormField("nomeCompleto", v)
+                    setCustomContatoNomeCompleto={
+                      handleSetCustomContatoNomeCompleto
                     }
                     customContatoCargo={formState.cargo ?? ""}
-                    setCustomContatoCargo={(v) => setFormField("cargo", v)}
+                    setCustomContatoCargo={handleSetCustomContatoCargo}
                     customContatoEmail={formState.emailContato}
-                    setCustomContatoEmail={(v) =>
-                      setFormField("emailContato", v)
-                    }
+                    setCustomContatoEmail={handleSetCustomContatoEmail}
                     customContatoTelefone={formState.telefoneContato}
-                    setCustomContatoTelefone={(v) =>
-                      setFormField("telefoneContato", v)
-                    }
+                    setCustomContatoTelefone={handleSetCustomContatoTelefone}
                     customContatoWhatsapp={formState.whatsappContato}
-                    setCustomContatoWhatsapp={(v) =>
-                      setFormField("whatsappContato", v)
-                    }
+                    setCustomContatoWhatsapp={handleSetCustomContatoWhatsapp}
                     recebeAvisoOS={recebeAvisoOS}
                     setRecebeAvisoOS={setRecebeAvisoOS}
                     saveToClient={saveToClient}
@@ -990,20 +1029,7 @@ const NovaOSRetroativa = () => {
                     showNameError={
                       !!errors.nomeContato && selectedContato?.value === -1
                     }
-                    onContactSaved={(savedContact: ClienteContato) => {
-                      loadContatos(selectedCliente!.value);
-                      setSelectedContato({
-                        value: Number(savedContact.id) || 0,
-                        label:
-                          savedContact.nome ||
-                          savedContact.nome_completo ||
-                          "Contato",
-                        contato: savedContact,
-                      });
-                      showSuccess(
-                        "Contato salvo e selecionado automaticamente."
-                      );
-                    }}
+                    onContactSaved={handleContactSaved}
                   />
                 </div>
               )}

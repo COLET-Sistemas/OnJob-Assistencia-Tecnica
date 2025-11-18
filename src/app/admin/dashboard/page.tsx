@@ -269,7 +269,7 @@ export default function DashboardPage() {
       labels:
         dashboardData?.graficos.top_clientes
           .slice(0, 20)
-          .map((item) => item.cliente) || [],
+          .map((item) => `${item.cliente} (${item.quantidade})`) || [],
       datasets: [
         {
           label: "OSs Abertas",
@@ -662,7 +662,7 @@ export default function DashboardPage() {
 
             {/* Pie Chart - Distribuição de OSs por Motivo */}
             <div
-              className={`bg-white p-4 rounded-xl shadow-sm h-[420px] sm:h-[480px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-1 chart-container ${
+              className={`bg-white p-4 rounded-xl shadow-sm h-[520px] sm:h-[580px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-1 chart-container ${
                 isRefreshing && !isLoading ? "chart-refreshing" : ""
               }`}
               style={{ borderLeft: "3px solid #7B54BE" }}
@@ -683,7 +683,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div
-                className="h-[270px] sm:h-[320px] flex items-center justify-center animate-scaleIn"
+                className="h-[370px] sm:h-[420px] flex items-center justify-center animate-scaleIn"
                 style={{ animationDelay: "200ms" }}
               >
                 {dashboardData.graficos.motivos_atendimento.length > 0 ? (
@@ -707,7 +707,7 @@ export default function DashboardPage() {
 
             {/* Bar Chart - OSs por Técnico */}
             <div
-              className={`bg-white p-4 rounded-xl shadow-sm h-[420px] sm:h-[480px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-2 chart-container ${
+              className={`bg-white p-4 rounded-xl shadow-sm h-[520px] sm:h-[580px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn card-delay-2 chart-container ${
                 isRefreshing && !isLoading ? "chart-refreshing" : ""
               }`}
               style={{ borderLeft: "3px solid #75f9bd" }}
@@ -728,7 +728,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div
-                className="h-[270px] sm:h-[320px] flex items-center justify-center animate-scaleIn"
+                className="h-[370px] sm:h-[420px] flex items-center justify-center animate-scaleIn"
                 style={{ animationDelay: "250ms" }}
               >
                 {dashboardData.graficos.por_tecnico.length > 0 ? (
@@ -748,13 +748,13 @@ export default function DashboardPage() {
                         },
                         layout: {
                           padding: {
-                            top: 25,
+                            top: 30,
                           },
                         },
                       }}
                     />
                     {/* Adicionar rótulos em divs absolutas em cima do gráfico */}
-                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex justify-around items-start pt-3">
+                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex justify-around items-start pt-4">
                       {dashboardData.graficos.por_tecnico.map((item, idx) => (
                         <div
                           key={idx}
@@ -784,7 +784,7 @@ export default function DashboardPage() {
 
             {/* Horizontal Bar Chart - Top 20 Clientes */}
             <div
-              className={`bg-white p-4 rounded-xl shadow-sm h-[420px] sm:h-[480px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] md:col-span-2 lg:col-span-1 animate-fadeIn card-delay-3 chart-container ${
+              className={`bg-white p-4 rounded-xl shadow-sm h-[520px] sm:h-[580px] hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] md:col-span-2 lg:col-span-1 animate-fadeIn card-delay-3 chart-container ${
                 isRefreshing && !isLoading ? "chart-refreshing" : ""
               }`}
               style={{ borderLeft: "3px solid #abc7e0" }}
@@ -805,7 +805,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div
-                className="h-[270px] sm:h-[320px] flex items-center justify-center animate-scaleIn"
+                className="h-[370px] sm:h-[420px] flex items-center justify-center animate-scaleIn"
                 style={{ animationDelay: "300ms" }}
               >
                 {dashboardData.graficos.top_clientes.length > 0 ? (
@@ -816,43 +816,11 @@ export default function DashboardPage() {
                         ...horizontalChartOptions,
                         layout: {
                           padding: {
-                            right: 40,
+                            right: 45,
                           },
                         },
                       }}
                     />
-                    {/* Adicionar rótulos em divs absolutas no final das barras */}
-                    <div
-                      className="absolute inset-0 pointer-events-none"
-                      style={{ paddingTop: "20px", paddingBottom: "20px" }}
-                    >
-                      <div className="h-full flex flex-col justify-between items-end pr-2">
-                        {dashboardData.graficos.top_clientes
-                          .slice(0, 20)
-                          .map((item, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center justify-center text-gray-700"
-                              style={{
-                                fontSize: "12px",
-                                fontFamily:
-                                  "system-ui, -apple-system, sans-serif",
-                                fontWeight: "normal",
-                                height: `${
-                                  100 /
-                                  Math.min(
-                                    20,
-                                    dashboardData.graficos.top_clientes.length
-                                  )
-                                }%`,
-                                minHeight: "20px",
-                              }}
-                            >
-                              {item.quantidade}
-                            </div>
-                          ))}
-                      </div>
-                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full w-full">
