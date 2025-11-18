@@ -683,7 +683,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div
-                className="h-[370px] sm:h-[420px] flex items-center justify-center animate-scaleIn"
+                className="h-[370px] sm:h-[460px] flex items-center justify-center animate-scaleIn"
                 style={{ animationDelay: "200ms" }}
               >
                 {dashboardData.graficos.motivos_atendimento.length > 0 ? (
@@ -728,7 +728,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div
-                className="h-[370px] sm:h-[420px] flex items-center justify-center animate-scaleIn"
+                className="h-[370px] sm:h-[480px] flex items-center justify-center animate-scaleIn"
                 style={{ animationDelay: "250ms" }}
               >
                 {dashboardData.graficos.por_tecnico.length > 0 ? (
@@ -805,7 +805,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div
-                className="h-[370px] sm:h-[420px] flex items-center justify-center animate-scaleIn"
+                className="h-[370px] sm:h-[480px] flex items-center justify-center animate-scaleIn"
                 style={{ animationDelay: "300ms" }}
               >
                 {dashboardData.graficos.top_clientes.length > 0 ? (
