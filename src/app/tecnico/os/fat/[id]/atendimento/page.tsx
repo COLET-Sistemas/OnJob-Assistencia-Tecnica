@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { fatService, type FATDetalhada } from "@/api/services/fatService";
+import { parametrosService } from "@/api/services/parametrosService";
 import { motivosAtendimentoService } from "@/api/services/motivosAtendimentoService";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import { Loading } from "@/components/LoadingPersonalizado";
@@ -111,6 +112,8 @@ const TextAreaField = React.memo(
 
 TextAreaField.displayName = "TextAreaField";
 
+type NumeroCiclosConfig = "S" | "N" | "O";
+
 export default function FATAtendimentoPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -122,6 +125,8 @@ export default function FATAtendimentoPage() {
     message: string;
     type: "success" | "error";
   } | null>(null);
+  const [numeroCiclosConfig, setNumeroCiclosConfig] =
+    useState<NumeroCiclosConfig>("S");
 
   // Estado para controlar edição da descrição do problema e motivo
   const [isDescricaoEditable, setIsDescricaoEditable] = useState(false);
@@ -145,18 +150,23 @@ export default function FATAtendimentoPage() {
   });
 
   // Verificar se houve mudanças no formulário (memoizado)
+  const shouldRenderNumeroCiclos = numeroCiclosConfig !== "N";
+  const isNumeroCiclosRequired = numeroCiclosConfig === "S";
   const hasChanges = useMemo(() => {
     if (!fat) return false;
+    const numeroCiclosChanged =
+      shouldRenderNumeroCiclos &&
+      form.numero_ciclos !== (fat.numero_ciclos?.toString() || "");
     return (
       form.descricao_problema !== (fat.descricao_problema || "") ||
       form.solucao_encontrada !== (fat.solucao_encontrada || "") ||
       form.testes_realizados !== (fat.testes_realizados || "") ||
       form.sugestoes !== (fat.sugestoes || "") ||
       form.observacoes !== (fat.observacoes || "") ||
-      form.numero_ciclos !== (fat.numero_ciclos?.toString() || "") ||
+      numeroCiclosChanged ||
       motivoSelecionado !== (fat.motivo_atendimento?.id_motivo ?? null)
     );
-  }, [form, fat, motivoSelecionado]);
+  }, [form, fat, motivoSelecionado, shouldRenderNumeroCiclos]);
 
   // Carregar dados da FAT e motivos de atendimento
   const fetchFAT = useCallback(async () => {
@@ -201,6 +211,36 @@ export default function FATAtendimentoPage() {
     fetchFAT();
   }, [fetchFAT]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadNumeroCiclosConfig = async () => {
+      try {
+        const parametro = await parametrosService.getByChave("USA-CICLOS");
+        if (!active) return;
+
+        const valor = parametro?.valor?.trim().toUpperCase();
+        if (valor === "S" || valor === "N" || valor === "O") {
+          setNumeroCiclosConfig(valor as NumeroCiclosConfig);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar parametro USA-CICLOS:", error);
+      }
+    };
+
+    loadNumeroCiclosConfig();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (numeroCiclosConfig === "N") {
+      setForm((prev) => ({ ...prev, numero_ciclos: "" }));
+    }
+  }, [numeroCiclosConfig]);
+
   // Handler de input (otimizado com useCallback)
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
@@ -232,6 +272,21 @@ export default function FATAtendimentoPage() {
       return;
     }
 
+    if (isNumeroCiclosRequired) {
+      const valorNumeroCiclos = form.numero_ciclos.trim();
+      if (!valorNumeroCiclos) {
+        const mensagem = "Informe o número de ciclos.";
+        setToast({ message: mensagem, type: "error" });
+        return;
+      }
+
+      if (Number.isNaN(Number(valorNumeroCiclos))) {
+        const mensagem = "Informe um número de ciclos válido.";
+        setToast({ message: mensagem, type: "error" });
+        return;
+      }
+    }
+
     setSaving(true);
     setError("");
     setToast(null);
@@ -245,7 +300,9 @@ export default function FATAtendimentoPage() {
         testes_realizados: form.testes_realizados,
         sugestoes: form.sugestoes,
         observacoes: form.observacoes,
-        ...(form.numero_ciclos !== "" && form.numero_ciclos !== "0"
+        ...(shouldRenderNumeroCiclos &&
+        form.numero_ciclos !== "" &&
+        form.numero_ciclos !== "0"
           ? { numero_ciclos: Number(form.numero_ciclos) }
           : {}),
         ...(motivoSelecionado
@@ -484,17 +541,20 @@ export default function FATAtendimentoPage() {
         </Section>
 
         {/* Número de Ciclos */}
-        <Section title="Número de Ciclos" icon={<Timer className="w-4 h-4" />}>
-          <input
-            type="number"
-            name="numero_ciclos"
-            value={form.numero_ciclos === "0" ? "" : form.numero_ciclos}
-            onChange={handleChange}
-            className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none bg-white text-slate-800 placeholder-slate-400 text-sm"
-            min={0}
-            placeholder="Informe o número de ciclos da máquina."
-          />
-        </Section>
+        {shouldRenderNumeroCiclos && (
+          <Section title="Número de Ciclos" icon={<Timer className="w-4 h-4" />}>
+            <input
+              type="number"
+              name="numero_ciclos"
+              value={form.numero_ciclos === "0" ? "" : form.numero_ciclos}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none bg-white text-slate-800 placeholder-slate-400 text-sm"
+              min={0}
+              required={isNumeroCiclosRequired}
+              placeholder="Informe o número de ciclos da máquina."
+            />
+          </Section>
+        )}
       </form>
 
       {/* Botões de ação - Fixos na parte inferior */}
