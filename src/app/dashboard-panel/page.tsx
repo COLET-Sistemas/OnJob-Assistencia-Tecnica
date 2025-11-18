@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { services } from "@/api";
 const { ordensServicoService } = services;
 import OsCard from "@/components/admin/ui/OsCard";
@@ -107,6 +107,96 @@ export default function DashboardPainel() {
     }
   };
 
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    let frameId: number | null = null;
+    let direction: 1 | -1 = 1;
+    let lastTimestamp: number | null = null;
+    type ScrollPhase = "waiting" | "scrolling";
+    let scrollPhase: ScrollPhase = "waiting";
+    let holdUntil: number | null = null;
+    const scrollDuration = 15000; // ms to scroll from top to bottom
+    const holdDuration = 20000; // ms to wait at each end
+
+    const startHold = (timestamp: number) => {
+      scrollPhase = "waiting";
+      holdUntil = timestamp + holdDuration;
+      lastTimestamp = timestamp;
+    };
+
+    const animateScroll = (timestamp: number) => {
+      if (!container) {
+        return;
+      }
+
+      const maxScroll = container.scrollHeight - container.clientHeight;
+      if (maxScroll <= 0) {
+        container.scrollTop = 0;
+        frameId = requestAnimationFrame(animateScroll);
+        return;
+      }
+
+      if (scrollPhase === "waiting") {
+        if (holdUntil === null) {
+          startHold(timestamp);
+        }
+        if (holdUntil !== null && timestamp < holdUntil) {
+          frameId = requestAnimationFrame(animateScroll);
+          return;
+        }
+        scrollPhase = "scrolling";
+        lastTimestamp = timestamp;
+      }
+
+      if (lastTimestamp === null) {
+        lastTimestamp = timestamp;
+      }
+
+      const delta = timestamp - lastTimestamp;
+      lastTimestamp = timestamp;
+      const pxPerMs = maxScroll / scrollDuration;
+      const next = container.scrollTop + direction * pxPerMs * delta;
+
+      if (direction === 1 && next >= maxScroll) {
+        container.scrollTop = maxScroll;
+        direction = -1;
+        startHold(timestamp);
+        frameId = requestAnimationFrame(animateScroll);
+        return;
+      }
+
+      if (direction === -1 && next <= 0) {
+        container.scrollTop = 0;
+        direction = 1;
+        startHold(timestamp);
+        frameId = requestAnimationFrame(animateScroll);
+        return;
+      }
+
+      container.scrollTop = next;
+      frameId = requestAnimationFrame(animateScroll);
+    };
+
+    frameId = requestAnimationFrame(animateScroll);
+
+    return () => {
+      if (frameId) {
+        cancelAnimationFrame(frameId);
+      }
+    };
+  }, [ordens.length]);
+
+  const lastUpdatedFormatted = lastUpdated.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return (
     <div className="h-screen bg-gradient-to-br from-[#f7f8fc] to-[#eef1f8] flex flex-col overflow-hidden">
       <style jsx global>{`
@@ -123,139 +213,96 @@ export default function DashboardPainel() {
         .animate-fadeIn {
           animation: fadeIn 0.4s ease-out forwards;
         }
+        .scrollbar-hidden::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hidden {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
       `}</style>
-      {/* Cabeçalho */}
-      <header className="bg-white shadow-md px-4 md:px-6 py-3 sticky top-0 z-10">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <div className="bg-gradient-to-r from-[#5E35B1] to-[#3949AB] p-2 rounded-lg shadow-md mr-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <h1 className="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#3949AB] to-[#5E35B1]">
-              Painel de Monitoramento
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center bg-[#75FABD]/20 rounded-full px-2 py-1 text-xs font-medium text-[#7C54BD] border border-[#75FABD]/30">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1 text-[#7C54BD]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span className="whitespace-nowrap">
-                Atualizado: {lastUpdated.toLocaleTimeString()}
+      <header className="bg-white/75 backdrop-blur-lg border-b border-white/40 shadow-sm px-4 md:px-6 py-3">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
+                Painel de Monitoramento
+              </h1>
+              <span className="text-xs font-semibold uppercase px-3 py-1 rounded-full border border-[#7C54BD]/60 bg-white/70 text-[#7C54BD]">
+                {ordens.length} cards
               </span>
             </div>
-
-            <select
-              value={refreshInterval}
-              onChange={(e) => setRefreshInterval(Number(e.target.value))}
-              className="border border-[#7C54BD]/30 rounded-lg px-2 py-1 text-xs bg-[#7C54BD]/5 text-[#7C54BD] shadow-sm hover:border-[#7C54BD] focus:ring-1 focus:ring-[#7C54BD] focus:border-[#7C54BD] focus:outline-none transition-all duration-200"
-            >
-              <option value={1}>1 min</option>
-              <option value={2}>2 min</option>
-              <option value={5}>5 min</option>
-              <option value={10}>10 min</option>
-            </select>
-
-            <div className="flex items-center gap-1">
-              <button
-                onClick={fetchOrdens}
-                className="bg-[#7C54BD] hover:bg-[#6B47A8] text-white px-2 py-1 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center text-xs font-medium"
-                aria-label="Atualizar"
-                title="Atualizar"
-              >
-                <RefreshCw size={12} className="text-white md:mr-1" />
-                <span className="hidden md:inline">Atualizar</span>
-              </button>
-
-              <button
-                onClick={toggleFullscreen}
-                className="bg-[#75FABD] hover:bg-[#4DE69E] transition-all duration-200 text-white p-1 rounded-lg shadow-sm hover:shadow-md"
-                aria-label={
-                  fullscreen ? "Sair da tela cheia" : "Modo tela cheia"
+            <p className="text-sm text-gray-500">
+              Atualizado às {lastUpdatedFormatted} • Atualiza a cada{" "}
+              {refreshInterval} min
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 justify-end">
+            <label className="flex flex-col text-[9px] uppercase tracking-[0.4em] text-[#7C54BD]/70">
+              Intervalo (min)
+              <select
+                value={refreshInterval}
+                onChange={(event) =>
+                  setRefreshInterval(Number(event.target.value))
                 }
-                title={fullscreen ? "Sair da tela cheia" : "Modo tela cheia"}
+                className="mt-1 w-24 rounded-full border border-[#7C54BD]/40 bg-white/80 px-3 py-1 text-xs font-semibold text-[#4d1e9b] focus:border-[#7C54BD] focus:outline-none focus:ring-1 focus:ring-[#7C54BD]/50"
               >
-                <Expand size={12} className="text-white" />
-              </button>
-            </div>
+                {[1, 2, 5, 10, 15, 30].map((interval) => (
+                  <option key={interval} value={interval}>
+                    {interval} min
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={fetchOrdens}
+              className="flex items-center gap-1 cursor-pointer rounded-full bg-gradient-to-r from-[#7C54BD] to-[#5C3DB1] px-4 py-2 text-xs font-semibold text-white shadow-lg transition hover:opacity-95 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#7C54BD]"
+            >
+              <RefreshCw size={16} />
+              Atualizar
+            </button>
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              aria-label={
+                fullscreen ? "Sair da tela cheia" : "Entrar em tela cheia"
+              }
+              className="flex items-center gap-1 cursor-pointer rounded-full border border-[#7C54BD]/40 bg-white px-3 py-2 text-xs font-semibold text-[#4a2fa7] shadow-sm transition hover:border-[#7C54BD] focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#7C54BD]"
+            >
+              <Expand size={16} />
+              {fullscreen ? "Sair da tela cheia" : "Tela cheia"}
+            </button>
           </div>
         </div>
       </header>
 
       {/* Conteúdo principal */}
-      <main className="flex-1 p-4 md:p-5 overflow-y-auto">
-        {isLoading && (
-          <div className="flex justify-center items-center h-64">
-            <div className="flex flex-col items-center">
+      <main className="flex-1 relative overflow-hidden px-3 pb-3 pt-3">
+        <div
+          ref={scrollContainerRef}
+          className="h-full overflow-y-auto scrollbar-hidden rounded-[20px] border border-white/60 bg-white/80 px-4 py-6 backdrop-blur-xl shadow-[0_25px_80px_rgba(15,23,42,0.15)]"
+        >
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500">
               <LoadingSpinner
-                fullScreen={true}
+                fullScreen={false}
                 preventScroll={false}
                 size="large"
-                text="Carregando painel de monitoramento..."
+                showText={false}
+                className="text-center"
               />
+              <p className="text-sm font-medium text-gray-600">
+                Carregando painel de monitoramento...
+              </p>
             </div>
-          </div>
-        )}
-
-        {error && (
-          <div
-            className="bg-white border-l-4 border-red-500 p-4 rounded-lg shadow-md mb-4 animate-fadeIn"
-            role="alert"
-          >
-            <div className="flex flex-col md:flex-row md:items-center">
-              <div className="bg-red-50 rounded-full w-10 h-10 flex items-center justify-center mb-3 md:mb-0 mx-auto md:mx-0">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-red-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <div className="md:ml-4 text-center md:text-left">
-                <p className="font-bold text-md text-red-700">
-                  Erro ao carregar dados
-                </p>
-                <p className="text-sm mt-1 text-gray-700">{error}</p>
-                <button
-                  onClick={fetchOrdens}
-                  className="mt-2 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-md font-medium flex items-center text-xs transition-all duration-200 mx-auto md:mx-0"
-                >
+          ) : error ? (
+            <div className="max-w-2xl mx-auto rounded-2xl border border-red-100 bg-red-50/70 p-6 text-center shadow-lg animate-fadeIn">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-3.5 w-3.5 mr-1.5"
+                    className="h-6 w-6"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -264,68 +311,59 @@ export default function DashboardPainel() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
+                </div>
+                <p className="text-lg font-semibold text-red-700">
+                  Erro ao carregar os dados
+                </p>
+                <p className="text-sm text-red-600">{error}</p>
+                <button
+                  onClick={fetchOrdens}
+                  className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50"
+                >
+                  <RefreshCw size={14} />
                   Tentar novamente
                 </button>
               </div>
             </div>
-          </div>
-        )}
-
-        {!isLoading && !error && ordens.length === 0 && (
-          <div className="bg-white shadow-md rounded-lg p-5 md:p-8 text-center border border-gray-100 animate-fadeIn">
-            <div className="bg-[#7C54BD]/5 rounded-full w-14 h-14 md:w-16 md:h-16 flex items-center justify-center mx-auto mb-4 border border-[#7C54BD]/20">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-7 w-7 md:h-8 md:w-8 text-[#7C54BD]/60"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
+          ) : ordens.length === 0 ? (
+            <div className="max-w-2xl mx-auto rounded-2xl border border-[#7C54BD]/30 bg-white p-6 text-center shadow-lg animate-fadeIn">
+              <div className="flex flex-col items-center gap-3">
+                <div className="rounded-full border border-[#7C54BD]/20 bg-[#7C54BD]/10 p-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-7 w-7 text-[#7C54BD]/60"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <p className="text-lg font-semibold text-gray-800">
+                  Sem ordens para exibir
+                </p>
+                <p className="text-sm text-gray-500">
+                  Atualize para buscar as últimas ordens de serviço.
+                </p>
+                <button
+                  onClick={fetchOrdens}
+                  className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#7C54BD] to-[#5C3DB1] px-4 py-2 text-xs font-semibold text-white shadow-lg transition hover:opacity-95"
+                >
+                  <RefreshCw size={14} />
+                  Atualizar painel
+                </button>
+              </div>
             </div>
-            <h3 className="text-md md:text-lg font-bold text-gray-800 mb-2">
-              Não há ordens de serviço disponíveis
-            </h3>
-            <p className="text-xs md:text-sm text-gray-500 mb-4 max-w-md mx-auto">
-              Não encontramos ordens de serviço para exibir. Tente atualizar a
-              página.
-            </p>
-            <button
-              onClick={fetchOrdens}
-              className="px-3 py-1.5 bg-[#7C54BD] hover:bg-[#6B47A8] text-white rounded-md font-medium flex items-center text-xs transition-all duration-200 mx-auto"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-3.5 w-3.5 mr-1.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              Atualizar dados
-            </button>
-          </div>
-        )}
-
-        {/* Lista de ordens de serviço */}
-        {!isLoading && !error && ordens.length > 0 && (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 md:gap-4 pb-4">
+          ) : (
+            <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(340px,1fr))]">
               {ordens.map((os) => (
                 <div
                   key={os.id_os}
@@ -335,21 +373,9 @@ export default function DashboardPainel() {
                 </div>
               ))}
             </div>
-          </>
-        )}
-      </main>
-
-      {/* Rodapé com altura reduzida */}
-      <footer className="bg-white border-t px-3 py-1.5 text-center shadow-inner">
-        <div className="flex items-center justify-center gap-1">
-          <div className="text-[#7C54BD] text-xs font-medium mr-1">
-            OnJob Assistência Técnica
-          </div>
-          <div className="text-[10px] text-gray-500">
-            Painel • {new Date().getFullYear()}
-          </div>
+          )}
         </div>
-      </footer>
+      </main>
     </div>
   );
 }
