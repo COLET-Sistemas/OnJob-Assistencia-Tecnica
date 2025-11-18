@@ -31,6 +31,7 @@ import {
   MessageCircle,
   Phone,
   Users,
+  UserRoundCog,
 } from "lucide-react";
 
 const HISTORICO_PAGE_SIZE_OPTIONS = [10, 15, 25, 50];
@@ -588,7 +589,8 @@ const ClientesDetalhesPage = () => {
                     </span>
                   )}
 
-                  <span className="ml-auto text-sm font-semibold text-slate-900 whitespace-nowrap">
+                  <span className="ml-auto inline-flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold text-slate-900 whitespace-nowrap">
+                    <UserRoundCog className="h-4 w-4 text-slate-500 relative -top-[1px]" />
                     {registro.nome_tecnico || "Tecnico nao informado"}
                   </span>
                 </div>

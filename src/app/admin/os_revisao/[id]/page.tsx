@@ -17,12 +17,12 @@ import {
   ClipboardCheck,
   Package,
   Car,
-  Wrench,
   FileText,
   Settings,
   Clock,
   Calendar,
   Camera,
+  UserRoundCog,
   MapPin,
   X,
   CircleCheck,
@@ -887,7 +887,7 @@ export default function OSRevisaoPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Wrench className="h-4 w-4 text-gray-500 shrink-0" />
+            <UserRoundCog className="h-4 w-4 text-gray-500 shrink-0" />
             <div className="overflow-hidden">
               <p className="font-medium text-gray-700 truncate">Técnico</p>
               <p className="text-xs text-gray-600 truncate">

@@ -15,6 +15,7 @@ import {
 import type { Maquina } from "@/types/admin/cadastro/maquinas";
 import {
   AlertCircle,
+  UserRoundCog,
   CalendarDays,
   ShieldCheck,
   CircleCheck,
@@ -369,8 +370,9 @@ const MaquinaDetalhesPage = () => {
                     / {registro.numero_serie}
                   </span>
                 )}
-                <span className="ml-auto text-sm font-semibold text-slate-900 whitespace-nowrap">
-                  {registro.nome_tecnico || "Técnico não informado"}
+                <span className="ml-auto inline-flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold text-slate-900 whitespace-nowrap">
+                  <UserRoundCog className="h-4 w-4 text-slate-500 relative -top-[1px]" />
+                  {registro.nome_tecnico || "Tecnico nao informado"}
                 </span>
               </div>
               <div className="grid gap-4 md:grid-cols-[0.9fr,1.1fr]">

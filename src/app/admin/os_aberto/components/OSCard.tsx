@@ -6,7 +6,7 @@ import {
   User,
   AlertOctagon,
   MapPin,
-  AlertCircle,
+  AlertCircle,UserRoundCog,
   Eye,
   Phone,
   Mail,
@@ -266,7 +266,7 @@ const OSCard: React.FC<OSCardProps> = ({
               <div className="md:col-span-3">
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                    <User className="w-3.5 h-3.5 flex-shrink-0 text-gray-500 my-auto" />
+                    <UserRoundCog className="w-3.5 h-3.5 flex-shrink-0 text-gray-500 my-auto" />
                     {isTecnicoIndefinido ? (
                       <div className="flex items-center gap-1.5 my-auto">
                         <span className="text-red-600 font-medium">
