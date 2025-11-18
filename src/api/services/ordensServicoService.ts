@@ -179,6 +179,7 @@ export interface OSFatDetalhado {
   // Arrays relacionados
   pecas_utilizadas: OSPecaUtilizada[];
   deslocamentos: OSDeslocamento[];
+  ocorrencias?: OcorrenciaOSDetalhe[];
 }
 
 // Original interface (kept for backwards compatibility)

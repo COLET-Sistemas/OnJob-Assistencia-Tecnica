@@ -814,7 +814,7 @@ export default function OSRevisaoPage() {
               <div className="ml-8 flex flex-col text-sm text-gray-600 min-w-[180px]">
                 {os.maquina?.numero_serie && (
                   <span className="font-medium text-gray-700 truncate">
-                    Numero de Serie: {os.maquina.numero_serie}
+                    Número de Série: {os.maquina.numero_serie}
                   </span>
                 )}
                 {os.maquina?.descricao && (

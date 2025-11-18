@@ -1,6 +1,8 @@
 import React from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { OSDetalhadaV2 } from "@/api/services/ordensServicoService";
+import type { OcorrenciaOSDetalhe } from "@/api/services/ocorrenciaOSService";
+import { getStatusInfo } from "@/utils/statusMapping";
 
 interface InfoTabProps {
   os: OSDetalhadaV2;
@@ -19,6 +21,75 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
       return;
     }
     setExpandedFatId((prev) => (prev === fatId ? null : fatId));
+  };
+
+  const renderOccurrences = (ocorrencias: OcorrenciaOSDetalhe[]) => {
+    if (!ocorrencias || ocorrencias.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+          Ocorrências ({ocorrencias.length})
+        </p>
+        <div className="flex flex-wrap gap-3">
+          {ocorrencias.map((ocorrencia, index) => {
+            // Extract status code from different possible formats
+            let statusCode: number | undefined;
+            if (
+              typeof ocorrencia.nova_situacao === "object" &&
+              ocorrencia.nova_situacao?.codigo !== undefined
+            ) {
+              statusCode = Number(ocorrencia.nova_situacao.codigo);
+            } else if (
+              typeof ocorrencia.situacao === "object" &&
+              ocorrencia.situacao?.codigo !== undefined
+            ) {
+              statusCode = Number(ocorrencia.situacao.codigo);
+            } else if (typeof ocorrencia.nova_situacao === "number") {
+              statusCode = ocorrencia.nova_situacao;
+            } else if (typeof ocorrencia.nova_situacao === "string") {
+              statusCode = Number(ocorrencia.nova_situacao);
+            }
+
+            const statusInfo = getStatusInfo(statusCode || 1);
+            const situacaoDescricao =
+              (typeof ocorrencia.nova_situacao === "object" &&
+                ocorrencia.nova_situacao?.descricao) ||
+              (typeof ocorrencia.situacao === "object" &&
+                ocorrencia.situacao?.descricao) ||
+              statusInfo.label;
+            const usuario =
+              ocorrencia.usuario?.nome || ocorrencia.usuario_nome || "N/A";
+            const dataOcorrencia =
+              ocorrencia.data_ocorrencia || ocorrencia.data || "N/A";
+
+            return (
+              <React.Fragment key={ocorrencia.id_ocorrencia || index}>
+                {index > 0 && (
+                  <span className="text-gray-400 text-xs flex items-center">
+                    -
+                  </span>
+                )}
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs border ${statusInfo.className}`}
+                  >
+                    {statusInfo.icon}
+                    <span className="font-medium">{situacaoDescricao}</span>
+                  </div>
+                  <span className="text-xs text-gray-600">{usuario}</span>
+                  <span className="text-xs text-gray-500 font-mono">
+                    {dataOcorrencia}
+                  </span>
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -121,7 +192,10 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
                     return true;
                   });
 
-                  const canExpand = detailItems.length > 0;
+                  const hasOcorrencias =
+                    fat.ocorrencias && fat.ocorrencias.length > 0;
+                  const canExpand =
+                    detailItems.length > 0 || Boolean(hasOcorrencias);
                   const isExpanded = expandedFatId === fat.id_fat;
 
                   return (
@@ -182,6 +256,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
                                 </div>
                               ))}
                             </div>
+                            {renderOccurrences(fat.ocorrencias || [])}
                           </td>
                         </tr>
                       )}
