@@ -594,7 +594,6 @@ const OSDetalhesPage: React.FC = () => {
       nome: string;
       tipo?: string;
     };
-    // ...other FAT properties as needed
   };
   const fatsData: FatType[] = useMemo(() => osData?.fats || [], [osData]);
   const partesCorrigidas = osData?.pecas_corrigidas ?? [];
@@ -696,7 +695,7 @@ const OSDetalhesPage: React.FC = () => {
 
   const extractDataOcorrencia = (ocorrencia: OcorrenciaOSDetalhe): string => {
     return (
-      ocorrencia.data_ocorrencia || ocorrencia.data || "" // fallback para string vazia
+      ocorrencia.data_ocorrencia || ocorrencia.data || "" 
     );
   };
 
@@ -1107,6 +1106,28 @@ const OSDetalhesPage: React.FC = () => {
               </div>
               <div className="p-6">
                 <div className="space-y-4">
+                  {maquinaData?.descricao && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">
+                        Descrição
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-gray-800 font-semibold">
+                          {maquinaData.descricao}
+                        </p>
+                        {maquinaDetalhesHref && (
+                          <Link
+                            href={maquinaDetalhesHref}
+                            className="flex items-center text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                            title="Ver detalhes da máquina"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {maquinaData?.numero_serie && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
@@ -1130,28 +1151,6 @@ const OSDetalhesPage: React.FC = () => {
                             <CircleX className="w-4 h-4 text-amber-500" />
                           )}
                         </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {maquinaData?.descricao && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Descrição
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-gray-800 font-semibold">
-                          {maquinaData.descricao}
-                        </p>
-                        {maquinaDetalhesHref && (
-                          <Link
-                            href={maquinaDetalhesHref}
-                            className="flex items-center text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
-                            title="Ver detalhes da máquina"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Link>
-                        )}
                       </div>
                     </div>
                   )}
@@ -1656,7 +1655,7 @@ const OSDetalhesPage: React.FC = () => {
                   {hasPartesCorrigidas && (
                     <div className="space-y-3">
                       <h4 className="text-sm font-semibold text-gray-700">
-                        Peças Corrigidas ({partesCorrigidas.length})
+                        Peças  ({partesCorrigidas.length})
                       </h4>
                       <div className="space-y-3">
                         {partesCorrigidas.map((peca) => {
@@ -1705,7 +1704,7 @@ const OSDetalhesPage: React.FC = () => {
                   {hasDeslocamentosCorrigidos && (
                     <div className="space-y-3">
                       <h4 className="text-sm font-semibold text-gray-700">
-                        Deslocamentos Corrigidos (
+                        Deslocamentos  (
                         {deslocamentosCorrigidos.length})
                       </h4>
                       <div className="space-y-3">
