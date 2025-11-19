@@ -70,10 +70,12 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
                 className="flex items-center gap-2"
               >
                 <div
-                  className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs border ${statusInfo.className}`}
+                  className={`inline-flex items-center justify-center gap-1.5 px-2 py-1 rounded-full text-xs border w-32 ${statusInfo.className}`}
                 >
                   {statusInfo.icon}
-                  <span className="font-medium">{situacaoDescricao}</span>
+                  <span className="font-medium truncate">
+                    {situacaoDescricao}
+                  </span>
                 </div>
                 <span className="text-xs text-gray-500 font-mono">
                   {dataOcorrencia}

@@ -3,34 +3,32 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { fatService, FATDetalhada } from "@/api/services/fatService";
 import { fatFotosService } from "@/api/services/fatFotosService";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { StatusBadge } from "@/components/admin/common";
 import Image from "next/image";
 import { LoadingSpinner } from "@/components/LoadingPersonalizado";
+import { STATUS_MAPPING } from "@/utils/statusMapping";
 import {
-  Clock,
-  Bell,
-  Car,
-  Wrench,
-  PauseCircle,
-  FileSearch,
-  CheckCircle,
-  XCircle,
-  UserX,
   User,
-  Laptop,
   Phone,
   CalendarClock,
   FileText,
   AlertCircle,
   ArrowLeft,
   ArrowUp,
-  Package,
   Image as ImageIcon,
   ImageOff,
-  Truck,
+  Eye,
+  UserRoundCog,
+  Settings,
+  XCircle,
+  Clock,
+  Car,
+  Wrench,
+  FileSearch,
   // ExternalLink,
 } from "lucide-react";
 
@@ -57,97 +55,6 @@ const FATDetalhesPage: React.FC = () => {
 
   // Memoizado para evitar re-renderizações desnecessárias
   const memoizedFatId = useMemo(() => fatId, [fatId]);
-
-  // Status mapping memoizado
-  const statusMapping: Record<
-    number,
-    { label: string; className: string; icon: React.ReactNode }
-  > = useMemo(
-    () => ({
-      1: {
-        label: "Pendente",
-        className: "bg-gray-100 text-gray-700 border border-gray-200",
-        icon: (
-          <span title="Pendente">
-            <Clock className="w-3.5 h-3.5 text-gray-500" />
-          </span>
-        ),
-      },
-      2: {
-        label: "A atender",
-        className: "bg-blue-100 text-blue-700 border border-blue-200",
-        icon: (
-          <span title="A atender">
-            <Bell className="w-3.5 h-3.5 text-blue-600" />
-          </span>
-        ),
-      },
-      3: {
-        label: "Em deslocamento",
-        className: "bg-purple-100 text-purple-700 border border-purple-200",
-        icon: (
-          <span title="Em deslocamento">
-            <Car className="w-3.5 h-3.5 text-purple-600" />
-          </span>
-        ),
-      },
-      4: {
-        label: "Em atendimento",
-        className: "bg-orange-100 text-orange-700 border border-orange-200",
-        icon: (
-          <span title="Em atendimento">
-            <Wrench className="w-3.5 h-3.5 text-orange-600" />
-          </span>
-        ),
-      },
-      5: {
-        label: "Atendimento interrompido",
-        className: "bg-amber-100 text-amber-700 border border-amber-200",
-        icon: (
-          <span title="Atendimento interrompido">
-            <PauseCircle className="w-3.5 h-3.5 text-amber-600" />
-          </span>
-        ),
-      },
-      6: {
-        label: "Em Revisão",
-        className: "bg-indigo-100 text-indigo-700 border border-indigo-200",
-        icon: (
-          <span title="Em Revisão">
-            <FileSearch className="w-3.5 h-3.5 text-indigo-600" />
-          </span>
-        ),
-      },
-      7: {
-        label: "Concluída",
-        className: "bg-green-100 text-green-700 border border-green-200",
-        icon: (
-          <span title="Concluída">
-            <CheckCircle className="w-3.5 h-3.5 text-green-600" />
-          </span>
-        ),
-      },
-      8: {
-        label: "Cancelada",
-        className: "bg-red-100 text-red-700 border border-red-200",
-        icon: (
-          <span title="Cancelada">
-            <XCircle className="w-3.5 h-3.5 text-red-600" />
-          </span>
-        ),
-      },
-      9: {
-        label: "Cancelada pelo Cliente",
-        className: "bg-rose-100 text-rose-700 border border-rose-200",
-        icon: (
-          <span title="Cancelada pelo Cliente">
-            <UserX className="w-3.5 h-3.5 text-rose-600" />
-          </span>
-        ),
-      },
-    }),
-    []
-  );
 
   type FullscreenImageModalProps = {
     src: string;
@@ -487,7 +394,7 @@ const FATDetalhesPage: React.FC = () => {
               <div className="py-3 px-6 border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <User className="text-[var(--primary)] h-4 w-4 animate-pulseScale" />
+                    <UserRoundCog className="text-[var(--primary)] h-4 w-4 animate-pulseScale" />
                     <h3 className="text-base font-semibold text-gray-800">
                       Técnico
                     </h3>
@@ -510,7 +417,7 @@ const FATDetalhesPage: React.FC = () => {
                       <p className="text-sm font-medium text-gray-500">
                         Motivo do Atendimento
                       </p>
-                      <p className="text-gray-800 font-semibold bg-gray-50 p-2 rounded-md">
+                      <p className="text-gray-800 font-semibold">
                         {fatData.motivo_atendimento.descricao}
                       </p>
                     </div>
@@ -536,13 +443,18 @@ const FATDetalhesPage: React.FC = () => {
                       <p className="text-sm font-medium text-gray-500 mb-2">
                         Situação Atual
                       </p>
-                      <div className="flex flex-col gap-1">
-                        <StatusBadge
-                          status={fatData.situacao.codigo.toString()}
-                          mapping={statusMapping}
-                        />
+
+                      <div className="flex items-center gap-3">
+                        <div className="shrink-0">
+                          <StatusBadge
+                            status={fatData.situacao.codigo.toString()}
+                            mapping={STATUS_MAPPING}
+                          />
+                        </div>
+
+                        {/* Data ao lado */}
                         {fatData.situacao.data_situacao && (
-                          <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                          <div className="flex items-center gap-1 text-xs text-gray-500">
                             <CalendarClock className="h-3 w-3" />
                             <span>Desde: {fatData.situacao.data_situacao}</span>
                           </div>
@@ -561,7 +473,7 @@ const FATDetalhesPage: React.FC = () => {
             >
               <div className="py-3 px-6 border-b border-gray-100">
                 <h3 className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                  <Laptop
+                  <Settings
                     className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
                     style={{ animationDelay: "0.3s" }}
                   />
@@ -570,6 +482,28 @@ const FATDetalhesPage: React.FC = () => {
               </div>
               <div className="p-6">
                 <div className="space-y-4">
+                  {fatData.maquina?.descricao && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">
+                        Descrição
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-gray-800 font-semibold">
+                          {fatData.maquina.descricao}
+                        </p>
+                        {fatData.maquina?.id && (
+                          <Link
+                            href={`/admin/maquinas_detalhes/${fatData.maquina.id}`}
+                            className="flex items-center text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                            title="Ver detalhes da máquina"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {fatData.maquina?.numero_serie && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">
@@ -577,17 +511,6 @@ const FATDetalhesPage: React.FC = () => {
                       </p>
                       <p className="text-gray-800 font-semibold">
                         {fatData.maquina.numero_serie}
-                      </p>
-                    </div>
-                  )}
-
-                  {fatData.maquina?.descricao && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Descrição
-                      </p>
-                      <p className="text-gray-800">
-                        {fatData.maquina.descricao}
                       </p>
                     </div>
                   )}
@@ -621,7 +544,7 @@ const FATDetalhesPage: React.FC = () => {
                     <p className="text-sm font-medium text-gray-500">
                       Número de Ciclos
                     </p>
-                    <span className="text-xl font-bold text-gray-800 bg-blue-50 px-4 py-2 rounded-lg">
+                    <span className="text-xl font-bold text-gray-800">
                       {formatarNumero(fatData.numero_ciclos)}
                     </span>
                   </div>
@@ -901,7 +824,7 @@ const FATDetalhesPage: React.FC = () => {
               >
                 <div className="py-3 px-6 border-b border-gray-100">
                   <h3 className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                    <Truck
+                    <Car
                       className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
                       style={{ animationDelay: "0.5s" }}
                     />
@@ -1048,7 +971,7 @@ const FATDetalhesPage: React.FC = () => {
               >
                 <div className="py-3 px-6 border-b border-gray-100">
                   <h3 className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                    <Package
+                    <Wrench
                       className="text-[var(--primary)] h-4 w-4 animate-pulseScale"
                       style={{ animationDelay: "0.6s" }}
                     />
@@ -1197,7 +1120,7 @@ const FATDetalhesPage: React.FC = () => {
                           <div
                             className={`absolute -left-10 top-1.5 w-6 h-6 rounded-full flex items-center justify-center z-10 ${bgColor} border-2 ${borderColor}`}
                           >
-                            {statusMapping[statusCode]?.icon || (
+                            {STATUS_MAPPING[statusCode.toString()]?.icon || (
                               <Clock className={`w-3 h-3 ${textColor}`} />
                             )}
                           </div>
@@ -1289,7 +1212,8 @@ const FATDetalhesPage: React.FC = () => {
                                     </span>
                                   ) : (
                                     <span className="text-xs text-gray-400 italic">
-                                      Alteração de status sem comentários adicionais.
+                                      Alteração de status sem comentários
+                                      adicionais.
                                     </span>
                                   )}
                                   <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -1309,7 +1233,9 @@ const FATDetalhesPage: React.FC = () => {
                             {/* Corpo do card */}
                             <div className="px-4 py-3">
                               {statusDescricao ? (
-                                <p className={`text-sm font-medium ${textStatusColor}`}>
+                                <p
+                                  className={`text-sm font-medium ${textStatusColor}`}
+                                >
                                   {statusDescricao}
                                 </p>
                               ) : (
