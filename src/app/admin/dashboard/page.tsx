@@ -20,6 +20,7 @@ import {
   BarElement,
   Title,
 } from "chart.js";
+import type { Plugin } from "chart.js";
 import { Pie, Bar } from "react-chartjs-2";
 import "./dashboard.css";
 
@@ -326,6 +327,41 @@ export default function DashboardPage() {
       animateScale: true,
       animateRotate: true,
       duration: 1000,
+    },
+  };
+
+  const verticalBarValueLabelsPlugin: Plugin<"bar"> = {
+    id: "verticalBarValueLabels",
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      if (!ctx) {
+        return;
+      }
+
+      ctx.save();
+      ctx.fillStyle = "#1f2937";
+      ctx.font = "600 12px 'Inter', system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+
+      chart.data.datasets.forEach((dataset, datasetIndex) => {
+        const meta = chart.getDatasetMeta(datasetIndex);
+        meta.data.forEach((barElement, index) => {
+          const rawValue = dataset.data[index];
+          if (rawValue == null) {
+            return;
+          }
+          const textValue =
+            typeof rawValue === "number"
+              ? rawValue.toLocaleString("pt-BR")
+              : String(rawValue);
+
+          const { x, y } = barElement as BarElement;
+          ctx.fillText(textValue, x, y - 6);
+        });
+      });
+
+      ctx.restore();
     },
   };
 
@@ -752,18 +788,8 @@ export default function DashboardPage() {
                           },
                         },
                       }}
+                      plugins={[verticalBarValueLabelsPlugin]}
                     />
-                    {/* Adicionar rótulos em divs absolutas em cima do gráfico */}
-                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex justify-around items-start pt-4">
-                      {dashboardData.graficos.por_tecnico.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="text-xs font-bold text-gray-700"
-                        >
-                          {item.quantidade}
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full w-full">
@@ -844,3 +870,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

@@ -33,7 +33,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
           Ocorrências ({ocorrencias.length})
         </p>
-        <div className="flex flex-wrap gap-3">
+        <div className="space-y-2">
           {ocorrencias.map((ocorrencia, index) => {
             // Extract status code from different possible formats
             let statusCode: number | undefined;
@@ -60,31 +60,30 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
               (typeof ocorrencia.situacao === "object" &&
                 ocorrencia.situacao?.descricao) ||
               statusInfo.label;
-            const usuario =
-              ocorrencia.usuario?.nome || ocorrencia.usuario_nome || "N/A";
+            const descricaoOcorrencia = ocorrencia.descricao_ocorrencia?.trim();
             const dataOcorrencia =
               ocorrencia.data_ocorrencia || ocorrencia.data || "N/A";
 
             return (
-              <React.Fragment key={ocorrencia.id_ocorrencia || index}>
-                {index > 0 && (
-                  <span className="text-gray-400 text-xs flex items-center">
-                    -
+              <div
+                key={ocorrencia.id_ocorrencia || index}
+                className="flex items-center gap-2"
+              >
+                <div
+                  className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs border ${statusInfo.className}`}
+                >
+                  {statusInfo.icon}
+                  <span className="font-medium">{situacaoDescricao}</span>
+                </div>
+                <span className="text-xs text-gray-500 font-mono">
+                  {dataOcorrencia}
+                </span>
+                {descricaoOcorrencia && (
+                  <span className="text-xs text-gray-600">
+                    {descricaoOcorrencia}
                   </span>
                 )}
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs border ${statusInfo.className}`}
-                  >
-                    {statusInfo.icon}
-                    <span className="font-medium">{situacaoDescricao}</span>
-                  </div>
-                  <span className="text-xs text-gray-600">{usuario}</span>
-                  <span className="text-xs text-gray-500 font-mono">
-                    {dataOcorrencia}
-                  </span>
-                </div>
-              </React.Fragment>
+              </div>
             );
           })}
         </div>
