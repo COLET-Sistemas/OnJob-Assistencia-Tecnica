@@ -1038,68 +1038,72 @@ const NovaOrdemServico = () => {
           }}
           className="grid grid-cols-1 md:grid-cols-5 gap-6"
         >
-          {/* Máquina */}
-          <motion.div className="md:col-span-2">
-            <CustomSelect
-              id="maquina"
-              label="Máquina"
-              required
-              placeholder={
-                selectedCliente
-                  ? loadingMaquinas
-                    ? "Carregando máquinas..."
-                    : "Selecione uma máquina"
-                  : "Selecione um cliente primeiro"
-              }
-              inputValue={maquinaInput}
-              onInputChange={handleMaquinaInputChange}
-              options={maquinaOptions}
-              value={selectedMaquina}
-              onChange={(option) => {
-                handleMaquinaSelectChange(option);
-                if (option) setErrors((prev) => ({ ...prev, maquina: false }));
-              }}
-              isLoading={loadingMaquinas || isSearchingMaquinas}
-              minCharsToSearch={3}
-              error={errors.maquina ? "Máquina é obrigatória" : ""}
-              noOptionsMessageFn={({ inputValue }) =>
-                inputValue.length < 3
-                  ? "Digite pelo menos 3 caracteres para buscar uma máquina..."
-                  : "Nenhuma máquina encontrada"
-              }
-              components={
-                maquinaSelectComponents as unknown as React.ComponentProps<
-                  typeof CustomSelect
-                >["components"]
-              }
-              isDisabled={!selectedCliente}
-            />
-          </motion.div>
+          {/* Máquina + Em Garantia (grupo responsivo) */}
+          <motion.div className="md:col-span-3">
+            <div className="flex flex-col md:flex-row md:items-end gap-4">
+              {/* Select Máquina */}
+              <div className="flex-1">
+                <CustomSelect
+                  id="maquina"
+                  label="Máquina"
+                  required
+                  placeholder={
+                    selectedCliente
+                      ? loadingMaquinas
+                        ? "Carregando máquinas..."
+                        : "Selecione uma máquina"
+                      : "Selecione um cliente primeiro"
+                  }
+                  inputValue={maquinaInput}
+                  onInputChange={handleMaquinaInputChange}
+                  options={maquinaOptions}
+                  value={selectedMaquina}
+                  onChange={(option) => {
+                    handleMaquinaSelectChange(option);
+                    if (option)
+                      setErrors((prev) => ({ ...prev, maquina: false }));
+                  }}
+                  isLoading={loadingMaquinas || isSearchingMaquinas}
+                  minCharsToSearch={3}
+                  error={errors.maquina ? "Máquina é obrigatória" : ""}
+                  noOptionsMessageFn={({ inputValue }) =>
+                    inputValue.length < 3
+                      ? "Digite pelo menos 3 caracteres..."
+                      : "Nenhuma máquina encontrada"
+                  }
+                  components={
+                    maquinaSelectComponents as unknown as React.ComponentProps<
+                      typeof CustomSelect
+                    >["components"]
+                  }
+                  isDisabled={!selectedCliente}
+                />
+              </div>
 
-          {/* Checkbox Em Garantia */}
-          <motion.div className="flex items-center">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="em-garantia"
-                checked={emGarantia}
-                onChange={(e) => setEmGarantia(e.target.checked)}
-                disabled={!selectedMaquina}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
-              />
-              <label
-                htmlFor="em-garantia"
-                className={`text-sm font-medium ${
-                  !selectedMaquina ? "text-gray-400" : "text-gray-700"
-                }`}
-              >
-                Em Garantia
-              </label>
+              {/* Checkbox Em Garantia */}
+              <div className="flex items-center gap-2 pb-1 md:pb-0">
+                <input
+                  type="checkbox"
+                  id="em-garantia"
+                  checked={emGarantia}
+                  onChange={(e) => setEmGarantia(e.target.checked)}
+                  disabled={!selectedMaquina}
+                  className="h-4 w-4 text-[var(--primary)] focus:ring-[var(--primary)] border-gray-300 rounded disabled:opacity-50"
+                />
+                <label
+                  htmlFor="em-garantia"
+                  className={`text-sm font-medium select-none ${
+                    !selectedMaquina ? "text-gray-400" : "text-gray-700"
+                  }`}
+                >
+                  Em Garantia
+                </label>
+              </div>
             </div>
           </motion.div>
 
           {/* Motivo de Atendimento */}
-          <motion.div>
+          <motion.div className="md:col-span-1">
             <CustomSelect
               id="motivo-atendimento"
               label="Motivo de Atendimento"
@@ -1113,15 +1117,12 @@ const NovaOrdemServico = () => {
               }}
               inputValue=""
               onInputChange={() => {}}
-              isLoading={false}
-              noOptionsMessageFn={() =>
-                "Nenhum motivo de atendimento cadastrado"
-              }
+              noOptionsMessageFn={() => "Nenhum motivo cadastrado"}
             />
           </motion.div>
 
-          {/* Técnico Designado */}
-          <motion.div>
+          {/* Técnico */}
+          <motion.div className="md:col-span-1">
             <CustomSelect
               id="tecnico"
               label="Técnico Designado"

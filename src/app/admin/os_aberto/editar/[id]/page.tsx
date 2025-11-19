@@ -1699,57 +1699,61 @@ const EditarOrdemServico = () => {
 
           {/* Terceira linha: Máquina / Em Garantia / Motivo de Atendimento / Técnico */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            {/* Máquina */}
-            <div>
-              <CustomSelect
-                id="maquina"
-                label="Máquina"
-                placeholder={
-                  selectedCliente
-                    ? "Selecione ou busque por número de série..."
-                    : "Selecione um cliente primeiro..."
-                }
-                value={selectedMaquina}
-                onChange={handleMaquinaSelectChange}
-                onInputChange={handleMaquinaInputChange}
-                options={maquinaOptions}
-                isSearchable={true}
-                inputValue={maquinaInput}
-                isLoading={loadingMaquinas || isSearchingMaquinas}
-                isDisabled={!selectedCliente}
-                className={errors.maquina ? "campo-erro" : ""}
-                components={
-                  maquinaSelectComponents as unknown as React.ComponentProps<
-                    typeof CustomSelect
-                  >["components"]
-                }
-              />
-              {errors.maquina && (
-                <div className="text-red-500 text-sm mt-1">
-                  Selecione uma máquina
-                </div>
-              )}
-            </div>
+            {/* Máquina + Em Garantia (grupo responsivo) */}
+            <div className="md:col-span-2">
+              <div className="flex flex-col md:flex-row md:items-end gap-4">
+                {/* Select Máquina */}
+                <div className="flex-1">
+                  <CustomSelect
+                    id="maquina"
+                    label="Máquina"
+                    placeholder={
+                      selectedCliente
+                        ? "Selecione ou busque por número de série..."
+                        : "Selecione um cliente primeiro..."
+                    }
+                    value={selectedMaquina}
+                    onChange={handleMaquinaSelectChange}
+                    onInputChange={handleMaquinaInputChange}
+                    options={maquinaOptions}
+                    isSearchable={true}
+                    inputValue={maquinaInput}
+                    isLoading={loadingMaquinas || isSearchingMaquinas}
+                    isDisabled={!selectedCliente}
+                    className={errors.maquina ? "campo-erro" : ""}
+                    components={
+                      maquinaSelectComponents as unknown as React.ComponentProps<
+                        typeof CustomSelect
+                      >["components"]
+                    }
+                  />
 
-            {/* Checkbox Em Garantia */}
-            <div className="flex items-center">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="em-garantia"
-                  checked={emGarantia}
-                  onChange={(e) => setEmGarantia(e.target.checked)}
-                  disabled={!selectedMaquina}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
-                />
-                <label
-                  htmlFor="em-garantia"
-                  className={`text-sm font-medium ${
-                    !selectedMaquina ? "text-gray-400" : "text-gray-700"
-                  }`}
-                >
-                  Em Garantia
-                </label>
+                  {errors.maquina && (
+                    <div className="text-red-500 text-sm mt-1">
+                      Selecione uma máquina
+                    </div>
+                  )}
+                </div>
+
+                {/* Checkbox Em Garantia */}
+                <div className="flex items-center gap-2 pb-1 md:pb-0">
+                  <input
+                    type="checkbox"
+                    id="em-garantia"
+                    checked={emGarantia}
+                    onChange={(e) => setEmGarantia(e.target.checked)}
+                    disabled={!selectedMaquina}
+                    className="h-4 w-4 text-[var(--primary)] focus:ring-[var(--primary)] border-gray-300 rounded disabled:opacity-50"
+                  />
+                  <label
+                    htmlFor="em-garantia"
+                    className={`text-sm font-medium select-none ${
+                      !selectedMaquina ? "text-gray-400" : "text-gray-700"
+                    }`}
+                  >
+                    Em Garantia
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -1763,8 +1767,8 @@ const EditarOrdemServico = () => {
                 onChange={handleMotivoAtendimentoSelectChange}
                 options={motivosAtendimentoOptions}
                 isSearchable
-                className={errors.motivoAtendimento ? "campo-erro" : ""}
                 isClearable
+                className={errors.motivoAtendimento ? "campo-erro" : ""}
               />
             </div>
 
@@ -1786,6 +1790,8 @@ const EditarOrdemServico = () => {
                     : "Nenhum técnico disponível"
                 }
               />
+
+              {/* Infos adicionais do técnico */}
               <div className="mt-2 flex flex-col gap-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">
@@ -1795,6 +1801,7 @@ const EditarOrdemServico = () => {
                       ? `Região: ${clienteRegiaoNome}`
                       : "Selecione um cliente para filtrar por região"}
                   </span>
+
                   <button
                     type="button"
                     onClick={
@@ -1816,6 +1823,7 @@ const EditarOrdemServico = () => {
                       : "Ver todos os técnicos"}
                   </button>
                 </div>
+
                 {tecnicoError && (
                   <span className="text-xs text-red-600">{tecnicoError}</span>
                 )}
