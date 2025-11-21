@@ -240,6 +240,7 @@ const NotificacoesDropdown = memo(
           className="p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
           onClick={toggleDropdown}
           aria-label="Notificações"
+          title="Notificações"
         >
           <Bell
             className="text-gray-700 hover:text-[#7B54BE] transition-colors cursor-pointer"

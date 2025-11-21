@@ -4,6 +4,7 @@ import {
   clearCadastroPermission,
   setCadastroPermission,
 } from "@/utils/cadastroPermission";
+import type { LicencaTipo } from "@/types/licenca";
 
 export interface Empresa {
   id_empresa: number;
@@ -20,6 +21,7 @@ export interface Empresa {
   latitude: number;
   longitude: number;
   licenca_demo: boolean;
+  licenca_tipo?: LicencaTipo | null;
   usuarios_ativos?: number;
   usuarios_cadastrados?: number;
   usuarios_licenciados?: number;
@@ -154,28 +156,36 @@ export class LoginService {
 
       // Dados da empresa (se disponÃ­vel)
       if (authData.empresa) {
-        const empresaObj = {
-          nome_bd: authData.empresa.nome_bd || "",
-          nome: authData.empresa.nome || "",
-          razao_social: authData.empresa.razao_social || "",
-          id_empresa: authData.empresa.id_empresa,
-          cnpj: authData.empresa.cnpj || "",
-          usuarios_ativos: authData.empresa.usuarios_ativos || 0,
-          usuarios_cadastrados: authData.empresa.usuarios_cadastrados || 0,
-          usuarios_licenciados: authData.empresa.usuarios_licenciados || 0,
-          latitude: Number(authData.empresa.latitude) || 0,
-          longitude: Number(authData.empresa.longitude) || 0,
-          data_validade: authData.empresa.data_validade || "",
-          licenca_demo: !!authData.empresa.licenca_demo,
-          cep: authData.empresa.cep || "",
-          bairro: authData.empresa.bairro || "",
-          cidade: authData.empresa.cidade || "",
-          endereco: authData.empresa.endereco || "",
-          numero: authData.empresa.numero || "",
-          uf: authData.empresa.uf || "",
-        };
-        localStorage.setItem("empresa", JSON.stringify(empresaObj));
+      const storedLicencaTipo: LicencaTipo | null =
+        authData.empresa.licenca_tipo ?? null;
+      const empresaObj = {
+        nome_bd: authData.empresa.nome_bd || "",
+        nome: authData.empresa.nome || "",
+        razao_social: authData.empresa.razao_social || "",
+        id_empresa: authData.empresa.id_empresa,
+        cnpj: authData.empresa.cnpj || "",
+        usuarios_ativos: authData.empresa.usuarios_ativos || 0,
+        usuarios_cadastrados: authData.empresa.usuarios_cadastrados || 0,
+        usuarios_licenciados: authData.empresa.usuarios_licenciados || 0,
+        latitude: Number(authData.empresa.latitude) || 0,
+        longitude: Number(authData.empresa.longitude) || 0,
+        data_validade: authData.empresa.data_validade || "",
+        licenca_demo: !!authData.empresa.licenca_demo,
+        licenca_tipo: storedLicencaTipo,
+        cep: authData.empresa.cep || "",
+        bairro: authData.empresa.bairro || "",
+        cidade: authData.empresa.cidade || "",
+        endereco: authData.empresa.endereco || "",
+        numero: authData.empresa.numero || "",
+        uf: authData.empresa.uf || "",
+      };
+      localStorage.setItem("empresa", JSON.stringify(empresaObj));
+      if (storedLicencaTipo) {
+        localStorage.setItem("licenca_tipo", storedLicencaTipo);
+      } else {
+        localStorage.removeItem("licenca_tipo");
       }
+    }
     } catch (error) {
       console.error("Erro ao salvar dados no localStorage:", error);
       throw new Error("Erro ao salvar dados de sessÃ£o");
@@ -198,6 +208,7 @@ export class LoginService {
       "empresa",
       "active_module",
       "super_admin",
+      "licenca_tipo",
     ];
 
     keysToRemove.forEach((key) => {

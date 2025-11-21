@@ -221,8 +221,8 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-700 hover:text-[#7B54BE] transition-colors p-1.5 hover:bg-gray-200 rounded-full cursor-pointer"
-            aria-label="Painel Dashboard"
-            title="Painel Dashboard"
+            aria-label="Painel Monitoramento"
+            title="Painel Monitoramento"
           >
             <MonitorDot size={20} className="cursor-pointer" />
           </Link>

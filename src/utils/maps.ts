@@ -1,4 +1,5 @@
 // utils/maps.ts
+import type { LicencaTipo } from "@/types/licenca";
 
 export const isValidCoordinate = (lat: number, lng: number): boolean => {
   return (
@@ -74,6 +75,7 @@ export interface EmpresaData {
   latitude: number;
   longitude: number;
   licenca_demo: boolean;
+  licenca_tipo?: LicencaTipo | null;
   usuarios_ativos: number;
   usuarios_cadastrados: number;
   usuarios_licenciados: number;

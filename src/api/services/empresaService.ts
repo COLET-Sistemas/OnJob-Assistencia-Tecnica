@@ -1,4 +1,5 @@
 import api from "../api";
+import type { LicencaTipo } from "@/types/licenca";
 
 interface EmpresaInfo {
   id: number;
@@ -6,6 +7,7 @@ interface EmpresaInfo {
   nome_bd: string;
   razao_social?: string;
   cnpj?: string;
+  licenca_tipo?: LicencaTipo | null;
   email?: string;
   telefone?: string;
   endereco?: string;
@@ -20,8 +22,24 @@ class EmpresaService {
   }
 
   saveEmpresaData(empresaData: EmpresaInfo): void {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("empresa", JSON.stringify(empresaData));
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const previousEmpresa = this.getEmpresaFromStorage();
+    const mergedLicencaTipo =
+      empresaData.licenca_tipo ?? previousEmpresa?.licenca_tipo ?? null;
+
+    const dataToStore = {
+      ...empresaData,
+      licenca_tipo: mergedLicencaTipo,
+    };
+
+    localStorage.setItem("empresa", JSON.stringify(dataToStore));
+    if (mergedLicencaTipo) {
+      localStorage.setItem("licenca_tipo", mergedLicencaTipo);
+    } else {
+      localStorage.removeItem("licenca_tipo");
     }
   }
 
@@ -48,6 +66,7 @@ class EmpresaService {
   clearEmpresaData(): void {
     if (typeof window !== "undefined") {
       localStorage.removeItem("empresa");
+      localStorage.removeItem("licenca_tipo");
     }
   }
 }
