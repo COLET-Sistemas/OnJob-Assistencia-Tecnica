@@ -6,7 +6,8 @@ import {
   User,
   AlertOctagon,
   MapPin,
-  AlertCircle,UserRoundCog,
+  AlertCircle,
+  UserRoundCog,
   Eye,
   Phone,
   Mail,
@@ -483,7 +484,11 @@ const OSCard: React.FC<OSCardProps> = ({
                                       ? "bg-green-50 text-green-600 hover:bg-green-100 border-green-200 cursor-pointer"
                                       : "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
                                   }`}
-                          title={canLiberar ? "Liberar financeiramente" : "Recurso disponível apenas para licenças Gold e Platinum"}
+                          title={
+                            canLiberar
+                              ? "Liberar financeiramente"
+                              : "Recurso disponível apenas para licenças Gold e Platinum"
+                          }
                         >
                           {canLiberar ? (
                             <DollarSign className="w-3.5 h-3.5" />
