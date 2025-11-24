@@ -1,12 +1,15 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Menu, Plus, Bell, ArrowLeft } from "lucide-react";
+import { Menu, Plus, Bell, ArrowLeft, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useLicenca } from "@/hooks";
 
 type MenuOption = {
   label: string;
   onClick: () => void;
+  disabled?: boolean;
+  locked?: boolean;
 };
 
 interface NotificationButtonProps {
@@ -18,7 +21,7 @@ const NotificationButton: React.FC<NotificationButtonProps> = ({
   onClick,
   totalNotificacoes = 0,
 }) => {
-  // Garante que o valor é um número válido
+  // Garante que o valor seja um numero valido
   const count = typeof totalNotificacoes === "number" ? totalNotificacoes : 0;
 
   return (
@@ -62,6 +65,10 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { licencaTipo, loading: licencaLoading } = useLicenca();
+  // Historico liberado apenas para licenca S
+  const historicoBloqueado = licencaTipo === "P" || licencaTipo === "G";
+  const historicoDesabilitado = licencaLoading || historicoBloqueado;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -92,6 +99,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   };
 
   const handleHistorico = () => {
+    if (historicoDesabilitado) return;
     setMenuOpen(false);
     router.push("/tecnico/historico");
   };
@@ -112,7 +120,12 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   const menuOptions: MenuOption[] = [
     { label: "Nova OS", onClick: handleNovaOS },
     { label: "Lista de OS's", onClick: handleInicial },
-    { label: "Histórico", onClick: handleHistorico },
+    {
+      label: "Histórico",
+      onClick: handleHistorico,
+      disabled: historicoDesabilitado,
+      locked: historicoBloqueado,
+    },
     { label: "Sobre", onClick: handleSobre },
     { label: "Sair", onClick: handleSair },
   ];
@@ -175,10 +188,16 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
                     key={option.label}
                     onClick={option.onClick}
                     className={`w-full text-left px-5 py-3 text-base font-medium transition-colors focus:outline-none focus:bg-[#f3eaff] hover:bg-[#f3eaff] ${
+                      option.disabled
+                        ? "cursor-not-allowed text-gray-400 bg-gray-50 hover:bg-gray-50 focus:bg-gray-50"
+                        : ""
+                    } ${
                       idx === menuOptions.length - 1
                         ? ""
                         : "border-b border-[#ece9f6]"
                     }`}
+                    disabled={option.disabled}
+                    aria-disabled={option.disabled}
                     style={{
                       borderRadius:
                         idx === 0
@@ -189,7 +208,12 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
                       background: "none",
                     }}
                   >
-                    {option.label}
+                    <span className="flex items-center gap-2">
+                      {option.label}
+                      {option.locked ? (
+                        <Lock className="w-4 h-4 text-amber-500" />
+                      ) : null}
+                    </span>
                   </button>
                 ))}
               </div>

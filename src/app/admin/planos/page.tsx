@@ -3,7 +3,6 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   ArrowUpRight,
   Check,
   CheckCircle2,
@@ -15,6 +14,7 @@ import {
 import { useTitle } from "@/context/TitleContext";
 import { useLicenca } from "@/hooks";
 import { Loading } from "@/components/LoadingPersonalizado";
+import PageHeader from "@/components/admin/ui/PageHeader";
 import type { LicencaTipo } from "@/types/licenca";
 
 type FeatureValue = boolean | string;
@@ -302,81 +302,38 @@ const PlanosPage: React.FC = () => {
   }
 
   const currentPlanLabel = licencaTipo ? planNames[licencaTipo] : "Plano atual";
-  const upgradeTarget = licencaTipo === "G" ? "Platinum" : "Gold";
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <button
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeft size={18} />
-          Voltar
-        </button>
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium text-gray-700">
-          <Info size={14} />
-          Visível apenas para licenças Silver ou Gold
-        </div>
-      </div>
+      <PageHeader
+        title="Upgrade de Plano"
+        config={{
+          type: "form",
+          useBackNavigation: true,
+          backLabel: "Voltar para tela anterior",
+        }}
+      />
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr,0.9fr]">
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-2">
-            Upgrade
-          </p>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Comparativo de planos
-          </h1>
-          <p className="text-sm text-gray-600 max-w-2xl">
-            Veja o que muda quando sua empresa evolui de plano. Recursos
-            bloqueados aparecem com o ícone vermelho; os disponíveis, em verde.
-          </p>
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-2">
+          Upgrade
+        </p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          Comparativo de planos
+        </h1>
+        <p className="text-sm text-gray-600 max-w-2xl">
+          Veja o que muda quando sua empresa evolui de plano. Recursos
+          bloqueados aparecem com o ícone vermelho; os disponíveis, em verde.
+        </p>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
-              <p className="text-xs text-gray-500 mb-1">Plano atual</p>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-gray-800" />
-                <span className="text-base font-semibold text-gray-900">
-                  {currentPlanLabel}
-                </span>
-              </div>
-            </div>
-            <div className="border border-gray-200 rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Próximo passo</p>
-                <p className="text-base font-semibold text-gray-900">
-                  {upgradeTarget}
-                </p>
-              </div>
-              <div className="p-2 rounded-lg bg-gray-100 text-gray-800">
-                <ArrowUpRight size={18} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <Crown className="text-gray-800" size={20} />
-            <div>
-              <p className="text-sm font-semibold text-gray-900">
-                Como solicitar
-              </p>
-              <p className="text-xs text-gray-600">
-                Fale com o time comercial para habilitar o upgrade no contrato.
-              </p>
-            </div>
-          </div>
-          <div className="space-y-3 text-sm text-gray-700">
+        <div className="mt-5">
+          <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+            <p className="text-xs text-gray-500 mb-1">Plano atual</p>
             <div className="flex items-center gap-2">
-              <Info size={16} className="text-gray-500" />
-              Recursos em verde já estão liberados no seu plano.
-            </div>
-            <div className="flex items-center gap-2">
-              <Info size={16} className="text-gray-500" />
-              Ícones em vermelho indicam o que você ganha ao migrar.
+              <CheckCircle2 size={18} className="text-gray-800" />
+              <span className="text-base font-semibold text-gray-900">
+                {currentPlanLabel}
+              </span>
             </div>
           </div>
         </div>
@@ -405,14 +362,16 @@ const PlanosPage: React.FC = () => {
                 <th className="w-2/5 text-left px-6 py-3 font-semibold">
                   Funcionalidade
                 </th>
-                {planOrder.map((plan) => (
-                  <th
-                    key={plan}
-                    className="px-4 py-3 font-semibold text-center"
-                  >
-                    {planNames[plan]}
-                  </th>
-                ))}
+                {planOrder
+                  .filter((plan) => licencaTipo === "S" || plan !== "S")
+                  .map((plan) => (
+                    <th
+                      key={plan}
+                      className="px-4 py-3 font-semibold text-center"
+                    >
+                      {planNames[plan]}
+                    </th>
+                  ))}
               </tr>
             </thead>
             <tbody>
@@ -420,7 +379,7 @@ const PlanosPage: React.FC = () => {
                 <React.Fragment key={section.title}>
                   <tr className="bg-gray-100 text-gray-900">
                     <td
-                      colSpan={4}
+                      colSpan={licencaTipo === "S" ? 4 : 3}
                       className="px-6 py-3 font-semibold uppercase text-xs tracking-wide"
                     >
                       {section.title}
@@ -443,17 +402,19 @@ const PlanosPage: React.FC = () => {
                           </ul>
                         )}
                       </td>
-                      {planOrder.map((plan) => (
-                        <td
-                          key={plan}
-                          className="px-4 py-4 text-center align-top"
-                        >
-                          <StatusBadge
-                            value={row.values[plan]}
-                            note={row.notes?.[plan]}
-                          />
-                        </td>
-                      ))}
+                      {planOrder
+                        .filter((plan) => licencaTipo === "S" || plan !== "S")
+                        .map((plan) => (
+                          <td
+                            key={plan}
+                            className="px-4 py-4 text-center align-top"
+                          >
+                            <StatusBadge
+                              value={row.values[plan]}
+                              note={row.notes?.[plan]}
+                            />
+                          </td>
+                        ))}
                     </tr>
                   ))}
                 </React.Fragment>

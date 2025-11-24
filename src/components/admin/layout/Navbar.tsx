@@ -13,7 +13,7 @@ import {
   MonitorDot,
   SlidersHorizontal,
 } from "lucide-react";
-import { useEffect, useState, memo } from "react";
+import { useEffect, useState, memo, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useEmpresa } from "@/hooks";
 import { authService, empresaService } from "@/api/services";
@@ -23,6 +23,8 @@ import {
   USER_ROLES_UPDATED_EVENT,
 } from "@/utils/userRoles";
 import NotificacoesDropdown from "./NotificacoesDropdown";
+import { useLicenca } from "@/hooks";
+import PlanUpgradeModal from "@/components/admin/ui/PlanUpgradeModal";
 
 const CompanyName = memo(function CompanyName() {
   const { nomeEmpresa, loading } = useEmpresa();
@@ -66,8 +68,8 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
   const [nomeUsuario, setNomeUsuario] = useState("Usuario");
   const [roles, setRoles] = useState(defaultRoles);
   const isAdmin = roles.admin;
-
-  // Utilizamos o hook sem referência direta ao componente
+  const { licencaTipo, loading: licenseLoading } = useLicenca();
+  const [showPlanModal, setShowPlanModal] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -104,8 +106,8 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
-  const closeDropdown = (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
+  const closeDropdown = (event: MouseEvent) => {
+    const target = event.target as HTMLElement;
     if (!target.closest(".user-profile-dropdown")) {
       setDropdownOpen(false);
     }
@@ -165,6 +167,21 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
     }
   };
 
+  const handleDashboardPanelClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (licenseLoading) {
+      event.preventDefault();
+      return;
+    }
+
+    const storedLicense =
+      licencaTipo || localStorage.getItem("licenca_tipo") || "";
+
+    if (storedLicense !== "P") {
+      event.preventDefault();
+      setShowPlanModal(true);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await authService.logout();
@@ -184,194 +201,211 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
   };
 
   return (
-    <header className="bg-transparent backdrop-blur-sm px-6 py-5 sticky top-0 z-30">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 px-2">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="focus:outline-none text-[#374151]  transition-colors cursor-pointer "
-            style={{
-              background: "none",
-              border: "none",
-              padding: 0,
-              margin: 0,
-            }}
-          >
-            {sidebarOpen ? (
-              <Menu
-                size={24}
-                strokeWidth={2.5}
-                className="text-[#374151] cursor-pointer"
-              />
-            ) : (
-              <ArrowRightFromLine
-                size={24}
-                strokeWidth={2.5}
-                className="text-[#374151] cursor-pointer"
-              />
-            )}
-          </button>
-          <CompanyName />
-        </div>
-
-        <div className="flex items-center space-x-5">
-          <NotificacoesDropdown />
-          <Link
-            href="/dashboard-panel"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-700 hover:text-[#7B54BE] transition-colors p-1.5 hover:bg-gray-200 rounded-full cursor-pointer"
-            aria-label="Painel Monitoramento"
-            title="Painel Monitoramento"
-          >
-            <MonitorDot size={20} className="cursor-pointer" />
-          </Link>
-          <button
-            onClick={toggleFullScreen}
-            className="text-gray-700 hover:text-[#7B54BE] transition-colors p-1.5 hover:bg-gray-200 rounded-full cursor-pointer"
-            aria-label={isFullScreen ? "Sair da tela cheia" : "Tela cheia"}
-            title={isFullScreen ? "Sair da tela cheia" : "Tela cheia"}
-          >
-            {isFullScreen ? (
-              <Minimize size={20} className="cursor-pointer" />
-            ) : (
-              <Maximize size={20} className="cursor-pointer" />
-            )}
-          </button>
-
-          {/* Seção do Usuário Melhorada */}
-          <div className="flex items-center space-x-3 pl-4 border-l border-gray-300 relative">
-            {/* Avatar do Usuário */}
-            <div className="w-10 h-10 bg-gradient-to-br from-[#7B54BE] to-[#9333ea] rounded-full flex items-center justify-center shadow-lg ring-1 ring-gray-200/50 transition-all duration-300 hover:shadow-xl">
-              <span className="text-white font-semibold text-base select-none flex items-center justify-center w-full h-full">
-                {nomeUsuario.charAt(0).toUpperCase()}
-              </span>
-            </div>
-
-            {/* Nome e Dropdown */}
-            <div
-              className={`hidden sm:flex items-center cursor-pointer user-profile-dropdown group transition-all duration-200 ease-out hover:bg-gray-50/80 rounded-lg px-2 py-2 ${
-                dropdownOpen ? "bg-gray-50/80" : ""
-              }`}
-              onClick={() => setDropdownOpen(!dropdownOpen)}
+    <>
+      <header className="bg-transparent backdrop-blur-sm px-6 py-5 sticky top-0 z-30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 px-2">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="focus:outline-none text-[#374151] transition-colors cursor-pointer"
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                margin: 0,
+              }}
             >
-              <p className="text-md font-bold text-gray-800 mr-2 group-hover:text-[#7B54BE] transition-colors duration-200">
-                {nomeUsuario}
-              </p>
-              <ChevronDown
-                size={16}
-                className={`text-gray-500 transition-all duration-300 ease-out group-hover:text-[#7B54BE] ${
-                  dropdownOpen ? "transform rotate-180 text-[#7B54BE]" : ""
+              {sidebarOpen ? (
+                <Menu
+                  size={24}
+                  strokeWidth={2.5}
+                  className="text-[#374151] cursor-pointer"
+                />
+              ) : (
+                <ArrowRightFromLine
+                  size={24}
+                  strokeWidth={2.5}
+                  className="text-[#374151] cursor-pointer"
+                />
+              )}
+            </button>
+            <CompanyName />
+          </div>
+
+          <div className="flex items-center space-x-5">
+            <NotificacoesDropdown />
+            <Link
+              href="/dashboard-panel"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-700 hover:text-[#7B54BE] transition-colors p-1.5 hover:bg-gray-200 rounded-full cursor-pointer"
+              aria-label="Painel Monitoramento"
+              title="Painel Monitoramento"
+              onClick={handleDashboardPanelClick}
+            >
+              <MonitorDot size={20} className="cursor-pointer" />
+            </Link>
+            <button
+              onClick={toggleFullScreen}
+              className="text-gray-700 hover:text-[#7B54BE] transition-colors p-1.5 hover:bg-gray-200 rounded-full cursor-pointer"
+              aria-label={isFullScreen ? "Sair da tela cheia" : "Tela cheia"}
+              title={isFullScreen ? "Sair da tela cheia" : "Tela cheia"}
+            >
+              {isFullScreen ? (
+                <Minimize size={20} className="cursor-pointer" />
+              ) : (
+                <Maximize size={20} className="cursor-pointer" />
+              )}
+            </button>
+
+            {/* Seção do Usuário Melhorada */}
+            <div className="flex items-center space-x-3 pl-4 border-l border-gray-300 relative">
+              {/* Avatar do Usuário */}
+              <div className="w-10 h-10 bg-gradient-to-br from-[#7B54BE] to-[#9333ea] rounded-full flex items-center justify-center shadow-lg ring-1 ring-gray-200/50 transition-all duration-300 hover:shadow-xl">
+                <span className="text-white font-semibold text-base select-none flex items-center justify-center w-full h-full">
+                  {nomeUsuario.charAt(0).toUpperCase()}
+                </span>
+              </div>
+
+              {/* Nome e Dropdown */}
+              <div
+                className={`hidden sm:flex items-center cursor-pointer user-profile-dropdown group transition-all duration-200 ease-out hover:bg-gray-50/80 rounded-lg px-2 py-2 ${
+                  dropdownOpen ? "bg-gray-50/80" : ""
                 }`}
-              />
-            </div>
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                <p className="text-md font-bold text-gray-800 mr-2 group-hover:text-[#7B54BE] transition-colors duration-200">
+                  {nomeUsuario}
+                </p>
+                <ChevronDown
+                  size={16}
+                  className={`text-gray-500 transition-all duration-300 ease-out group-hover:text-[#7B54BE] ${
+                    dropdownOpen ? "transform rotate-180 text-[#7B54BE]" : ""
+                  }`}
+                />
+              </div>
 
-            {/* Dropdown Menu Clean */}
-            <div
-              className={`absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200/60 overflow-hidden z-20 transition-all duration-250 ease-out origin-top-right ${
-                dropdownOpen
-                  ? "opacity-100 scale-100 translate-y-0"
-                  : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
-              }`}
-            >
-              <div className="py-1">
-                <button
-                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    router.push("/admin/perfil");
-                  }}
-                >
-                  <UserCircle
-                    size={18}
-                    className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
-                  />
-                  <span className="font-medium">Perfil</span>
-                </button>
+              {/* Dropdown Menu Clean */}
+              <div
+                className={`absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200/60 overflow-hidden z-20 transition-all duration-250 ease-out origin-top-right ${
+                  dropdownOpen
+                    ? "opacity-100 scale-100 translate-y-0"
+                    : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
+                }`}
+              >
+                <div className="py-1">
+                  <button
+                    className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      router.push("/admin/perfil");
+                    }}
+                  >
+                    <UserCircle
+                      size={18}
+                      className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
+                    />
+                    <span className="font-medium">Perfil</span>
+                  </button>
 
-                {isAdmin && (
-                  <>
-                    <button
-                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
-                      onClick={() => {
-                        setDropdownOpen(false);
-                        router.push("/admin/administracao/empresa");
-                      }}
-                    >
-                      <ScrollText
-                        size={18}
-                        className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
-                      />
-                      <span className="font-medium">Licença de Uso</span>
-                    </button>
+                  {isAdmin && (
+                    <>
+                      <button
+                        className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          router.push("/admin/administracao/empresa");
+                        }}
+                      >
+                        <ScrollText
+                          size={18}
+                          className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
+                        />
+                        <span className="font-medium">Licença de Uso</span>
+                      </button>
 
-                    <button
-                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
-                      onClick={() => {
-                        setDropdownOpen(false);
-                        router.push("/admin/administracao/usuarios");
-                      }}
-                    >
-                      <UsersRound
-                        size={18}
-                        className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
-                      />
-                      <span className="font-medium">Gestão de Usuários</span>
-                    </button>
+                      <button
+                        className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          router.push("/admin/administracao/usuarios");
+                        }}
+                      >
+                        <UsersRound
+                          size={18}
+                          className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
+                        />
+                        <span className="font-medium">Gestão de Usuários</span>
+                      </button>
 
-                    <button
-                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
-                      onClick={() => {
-                        setDropdownOpen(false);
-                        router.push("/admin/administracao/parametros");
-                      }}
-                    >
-                      <SlidersHorizontal
-                        size={18}
-                        className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
-                      />
-                      <span className="font-medium">Parametrização</span>
-                    </button>
-                  </>
-                )}
+                      <button
+                        className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          router.push("/admin/administracao/parametros");
+                        }}
+                      >
+                        <SlidersHorizontal
+                          size={18}
+                          className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
+                        />
+                        <span className="font-medium">Parametrização</span>
+                      </button>
+                    </>
+                  )}
 
-                <button
-                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    router.push("/admin/sobre");
-                  }}
-                >
-                  <Info
-                    size={18}
-                    className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
-                  />
-                  <span className="font-medium">Sobre OnJob</span>
-                </button>
+                  <button
+                    className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#7B54BE] transition-all duration-150 cursor-pointer group"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      router.push("/admin/sobre");
+                    }}
+                  >
+                    <Info
+                      size={18}
+                      className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
+                    />
+                    <span className="font-medium">Sobre OnJob</span>
+                  </button>
 
-                <div className="border-t border-gray-100 my-1"></div>
+                  <div className="border-t border-gray-100 my-1"></div>
 
-                <button
-                  className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-150 cursor-pointer group"
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    handleLogout();
-                  }}
-                >
-                  <LogOut
-                    size={18}
-                    className="mr-3 text-gray-500 group-hover:text-red-600 transition-colors duration-150"
-                  />
-                  <span className="font-medium">Sair</span>
-                </button>
+                  <button
+                    className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-150 cursor-pointer group"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      handleLogout();
+                    }}
+                  >
+                    <LogOut
+                      size={18}
+                      className="mr-3 text-gray-500 group-hover:text-red-600 transition-colors duration-150"
+                    />
+                    <span className="font-medium">Sair</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      <PlanUpgradeModal
+        isOpen={showPlanModal}
+        onClose={() => setShowPlanModal(false)}
+        title="Painel de monitoramento"
+        badgeText="Disponível no Plano Platinum"
+        allowedPlansMessage={
+          <>
+            O painel de monitoramento está disponível apenas para empresas no
+            plano <strong>PLATINUM</strong>. Conheça nossos planos.
+          </>
+        }
+        highlightTitle="Ver planos"
+        highlightNote="Faça upgrade para liberar o painel de monitoramento."
+      />
+    </>
   );
 }
 
-// Export the memoized version of the component to prevent unnecessary re-renders
 export default memo(NavbarComponent);

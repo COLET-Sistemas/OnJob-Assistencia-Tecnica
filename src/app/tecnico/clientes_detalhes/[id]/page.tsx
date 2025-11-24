@@ -26,6 +26,7 @@ import {
   CircleCheck,
   CircleX,
 } from "lucide-react";
+import { useLicenca } from "@/hooks";
 
 type SectionCardProps = {
   title: string;
@@ -94,6 +95,8 @@ const renderHistoricoField = (
 export default function ClienteDetalheTecnicoPage() {
   const router = useRouter();
   const params = useParams();
+  const { licencaTipo, loading: licencaLoading } = useLicenca();
+  const historicoClienteBloqueado = licencaTipo === "S";
   const rawId = params?.id;
   const normalizedId = Array.isArray(rawId) ? rawId[0] : rawId;
   const clienteId = useMemo(() => {
@@ -118,7 +121,7 @@ export default function ClienteDetalheTecnicoPage() {
     let active = true;
 
     const loadCliente = async () => {
-      if (!clienteId) {
+      if (!clienteId || historicoClienteBloqueado) {
         setError("Cliente não encontrado.");
         setCliente(null);
         setLoading(false);
@@ -156,10 +159,10 @@ export default function ClienteDetalheTecnicoPage() {
     return () => {
       active = false;
     };
-  }, [clienteId, refreshKey]);
+  }, [clienteId, historicoClienteBloqueado, refreshKey]);
 
   const fetchHistorico = useCallback(async () => {
-    if (!clienteId) {
+    if (!clienteId || historicoClienteBloqueado) {
       setHistoricoRegistros([]);
       setHistoricoTotalRegistros(0);
       setHistoricoError(null);
@@ -186,11 +189,13 @@ export default function ClienteDetalheTecnicoPage() {
     } finally {
       setHistoricoLoading(false);
     }
-  }, [clienteId, historicoPagina]);
+  }, [clienteId, historicoClienteBloqueado, historicoPagina]);
 
   useEffect(() => {
-    fetchHistorico();
-  }, [fetchHistorico]);
+    if (!historicoClienteBloqueado) {
+      fetchHistorico();
+    }
+  }, [fetchHistorico, historicoClienteBloqueado]);
 
   useEffect(() => {
     setHistoricoPagina(1);
@@ -227,7 +232,15 @@ export default function ClienteDetalheTecnicoPage() {
       />
 
       <main className="px-4 py-4 space-y-4">
-        {loading ? (
+        {licencaLoading ? (
+          <div className="flex h-[60vh] items-center justify-center">
+            <Loading text="Carregando permissões..." />
+          </div>
+        ) : historicoClienteBloqueado ? (
+          <div className="rounded-2xl border border-dashed border-amber-200 bg-white p-6 text-sm text-amber-700 shadow-sm">
+            O histórico de clientes não está disponível para o seu plano atual.
+          </div>
+        ) : loading ? (
           <div className="flex h-[60vh] items-center justify-center">
             <Loading />
           </div>

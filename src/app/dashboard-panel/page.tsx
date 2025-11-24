@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { services } from "@/api";
 const { ordensServicoService } = services;
 import OsCard from "@/components/admin/ui/OsCard";
 import { Loading as LoadingSpinner } from "@/components/LoadingPersonalizado";
-import { Expand, RefreshCw } from "lucide-react";
+import { Expand, MonitorDot, RefreshCw } from "lucide-react";
+import PlanUpgradeModal from "@/components/admin/ui/PlanUpgradeModal";
+import { useLicenca } from "@/hooks";
 
 interface OrdemServico {
   id_os: number;
@@ -66,8 +68,10 @@ export default function DashboardPainel() {
   const [fullscreen, setFullscreen] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState<number>(2); // minutos
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const { licencaTipo, loading: licenseLoading } = useLicenca();
+  const [showPlanModal, setShowPlanModal] = useState(false);
 
-  const fetchOrdens = async () => {
+  const fetchOrdens = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await ordensServicoService.getDashboard();
@@ -77,21 +81,31 @@ export default function DashboardPainel() {
       setLastUpdated(new Date());
       setError(null);
     } catch (err) {
-      setError("Erro ao carregar as ordens de serviço.");
-      console.error("Erro ao buscar ordens de serviço:", err);
+      setError("Erro ao carregar as ordens de servi��o.");
+      console.error("Erro ao buscar ordens de servi��o:", err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
+    if (licenseLoading) {
+      return;
+    }
+
+    if (licencaTipo !== "P") {
+      setIsLoading(false);
+      setShowPlanModal(true);
+      return;
+    }
+
     fetchOrdens();
 
-    // Configura o intervalo de atualização
+    // Configura o intervalo de atualiza��ǜo
     const interval = setInterval(fetchOrdens, refreshInterval * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [refreshInterval]);
+  }, [fetchOrdens, licencaTipo, licenseLoading, refreshInterval]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -197,6 +211,69 @@ export default function DashboardPainel() {
     minute: "2-digit",
   });
 
+  if (licenseLoading) {
+    return (
+      <LoadingSpinner
+        fullScreen={true}
+        preventScroll={false}
+        size="large"
+        text="Verificando licen��a..."
+      />
+    );
+  }
+
+  if (licencaTipo !== "P") {
+    return (
+      <>
+        <div className="h-screen bg-gradient-to-br from-[#f7f8fc] to-[#eef1f8] flex items-center justify-center px-4">
+          <div className="max-w-lg w-full bg-white/90 border border-gray-100 rounded-2xl shadow-xl p-8 text-center space-y-4">
+            <div className="mx-auto h-14 w-14 rounded-full bg-gradient-to-br from-[#7C54BD]/15 to-[#5C3DB1]/20 flex items-center justify-center">
+              <MonitorDot className="h-7 w-7 text-[#7C54BD]" />
+            </div>
+            <h1 className="text-2xl font-semibold text-slate-900">
+              Dispon��vel no plano Platinum
+            </h1>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              O painel de monitoramento est�� dispon��vel apenas para empresas com
+              plano <strong>PLATINUM</strong>. Conhe��a os planos para liberar este
+              recurso.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                type="button"
+                onClick={() => setShowPlanModal(true)}
+                className="px-5 py-3 rounded-full bg-gradient-to-r from-[#7C54BD] to-[#5C3DB1] text-white text-sm font-semibold shadow-lg hover:opacity-95 transition"
+              >
+                Ver planos
+              </button>
+              <a
+                href="/admin/dashboard"
+                className="px-5 py-3 rounded-full border border-[#7C54BD]/30 text-[#7C54BD] text-sm font-semibold bg-white hover:bg-[#f5f0ff] transition"
+              >
+                Voltar ao dashboard
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <PlanUpgradeModal
+          isOpen={showPlanModal}
+          onClose={() => setShowPlanModal(false)}
+          title="Painel de monitoramento"
+          badgeText="Dispon��vel no Plano Platinum"
+          allowedPlansMessage={
+            <>
+              O painel de monitoramento est�� dispon��vel apenas para empresas no
+              plano <strong>PLATINUM</strong>. Conhe��a nossos planos.
+            </>
+          }
+          highlightTitle="Liberar painel"
+          highlightNote="Faça upgrade para acessar o painel de monitoramento."
+        />
+      </>
+    );
+  }
+
   return (
     <div className="h-screen bg-gradient-to-br from-[#f7f8fc] to-[#eef1f8] flex flex-col overflow-hidden">
       <style jsx global>{`
@@ -233,7 +310,7 @@ export default function DashboardPainel() {
               </span>
             </div>
             <p className="text-sm text-gray-500">
-              Atualizado às {lastUpdatedFormatted} • Atualiza a cada{" "}
+              Atualizado ��s {lastUpdatedFormatted} �?� Atualiza a cada{" "}
               {refreshInterval} min
             </p>
           </div>
@@ -277,7 +354,7 @@ export default function DashboardPainel() {
         </div>
       </header>
 
-      {/* Conteúdo principal */}
+      {/* Conte��do principal */}
       <main className="flex-1 relative overflow-hidden px-3 pb-3 pt-3">
         <div
           ref={scrollContainerRef}
@@ -351,7 +428,7 @@ export default function DashboardPainel() {
                   Sem ordens para exibir
                 </p>
                 <p className="text-sm text-gray-500">
-                  Atualize para buscar as últimas ordens de serviço.
+                  Atualize para buscar as ��ltimas ordens de servi��o.
                 </p>
                 <button
                   onClick={fetchOrdens}

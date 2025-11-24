@@ -6,6 +6,7 @@ import { Loading } from "@/components/LoadingPersonalizado";
 import MobileHeader from "@/components/tecnico/MobileHeader";
 import { clientesService } from "@/api/services/clientesService";
 import { maquinasService } from "@/api/services/maquinasService";
+import { useLicenca } from "@/hooks";
 import type { Cliente } from "@/types/admin/cadastro/clientes";
 import type { Maquina } from "@/types/admin/cadastro/maquinas";
 import { CircleCheck, CircleX } from "lucide-react";
@@ -16,16 +17,35 @@ type SearchMode = "cliente" | "maquina";
 
 export default function HistoricoPage() {
   const router = useRouter();
+  const { licencaTipo, loading: licencaLoading } = useLicenca();
   const [searchMode, setSearchMode] = useState<SearchMode>("cliente");
   const [query, setQuery] = useState("");
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [maquinas, setMaquinas] = useState<Maquina[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const historicoBloqueado =
+    !licencaLoading && (licencaTipo === "P" || licencaTipo === "G");
+
+  useEffect(() => {
+    if (historicoBloqueado) {
+      router.replace("/tecnico/dashboard");
+    }
+  }, [historicoBloqueado, router]);
 
   useEffect(() => {
     let isMounted = true;
     const trimmed = query.trim();
+
+    if (licencaLoading || historicoBloqueado) {
+      setLoading(false);
+      setError("");
+      setClientes([]);
+      setMaquinas([]);
+      return () => {
+        isMounted = false;
+      };
+    }
 
     if (trimmed.length < MIN_SEARCH_LENGTH) {
       setLoading(false);
@@ -53,9 +73,9 @@ export default function HistoricoPage() {
         }
       } catch (err) {
         if (!isMounted) return;
-        console.error("Erro ao buscar histórico:", err);
+        console.error("Erro ao buscar historico:", err);
         setError(
-          "Não foi possível buscar dados no momento. Tente novamente mais tarde."
+          "Nao foi possivel buscar dados no momento. Tente novamente mais tarde."
         );
         if (searchMode === "cliente") {
           setClientes([]);
@@ -73,23 +93,23 @@ export default function HistoricoPage() {
       isMounted = false;
       clearTimeout(handler);
     };
-  }, [query, searchMode]);
+  }, [query, searchMode, licencaLoading, historicoBloqueado]);
 
   const results = searchMode === "cliente" ? clientes : maquinas;
   const hasSearched = query.trim().length >= MIN_SEARCH_LENGTH;
   const searchLabel =
     searchMode === "cliente"
-      ? "Histórico de clientes"
-      : "Histórico de máquinas";
+      ? "Historico de clientes"
+      : "Historico de maquinas";
   const placeholder =
     searchMode === "cliente"
-      ? "Digite o nome do cliente (mínimo 3 caracteres)"
-      : "Digite o número de série da máquina (mínimo 3 caracteres)";
+      ? "Digite o nome do cliente (minimo 3 caracteres)"
+      : "Digite o numero de serie da maquina (minimo 3 caracteres)";
   const noResultsMessage =
     hasSearched && !loading && results.length === 0
       ? searchMode === "cliente"
         ? "Nenhum cliente encontrado."
-        : "Nenhuma máquina encontrada."
+        : "Nenhuma maquina encontrada."
       : "";
   const helperMessage =
     !hasSearched && !loading && !error
@@ -108,10 +128,46 @@ export default function HistoricoPage() {
     router.push(`/tecnico/maquinas_detalhes/${maquina.id}`);
   };
 
+  if (licencaLoading) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <MobileHeader
+          title="Historico"
+          showNotifications={false}
+          leftVariant="back"
+          onAddClick={() => router.back()}
+        />
+        <div className="px-4 pb-6 pt-3">
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <Loading text="Carregando permissoes..." fullScreen={false} />
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (historicoBloqueado) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <MobileHeader
+          title="Historico"
+          showNotifications={false}
+          leftVariant="back"
+          onAddClick={() => router.back()}
+        />
+        <div className="px-4 pb-6 pt-3">
+          <div className="rounded-2xl border border-dashed border-amber-200 bg-white p-6 text-sm text-amber-700 shadow-sm">
+            O histórico não está disponível para o seu plano atual.
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-gray-50">
       <MobileHeader
-        title="Histórico"
+        title="Historico"
         showNotifications={false}
         leftVariant="back"
         onAddClick={() => router.back()}
@@ -149,7 +205,7 @@ export default function HistoricoPage() {
                   : "border-gray-200 bg-white text-gray-600 hover:border-[#7B54BE]"
               }`}
             >
-              Máquina
+              Maquina
             </button>
           </div>
 

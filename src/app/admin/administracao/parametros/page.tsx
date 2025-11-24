@@ -8,8 +8,8 @@ import { parametrosService } from "@/api/services/parametrosService";
 import { ParametroSistema } from "@/types/admin/administracao/parametros";
 import { useDataFetch } from "@/hooks";
 import { isSuperAdmin } from "@/utils/superAdmin";
-import { ChangeEvent, useCallback, useMemo, useState, useEffect } from "react";
-import { Loader2, Search, Pencil, Save, X, Building2 } from "lucide-react";
+import { ChangeEvent, useCallback, useMemo, useState } from "react";
+import { Loader2, Search, Pencil, Save, X } from "lucide-react";
 
 const ParametrizacaoPage = () => {
   const { showError, showSuccess } = useToast();
@@ -17,28 +17,10 @@ const ParametrizacaoPage = () => {
   const [editedValue, setEditedValue] = useState("");
   const [savingId, setSavingId] = useState<number | null>(null);
   const [searchValue, setSearchValue] = useState("");
-  const [licencaTipo, setLicencaTipo] = useState<string>("");
-  const [savingLicenca, setSavingLicenca] = useState(false);
   const userIsSuperAdmin = isSuperAdmin();
   const clearSearchValue = () => setSearchValue("");
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) =>
     setSearchValue(event.target.value);
-
-  // Carregar tipo de licença atual do localStorage
-  useEffect(() => {
-    try {
-      const empresaData = localStorage.getItem("empresa");
-      if (empresaData) {
-        const empresa = JSON.parse(empresaData);
-        setLicencaTipo(empresa.licenca_tipo || "S");
-      } else {
-        setLicencaTipo("S");
-      }
-    } catch (error) {
-      console.error("Erro ao carregar tipo de licença:", error);
-      setLicencaTipo("S");
-    }
-  }, []);
 
   const fetchParametros = useCallback(async () => {
     try {
@@ -174,44 +156,6 @@ const ParametrizacaoPage = () => {
     if (event.key === "Escape") {
       event.preventDefault();
       cancelEditing();
-    }
-  };
-
-  const handleLicencaTipoChange = async (novoTipo: string) => {
-    if (savingLicenca || novoTipo === licencaTipo) return;
-
-    setSavingLicenca(true);
-    try {
-      // Atualizar localStorage
-      const empresaData = localStorage.getItem("empresa");
-      if (empresaData) {
-        const empresa = JSON.parse(empresaData);
-        empresa.licenca_tipo = novoTipo;
-        localStorage.setItem("empresa", JSON.stringify(empresa));
-        localStorage.setItem("licenca_tipo", novoTipo);
-      } else {
-        // Criar objeto empresa básico se não existir
-        const novaEmpresa = { licenca_tipo: novoTipo };
-        localStorage.setItem("empresa", JSON.stringify(novaEmpresa));
-        localStorage.setItem("licenca_tipo", novoTipo);
-      }
-
-      setLicencaTipo(novoTipo);
-
-      const tipoNome =
-        novoTipo === "S" ? "Silver" : novoTipo === "G" ? "Gold" : "Platinum";
-      showSuccess(
-        "Parametrização",
-        `Tipo de licença alterado para ${tipoNome} com sucesso!`
-      );
-    } catch (error) {
-      console.error("Erro ao atualizar tipo de licença:", error);
-      showError(
-        "Parametrização",
-        "Não foi possível alterar o tipo de licença. Tente novamente."
-      );
-    } finally {
-      setSavingLicenca(false);
     }
   };
 
@@ -375,76 +319,7 @@ const ParametrizacaoPage = () => {
     </div>
   );
 
-  const renderLicencaSection = () => {
-    const opcoes = [
-      { value: "S", label: "Silver", description: "Plano básico" },
-      { value: "G", label: "Gold", description: "Plano intermediário" },
-      { value: "P", label: "Platinum", description: "Plano premium" },
-    ];
 
-    return (
-      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Building2 className="h-5 w-5 text-[var(--primary)]" />
-          <h2 className="text-lg font-semibold text-gray-900">
-            Tipo de Licença da Empresa
-          </h2>
-        </div>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="flex-1">
-            <p className="text-sm text-gray-600 mb-3">
-              Configure o tipo de licença da empresa. Esta alteração afeta as
-              funcionalidades disponíveis no sistema.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {opcoes.map((opcao) => (
-                <button
-                  key={opcao.value}
-                  type="button"
-                  disabled={savingLicenca}
-                  onClick={() => handleLicencaTipoChange(opcao.value)}
-                  className={`
-                    p-4 rounded-lg border-2 transition-all text-left
-                    ${
-                      licencaTipo === opcao.value
-                        ? "border-[var(--primary)] bg-[var(--primary)]/5 shadow-md"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                    }
-                    ${
-                      savingLicenca
-                        ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
-                    }
-                  `}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-gray-900">
-                      {opcao.label}
-                    </span>
-                    <span className="text-xs font-mono text-gray-500">
-                      {opcao.value}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-600">{opcao.description}</p>
-                  {licencaTipo === opcao.value && (
-                    <div className="mt-2 text-xs font-medium text-[var(--primary)]">
-                      ✓ Selecionado
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-            {savingLicenca && (
-              <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Salvando alteração...
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-    );
-  };
 
   const renderEditModal = () => {
     if (!parametroEmEdicao) return null;
@@ -558,7 +433,6 @@ const ParametrizacaoPage = () => {
         }}
       />
 
-      {renderLicencaSection()}
 
       <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="mb-6">

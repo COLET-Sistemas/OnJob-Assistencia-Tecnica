@@ -23,6 +23,14 @@ export function useLicenca(): UseLicencaReturn {
   useEffect(() => {
     const loadLicencaFromStorage = () => {
       try {
+        // prioridade: chave licenca_tipo salva diretamente
+        const licencaDireta = localStorage.getItem("licenca_tipo");
+        if (licencaDireta) {
+          setLicencaTipo(licencaDireta as LicencaTipo);
+          return;
+        }
+
+        // fallback: objeto empresa com licenca_tipo
         const empresaData = localStorage.getItem("empresa");
         if (empresaData) {
           const empresa = JSON.parse(empresaData);
@@ -31,7 +39,7 @@ export function useLicenca(): UseLicencaReturn {
           setLicencaTipo(null);
         }
       } catch (error) {
-        console.error("Erro ao carregar tipo de licença:", error);
+        console.error("Erro ao carregar tipo de licenca:", error);
         setLicencaTipo(null);
       } finally {
         setLoading(false);
@@ -40,7 +48,6 @@ export function useLicenca(): UseLicencaReturn {
 
     loadLicencaFromStorage();
 
-    // Listener para mudanças no localStorage
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === "empresa" || event.key === "licenca_tipo") {
         loadLicencaFromStorage();
@@ -55,10 +62,9 @@ export function useLicenca(): UseLicencaReturn {
   }, []);
 
   const isFeatureRestricted = (feature: string): boolean => {
-    if (loading) return true; // Bloqueia durante loading para segurança
-    if (!licencaTipo) return false; // Se não há licença, permite acesso
+    if (loading) return true; // bloqueia durante loading para seguranca
+    if (!licencaTipo) return false; // sem licenca, libera acesso
 
-    // Licença Silver (S) tem restrições
     if (licencaTipo === "S") {
       return (
         feature === RESTRICTED_FEATURES.PECAS ||
@@ -67,21 +73,15 @@ export function useLicenca(): UseLicencaReturn {
       );
     }
 
-    // Licenças Gold (G) e Platinum (P) não têm restrições
+    // G e P sem restricoes
     return false;
   };
 
-  const canAccessPecasModule = (): boolean => {
-    return !isFeatureRestricted(RESTRICTED_FEATURES.PECAS);
-  };
-
-  const canAccessTiposPecasModule = (): boolean => {
-    return !isFeatureRestricted(RESTRICTED_FEATURES.TIPOS_PECAS);
-  };
-
-  const canAccessLiberacaoFinanceira = (): boolean => {
-    return !isFeatureRestricted(RESTRICTED_FEATURES.LIBERACAO_FINANCEIRA);
-  };
+  const canAccessPecasModule = (): boolean => !isFeatureRestricted(RESTRICTED_FEATURES.PECAS);
+  const canAccessTiposPecasModule = (): boolean =>
+    !isFeatureRestricted(RESTRICTED_FEATURES.TIPOS_PECAS);
+  const canAccessLiberacaoFinanceira = (): boolean =>
+    !isFeatureRestricted(RESTRICTED_FEATURES.LIBERACAO_FINANCEIRA);
 
   return {
     licencaTipo,

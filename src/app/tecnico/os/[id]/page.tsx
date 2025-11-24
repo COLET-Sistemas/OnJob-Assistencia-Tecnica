@@ -32,6 +32,7 @@ import {
   ChevronRight,
   ArrowUpRight,
   FileText,
+  Lock,
 } from "lucide-react";
 import {
   ordensServicoService,
@@ -40,6 +41,7 @@ import {
 import FATCard from "@/components/tecnico/FATCard";
 import { Loading } from "@/components/LoadingPersonalizado";
 import { MAQUINA_PREVIEW_CACHE_KEY } from "@/constants/storageKeys";
+import { useLicenca } from "@/hooks";
 
 const Section = React.memo(
   ({
@@ -142,14 +144,19 @@ const HistoryActionButton = React.memo(
     href,
     label,
     variant = "primary",
+    disabled = false,
+    locked = false,
   }: {
     href: string;
     label: string;
     variant?: HistoryActionVariant;
+    disabled?: boolean;
+    locked?: boolean;
   }) => {
     const router = useRouter();
     const [isPending, setIsPending] = useState(false);
     const isMountedRef = useRef(true);
+    const isDisabled = disabled || isPending;
 
     useEffect(() => {
       isMountedRef.current = true;
@@ -164,6 +171,11 @@ const HistoryActionButton = React.memo(
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLAnchorElement>) => {
+        if (disabled) {
+          event.preventDefault();
+          return;
+        }
+
         if (
           event.defaultPrevented ||
           event.button !== 0 ||
@@ -191,7 +203,7 @@ const HistoryActionButton = React.memo(
           }
         });
       },
-      [href, isPending, router]
+      [disabled, href, isPending, router]
     );
 
     const baseClasses =
@@ -200,9 +212,14 @@ const HistoryActionButton = React.memo(
       variant === "primary"
         ? "bg-[#7B54BE] text-white hover:bg-[#6843a4]"
         : "border border-slate-200 bg-white text-slate-800 hover:border-[#7B54BE] hover:text-[#7B54BE]";
-    const stateClasses = isPending
-      ? "cursor-wait opacity-70"
+    const stateClasses = isDisabled
+      ? "cursor-not-allowed opacity-70"
       : "cursor-pointer";
+    const rightIcon = locked ? (
+      <Lock className="h-4 w-4" />
+    ) : (
+      <ArrowUpRight className="h-4 w-4" />
+    );
 
     return (
       <Link
@@ -212,10 +229,11 @@ const HistoryActionButton = React.memo(
         prefetch={false}
         aria-label={label}
         aria-busy={isPending}
-        aria-disabled={isPending}
+        aria-disabled={isDisabled}
+        tabIndex={isDisabled ? -1 : undefined}
       >
         <span className="truncate">{isPending ? `${label}…` : label}</span>
-        <ArrowUpRight className="h-4 w-4" />
+        {rightIcon}
       </Link>
     );
   }
@@ -265,6 +283,7 @@ FATsSection.displayName = "FATsSection";
 export default function OSDetalheMobile() {
   const router = useRouter();
   const params = useParams();
+  const { licencaTipo } = useLicenca();
   const [os, setOs] = useState<OSDetalhadaV2 | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -714,6 +733,8 @@ export default function OSDetalheMobile() {
     };
   }, [os]);
 
+  const historicoClienteBloqueado = licencaTipo === "S";
+
   // Effect otimizado com cleanup
   useEffect(() => {
     let mounted = true;
@@ -995,6 +1016,8 @@ export default function OSDetalheMobile() {
                   href={`/tecnico/clientes_detalhes/${os.cliente.id}`}
                   label="Ver histórico do cliente"
                   variant="primary"
+                  disabled={historicoClienteBloqueado}
+                  locked={historicoClienteBloqueado}
                 />
               </div>
             )}
