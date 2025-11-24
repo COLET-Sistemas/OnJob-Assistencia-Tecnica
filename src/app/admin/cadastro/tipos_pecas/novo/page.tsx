@@ -1,6 +1,7 @@
 "use client";
 
 import api from "@/api/api";
+import LicenseGuard from "@/components/admin/common/LicenseGuard";
 import { useTitle } from "@/context/TitleContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -142,7 +143,7 @@ const CadastrarTipoPeca: React.FC = () => {
   );
 
   return (
-    <>
+    <LicenseGuard feature="tipos_pecas">
       <PageHeader
         title="Cadastro de Tipo de Peça"
         config={{
@@ -200,14 +201,13 @@ const CadastrarTipoPeca: React.FC = () => {
                 isLoading={isSubmitting}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-                  <span>Salvar</span>
-          
+                <span>Salvar</span>
               </LoadingButton>
             </div>
           </footer>
         </form>
       </main>
-    </>
+    </LicenseGuard>
   );
 };
 

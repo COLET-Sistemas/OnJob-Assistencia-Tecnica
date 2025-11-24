@@ -1,6 +1,7 @@
 "use client";
 
 import { pecasService, tiposPecasService } from "@/api/services";
+import LicenseGuard from "@/components/admin/common/LicenseGuard";
 import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import Link from "next/link";
@@ -200,7 +201,7 @@ const CadastrarPeca = () => {
   };
 
   return (
-    <>
+    <LicenseGuard feature="pecas">
       <PageHeader
         title="Cadastro de Peça"
         config={{
@@ -301,15 +302,13 @@ const CadastrarPeca = () => {
                 isLoading={savingData}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-     
-                  <span>Salvar</span>
-           
+                <span>Salvar</span>
               </LoadingButton>
             </div>
           </footer>
         </form>
       </main>
-    </>
+    </LicenseGuard>
   );
 };
 

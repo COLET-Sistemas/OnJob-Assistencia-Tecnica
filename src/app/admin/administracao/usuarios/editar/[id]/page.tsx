@@ -8,7 +8,9 @@ import { Loading } from "@/components/LoadingPersonalizado";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import { InputField, LoadingButton } from "@/components/admin/form";
 import PageHeader from "@/components/admin/ui/PageHeader";
+import PlanUpgradeModal from "@/components/admin/ui/PlanUpgradeModal";
 import AdminAuthGuard from "@/components/admin/common/AdminAuthGuard";
+import { Lock } from "lucide-react";
 
 interface PageProps {
   params: Promise<{
@@ -63,6 +65,8 @@ const EditarUsuario = (props: PageProps) => {
     permite_cadastros: false,
   });
   const [loading, setLoading] = useState(true);
+  const [licencaTipo, setLicencaTipo] = useState<string | null>(null);
+  const [planUpgradeModal, setPlanUpgradeModal] = useState(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -140,6 +144,13 @@ const EditarUsuario = (props: PageProps) => {
         if (!mountedRef.current) return;
 
         setFormData(userData);
+
+        // Recuperar tipo de licença da empresa
+        const empresaData = localStorage.getItem("empresa");
+        if (empresaData) {
+          const empresa = JSON.parse(empresaData);
+          setLicencaTipo(empresa.licenca_tipo || null);
+        }
       } catch (error) {
         if (!mountedRef.current) return;
 
@@ -158,6 +169,11 @@ const EditarUsuario = (props: PageProps) => {
 
     loadUserData();
   }, [id, showError, router]);
+
+  // Função para verificar se um perfil está restrito
+  const isPerfilRestrito = (perfilKey: string): boolean => {
+    return perfilKey === "perfil_tecnico_terceirizado" && licencaTipo === "S";
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -182,6 +198,11 @@ const EditarUsuario = (props: PageProps) => {
   };
 
   const handlePerfilChange = (perfilKey: string) => {
+    if (isPerfilRestrito(perfilKey)) {
+      setPlanUpgradeModal(true);
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [perfilKey]: !prev[perfilKey],
@@ -334,24 +355,37 @@ const EditarUsuario = (props: PageProps) => {
                         : ""
                     }`}
                   >
-                    {perfis.map((perfil) => (
-                      <button
-                        key={perfil.key}
-                        type="button"
-                        onClick={() => handlePerfilChange(perfil.key)}
-                        className={`
-                          px-4 py-2 rounded-md font-medium transition-all
-                          ${
-                            formData[perfil.key]
-                              ? "bg-violet-600 text-white shadow-md hover:bg-violet-700"
-                              : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400"
-                          }
-                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500
-                        `}
-                      >
-                        {perfil.label}
-                      </button>
-                    ))}
+                    {perfis.map((perfil) => {
+                      const isRestrito = isPerfilRestrito(perfil.key);
+                      const isSelected = formData[perfil.key];
+
+                      return (
+                        <button
+                          key={perfil.key}
+                          type="button"
+                          disabled={isRestrito}
+                          onClick={() => handlePerfilChange(perfil.key)}
+                          className={`
+                            px-4 py-2 rounded-md font-medium transition-all flex items-center gap-2
+                            ${
+                              isSelected
+                                ? "bg-violet-600 text-white shadow-md hover:bg-violet-700"
+                                : isRestrito
+                                ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                            }
+                            ${
+                              !isRestrito
+                                ? "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+                                : ""
+                            }
+                          `}
+                        >
+                          {isRestrito && <Lock className="h-4 w-4" />}
+                          {perfil.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -431,6 +465,12 @@ const EditarUsuario = (props: PageProps) => {
           </footer>
         </form>
       </main>
+
+      {/* Modal de upgrade de plano */}
+      <PlanUpgradeModal
+        isOpen={planUpgradeModal}
+        onClose={() => setPlanUpgradeModal(false)}
+      />
     </AdminAuthGuard>
   );
 };

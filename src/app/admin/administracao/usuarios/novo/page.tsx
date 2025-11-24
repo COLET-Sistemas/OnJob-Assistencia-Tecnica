@@ -7,8 +7,10 @@ import Link from "next/link";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { InputField } from "@/components/admin/form";
 import SuccessModal from "@/components/admin/ui/SuccessModal";
+import PlanUpgradeModal from "@/components/admin/ui/PlanUpgradeModal";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import AdminAuthGuard from "@/components/admin/common/AdminAuthGuard";
+import { Lock } from "lucide-react";
 
 const perfis = [
   { key: "administrador", label: "Administrador" },
@@ -55,6 +57,8 @@ export default function NovoUsuario() {
     message: "",
     additionalInfo: {} as Record<string, string>,
   });
+  const [licencaTipo, setLicencaTipo] = useState<string | null>(null);
+  const [planUpgradeModal, setPlanUpgradeModal] = useState(false);
   const { showError } = useToast();
 
   React.useEffect(() => {
@@ -68,6 +72,8 @@ export default function NovoUsuario() {
               ...prev,
               id_empresa: empresa.id_empresa.toString(),
             }));
+            // Recuperar tipo de licença
+            setLicencaTipo(empresa.licenca_tipo || null);
           }
         }
       } catch (error) {
@@ -75,6 +81,11 @@ export default function NovoUsuario() {
       }
     }
   }, []);
+
+  // Função para verificar se um perfil está restrito
+  const isPerfilRestrito = (perfilKey: string): boolean => {
+    return perfilKey === "perfil_tecnico_terceirizado" && licencaTipo === "S";
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -203,6 +214,12 @@ export default function NovoUsuario() {
         additionalInfo={successModal.additionalInfo}
       />
 
+      {/* Modal de upgrade de plano */}
+      <PlanUpgradeModal
+        isOpen={planUpgradeModal}
+        onClose={() => setPlanUpgradeModal(false)}
+      />
+
       <main>
         <form
           onSubmit={handleSubmit}
@@ -287,11 +304,20 @@ export default function NovoUsuario() {
                     }`}
                   >
                     {perfis.map((perfil) => {
+                      const isRestrito = isPerfilRestrito(perfil.key);
+                      const isSelected = form[perfil.key];
+
                       return (
                         <button
                           key={perfil.key}
                           type="button"
+                          disabled={isRestrito}
                           onClick={() => {
+                            if (isRestrito) {
+                              setPlanUpgradeModal(true);
+                              return;
+                            }
+
                             const name = perfil.key;
                             setForm((prev) => {
                               // Se desmarcar o gestor, desmarcar permite_cadastros também
@@ -319,15 +345,22 @@ export default function NovoUsuario() {
                             }
                           }}
                           className={`
-            px-4 py-2 rounded-md font-medium transition-all
+            px-4 py-2 rounded-md font-medium transition-all flex items-center gap-2
             ${
-              form[perfil.key]
+              isSelected
                 ? `${"bg-violet-600 hover:bg-violet-700 text-white"} shadow-md`
+                : isRestrito
+                ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
                 : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400"
             }
-            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500
+            ${
+              !isRestrito
+                ? "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+                : ""
+            }
           `}
                         >
+                          {isRestrito && <Lock className="h-4 w-4" />}
                           {perfil.label}
                         </button>
                       );

@@ -26,8 +26,10 @@ import {
   Wrench,
   PauseCircle,
   FileX,
+  Lock,
 } from "lucide-react";
 import { isDataAgendadaPassada } from "@/utils/formatters";
+import { useLicenca } from "@/hooks/useLicenca";
 
 interface OSCardProps {
   os: OrdemServico;
@@ -69,6 +71,8 @@ const OSCard: React.FC<OSCardProps> = ({
   onEditarOS,
   onCancelarOS,
 }) => {
+  const { canAccessLiberacaoFinanceira } = useLicenca();
+  const canLiberar = canAccessLiberacaoFinanceira();
   // Função para determinar a cor baseada no código da situação
   const getSituacaoColor = (codigo: number) => {
     switch (codigo) {
@@ -468,14 +472,24 @@ const OSCard: React.FC<OSCardProps> = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onLiberarFinanceiramente(os.id_os);
+                            if (canLiberar) {
+                              onLiberarFinanceiramente(os.id_os);
+                            }
                           }}
-                          className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 text-green-600 
-                                  hover:bg-green-100 rounded-md text-xs font-medium transition-colors 
-                                  border border-green-200 transform hover:scale-105 active:scale-95 cursor-pointer"
-                          title="Liberar financeiramente"
+                          disabled={!canLiberar}
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-colors 
+                                  border transform hover:scale-105 active:scale-95 ${
+                                    canLiberar
+                                      ? "bg-green-50 text-green-600 hover:bg-green-100 border-green-200 cursor-pointer"
+                                      : "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
+                                  }`}
+                          title={canLiberar ? "Liberar financeiramente" : "Recurso disponível apenas para licenças Gold e Platinum"}
                         >
-                          <DollarSign className="w-3.5 h-3.5" />
+                          {canLiberar ? (
+                            <DollarSign className="w-3.5 h-3.5" />
+                          ) : (
+                            <Lock className="w-3.5 h-3.5" />
+                          )}
                           Liberar
                         </button>
                       )}

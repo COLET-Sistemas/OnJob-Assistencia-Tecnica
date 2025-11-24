@@ -1,6 +1,7 @@
 "use client";
 
 import api from "@/api/api";
+import LicenseGuard from "@/components/admin/common/LicenseGuard";
 import { useTitle } from "@/context/TitleContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -161,7 +162,7 @@ const EditarTipoPeca = (props: PageProps) => {
   }
 
   return (
-    <>
+    <LicenseGuard feature="tipos_pecas">
       <PageHeader
         title="Editar Tipo de Peça"
         config={{
@@ -234,15 +235,13 @@ const EditarTipoPeca = (props: PageProps) => {
                 isLoading={savingData}
                 className="bg-[var(--primary)] text-white hover:bg-violet-700 focus:ring-violet-500 shadow-sm"
               >
-          
-                  <span>Salvar</span>
-            
+                <span>Salvar</span>
               </LoadingButton>
             </div>
           </footer>
         </form>
       </main>
-    </>
+    </LicenseGuard>
   );
 };
 

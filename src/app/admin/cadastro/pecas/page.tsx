@@ -1,6 +1,7 @@
 "use client";
 import { Loading } from "@/components/LoadingPersonalizado";
 import { TableList, TableStatusColumn } from "@/components/admin/common";
+import LicenseGuard from "@/components/admin/common/LicenseGuard";
 import { useTitle } from "@/context/TitleContext";
 import { useDataFetch } from "@/hooks";
 import type { Peca } from "@/types/admin/cadastro/pecas";
@@ -267,7 +268,7 @@ const CadastroPecas = () => {
   ];
 
   return (
-    <>
+    <LicenseGuard feature="pecas">
       <PageHeader
         title="Lista de Peças"
         config={{
@@ -313,7 +314,7 @@ const CadastroPecas = () => {
         recordsPerPageOptions={[10, 20, 25, 50, 100]}
         showRecordsPerPage={true}
       />
-    </>
+    </LicenseGuard>
   );
 };
 

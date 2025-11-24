@@ -11,6 +11,7 @@ import {
   MapPin,
   FileClock,
   Settings,
+  Gem,
   Search,
   UserPlus,
   Tag,
@@ -19,6 +20,7 @@ import {
   ClipboardEdit,
   FileCog,
   UsersRound,
+  Lock,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -29,6 +31,8 @@ import {
   getStoredRoles,
   USER_ROLES_UPDATED_EVENT,
 } from "@/utils/userRoles";
+import { useLicenca } from "@/hooks";
+import { usePlanUpgradeModal } from "@/context";
 import packageInfo from "../../../../package.json";
 
 /* ---------------------------- Tipos ---------------------------- */
@@ -166,6 +170,16 @@ export default function Sidebar({ isOpen }: SidebarProps) {
   const [apiVersion, setApiVersion] = useState("...");
   const [isMounted, setIsMounted] = useState(false);
 
+  const {
+    licencaTipo,
+    loading,
+    canAccessPecasModule,
+    canAccessTiposPecasModule,
+  } = useLicenca();
+  const { openModal } = usePlanUpgradeModal();
+  const showUpgradeLink =
+    !loading && (licencaTipo === "S" || licencaTipo === "G");
+
   useEffect(() => {
     setIsMounted(true);
 
@@ -265,6 +279,20 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     [roles, rolesLoaded]
   );
 
+  const isMenuItemLocked = useCallback(
+    (item: MenuItem): boolean => {
+      switch (item.key) {
+        case "pecas":
+          return !canAccessPecasModule();
+        case "tipos_pecas":
+          return !canAccessTiposPecasModule();
+        default:
+          return false;
+      }
+    },
+    [canAccessPecasModule, canAccessTiposPecasModule]
+  );
+
   const visibleMenuItems = useMemo(
     () => menuItems.filter(hasAccessToMenuItem),
     [hasAccessToMenuItem]
@@ -276,11 +304,17 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     setExpandedMenus((prev) => ({ ...prev, [menuKey]: !prev[menuKey] }));
 
   const handleMenuClick = (item: MenuItem, hasSubmenu: boolean) => {
+    // Verificar se o item está bloqueado por licença
+    if (isMenuItemLocked(item)) {
+      openModal();
+      return;
+    }
+
     if (hasSubmenu && !isOpen) {
-      // 🔸 Quando o menu está FECHADO, vai direto para o link principal
+      // ?? Quando o menu está FECHADO, vai direto para o link principal
       if (item.path) router.push(item.path);
     } else if (hasSubmenu && isOpen) {
-      // 🔸 Quando o menu está ABERTO, apenas expande
+      // ?? Quando o menu está ABERTO, apenas expande
       toggleSubmenu(item.key);
     } else if (item.path) {
       setActiveMenu(item.key);
@@ -311,6 +345,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           activeMenu === subItem.key ||
           (subItem.path && pathname.startsWith(subItem.path))
       );
+    const isLocked = isMenuItemLocked(item);
 
     return (
       <div key={item.key} className="relative group">
@@ -340,11 +375,20 @@ export default function Sidebar({ isOpen }: SidebarProps) {
             </div>
           )}
           {isOpen && (
-            <span className="ml-3 text-sm font-medium whitespace-nowrap">
-              {item.label}
-            </span>
+            <div className="ml-3 flex items-center gap-2 flex-1">
+              <span className="text-sm font-medium whitespace-nowrap">
+                {item.label}
+              </span>
+              {isLocked && (
+                <Lock
+                  size={14}
+                  className="text-amber-400 hover:text-amber-300 cursor-pointer flex-shrink-0"
+                  strokeWidth={2}
+                />
+              )}
+            </div>
           )}
-          {isOpen && hasSubmenu && (
+          {isOpen && hasSubmenu && !isLocked && (
             <div className="ml-auto">
               {isExpanded ? (
                 <ChevronDown
@@ -363,7 +407,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           )}
         </div>
 
-        {isOpen && hasSubmenu && isExpanded && (
+        {isOpen && hasSubmenu && isExpanded && !isLocked && (
           <div className="pl-6 mt-1 border-l border-white/10">
             {submenuItems.map((s) => renderMenuItem(s, level + 1))}
           </div>
@@ -434,9 +478,23 @@ export default function Sidebar({ isOpen }: SidebarProps) {
               </div>
             </div>
           </div>
+
+          {showUpgradeLink && (
+            <button
+              onClick={() => router.push("/admin/planos")}
+              className="mt-2 w-full flex items-center justify-center gap-2 
+               text-xs font-semibold text-white 
+               bg-white/10 border border-white/20 
+               rounded-lg py-1.5 px-3 
+               hover:bg-white/20 active:scale-[0.98] 
+               transition-all cursor-pointer"
+            >
+              <Gem className="h-4 w-4 text-white/90" strokeWidth={2.5} />
+              Ver planos de upgrade
+            </button>
+          )}
         </div>
       )}
     </div>
   );
 }
-
