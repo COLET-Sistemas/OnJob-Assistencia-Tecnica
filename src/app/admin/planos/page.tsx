@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   Check,
   CheckCircle2,
-  Crown,
   Info,
   ShieldCheck,
   X,
