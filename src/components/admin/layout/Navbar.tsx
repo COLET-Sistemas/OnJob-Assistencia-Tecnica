@@ -13,7 +13,7 @@ import {
   MonitorDot,
   SlidersHorizontal,
 } from "lucide-react";
-import { useEffect, useState, memo, type MouseEvent } from "react";
+import { useEffect, useState, memo } from "react";
 import { useRouter } from "next/navigation";
 import { useEmpresa } from "@/hooks";
 import { authService, empresaService } from "@/api/services";
@@ -106,7 +106,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
-  const closeDropdown = (event: MouseEvent) => {
+  const closeDropdown = (event: Event) => {
     const target = event.target as HTMLElement;
     if (!target.closest(".user-profile-dropdown")) {
       setDropdownOpen(false);
@@ -167,7 +167,9 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
     }
   };
 
-  const handleDashboardPanelClick = (event: MouseEvent<HTMLAnchorElement>) => {
+  const handleDashboardPanelClick = (
+    event: React.MouseEvent<HTMLAnchorElement>
+  ) => {
     if (licenseLoading) {
       event.preventDefault();
       return;
