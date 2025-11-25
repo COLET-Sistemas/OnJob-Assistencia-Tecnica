@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Building2,
@@ -8,11 +9,13 @@ import {
   Shield,
   Calendar,
 } from "lucide-react";
+import Link from "next/link";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { Loading } from "@/components/LoadingPersonalizado";
 import MapComponent from "@/components/admin/ui/MapComponent";
 import packageInfo from "../../../../../package.json";
 import { useTitle } from "@/context/TitleContext";
+import type { LicencaTipo } from "@/types/licenca";
 import {
   getEmpresaFromStorage,
   formatEmpresaAddress,
@@ -24,8 +27,21 @@ interface VersaoInfo {
   versaoApi: string;
 }
 
+const LICENSE_LABELS: Record<LicencaTipo, string> = {
+  P: "Platinum",
+  G: "Gold",
+  S: "Silver",
+};
+
+const LICENSE_DESCRIPTIONS: Record<LicencaTipo, string> = {
+  P: "Licença avançada",
+  G: "Licença intermediária",
+  S: "Licença básica",
+};
+
 const ConsultaEmpresa: React.FC = () => {
   const [empresaData, setEmpresaData] = useState<EmpresaData | null>(null);
+  const [licencaTipo, setLicencaTipo] = useState<LicencaTipo | null>(null);
   const [versaoInfo, setVersaoInfo] = useState<VersaoInfo>({
     versaoApp: "",
     versaoApi: "",
@@ -43,11 +59,23 @@ const ConsultaEmpresa: React.FC = () => {
     const fetchEmpresa = async () => {
       try {
         const empresa = getEmpresaFromStorage();
+        const storedLicenca =
+          (localStorage.getItem("licenca_tipo") as LicencaTipo | null) || null;
 
         if (empresa) {
           setEmpresaData(empresa);
+          const licencaFromEmpresa =
+            typeof empresa.licenca_tipo === "string" &&
+            (["P", "G", "S"] as const).includes(
+              empresa.licenca_tipo as LicencaTipo
+            )
+              ? (empresa.licenca_tipo as LicencaTipo)
+              : null;
+
+          setLicencaTipo(storedLicenca || licencaFromEmpresa || null);
         } else {
           console.warn("Dados da empresa não encontrados no localStorage");
+          setLicencaTipo(storedLicenca);
         }
       } catch (error) {
         console.error("Erro ao carregar dados da empresa:", error);
@@ -83,6 +111,16 @@ const ConsultaEmpresa: React.FC = () => {
     () => (empresaData ? formatEmpresaAddress(empresaData) : ""),
     [empresaData]
   );
+
+  const licencaTipoLabel = useMemo(() => {
+    if (!licencaTipo) return "Não informado";
+    return LICENSE_LABELS[licencaTipo];
+  }, [licencaTipo]);
+
+  const licencaTipoDescricao = useMemo(() => {
+    if (!licencaTipo) return "";
+    return LICENSE_DESCRIPTIONS[licencaTipo];
+  }, [licencaTipo]);
 
   // Componente de skeleton para carregamento
   const Skeleton = () => (
@@ -128,19 +166,19 @@ const ConsultaEmpresa: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Dados principais */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[450px]">
-              <div className="p-6 h-full flex flex-col">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="p-6">
                 <h3 className="text-lg font-medium mb-6 text-[var(--neutral-graphite)] flex items-center gap-2">
                   <Building2 className="h-5 w-5 text-[var(--primary)]" />
                   Dados Corporativos
                 </h3>
 
                 {loading ? (
-                  <div className="flex-1 flex items-center">
+                  <div className="flex items-center">
                     <Skeleton />
                   </div>
                 ) : (
-                  <div className="space-y-4 flex-1 flex flex-col justify-center">
+                  <div className="space-y-4">
                     <InfoCard
                       title="Razão Social"
                       value={empresaData?.razao_social}
@@ -170,20 +208,20 @@ const ConsultaEmpresa: React.FC = () => {
             </div>
 
             {/* Versões */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[250px]">
-              <div className="p-6 h-full flex flex-col">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="p-6">
                 <h3 className="text-lg font-medium mb-6 text-[var(--neutral-graphite)] flex items-center gap-2">
                   <Package className="h-5 w-5 text-[var(--primary)]" />
                   Versões
                 </h3>
 
                 {loading ? (
-                  <div className="flex flex-col gap-4 flex-1 justify-center">
+                  <div className="flex flex-col gap-4">
                     <div className="h-[40px] bg-gray-100 rounded animate-pulse"></div>
                     <div className="h-[40px] bg-gray-100 rounded animate-pulse"></div>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-4 flex-1">
+                  <div className="flex flex-col gap-4">
                     <div className="p-4 bg-white border border-gray-100 rounded-lg flex justify-between items-center">
                       <p className="text-md text-gray-500 font-medium">
                         Aplicação
@@ -208,15 +246,15 @@ const ConsultaEmpresa: React.FC = () => {
           {/* Mapa e licenças */}
           <div className="lg:col-span-2 space-y-6">
             {/* Mapa */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[450px]">
-              <div className="p-6 h-full flex flex-col">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="p-6">
                 <h3 className="text-lg font-medium mb-4 text-[var(--neutral-graphite)] flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-[var(--primary)]" />
                   Localização
                 </h3>
 
                 {loading ? (
-                  <div className="flex-1 w-full rounded-lg flex items-center justify-center bg-gray-50 border">
+                  <div className="h-[350px] w-full rounded-lg flex items-center justify-center bg-gray-50 border">
                     <Loading
                       size="medium"
                       text="Carregando mapa..."
@@ -224,7 +262,7 @@ const ConsultaEmpresa: React.FC = () => {
                     />
                   </div>
                 ) : (
-                  <div className="transition-all duration-300 rounded-lg overflow-hidden flex-1">
+                  <div className="transition-all duration-300 rounded-lg overflow-hidden h-[350px]">
                     <MapComponent
                       height="100%"
                       zoom={17}
@@ -237,13 +275,44 @@ const ConsultaEmpresa: React.FC = () => {
             </div>
 
             {/* Licença */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[250px]">
-              <div className="p-6 h-full flex flex-col">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="p-6">
                 <h3 className="text-lg font-medium mb-4 text-[var(--neutral-graphite)] flex items-center gap-2">
                   <Users className="h-5 w-5 text-[var(--primary)]" />
                   Informações de Licença
                 </h3>
-                <div className="flex-1 flex flex-col gap-3">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-gray-100 bg-white">
+                    <div className="flex items-center gap-3">
+                      <Shield className="h-5 w-5 text-[var(--primary)]" />
+                      <div className="flex flex-col">
+                        <span className="text-xs text-gray-500 font-medium">
+                          Tipo de Licença
+                        </span>
+                        <span className="text-sm font-semibold text-[var(--neutral-graphite)]">
+                          {loading ? "Carregando..." : licencaTipoLabel}
+                        </span>
+                        {!loading && licencaTipoDescricao && (
+                          <span className="text-xs text-gray-500">
+                            {licencaTipoDescricao}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {licencaTipo && (
+                      <div className="flex items-center gap-2">
+                        {licencaTipo !== "P" && (
+                          <Link
+                            href="/admin/planos"
+                            className="text-xs font-semibold px-3 py-1.5 rounded-md bg-[var(--primary)] text-white hover:bg-[#6b46c1] transition-colors"
+                          >
+                            Ver planos
+                          </Link>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Usuários */}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="flex justify-between items-center p-4 rounded-lg border border-gray-100 bg-white">
