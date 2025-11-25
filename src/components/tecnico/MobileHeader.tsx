@@ -66,9 +66,12 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { licencaTipo, loading: licencaLoading } = useLicenca();
-  // Historico liberado apenas para licenca S
-  const historicoBloqueado = licencaTipo === "P" || licencaTipo === "G";
+  // Historico liberado apenas para licenca P
+  const historicoBloqueado = !licencaLoading && licencaTipo !== "P";
   const historicoDesabilitado = licencaLoading || historicoBloqueado;
+  // Nova OS liberada apenas para licenca P
+  const novaOsBloqueada = !licencaLoading && licencaTipo !== "P";
+  const novaOsDesabilitada = licencaLoading || novaOsBloqueada;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -94,6 +97,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   };
 
   const handleNovaOS = () => {
+    if (novaOsDesabilitada) return;
     setMenuOpen(false);
     router.push("/tecnico/os/novo");
   };
@@ -118,7 +122,12 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   };
 
   const menuOptions: MenuOption[] = [
-    { label: "Nova OS", onClick: handleNovaOS },
+    {
+      label: "Nova OS",
+      onClick: handleNovaOS,
+      disabled: novaOsDesabilitada,
+      locked: novaOsBloqueada,
+    },
     { label: "Lista de OS's", onClick: handleInicial },
     {
       label: "Histórico",

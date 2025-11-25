@@ -393,6 +393,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
       <PlanUpgradeModal
         isOpen={showPlanModal}
         onClose={() => setShowPlanModal(false)}
+        planScope="platinum_only"
         title="Painel de monitoramento"
         badgeText="Disponível no Plano Platinum"
         allowedPlansMessage={

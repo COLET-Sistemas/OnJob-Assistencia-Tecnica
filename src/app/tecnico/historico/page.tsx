@@ -24,14 +24,7 @@ export default function HistoricoPage() {
   const [maquinas, setMaquinas] = useState<Maquina[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const historicoBloqueado =
-    !licencaLoading && (licencaTipo === "P" || licencaTipo === "G");
-
-  useEffect(() => {
-    if (historicoBloqueado) {
-      router.replace("/tecnico/dashboard");
-    }
-  }, [historicoBloqueado, router]);
+  const historicoBloqueado = !licencaLoading && licencaTipo !== "P";
 
   useEffect(() => {
     let isMounted = true;
@@ -167,7 +160,7 @@ export default function HistoricoPage() {
   return (
     <main className="min-h-screen bg-gray-50">
       <MobileHeader
-        title="Historico"
+        title="Histórico"
         showNotifications={false}
         leftVariant="back"
         onAddClick={() => router.back()}

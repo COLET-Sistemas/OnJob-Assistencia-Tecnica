@@ -15,7 +15,7 @@ interface AdminLayoutProps {
 
 // Componente interno que usa o contexto do modal
 function AdminLayoutContent({ children }: AdminLayoutProps) {
-  const { isOpen, closeModal } = usePlanUpgradeModal();
+  const { isOpen, closeModal, planScope } = usePlanUpgradeModal();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Detectar tamanho da tela para mobile
@@ -64,7 +64,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
       </div>
 
       {/* Modal de upgrade de plano renderizado no painel principal */}
-      <PlanUpgradeModal isOpen={isOpen} onClose={closeModal} />
+      <PlanUpgradeModal isOpen={isOpen} onClose={closeModal} planScope={planScope} />
     </>
   );
 }

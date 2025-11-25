@@ -22,6 +22,7 @@ import {
   Users,
 } from "lucide-react";
 import MobileHeader from "@/components/tecnico/MobileHeader";
+import { Loading } from "@/components/LoadingPersonalizado";
 import { clientesService } from "@/api/services/clientesService";
 import { maquinasService } from "@/api/services/maquinasService";
 import { motivosAtendimentoService } from "@/api/services/motivosAtendimentoService";
@@ -30,6 +31,7 @@ import { Cliente, ClienteContato } from "@/types/admin/cadastro/clientes";
 import { Maquina } from "@/types/admin/cadastro/maquinas";
 import { MotivoAtendimento } from "@/types/admin/cadastro/motivos_atendimento";
 import useDebouncedCallback from "@/hooks/useDebouncedCallback";
+import { useLicenca } from "@/hooks";
 import { useFeedback } from "@/context";
 
 type ClienteOption = {
@@ -109,6 +111,8 @@ const formatClienteSecondaryLine = (option: ClienteOption) => {
 export default function NovaOrdemServicoMobile() {
   const router = useRouter();
   const { showToast } = useFeedback();
+  const { licencaTipo, loading: licencaLoading } = useLicenca();
+  const novaOsBloqueada = !licencaLoading && licencaTipo !== "P";
 
   const [tecnicoId, setTecnicoId] = useState<number | null>(null);
 
@@ -168,6 +172,12 @@ export default function NovaOrdemServicoMobile() {
   });
 
   useEffect(() => {
+    if (novaOsBloqueada) {
+      router.replace("/tecnico/dashboard");
+    }
+  }, [novaOsBloqueada, router]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const stored = localStorage.getItem("id_usuario");
     if (stored) {
@@ -179,6 +189,7 @@ export default function NovaOrdemServicoMobile() {
   }, []);
 
   useEffect(() => {
+    if (licencaLoading || novaOsBloqueada) return;
     let active = true;
     motivosAtendimentoService
       .getAll({ situacao: "A" })
@@ -197,7 +208,7 @@ export default function NovaOrdemServicoMobile() {
     return () => {
       active = false;
     };
-  }, [showToast]);
+  }, [licencaLoading, novaOsBloqueada, showToast]);
 
   const debouncedSearchClientes = useDebouncedCallback(
     async (term: string) => {
@@ -604,6 +615,10 @@ export default function NovaOrdemServicoMobile() {
   const handleSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      if (novaOsBloqueada) {
+        showToast("Seu plano atual nao permite abrir nova OS.", "warning");
+        return;
+      }
       const validationErrors: Partial<typeof errors> = {};
       const manualContactSelected = selectedContato?.id === -1;
       const manualNome = newContact.nome.trim();
@@ -727,10 +742,45 @@ export default function NovaOrdemServicoMobile() {
       selectedContato,
       selectedMaquina,
       selectedMotivo,
+      novaOsBloqueada,
       showToast,
       tecnicoId,
     ]
   );
+
+  if (licencaLoading) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <MobileHeader
+          title="Nova OS"
+          leftVariant="back"
+          onAddClick={() => router.back()}
+        />
+        <div className="px-4 pb-6 pt-3">
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <Loading text="Carregando permissoes..." fullScreen={false} />
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (novaOsBloqueada) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <MobileHeader
+          title="Nova OS"
+          leftVariant="back"
+          onAddClick={() => router.back()}
+        />
+        <div className="px-4 pb-6 pt-3">
+          <div className="rounded-2xl border border-dashed border-amber-200 bg-white p-6 text-sm text-amber-700 shadow-sm">
+            A abertura de nova OS nao esta disponivel para o seu plano atual.
+          </div>
+        </div>
+      </main>
+    );
+  }
   return (
     <>
       <MobileHeader
@@ -1224,4 +1274,3 @@ export default function NovaOrdemServicoMobile() {
     </>
   );
 }
-

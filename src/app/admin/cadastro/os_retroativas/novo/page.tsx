@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import PageHeader from "@/components/admin/ui/PageHeader";
+import LicenseGuard from "@/components/admin/common/LicenseGuard";
 
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import {
@@ -879,22 +880,23 @@ const NovaOSRetroativa = () => {
   const isNumeroCiclosRequired = numeroCiclosConfig === "S";
 
   return (
-    <>
-      <PageHeader
-        title="Cadastro de OS Retroativa"
-        config={{
-          type: "form",
-          backLink: "/admin/cadastro/os_retroativas",
-          backLabel: "Voltar para OS retroativas",
-        }}
-      />
+    <LicenseGuard feature="os_retroativas">
+      <>
+        <PageHeader
+          title="Cadastro de OS Retroativa"
+          config={{
+            type: "form",
+            backLink: "/admin/cadastro/os_retroativas",
+            backLabel: "Voltar para OS retroativas",
+          }}
+        />
 
-      <main>
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
-          noValidate
-        >
+        <main>
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+            noValidate
+          >
           <div className="p-6 md:p-8 space-y-10">
             {/* ABERTURA */}
             <section className="space-y-6">
@@ -1254,33 +1256,34 @@ const NovaOSRetroativa = () => {
             </section>
           </div>
 
-          <footer className="bg-slate-50 px-6 md:px-8 py-6 border-t border-slate-200">
-            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
-              <button
-                type="button"
-                onClick={() => router.push("/admin/cadastro/os_retroativas")}
-                className="px-6 py-3 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-colors text-center font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400"
-              >
-                Cancelar
-              </button>
+            <footer className="bg-slate-50 px-6 md:px-8 py-6 border-t border-slate-200">
+              <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => router.push("/admin/cadastro/os_retroativas")}
+                  className="px-6 py-3 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-colors text-center font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400"
+                >
+                  Cancelar
+                </button>
 
-              <LoadingButton
-                type="submit"
-                isLoading={isSubmitting}
-                className="bg-[var(--primary)] text-white hover:bg-[var(--primary)]/90 focus:ring-[var(--primary)] shadow-sm"
-              >
-                Salvar
-              </LoadingButton>
-            </div>
-            {errors.usuario && (
-              <p className="text-sm text-red-600 mt-3 text-right">
-                {errors.usuario}
-              </p>
-            )}
-          </footer>
-        </form>
-      </main>
-    </>
+                <LoadingButton
+                  type="submit"
+                  isLoading={isSubmitting}
+                  className="bg-[var(--primary)] text-white hover:bg-[var(--primary)]/90 focus:ring-[var(--primary)] shadow-sm"
+                >
+                  Salvar
+                </LoadingButton>
+              </div>
+              {errors.usuario && (
+                <p className="text-sm text-red-600 mt-3 text-right">
+                  {errors.usuario}
+                </p>
+              )}
+            </footer>
+          </form>
+        </main>
+      </>
+    </LicenseGuard>
   );
 };
 

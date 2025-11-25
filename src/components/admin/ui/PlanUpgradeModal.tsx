@@ -4,11 +4,14 @@ import React from "react";
 import { Lock, X, Zap, Crown, Star, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+type PlanScope = "gold_platinum" | "platinum_only";
+
 interface PlanUpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   badgeText?: string;
+  planScope?: PlanScope;
   allowedPlansMessage?: React.ReactNode;
   highlightTitle?: string;
   highlightNote?: string;
@@ -17,18 +20,42 @@ interface PlanUpgradeModalProps {
 const PlanUpgradeModal: React.FC<PlanUpgradeModalProps> = ({
   isOpen,
   onClose,
-  title = "Recurso Premium",
-  badgeText = "Premium Feature",
-  allowedPlansMessage = (
-    <>
-      Este recurso só está disponível nos planos <strong>GOLD</strong> e{" "}
-      <strong>PLATINUM</strong>. Conheça nossos planos.
-    </>
-  ),
+  title: _title = "Recurso Premium",
+  badgeText,
+  planScope = "gold_platinum",
+  allowedPlansMessage,
   highlightTitle = "Upgrade para acessar",
-  highlightNote = "Técnicos Terceirizados e outros recursos avançados",
+  highlightNote,
 }) => {
   const router = useRouter();
+  const isPlatinumOnly = planScope === "platinum_only";
+  const headerTitle = _title;
+
+  const computedBadgeText =
+    badgeText ||
+    (isPlatinumOnly
+      ? "Disponível no Plano Platinum"
+      : "Disponível nos Planos Gold e Platinum");
+
+  const computedAllowedPlansMessage =
+    allowedPlansMessage ||
+    (isPlatinumOnly ? (
+      <>
+        Este recurso esta disponível apenas para empresas no plano{" "}
+        <strong>PLATINUM</strong>. Conheca nossos planos.
+      </>
+    ) : (
+      <>
+        Este recurso esta disponível nos planos <strong>GOLD</strong> e{" "}
+        <strong>PLATINUM</strong>. Conheca nossos planos.
+      </>
+    ));
+
+  const computedHighlightNote =
+    highlightNote ||
+    (isPlatinumOnly
+      ? "Faca upgrade para o plano Platinum e liberar este recurso."
+      : "Faca upgrade para liberar este recurso nos planos Gold ou Platinum.");
 
   const handleKnowPlans = () => {
     onClose();
@@ -46,9 +73,8 @@ const PlanUpgradeModal: React.FC<PlanUpgradeModalProps> = ({
 
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative w-full max-w-lg transform rounded-2xl bg-white shadow-2xl transition-all duration-300 animate-in slide-in-from-bottom-4 fade-in-0">
-          {/* Header com gradiente */}
+          {/* Header */}
           <div className="relative overflow-hidden rounded-t-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 px-6 py-8">
-            {/* Padrão de fundo sutil */}
             <div className="absolute inset-0 bg-white/10 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.3)_1px,transparent_0)] [background-size:20px_20px]" />
 
             <div className="relative flex items-center justify-between">
@@ -57,11 +83,13 @@ const PlanUpgradeModal: React.FC<PlanUpgradeModalProps> = ({
                   <Lock className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">{title}</h3>
+                  <h3 className="text-xl font-bold text-white">
+                    {headerTitle}
+                  </h3>
                   <div className="mt-1 inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 backdrop-blur-sm">
                     <Crown className="h-3 w-3 text-amber-200" />
                     <span className="text-xs font-medium text-white">
-                      {badgeText}
+                      {computedBadgeText}
                     </span>
                   </div>
                 </div>
@@ -75,16 +103,16 @@ const PlanUpgradeModal: React.FC<PlanUpgradeModalProps> = ({
             </div>
           </div>
 
-          {/* Conteúdo principal */}
+          {/* Conteudo principal */}
           <div className="px-6 py-6">
             {/* Mensagem principal */}
             <div className="mb-6 text-center">
               <p className="text-gray-700 leading-relaxed">
-                {allowedPlansMessage}
+                {computedAllowedPlansMessage}
               </p>
             </div>
 
-            {/* Card de destaque melhorado */}
+            {/* Card de destaque */}
             <div className="mb-6 overflow-hidden rounded-xl border border-violet-100 bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 p-5">
               <div className="mb-3 flex items-center justify-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100">
@@ -95,27 +123,27 @@ const PlanUpgradeModal: React.FC<PlanUpgradeModalProps> = ({
                 </span>
               </div>
               <p className="text-center text-sm text-violet-700 leading-relaxed">
-                {highlightNote}
+                {computedHighlightNote}
               </p>
 
-              {/* Benefícios adicionais */}
+              {/* Beneficios adicionais */}
               <div className="mt-4 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-violet-700">
                   <Star className="h-3 w-3 fill-violet-400 text-violet-400" />
-                  <span>Recursos avançados de gestão</span>
+                  <span>Recursos avancados de gestao</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-violet-700">
                   <Star className="h-3 w-3 fill-violet-400 text-violet-400" />
-                  <span>Suporte prioritário</span>
+                  <span>Suporte prioritario</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-violet-700">
                   <Star className="h-3 w-3 fill-violet-400 text-violet-400" />
-                  <span>Relatórios detalhados</span>
+                  <span>Relatorios detalhados</span>
                 </div>
               </div>
             </div>
 
-            {/* Botões de ação melhorados */}
+            {/* Botoes */}
             <div className="flex gap-3">
               <button
                 onClick={onClose}

@@ -175,6 +175,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     loading,
     canAccessPecasModule,
     canAccessTiposPecasModule,
+    canAccessOsRetroativasModule,
   } = useLicenca();
   const { openModal } = usePlanUpgradeModal();
   const showUpgradeLink =
@@ -286,11 +287,13 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           return !canAccessPecasModule();
         case "tipos_pecas":
           return !canAccessTiposPecasModule();
+        case "os_retroativas":
+          return !canAccessOsRetroativasModule();
         default:
           return false;
       }
     },
-    [canAccessPecasModule, canAccessTiposPecasModule]
+    [canAccessPecasModule, canAccessTiposPecasModule, canAccessOsRetroativasModule]
   );
 
   const visibleMenuItems = useMemo(
@@ -304,9 +307,11 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     setExpandedMenus((prev) => ({ ...prev, [menuKey]: !prev[menuKey] }));
 
   const handleMenuClick = (item: MenuItem, hasSubmenu: boolean) => {
+    const planScope =
+      item.key === "os_retroativas" ? "platinum_only" : "gold_platinum";
     // Verificar se o item está bloqueado por licença
     if (isMenuItemLocked(item)) {
-      openModal();
+      openModal(planScope);
       return;
     }
 

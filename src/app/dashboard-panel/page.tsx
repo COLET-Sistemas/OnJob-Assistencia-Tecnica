@@ -259,6 +259,7 @@ export default function DashboardPainel() {
         <PlanUpgradeModal
           isOpen={showPlanModal}
           onClose={() => setShowPlanModal(false)}
+          planScope="platinum_only"
           title="Painel de monitoramento"
           badgeText="Dispon��vel no Plano Platinum"
           allowedPlansMessage={

@@ -8,12 +8,14 @@ interface UseLicencaReturn {
   canAccessPecasModule: () => boolean;
   canAccessTiposPecasModule: () => boolean;
   canAccessLiberacaoFinanceira: () => boolean;
+  canAccessOsRetroativasModule: () => boolean;
 }
 
 const RESTRICTED_FEATURES = {
   PECAS: "pecas",
   TIPOS_PECAS: "tipos_pecas",
   LIBERACAO_FINANCEIRA: "liberacao_financeira",
+  OS_RETROATIVAS: "os_retroativas",
 } as const;
 
 export function useLicenca(): UseLicencaReturn {
@@ -65,16 +67,18 @@ export function useLicenca(): UseLicencaReturn {
     if (loading) return true; // bloqueia durante loading para seguranca
     if (!licencaTipo) return false; // sem licenca, libera acesso
 
-    if (licencaTipo === "S") {
-      return (
-        feature === RESTRICTED_FEATURES.PECAS ||
-        feature === RESTRICTED_FEATURES.TIPOS_PECAS ||
-        feature === RESTRICTED_FEATURES.LIBERACAO_FINANCEIRA
-      );
-    }
+    const restrictedByLicense: Record<LicencaTipo, string[]> = {
+      S: [
+        RESTRICTED_FEATURES.PECAS,
+        RESTRICTED_FEATURES.TIPOS_PECAS,
+        RESTRICTED_FEATURES.LIBERACAO_FINANCEIRA,
+        RESTRICTED_FEATURES.OS_RETROATIVAS,
+      ],
+      G: [RESTRICTED_FEATURES.OS_RETROATIVAS],
+      P: [],
+    };
 
-    // G e P sem restricoes
-    return false;
+    return restrictedByLicense[licencaTipo]?.includes(feature) ?? false;
   };
 
   const canAccessPecasModule = (): boolean => !isFeatureRestricted(RESTRICTED_FEATURES.PECAS);
@@ -82,6 +86,8 @@ export function useLicenca(): UseLicencaReturn {
     !isFeatureRestricted(RESTRICTED_FEATURES.TIPOS_PECAS);
   const canAccessLiberacaoFinanceira = (): boolean =>
     !isFeatureRestricted(RESTRICTED_FEATURES.LIBERACAO_FINANCEIRA);
+  const canAccessOsRetroativasModule = (): boolean =>
+    !isFeatureRestricted(RESTRICTED_FEATURES.OS_RETROATIVAS);
 
   return {
     licencaTipo,
@@ -90,5 +96,6 @@ export function useLicenca(): UseLicencaReturn {
     canAccessPecasModule,
     canAccessTiposPecasModule,
     canAccessLiberacaoFinanceira,
+    canAccessOsRetroativasModule,
   };
 }
