@@ -1,7 +1,11 @@
 // utils/maps.ts
 import type { LicencaTipo } from "@/types/licenca";
 
-export const isValidAddress = (endereco: string, cidade: string, uf: string): boolean => {
+export const isValidAddress = (
+  endereco: string,
+  cidade: string,
+  uf: string
+): boolean => {
   return (
     endereco?.trim().length > 0 &&
     cidade?.trim().length > 0 &&
@@ -21,9 +25,15 @@ export const generateGoogleMapsIframeUrl = (
     return "";
   }
 
-  const fullAddress = formatEmpresaAddressForUrl(endereco, numero, bairro, cidade, uf);
+  const fullAddress = formatEmpresaAddressForUrl(
+    endereco,
+    numero,
+    bairro,
+    cidade,
+    uf
+  );
   const encodedAddress = encodeURIComponent(fullAddress);
-  
+
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   if (apiKey) {
@@ -44,9 +54,15 @@ export const generateGoogleMapsUrl = (
     return "";
   }
 
-  const fullAddress = formatEmpresaAddressForUrl(endereco, numero, bairro, cidade, uf);
+  const fullAddress = formatEmpresaAddressForUrl(
+    endereco,
+    numero,
+    bairro,
+    cidade,
+    uf
+  );
   const encodedAddress = encodeURIComponent(fullAddress);
-  
+
   return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
 };
 

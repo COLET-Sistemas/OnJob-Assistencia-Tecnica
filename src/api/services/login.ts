@@ -151,8 +151,12 @@ export class LoginService {
           usuarios_ativos: authData.empresa.usuarios_ativos || 0,
           usuarios_cadastrados: authData.empresa.usuarios_cadastrados || 0,
           usuarios_licenciados: authData.empresa.usuarios_licenciados || 0,
-          latitude: authData.empresa.latitude ? Number(authData.empresa.latitude) : undefined,
-          longitude: authData.empresa.longitude ? Number(authData.empresa.longitude) : undefined,
+          latitude: authData.empresa.latitude
+            ? Number(authData.empresa.latitude)
+            : undefined,
+          longitude: authData.empresa.longitude
+            ? Number(authData.empresa.longitude)
+            : undefined,
           data_validade: authData.empresa.data_validade || "",
           licenca_demo: !!authData.empresa.licenca_demo,
           licenca_tipo: storedLicencaTipo,
@@ -270,9 +274,7 @@ export class LoginService {
     }
   }
 
-  static async impersonateEmpresa(
-    idEmpresa: number
-  ): Promise<LoginResponse> {
+  static async impersonateEmpresa(idEmpresa: number): Promise<LoginResponse> {
     if (!idEmpresa) {
       throw new Error("Selecione uma empresa v\u00e1lida.");
     }

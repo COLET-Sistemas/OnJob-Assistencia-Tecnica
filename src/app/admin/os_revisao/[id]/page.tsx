@@ -773,310 +773,319 @@ export default function OSRevisaoPage() {
   return (
     <LicenseGuard feature="os_revisao">
       <>
-      <PageHeader
-        title={`Revisão de OS #${os.id_os}`}
-        config={{
-          type: "form",
-          backLink: "/admin/os_revisao",
-          backLabel: "Voltar para a lista",
-        }}
-      />
+        <PageHeader
+          title={`Revisão de OS #${os.id_os}`}
+          config={{
+            type: "form",
+            backLink: "/admin/os_revisao",
+            backLabel: "Voltar para a lista",
+          }}
+        />
 
-      {/* Header da OS - Design mais compacto e profissional */}
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            {/* Lado esquerdo: cliente e localizacao */}
-            <div className="flex items-center gap-6 flex-wrap">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  OS #{os.id_os}
-                </h3>
-              </div>
-
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-700 font-medium">
-                    {os.cliente.nome}
-                  </span>
-                  {os.cliente.id && (
-                    <Link
-                      href={`/admin/clientes_detalhes/${os.cliente.id}`}
-                      className="flex items-center text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
-                      title="Ver detalhes do cliente"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Link>
-                  )}
+        {/* Header da OS - Design mais compacto e profissional */}
+        <div className="bg-white rounded-lg shadow mb-6">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              {/* Lado esquerdo: cliente e localizacao */}
+              <div className="flex items-center gap-6 flex-wrap">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    OS #{os.id_os}
+                  </h3>
                 </div>
-                <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <button
-                    onClick={() => {
-                      const empresa = JSON.parse(
-                        localStorage.getItem("empresa") || "{}"
-                      );
-                      const origem = empresa.endereco && empresa.cidade && empresa.uf
-                        ? encodeURIComponent(`${empresa.endereco}, ${empresa.numero || ''}, ${empresa.cidade}, ${empresa.uf}`)
-                        : null;
-                      const destino = encodeURIComponent(
-                        `${os.cliente.cidade}, ${os.cliente.uf}`
-                      );
-                      const url = origem
-                        ? `https://www.google.com/maps/dir/?api=1&origin=${origem}&destination=${destino}`
-                        : `https://www.google.com/maps/search/?api=1&query=${destino}`;
-                      window.open(url, "_blank");
-                    }}
-                    title="Ver rota no Google Maps"
-                    className="text-gray-500 cursor-pointer hover:text-purple-900 transition-colors"
-                  >
-                    <MapPin className="w-4 h-4" />
-                  </button>
-                  <span>
-                    {os.cliente.cidade} / {os.cliente.uf}
-                  </span>
-                </div>
-              </div>
 
-              <div className="ml-8 flex flex-col text-sm text-gray-600 min-w-[180px]">
-                {os.maquina?.numero_serie && (
-                  <span className="font-medium text-gray-700 truncate">
-                    Número de Série: {os.maquina.numero_serie}
-                  </span>
-                )}
-                {os.maquina?.descricao && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 truncate">
-                    <div
-                      className="w-4 h-4 flex items-center justify-center shrink-0  transform"
-                      title={
-                        os.maquina.em_garantia
-                          ? "Em garantia"
-                          : "Fora da garantia"
-                      }
-                    >
-                      {os.maquina.em_garantia ? (
-                        <CircleCheck className="w-3.5 h-3.5 text-emerald-500" />
-                      ) : (
-                        <CircleX className="w-3.5 h-3.5 text-amber-500" />
-                      )}
-                    </div>
-                    <span className="truncate">{os.maquina.descricao}</span>
-                    {os.maquina?.id && (
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-700 font-medium">
+                      {os.cliente.nome}
+                    </span>
+                    {os.cliente.id && (
                       <Link
-                        href={`/admin/maquinas_detalhes/${os.maquina.id}`}
-                        className="flex items-center text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded ml-1"
-                        title="Ver detalhes da máquina"
+                        href={`/admin/clientes_detalhes/${os.cliente.id}`}
+                        className="flex items-center text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded"
+                        title="Ver detalhes do cliente"
                       >
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-4 h-4" />
                       </Link>
                     )}
                   </div>
-                )}
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                    <button
+                      onClick={() => {
+                        const empresa = JSON.parse(
+                          localStorage.getItem("empresa") || "{}"
+                        );
+                        const origem =
+                          empresa.endereco && empresa.cidade && empresa.uf
+                            ? encodeURIComponent(
+                                `${empresa.endereco}, ${
+                                  empresa.numero || ""
+                                }, ${empresa.cidade}, ${empresa.uf}`
+                              )
+                            : null;
+                        const destino = encodeURIComponent(
+                          `${os.cliente.cidade}, ${os.cliente.uf}`
+                        );
+                        const url = origem
+                          ? `https://www.google.com/maps/dir/?api=1&origin=${origem}&destination=${destino}`
+                          : `https://www.google.com/maps/search/?api=1&query=${destino}`;
+                        window.open(url, "_blank");
+                      }}
+                      title="Ver rota no Google Maps"
+                      className="text-gray-500 cursor-pointer hover:text-purple-900 transition-colors"
+                    >
+                      <MapPin className="w-4 h-4" />
+                    </button>
+                    <span>
+                      {os.cliente.cidade} / {os.cliente.uf}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="ml-8 flex flex-col text-sm text-gray-600 min-w-[180px]">
+                  {os.maquina?.numero_serie && (
+                    <span className="font-medium text-gray-700 truncate">
+                      Número de Série: {os.maquina.numero_serie}
+                    </span>
+                  )}
+                  {os.maquina?.descricao && (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 truncate">
+                      <div
+                        className="w-4 h-4 flex items-center justify-center shrink-0  transform"
+                        title={
+                          os.maquina.em_garantia
+                            ? "Em garantia"
+                            : "Fora da garantia"
+                        }
+                      >
+                        {os.maquina.em_garantia ? (
+                          <CircleCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        ) : (
+                          <CircleX className="w-3.5 h-3.5 text-amber-500" />
+                        )}
+                      </div>
+                      <span className="truncate">{os.maquina.descricao}</span>
+                      {os.maquina?.id && (
+                        <Link
+                          href={`/admin/maquinas_detalhes/${os.maquina.id}`}
+                          className="flex items-center text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:rounded ml-1"
+                          title="Ver detalhes da máquina"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Badge de garantia da OS */}
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                    os.em_garantia
+                      ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                      : "border-amber-100 bg-amber-50 text-amber-700"
+                  }`}
+                  title={
+                    os.em_garantia ? "OS em garantia" : "OS fora da garantia"
+                  }
+                >
+                  {os.em_garantia ? (
+                    <ShieldCheck className="h-4 w-4" />
+                  ) : (
+                    <ShieldX className="h-4 w-4" />
+                  )}
+                  {os.em_garantia ? "OS Em garantia" : "OS Fora da garantia"}
+                </span>
+
+                <StatusBadge status={os.situacao_os.codigo.toString()} />
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6 py-3 grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Settings className="h-4 w-4 text-gray-500 shrink-0" />
+              <div className="overflow-hidden">
+                <p className="font-medium text-gray-700 truncate">
+                  Motivo Atendimento
+                </p>
+                <p className="text-xs text-gray-600 truncate">
+                  {os.abertura.motivo_atendimento}
+                </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Badge de garantia da OS */}
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
-                  os.em_garantia
-                    ? "border-emerald-100 bg-emerald-50 text-emerald-700"
-                    : "border-amber-100 bg-amber-50 text-amber-700"
-                }`}
-                title={
-                  os.em_garantia ? "OS em garantia" : "OS fora da garantia"
-                }
-              >
-                {os.em_garantia ? (
-                  <ShieldCheck className="h-4 w-4" />
-                ) : (
-                  <ShieldX className="h-4 w-4" />
-                )}
-                {os.em_garantia ? "OS Em garantia" : "OS Fora da garantia"}
-              </span>
+              <UserRoundCog className="h-4 w-4 text-gray-500 shrink-0" />
+              <div className="overflow-hidden">
+                <p className="font-medium text-gray-700 truncate">Técnico</p>
+                <p className="text-xs text-gray-600 truncate">
+                  {os.tecnico?.nome || "Nao atribuido"}
+                </p>
+              </div>
+            </div>
 
-              <StatusBadge status={os.situacao_os.codigo.toString()} />
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-gray-500 shrink-0" />
+              <div className="overflow-hidden">
+                <p className="font-medium text-gray-700 truncate">Abertura</p>
+                <p className="text-xs text-gray-600">
+                  {os.abertura.data_abertura}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-gray-500 shrink-0" />
+              <div className="overflow-hidden">
+                <p className="font-medium text-gray-700 truncate">
+                  Agendamento
+                </p>
+                <p className="text-xs text-gray-600">
+                  {os.data_agendada || "-"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Clipboard className="h-4 w-4 text-gray-500 shrink-0" />
+              <div className="overflow-hidden">
+                <p className="font-medium text-gray-700 truncate">Conclusão</p>
+                <p className="text-xs text-gray-600">
+                  {os.situacao_os.data_situacao || "-"}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="px-6 py-3 grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4 text-gray-500 shrink-0" />
-            <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">
-                Motivo Atendimento
-              </p>
-              <p className="text-xs text-gray-600 truncate">
-                {os.abertura.motivo_atendimento}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <UserRoundCog className="h-4 w-4 text-gray-500 shrink-0" />
-            <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">Técnico</p>
-              <p className="text-xs text-gray-600 truncate">
-                {os.tecnico?.nome || "Nao atribuido"}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-500 shrink-0" />
-            <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">Abertura</p>
-              <p className="text-xs text-gray-600">
-                {os.abertura.data_abertura}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-gray-500 shrink-0" />
-            <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">Agendamento</p>
-              <p className="text-xs text-gray-600">{os.data_agendada || "-"}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Clipboard className="h-4 w-4 text-gray-500 shrink-0" />
-            <div className="overflow-hidden">
-              <p className="font-medium text-gray-700 truncate">Conclusão</p>
-              <p className="text-xs text-gray-600">
-                {os.situacao_os.data_situacao || "-"}
-              </p>
-            </div>
-          </div>
+        {/* Abas */}
+        <div className="mb-6 flex border-b border-gray-200">
+          <button
+            className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
+              activeTab === "info"
+                ? "border-b-2 border-[var(--primary)] text-[var(--primary)]"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            onClick={() => setActiveTab("info")}
+          >
+            <FileText className="h-4 w-4" />
+            Informações
+          </button>
+          <button
+            className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
+              activeTab === "deslocamentos"
+                ? "border-b-2 border-[var(--primary)] text-[var(--primary)]"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            onClick={() => setActiveTab("deslocamentos")}
+          >
+            <Car className="h-4 w-4" />
+            Deslocamentos ({deslocamentosOriginais.length} |{" "}
+            {deslocamentosRevisados.filter((d) => !d.isDeleted).length})
+          </button>
+          <button
+            className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
+              activeTab === "pecas"
+                ? "border-b-2 border-[var(--primary)] text-[var(--primary)]"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            onClick={() => setActiveTab("pecas")}
+          >
+            <Package className="h-4 w-4" />
+            Peças ({pecasOriginais.length} |{" "}
+            {pecasRevisadas.filter((p) => !p.isDeleted).length})
+          </button>
+          <button
+            className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
+              activeTab === "fotos"
+                ? "border-b-2 border-[var(--primary)] text-[var(--primary)]"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            onClick={() => setActiveTab("fotos")}
+          >
+            <Camera className="h-4 w-4" />
+            Fotos ({fotosCount})
+          </button>
+          <button
+            className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
+              activeTab === "revisao"
+                ? "border-b-2 border-[var(--primary)] text-[var(--primary)]"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            onClick={() => setActiveTab("revisao")}
+          >
+            <ClipboardCheck className="h-4 w-4" />
+            Revisão
+          </button>
         </div>
-      </div>
 
-      {/* Abas */}
-      <div className="mb-6 flex border-b border-gray-200">
-        <button
-          className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
-            activeTab === "info"
-              ? "border-b-2 border-[var(--primary)] text-[var(--primary)]"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-          onClick={() => setActiveTab("info")}
-        >
-          <FileText className="h-4 w-4" />
-          Informações
-        </button>
-        <button
-          className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
-            activeTab === "deslocamentos"
-              ? "border-b-2 border-[var(--primary)] text-[var(--primary)]"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-          onClick={() => setActiveTab("deslocamentos")}
-        >
-          <Car className="h-4 w-4" />
-          Deslocamentos ({deslocamentosOriginais.length} |{" "}
-          {deslocamentosRevisados.filter((d) => !d.isDeleted).length})
-        </button>
-        <button
-          className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
-            activeTab === "pecas"
-              ? "border-b-2 border-[var(--primary)] text-[var(--primary)]"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-          onClick={() => setActiveTab("pecas")}
-        >
-          <Package className="h-4 w-4" />
-          Peças ({pecasOriginais.length} |{" "}
-          {pecasRevisadas.filter((p) => !p.isDeleted).length})
-        </button>
-        <button
-          className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
-            activeTab === "fotos"
-              ? "border-b-2 border-[var(--primary)] text-[var(--primary)]"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-          onClick={() => setActiveTab("fotos")}
-        >
-          <Camera className="h-4 w-4" />
-          Fotos ({fotosCount})
-        </button>
-        <button
-          className={`py-3 px-5 text-sm font-medium flex items-center gap-2 ${
-            activeTab === "revisao"
-              ? "border-b-2 border-[var(--primary)] text-[var(--primary)]"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-          onClick={() => setActiveTab("revisao")}
-        >
-          <ClipboardCheck className="h-4 w-4" />
-          Revisão
-        </button>
-      </div>
+        <div className="bg-white rounded-lg shadow mb-6">
+          {activeTab === "info" && (
+            <InfoTab os={os} machineObservations={observacoesMaquina} />
+          )}
 
-      <div className="bg-white rounded-lg shadow mb-6">
-        {activeTab === "info" && (
-          <InfoTab os={os} machineObservations={observacoesMaquina} />
-        )}
+          {activeTab === "deslocamentos" && (
+            <DeslocamentosTab
+              originais={deslocamentosOriginais}
+              revisados={deslocamentosRevisados}
+              onAccept={handleAcceptDeslocamento}
+              onAcceptAll={handleAcceptAllDeslocamentos}
+              onAdd={handleAddDeslocamento}
+              onChange={handleDeslocamentoChange}
+              onEdit={handleEditDeslocamento}
+              onSave={handleSaveDeslocamento}
+              onCancel={handleCancelDeslocamento}
+              onDelete={handleDeleteDeslocamento}
+              onRestore={handleRestoreDeslocamento}
+              readOnly={isDeslocamentoReadOnly}
+            />
+          )}
 
-        {activeTab === "deslocamentos" && (
-          <DeslocamentosTab
-            originais={deslocamentosOriginais}
-            revisados={deslocamentosRevisados}
-            onAccept={handleAcceptDeslocamento}
-            onAcceptAll={handleAcceptAllDeslocamentos}
-            onAdd={handleAddDeslocamento}
-            onChange={handleDeslocamentoChange}
-            onEdit={handleEditDeslocamento}
-            onSave={handleSaveDeslocamento}
-            onCancel={handleCancelDeslocamento}
-            onDelete={handleDeleteDeslocamento}
-            onRestore={handleRestoreDeslocamento}
-            readOnly={isDeslocamentoReadOnly}
-          />
-        )}
+          {activeTab === "pecas" && (
+            <PecasTab
+              originais={pecasOriginais}
+              revisadas={pecasRevisadas}
+              onAccept={handleAcceptPeca}
+              onAcceptAll={handleAcceptAllPecas}
+              onAdd={handleAddPeca}
+              onChange={handlePecaChange}
+              onSelectCatalogItem={handlePecaCatalogSelect}
+              onEdit={handleEditPeca}
+              onSave={handleSavePeca}
+              onCancel={handleCancelPeca}
+              onDelete={handleDeletePeca}
+              onRestore={handleRestorePeca}
+            />
+          )}
 
-        {activeTab === "pecas" && (
-          <PecasTab
-            originais={pecasOriginais}
-            revisadas={pecasRevisadas}
-            onAccept={handleAcceptPeca}
-            onAcceptAll={handleAcceptAllPecas}
-            onAdd={handleAddPeca}
-            onChange={handlePecaChange}
-            onSelectCatalogItem={handlePecaCatalogSelect}
-            onEdit={handleEditPeca}
-            onSave={handleSavePeca}
-            onCancel={handleCancelPeca}
-            onDelete={handleDeletePeca}
-            onRestore={handleRestorePeca}
-          />
-        )}
+          {activeTab === "fotos" && (
+            <FotosTab
+              osId={os.id_os}
+              fats={os.fats ?? []}
+              onCountChange={setFotosCount}
+            />
+          )}
 
-        {activeTab === "fotos" && (
-          <FotosTab
-            osId={os.id_os}
-            fats={os.fats ?? []}
-            onCountChange={setFotosCount}
-          />
-        )}
-
-        {activeTab === "revisao" && (
-          <RevisaoTab
-            observacoesRevisao={observacoesRevisao}
-            onObservacoesRevisaoChange={setObservacoesRevisao}
-            observacoesMaquina={observacoesMaquina}
-            isEditandoObservacoesMaquina={editarObservacoesMaquina}
-            onToggleEditarObservacoesMaquina={setEditarObservacoesMaquina}
-            onObservacoesMaquinaChange={setObservacoesMaquina}
-            emGarantia={emGarantia}
-            onEmGarantiaChange={setEmGarantia}
-            onSubmit={handleSubmitRevisao}
-            onCancel={handleCancelarRevisao}
-            isSubmitting={isSubmittingRevisao}
-            submittingAction={submittingAction}
-          />
-        )}
-      </div>
+          {activeTab === "revisao" && (
+            <RevisaoTab
+              observacoesRevisao={observacoesRevisao}
+              onObservacoesRevisaoChange={setObservacoesRevisao}
+              observacoesMaquina={observacoesMaquina}
+              isEditandoObservacoesMaquina={editarObservacoesMaquina}
+              onToggleEditarObservacoesMaquina={setEditarObservacoesMaquina}
+              onObservacoesMaquinaChange={setObservacoesMaquina}
+              emGarantia={emGarantia}
+              onEmGarantiaChange={setEmGarantia}
+              onSubmit={handleSubmitRevisao}
+              onCancel={handleCancelarRevisao}
+              isSubmitting={isSubmittingRevisao}
+              submittingAction={submittingAction}
+            />
+          )}
+        </div>
       </>
     </LicenseGuard>
   );
