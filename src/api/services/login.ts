@@ -1,4 +1,4 @@
-﻿// /api/services/login.ts
+// /api/services/login.ts
 import { criptografarSenha } from "@/utils/cryptoPassword";
 import {
   clearCadastroPermission,
@@ -60,7 +60,7 @@ export class LoginService {
     senha: string
   ): Promise<LoginResponse> {
     if (!login.trim() || !senha.trim()) {
-      throw new Error("Login e senha sÃ£o obrigatÃ³rios");
+      throw new Error("Login e senha s\u00e3o obrigat\u00f3rios");
     }
 
     const loginData: LoginRequest = {
@@ -69,8 +69,7 @@ export class LoginService {
     };
 
     try {
-      // Usando o proxy interno para evitar problemas de CORS
-      const loginUrl = this.resolveEndpoint("/login");
+      const loginUrl = "/api/auth/login";
 
       const response = await fetch(loginUrl, {
         method: "POST",
@@ -78,12 +77,12 @@ export class LoginService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(loginData),
-        credentials: "same-origin",
+        credentials: "include",
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Credenciais inválidas");
+          throw new Error("Credenciais inv\u00e1lidas");
         }
         if (response.status === 403) {
           throw new Error("Acesso negado");
@@ -91,13 +90,13 @@ export class LoginService {
         if (response.status >= 500) {
           throw new Error("Erro no servidor. Tente novamente mais tarde");
         }
-        throw new Error(`Erro na requisiÃ§Ã£o: ${response.status}`);
+        throw new Error(`Erro na requisi\u00e7\u00e3o: ${response.status}`);
       }
 
       const data: LoginResponse = await response.json();
 
       if (!data.token) {
-        throw new Error("Resposta inválida do servidor");
+        throw new Error("Resposta inv\u00e1lida do servidor");
       }
 
       return data;
@@ -105,7 +104,7 @@ export class LoginService {
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error("Erro desconhecido durante a autenticaÃ§Ã£o");
+      throw new Error("Erro desconhecido durante a autentica\u00e7\u00e3o");
     }
   }
 
@@ -118,17 +117,15 @@ export class LoginService {
   }
 
   /**
-   * Salva os dados do usuÃ¡rio no localStorage e cookie
+   * Salva os dados do usu\u00e1rio sem persistir o token no localStorage
    */
   static saveUserData(authData: LoginResponse): void {
     if (typeof window === "undefined") return;
 
     try {
-      // Dados principais do usuário
       localStorage.setItem("email", authData.email);
       localStorage.setItem("id_usuario", String(authData.id_usuario));
       localStorage.setItem("nome_usuario", authData.nome_usuario);
-      localStorage.setItem("token", authData.token);
       localStorage.setItem("perfil", JSON.stringify(authData.perfil));
       localStorage.setItem(
         "super_admin",
@@ -142,58 +139,45 @@ export class LoginService {
       setCadastroPermission(permiteCadastros);
       localStorage.setItem("versao_api", String(authData.versao_api || ""));
 
-      // Definir cookie para o middleware
-      const expirationDate = new Date();
-      expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000); // 24 horas
-
-      // Configurar o cookie com valores seguros para o ambiente
-      const secure = window.location.protocol === "https:" ? "; Secure" : "";
-
-      // Configurar o cookie com SameSite=Lax para melhor compatibilidade
-      document.cookie = `token=${
-        authData.token
-      }; expires=${expirationDate.toUTCString()}; path=/; SameSite=Lax${secure}`;
-
-      // Dados da empresa (se disponÃ­vel)
       if (authData.empresa) {
-      const storedLicencaTipo: LicencaTipo | null =
-        authData.empresa.licenca_tipo ?? null;
-      const empresaObj = {
-        nome_bd: authData.empresa.nome_bd || "",
-        nome: authData.empresa.nome || "",
-        razao_social: authData.empresa.razao_social || "",
-        id_empresa: authData.empresa.id_empresa,
-        cnpj: authData.empresa.cnpj || "",
-        usuarios_ativos: authData.empresa.usuarios_ativos || 0,
-        usuarios_cadastrados: authData.empresa.usuarios_cadastrados || 0,
-        usuarios_licenciados: authData.empresa.usuarios_licenciados || 0,
-        latitude: Number(authData.empresa.latitude) || 0,
-        longitude: Number(authData.empresa.longitude) || 0,
-        data_validade: authData.empresa.data_validade || "",
-        licenca_demo: !!authData.empresa.licenca_demo,
-        licenca_tipo: storedLicencaTipo,
-        cep: authData.empresa.cep || "",
-        bairro: authData.empresa.bairro || "",
-        cidade: authData.empresa.cidade || "",
-        endereco: authData.empresa.endereco || "",
-        numero: authData.empresa.numero || "",
-        uf: authData.empresa.uf || "",
-      };
-      localStorage.setItem("empresa", JSON.stringify(empresaObj));
-      if (storedLicencaTipo) {
-        localStorage.setItem("licenca_tipo", storedLicencaTipo);
-      } else {
-        localStorage.removeItem("licenca_tipo");
+        const storedLicencaTipo: LicencaTipo | null =
+          authData.empresa.licenca_tipo ?? null;
+        const empresaObj = {
+          nome_bd: authData.empresa.nome_bd || "",
+          nome: authData.empresa.nome || "",
+          razao_social: authData.empresa.razao_social || "",
+          id_empresa: authData.empresa.id_empresa,
+          cnpj: authData.empresa.cnpj || "",
+          usuarios_ativos: authData.empresa.usuarios_ativos || 0,
+          usuarios_cadastrados: authData.empresa.usuarios_cadastrados || 0,
+          usuarios_licenciados: authData.empresa.usuarios_licenciados || 0,
+          latitude: Number(authData.empresa.latitude) || 0,
+          longitude: Number(authData.empresa.longitude) || 0,
+          data_validade: authData.empresa.data_validade || "",
+          licenca_demo: !!authData.empresa.licenca_demo,
+          licenca_tipo: storedLicencaTipo,
+          cep: authData.empresa.cep || "",
+          bairro: authData.empresa.bairro || "",
+          cidade: authData.empresa.cidade || "",
+          endereco: authData.empresa.endereco || "",
+          numero: authData.empresa.numero || "",
+          uf: authData.empresa.uf || "",
+        };
+        localStorage.setItem("empresa", JSON.stringify(empresaObj));
+        if (storedLicencaTipo) {
+          localStorage.setItem("licenca_tipo", storedLicencaTipo);
+        } else {
+          localStorage.removeItem("licenca_tipo");
+        }
       }
-    }
     } catch (error) {
       console.error("Erro ao salvar dados no localStorage:", error);
-      throw new Error("Erro ao salvar dados de sessÃ£o");
+      throw new Error("Erro ao salvar dados de sess\u00e3o");
     }
   }
 
   /**
-   * Limpa os dados de sessÃ£o
+   * Limpa os dados de sess\u00e3o
    */
   static clearUserData(): void {
     if (typeof window === "undefined") return;
@@ -222,19 +206,17 @@ export class LoginService {
   }
 
   /**
-   * Verifica se há dados de sessão válidos
+   * Verifica se h\u00e1 dados de sess\u00e3o v\u00e1lidos
    */
   static hasValidSession(): boolean {
     if (typeof window === "undefined") return false;
 
-    const token = localStorage.getItem("token");
     const userId = localStorage.getItem("id_usuario");
-
-    return !!(token && userId);
+    return document.cookie.includes("session_active=true") && Boolean(userId);
   }
 
   /**
-   * Verifica se o usuário é super admin
+   * Verifica se o usu\u00e1rio \u00e9 super admin
    */
   static isSuperAdmin(): boolean {
     if (typeof window === "undefined") return false;
@@ -244,33 +226,21 @@ export class LoginService {
   }
 
   private static resolveEndpoint(path: string): string {
-    if (
-      typeof window !== "undefined" &&
-      window.location.hostname === "localhost"
-    ) {
-      return `/api-proxy${path}`;
-    }
-
-    if (!this.API_URL) {
-      throw new Error("URL da API não configurada");
-    }
-
-    return `${this.API_URL}${path}`;
+    return `/api-proxy${path}`;
   }
 
-  static async fetchEmpresas(token: string): Promise<Empresa[]> {
+  static async fetchEmpresas(): Promise<Empresa[]> {
     const empresasUrl = this.resolveEndpoint("/empresas");
 
     try {
       const response = await fetch(empresasUrl, {
         method: "GET",
-        headers: this.createAuthorizedHeaders(token),
-        credentials: "same-origin",
+        credentials: "include",
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Sessão expirada. Faça login novamente.");
+          throw new Error("Sess\u00e3o expirada. Fa\u00e7a login novamente.");
         }
         if (response.status === 403) {
           throw new Error("Acesso negado ao listar empresas.");
@@ -291,7 +261,7 @@ export class LoginService {
         return data.empresas as Empresa[];
       }
 
-      throw new Error("Resposta inválida ao buscar empresas.");
+      throw new Error("Resposta inv\u00e1lida ao buscar empresas.");
     } catch (error) {
       if (error instanceof Error) {
         throw error;
@@ -301,11 +271,10 @@ export class LoginService {
   }
 
   static async impersonateEmpresa(
-    token: string,
     idEmpresa: number
   ): Promise<LoginResponse> {
     if (!idEmpresa) {
-      throw new Error("Selecione uma empresa válida.");
+      throw new Error("Selecione uma empresa v\u00e1lida.");
     }
 
     const impersonateUrl = this.resolveEndpoint("/impersonate_empresa");
@@ -313,14 +282,16 @@ export class LoginService {
     try {
       const response = await fetch(impersonateUrl, {
         method: "POST",
-        headers: this.createAuthorizedHeaders(token),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ id_empresa: idEmpresa }),
-        credentials: "same-origin",
+        credentials: "include",
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Sessão expirada. Faça login novamente.");
+          throw new Error("Sess\u00e3o expirada. Fa\u00e7a login novamente.");
         }
         if (response.status === 403) {
           throw new Error("Acesso negado para impersonar empresa.");
@@ -334,7 +305,7 @@ export class LoginService {
       const data: LoginResponse = await response.json();
 
       if (!data?.token) {
-        throw new Error("Resposta inválida ao impersonar empresa.");
+        throw new Error("Resposta inv\u00e1lida ao impersonar empresa.");
       }
 
       return data;
@@ -344,13 +315,5 @@ export class LoginService {
       }
       throw new Error("Erro desconhecido ao impersonar empresa.");
     }
-  }
-
-  private static createAuthorizedHeaders(token: string) {
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      "X-Token": token,
-    };
   }
 }

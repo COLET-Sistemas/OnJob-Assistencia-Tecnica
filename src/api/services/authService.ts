@@ -48,7 +48,13 @@ class AuthService {
   async logout(): Promise<void> {
     if (typeof window !== "undefined") {
       try {
-        // 🔹 Apenas limpeza local (sem chamada à API)
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include",
+        }).catch((error) => {
+          console.error("Erro ao limpar cookie de sessão:", error);
+        });
+
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         localStorage.removeItem("super_admin");
@@ -56,13 +62,6 @@ class AuthService {
         this.clearRolesCookie();
         clearStoredRoles();
         clearCadastroPermission();
-
-        // Remove cookie do token
-        const secure = window.location.protocol === "https:" ? "; secure" : "";
-        const sameSite = "; samesite=lax";
-        document.cookie = `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${secure}${sameSite}`;
-
-        // Limpa dados da empresa
         empresaService.clearEmpresaData();
       } catch (error) {
         console.error("Erro durante logout:", error);
@@ -72,7 +71,6 @@ class AuthService {
 
   saveAuthData(authData: AuthResponse, module?: ModuleType): void {
     if (typeof window !== "undefined") {
-      localStorage.setItem("token", authData.token);
       localStorage.setItem("user", JSON.stringify(authData.user));
       localStorage.setItem(
         "super_admin",
@@ -83,19 +81,6 @@ class AuthService {
           ? authData.user.permite_cadastros
           : true;
       setCadastroPermission(permiteCadastros);
-
-      const expirationDate = new Date();
-      expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000);
-
-      const secure = window.location.protocol === "https:" ? "; secure" : "";
-      const sameSite = "; samesite=lax";
-
-      document.cookie = `token=${
-        authData.token
-      }; expires=${expirationDate.toUTCString()}; path=/${secure}${sameSite}`;
-
-      document.cookie =
-        "clearLocalStorage=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
       if (module) {
         this.setActiveModule(module);
@@ -124,7 +109,7 @@ class AuthService {
 
   isAuthenticated(): boolean {
     if (typeof window !== "undefined") {
-      return Boolean(localStorage.getItem("token"));
+      return document.cookie.includes("session_active=true");
     }
     return false;
   }

@@ -2,13 +2,11 @@
 
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { verifyToken } from "@/utils/jwtUtils";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
-
 
 const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   return (
@@ -18,14 +16,12 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   );
 };
 
-// Componente interno que utiliza os hooks que precisam de Suspense
 const AuthGuardInner: React.FC<AuthGuardProps> = ({ children }) => {
   const router = useRouter();
   const { showError } = useToast();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Verificar se existe uma mensagem de erro de autenticacao nos parametros de consulta
     const authError = searchParams.get("authError");
     const permissionDenied = searchParams.get("permissionDenied");
 
@@ -38,44 +34,40 @@ const AuthGuardInner: React.FC<AuthGuardProps> = ({ children }) => {
     }
 
     if (authError || permissionDenied) {
-      // Remover os parametros de consulta da URL sem recarregar a pagina
       const newUrl = window.location.pathname;
       window.history.replaceState({}, "", newUrl);
     }
   }, [searchParams, showError]);
 
   useEffect(() => {
-    // Verificar autenticação no lado do cliente
-    const checkAuth = () => {
-      // Verificar token no localStorage
-      const token = localStorage.getItem("token");
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/auth/session", {
+          credentials: "include",
+        });
 
-      if (!token) {
-        // Se não houver token, redirecionar para a página de login
+        if (!response.ok) {
+          router.push(
+            "/?authError=Sua sessão expirou, faça login novamente."
+          );
+          return;
+        }
+
+        const data = await response.json();
+        if (!data?.authenticated) {
+          router.push(
+            "/?authError=Sua sessão expirou, faça login novamente."
+          );
+        }
+      } catch (error) {
+        console.error("Erro ao validar sessão:", error);
         router.push("/?authError=Sua sessão expirou, faça login novamente.");
-        return;
-      }
-
-      // Verificar se o token é válido
-      const { isValid } = verifyToken(token);
-      if (!isValid) {
-        // Se o token for inválido, limpar localStorage e cookie
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        document.cookie =
-          "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-
-        // Redirecionar para a página de login
-        router.push("/?authError=Sua sessão expirou, faça login novamente.");
-        return;
       }
     };
 
     checkAuth();
 
-    // Configurar verificação periódica de autenticação (a cada 5 minutos)
     const intervalId = setInterval(checkAuth, 5 * 60 * 1000);
-
     return () => clearInterval(intervalId);
   }, [router]);
 
@@ -83,4 +75,3 @@ const AuthGuardInner: React.FC<AuthGuardProps> = ({ children }) => {
 };
 
 export default AuthGuard;
-

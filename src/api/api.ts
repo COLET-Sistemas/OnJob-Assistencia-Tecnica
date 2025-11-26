@@ -5,77 +5,19 @@ interface ApiError extends Error {
   data?: unknown;
 }
 
-// Função para determinar a baseURL da API com base no ambiente
-const getBaseUrl = (): string => {
-  // Em ambiente de desenvolvimento local, use o proxy para evitar problemas de CORS
-  if (
-    typeof window !== "undefined" &&
-    window.location.hostname === "localhost"
-  ) {
-    return "/api-proxy"; // Usa o proxy definido no next.config.ts
-  }
-
-  // Em outros ambientes, use a URL da API diretamente
-  return process.env.NEXT_PUBLIC_API_URL || "";
-};
-
-// Configurações da API
+// Configurações base da API - sempre usa o proxy interno para garantir envio de cookies
 export const API_CONFIG = {
-  baseURL: getBaseUrl(),
+  baseURL: "/api-proxy",
   headers: {
     "Content-Type": "application/json",
   },
 };
 
-// Função para obter o token (client-side only)
-export const getToken = (): string => {
-  if (typeof window !== "undefined") {
-    // Primeiro tenta obter do localStorage
-    const token = localStorage.getItem("token");
+// Token agora fica apenas em cookie HttpOnly; não deve ser acessado via client-side
+export const getToken = (): string => "";
 
-    // Se não encontrou no localStorage, tenta obter do cookie
-    if (!token) {
-      // Função para obter valor de um cookie específico
-      const getCookie = (name: string): string | null => {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) {
-          return parts.pop()?.split(";").shift() || null;
-        }
-        return null;
-      };
-
-      // Verifica se existe no cookie
-      const tokenCookie = getCookie("token");
-      if (tokenCookie) {
-        // Se encontrado no cookie, sincroniza com localStorage
-        localStorage.setItem("token", tokenCookie);
-        return tokenCookie;
-      }
-
-      throw new Error("Token não encontrado");
-    }
-    return token;
-  }
-  return "";
-};
-
-// Função para criar headers com token
+// Headers padrão sem token explícito (token é injetado pelo middleware via cookie)
 export const createHeaders = () => {
-  if (typeof window !== "undefined") {
-    try {
-      const token = getToken();
-      return {
-        ...API_CONFIG.headers,
-        Authorization: `Bearer ${token}`,
-        "X-Token": token, 
-      };
-    } catch (error) {
-      console.error("Erro ao obter token para headers:", error);
-
-      return API_CONFIG.headers;
-    }
-  }
   return API_CONFIG.headers;
 };
 
@@ -108,35 +50,28 @@ interface RequestOptions extends RequestInit {
 // Função para lidar com erros de sessão encerrada
 const handleSessionExpiredError = () => {
   if (typeof window !== "undefined") {
-    // Armazenar uma mensagem amigável para exibir na página de login
     const friendlyMessage =
       "Sessão encerrada: novo login efetuado neste usuário.";
     sessionStorage.setItem("loginRedirectReason", friendlyMessage);
-
-    // Fazer logout para limpar os dados de autenticação
     authService.logout();
-
-    // Redirecionar para a página inicial (login)
     window.location.href = "/";
   }
 };
 
 // Variável para controlar o tempo entre exibições de mensagens de erro 403
 let lastForbiddenErrorTime = 0;
-const ERROR_COOLDOWN_MS = 3000; 
+const ERROR_COOLDOWN_MS = 3000;
 
 // Função para lidar com erros de acesso negado (403)
 const handleForbiddenError = (message: string) => {
   if (typeof window !== "undefined") {
-    // Prevenir múltiplas mensagens de erro em sequência rápida
     const now = Date.now();
     if (now - lastForbiddenErrorTime < ERROR_COOLDOWN_MS) {
-      return; 
+      return;
     }
 
     lastForbiddenErrorTime = now;
 
-    // Usamos um evento customizado para garantir que qualquer componente possa escutar
     window.dispatchEvent(
       new CustomEvent("api:forbidden", {
         detail: {
@@ -160,10 +95,7 @@ const apiRequest = async <T>(
       ...createHeaders(),
       ...options.headers,
     },
-    credentials:
-      typeof window !== "undefined" && window.location.hostname === "localhost"
-        ? "same-origin" 
-        : "include", 
+    credentials: "include",
   };
 
   try {
@@ -184,10 +116,7 @@ const apiRequest = async <T>(
       const errorText = await response.text();
       const status = response.status;
 
-      const createApiError = (
-        message: string,
-        data?: unknown
-      ): ApiError => {
+      const createApiError = (message: string, data?: unknown): ApiError => {
         const error = new Error(message || "Erro na API") as ApiError;
         error.status = status;
         if (data !== undefined) {
@@ -207,14 +136,11 @@ const apiRequest = async <T>(
 
         const errorDetail = errorData?.detalhe || errorData?.detail || "";
 
-        // Log detailed error information for debugging
         if (status === 500) {
           console.error("API 500 error details:", errorData);
         }
 
-        // Tratamento de erros de autenticação (401)
         if (response.status === 401) {
-          // Verificar se é o erro específico de sessão encerrada
           if (
             apiMessage === "Sessão encerrada: novo login efetuado neste usuário"
           ) {
@@ -226,7 +152,6 @@ const apiRequest = async <T>(
             throw sessionError;
           }
 
-          // Outros erros de autenticação
           console.warn("Erro de autenticação na API:", apiMessage);
           authService.logout();
           if (typeof window !== "undefined") {
@@ -240,7 +165,6 @@ const apiRequest = async <T>(
           throw authError;
         }
 
-        // Tratar erros de status 403 (Forbidden)
         if (response.status === 403) {
           handleForbiddenError(apiMessage || "Acesso negado");
           const forbiddenError = createApiError(
@@ -251,7 +175,6 @@ const apiRequest = async <T>(
           throw forbiddenError;
         }
 
-        // Include error detail if available
         const fullErrorMessage = errorDetail
           ? `${apiMessage || "Erro na API"}: ${errorDetail}`
           : apiMessage || "Erro desconhecido na API";
@@ -279,7 +202,6 @@ const apiRequest = async <T>(
           throw sessionError;
         }
 
-        // Se for um erro 403, mas não for JSON válido
         if (response.status === 403) {
           handleForbiddenError(errorText || "Acesso negado");
           const forbiddenError = createApiError(errorText || "Acesso negado");
@@ -294,18 +216,15 @@ const apiRequest = async <T>(
       }
     }
 
-    // No content (204) ou outros status de sucesso que podem não ter corpo
     if (response.status === 204) {
       return {} as T;
     }
 
-    // Para status 201 (Created), tente obter o corpo da resposta ou retorne um objeto de sucesso padrão
     if (response.status === 201) {
       try {
         const jsonData = await response.json();
         return jsonData as T;
       } catch {
- 
         return {
           sucesso: true,
           mensagem: "Operação realizada com sucesso.",
@@ -313,7 +232,6 @@ const apiRequest = async <T>(
       }
     }
 
-    // Outros status de sucesso com corpo JSON
     return response.json() as Promise<T>;
   } catch (error) {
     console.error("Erro na API:", error);
@@ -323,7 +241,6 @@ const apiRequest = async <T>(
 
 // API com métodos HTTP específicos
 const api = {
-  // GET
   get: <T>(endpoint: string, options: RequestOptions = {}) => {
     const { params, ...restOptions } = options;
     const queryString = buildQueryString(params);
@@ -334,7 +251,6 @@ const api = {
     });
   },
 
-  // POST
   post: <T>(endpoint: string, data: unknown, options: RequestOptions = {}) => {
     return apiRequest<T>(endpoint, {
       method: "POST",
@@ -343,7 +259,6 @@ const api = {
     });
   },
 
-  // PUT
   put: <T>(endpoint: string, data: unknown, options: RequestOptions = {}) => {
     return apiRequest<T>(endpoint, {
       method: "PUT",
@@ -352,11 +267,9 @@ const api = {
     });
   },
 
-  // DELETE
   delete: <T>(endpoint: string, options: RequestOptions = {}) => {
     const { params, ...restOptions } = options;
 
-    // Validar parâmetros
     if (params && params.id !== undefined) {
       if (params.id === null || params.id === "") {
         console.error("API DELETE: ID inválido:", params.id);
@@ -381,7 +294,6 @@ const api = {
       });
   },
 
-  // PATCH
   patch: <T>(endpoint: string, data: unknown, options: RequestOptions = {}) => {
     return apiRequest<T>(endpoint, {
       method: "PATCH",

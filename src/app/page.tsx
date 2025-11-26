@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   AlertTriangle,
@@ -307,6 +307,15 @@ export default function LoginPage() {
 
   const persistAuthData = useCallback(
     (authData: LoginResponse, module: ModuleType) => {
+      fetch("/api/auth/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: authData.token }),
+        credentials: "include",
+      }).catch((error) =>
+        console.error("Falha ao atualizar cookie de sessão:", error)
+      );
+
       try {
         LoginService.saveUserData(authData);
       } catch (storageError) {
@@ -367,12 +376,12 @@ export default function LoginPage() {
     [router]
   );
 
-  const loadEmpresas = useCallback(async (token: string) => {
+  const loadEmpresas = useCallback(async () => {
     setLoadingEmpresas(true);
     setEmpresaError("");
     setEmpresasDisponiveis([]);
     try {
-      const empresas = await LoginService.fetchEmpresas(token);
+      const empresas = await LoginService.fetchEmpresas();
       setEmpresasDisponiveis(empresas);
       if (!empresas.length) {
         setEmpresaError("Nenhuma empresa disponível para seleção.");
@@ -397,7 +406,7 @@ export default function LoginPage() {
       setEmpresasDisponiveis([]);
       setSuperAdminContext({ data: authData, module });
       setIsEmpresaModalOpen(true);
-      await loadEmpresas(authData.token);
+      await loadEmpresas();
     },
     [loadEmpresas]
   );
@@ -428,10 +437,7 @@ export default function LoginPage() {
     setEmpresaError("");
 
     try {
-      const impersonatedData = await LoginService.impersonateEmpresa(
-        superAdminContext.data.token,
-        selectedEmpresaId
-      );
+      const impersonatedData = await LoginService.impersonateEmpresa(selectedEmpresaId);
 
       const targetModule = superAdminContext.module;
 

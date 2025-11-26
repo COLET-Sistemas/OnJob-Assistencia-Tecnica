@@ -1,12 +1,12 @@
 "use client";
 
 import { AlertTriangle, Check, Eye, EyeOff, Lock, Loader2 } from "lucide-react";
-
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { criptografarSenha } from "@/utils/cryptoPassword";
 import api from "@/api/api";
+import { authService } from "@/api/services/authService";
 
 export default function AlterarSenhaPage() {
   const [senhaAtual, setSenhaAtual] = useState("");
@@ -24,22 +24,35 @@ export default function AlterarSenhaPage() {
   const router = useRouter();
 
   useEffect(() => {
-    setIsMounted(true);
+    const verifySession = async () => {
+      setIsMounted(true);
 
-    // Verificar se o usuário está logado
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("id_usuario");
-    const nome = localStorage.getItem("nome_usuario");
+      const nome = localStorage.getItem("nome_usuario");
+      if (nome) {
+        setNomeUsuario(nome);
+      }
 
-    if (!token || !userId) {
-      // Redirecionar para a página de login se não estiver autenticado
-      router.push("/");
-      return;
-    }
+      try {
+        const response = await fetch("/api/auth/session", {
+          credentials: "include",
+        });
 
-    if (nome) {
-      setNomeUsuario(nome);
-    }
+        if (!response.ok) {
+          router.push("/");
+          return;
+        }
+
+        const session = await response.json();
+        if (!session?.authenticated) {
+          router.push("/");
+        }
+      } catch (sessionError) {
+        console.error("Erro ao validar sessão:", sessionError);
+        router.push("/");
+      }
+    };
+
+    verifySession();
   }, [router]);
 
   const validatePassword = (
@@ -72,14 +85,12 @@ export default function AlterarSenhaPage() {
       return;
     }
 
-    // Validar nova senha
     const validacaoSenha = validatePassword(senhaNova);
     if (!validacaoSenha.valid) {
       setError(validacaoSenha.message || "Senha inválida");
       return;
     }
 
-    // Validar confirmação
     if (senhaNova !== confirmacaoSenha) {
       setError("A nova senha e a confirmação não coincidem.");
       return;
@@ -102,15 +113,11 @@ export default function AlterarSenhaPage() {
 
       setSuccess(true);
 
-      // Aguardar 2 segundos e redirecionar para a tela de login
-      setTimeout(() => {
-        // Limpar informações do usuário armazenadas
-        localStorage.removeItem("token");
+      setTimeout(async () => {
         localStorage.removeItem("id_usuario");
         localStorage.removeItem("nome_usuario");
         localStorage.removeItem("perfil");
-
-        // Redirecionar para a página de login
+        await authService.logout();
         router.push("/");
       }, 2000);
     } catch (err) {
@@ -245,15 +252,11 @@ export default function AlterarSenhaPage() {
                 )}
               </button>
             </div>
-            <p className="text-xs text-gray-600 mt-2">
-              A senha deve conter pelo menos 8 caracteres e incluir pelo menos
-              um caractere especial: @, #, $, %, ?, !, *, &
-            </p>
           </div>
 
           <div>
             <label className="block text-sm font-semibold mb-3 text-gray-800">
-              Confirme a Nova Senha
+              Confirmar Nova Senha
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -284,65 +287,22 @@ export default function AlterarSenhaPage() {
             </div>
           </div>
 
-          <div className="pt-4">
-            <button
-              onClick={handleAlterarSenha}
-              disabled={
-                loading ||
-                success ||
-                !senhaAtual ||
-                !senhaNova ||
-                !confirmacaoSenha
-              }
-              className={`w-full text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-3 
-              ${
-                loading || success
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-[#7C54BD] hover:shadow-xl hover:shadow-[#7C54BD]/25 transform hover:-translate-y-1 active:scale-95"
-              }`}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Processando...</span>
-                </>
-              ) : success ? (
-                <>
-                  <Check className="w-5 h-5" />
-                  <span>Senha Alterada</span>
-                </>
-              ) : (
-                <span>Alterar Senha</span>
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-          <p className="text-gray-500 text-xs">
-            © 2025 OnJob Sistemas. Todos os direitos reservados.
-          </p>
+          <button
+            onClick={handleAlterarSenha}
+            disabled={loading || success}
+            className="w-full bg-gradient-to-r from-[#7C54BD] to-[#553499] text-white font-semibold py-4 rounded-xl hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <span className="flex items-center justify-center space-x-3">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Alterando senha...</span>
+              </span>
+            ) : (
+              "Alterar Senha"
+            )}
+          </button>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes shake {
-          0%,
-          100% {
-            transform: translateX(0);
-          }
-          25% {
-            transform: translateX(-5px);
-          }
-          75% {
-            transform: translateX(5px);
-          }
-        }
-
-        .animate-shake {
-          animation: shake 0.5s ease-in-out;
-        }
-      `}</style>
     </div>
   );
 }

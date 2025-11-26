@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/api/services/authService";
-import { verifyToken } from "@/utils/jwtUtils";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 
-// Interface para o usuário com base no payload do token
 interface User {
   id: number;
   nome: string;
@@ -20,6 +18,11 @@ interface User {
   super_admin?: boolean;
 }
 
+interface SessionResponse {
+  authenticated: boolean;
+  user?: User;
+}
+
 interface UseAuthReturn {
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -28,10 +31,6 @@ interface UseAuthReturn {
   logout: () => Promise<void>;
 }
 
-/**
- * Hook personalizado para gerenciar autenticação
- * @returns Objeto com estado de autenticação, usuário e funções de logout
- */
 export const useAuth = (): UseAuthReturn => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -41,40 +40,29 @@ export const useAuth = (): UseAuthReturn => {
   const { showError } = useToast();
 
   useEffect(() => {
-    const checkAuthStatus = () => {
+    const checkAuthStatus = async () => {
       try {
-        // Verificar se existe token no localStorage
-        const token = localStorage.getItem("token");
+        const response = await fetch("/api/auth/session", {
+          credentials: "include",
+        });
 
-        if (!token) {
+        if (!response.ok) {
           setIsAuthenticated(false);
           setUser(null);
           setIsSuperAdmin(false);
-          setIsLoading(false);
           return;
         }
 
-        // Verificar se o token é válido
-        const { isValid } = verifyToken(token);
+        const data: SessionResponse = await response.json();
 
-        if (!isValid) {
-          // Token inválido, limpar dados e atualizar estado
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          localStorage.removeItem("super_admin");
-          document.cookie =
-            "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-
+        if (data.authenticated && data.user) {
+          setIsAuthenticated(true);
+          setUser(data.user);
+          setIsSuperAdmin(Boolean(data.user.super_admin));
+        } else {
           setIsAuthenticated(false);
           setUser(null);
           setIsSuperAdmin(false);
-        } else {
-          // Token válido
-          const userData = authService.getUser();
-          const superAdminStatus = authService.isSuperAdmin();
-          setIsAuthenticated(true);
-          setUser(userData);
-          setIsSuperAdmin(superAdminStatus);
         }
       } catch (error) {
         console.error("Erro ao verificar autenticação:", error);
@@ -88,15 +76,11 @@ export const useAuth = (): UseAuthReturn => {
 
     checkAuthStatus();
 
-    // Verificar periodicamente (a cada 5 minutos)
     const interval = setInterval(checkAuthStatus, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);
 
-  /**
-   * Função para fazer logout
-   */
   const logout = async (): Promise<void> => {
     try {
       await authService.logout();

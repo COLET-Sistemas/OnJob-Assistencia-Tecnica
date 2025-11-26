@@ -179,7 +179,7 @@ export function useNotificacoes(
   // Verificar se o usuário está autenticado
   const isAuthenticated = () => {
     if (typeof window === "undefined") return false;
-    return !!localStorage.getItem("token");
+    return document.cookie.includes("session_active=true");
   };
 
   // Singleton para rastrear se a inicialização já foi feita
