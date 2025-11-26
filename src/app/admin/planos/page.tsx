@@ -284,7 +284,7 @@ const PlanosPage: React.FC = () => {
           </div>
           <h1 className="text-xl font-bold text-gray-900 mb-2">
             Plano Platinum ativo
-          </h1>
+            </h1>
           <p className="text-sm text-gray-600 mb-6">
             Todos os recursos já estão liberados.
           </p>
@@ -314,25 +314,29 @@ const PlanosPage: React.FC = () => {
       />
 
       <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-        <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-2">
-          Upgrade
-        </p>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Comparativo de planos
-        </h1>
-        <p className="text-sm text-gray-600 max-w-2xl">
-          Veja o que muda quando sua empresa evolui de plano. Recursos
-          bloqueados aparecem com o ícone vermelho; os disponíveis, em verde.
-        </p>
+        <div className="grid md:grid-cols-2 gap-6 items-start">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-2">
+              Upgrade
+            </p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Comparativo de planos
+            </h1>
+            <p className="text-sm text-gray-600 max-w-2xl">
+              Veja o que muda quando sua empresa evolui de plano. Recursos
+              bloqueados aparecem com o ícone vermelho; os disponíveis, em verde.
+            </p>
+          </div>
 
-        <div className="mt-5">
-          <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
-            <p className="text-xs text-gray-500 mb-1">Plano atual</p>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 size={18} className="text-gray-800" />
-              <span className="text-base font-semibold text-gray-900">
-                {currentPlanLabel}
-              </span>
+          <div className="mt-5 md:mt-0">
+            <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 h-full">
+              <p className="text-xs text-gray-500 mb-1">Plano atual</p>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={18} className="text-gray-800" />
+                <span className="text-base font-semibold text-gray-900">
+                  {currentPlanLabel}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -354,11 +358,11 @@ const PlanosPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-gray-700">
-                <th className="w-2/5 text-left px-6 py-3 font-semibold">
+        <div className="relative overflow-auto max-h-[70vh]">
+          <table className="min-w-full text-sm relative">
+            <thead className="sticky top-0 z-20">
+              <tr className="bg-white/95 backdrop-blur text-gray-700 shadow-sm border-b border-gray-200">
+                <th className="w-2/5 text-left px-6 py-3 font-semibold sticky top-0 bg-white/95 backdrop-blur z-20">
                   Funcionalidade
                 </th>
                 {planOrder
@@ -366,7 +370,7 @@ const PlanosPage: React.FC = () => {
                   .map((plan) => (
                     <th
                       key={plan}
-                      className="px-4 py-3 font-semibold text-center"
+                      className="px-4 py-3 font-semibold text-center sticky top-0 bg-white/95 backdrop-blur z-20"
                     >
                       {planNames[plan]}
                     </th>
@@ -384,38 +388,44 @@ const PlanosPage: React.FC = () => {
                       {section.title}
                     </td>
                   </tr>
-                  {section.items.map((row, index) => (
-                    <tr
-                      key={`${row.title}-${index}`}
-                      className="border-b border-gray-100"
-                    >
-                      <td className="px-6 py-4 align-top">
-                        <div className="text-sm font-medium text-gray-900">
-                          {row.title}
-                        </div>
-                        {row.subItems && (
-                          <ul className="mt-1 space-y-0.5 text-xs text-gray-600 list-disc list-inside">
-                            {row.subItems.map((item, subIndex) => (
-                              <li key={subIndex}>{item}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </td>
-                      {planOrder
-                        .filter((plan) => licencaTipo === "S" || plan !== "S")
-                        .map((plan) => (
-                          <td
-                            key={plan}
-                            className="px-4 py-4 text-center align-top"
-                          >
-                            <StatusBadge
-                              value={row.values[plan]}
-                              note={row.notes?.[plan]}
-                            />
-                          </td>
-                        ))}
-                    </tr>
-                  ))}
+                  {section.items.map((row, index) => {
+                    const isEvenRow = index % 2 === 0;
+
+                    return (
+                      <tr
+                        key={`${row.title}-${index}`}
+                        className={`border-b border-gray-100 ${
+                          isEvenRow ? "bg-white" : "bg-gray-50"
+                        }`}
+                      >
+                        <td className="px-6 py-4 align-top">
+                          <div className="text-sm font-medium text-gray-900">
+                            {row.title}
+                          </div>
+                          {row.subItems && (
+                            <ul className="mt-1 space-y-0.5 text-xs text-gray-600 list-disc list-inside">
+                              {row.subItems.map((item, subIndex) => (
+                                <li key={subIndex}>{item}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </td>
+                        {planOrder
+                          .filter((plan) => licencaTipo === "S" || plan !== "S")
+                          .map((plan) => (
+                            <td
+                              key={plan}
+                              className="px-4 py-4 text-center align-top"
+                            >
+                              <StatusBadge
+                                value={row.values[plan]}
+                                note={row.notes?.[plan]}
+                              />
+                            </td>
+                          ))}
+                      </tr>
+                    );
+                  })}
                 </React.Fragment>
               ))}
             </tbody>
