@@ -179,12 +179,16 @@ export default function NovaOrdemServicoMobile() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const stored = localStorage.getItem("id_usuario");
-    if (stored) {
-      const parsed = Number(stored);
+    try {
+      const rawUser = localStorage.getItem("user");
+      if (!rawUser) return;
+      const parsedUser = JSON.parse(rawUser);
+      const parsed = Number(parsedUser?.id ?? parsedUser?.id_usuario);
       if (!Number.isNaN(parsed)) {
         setTecnicoId(parsed);
       }
+    } catch (error) {
+      console.error("Erro ao obter usuario do localStorage:", error);
     }
   }, []);
 

@@ -33,6 +33,7 @@ export interface LoginResponse {
   nome_usuario: string;
   id_usuario: number;
   email: string;
+  login?: string;
   super_admin?: boolean;
   perfil: {
     interno: boolean;
@@ -123,14 +124,24 @@ export class LoginService {
     if (typeof window === "undefined") return;
 
     try {
-      localStorage.setItem("email", authData.email);
-      localStorage.setItem("id_usuario", String(authData.id_usuario));
-      localStorage.setItem("nome_usuario", authData.nome_usuario);
-      localStorage.setItem("perfil", JSON.stringify(authData.perfil));
       localStorage.setItem(
-        "super_admin",
-        String(authData.super_admin || false)
+        "user",
+        JSON.stringify({
+          id: authData.id_usuario,
+          nome: authData.nome_usuario,
+          login:
+            authData.login || authData.email || authData.nome_usuario || "",
+          email: authData.email,
+          perfil_interno: authData.perfil.interno,
+          perfil_gestor_assistencia: authData.perfil.gestor,
+          perfil_tecnico_proprio: authData.perfil.tecnico_proprio,
+          perfil_tecnico_terceirizado: authData.perfil.tecnico_terceirizado,
+          administrador: authData.perfil.admin,
+          super_admin: authData.super_admin || false,
+          permite_cadastros: authData.perfil.permite_cadastros,
+        })
       );
+      localStorage.setItem("perfil", JSON.stringify(authData.perfil));
 
       const permiteCadastros =
         typeof authData.perfil.permite_cadastros === "boolean"
@@ -187,6 +198,7 @@ export class LoginService {
     if (typeof window === "undefined") return;
 
     const keysToRemove = [
+      "user",
       "email",
       "id_usuario",
       "nome_usuario",
@@ -196,6 +208,8 @@ export class LoginService {
       "empresa",
       "active_module",
       "super_admin",
+      "permite_cadastros",
+      "user_roles_state",
       "licenca_tipo",
     ];
 
@@ -215,7 +229,18 @@ export class LoginService {
   static hasValidSession(): boolean {
     if (typeof window === "undefined") return false;
 
-    const userId = localStorage.getItem("id_usuario");
+    const userId = (() => {
+      const user = localStorage.getItem("user");
+      if (!user) return null;
+      try {
+        const parsed = JSON.parse(user);
+        return parsed?.id ?? parsed?.id_usuario ?? null;
+      } catch (error) {
+        console.error("Erro ao ler usuario do localStorage:", error);
+        return null;
+      }
+    })();
+
     return document.cookie.includes("session_active=true") && Boolean(userId);
   }
 
@@ -225,8 +250,15 @@ export class LoginService {
   static isSuperAdmin(): boolean {
     if (typeof window === "undefined") return false;
 
-    const superAdmin = localStorage.getItem("super_admin");
-    return superAdmin === "true";
+    try {
+      const raw = localStorage.getItem("user");
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      return Boolean(parsed?.super_admin);
+    } catch (error) {
+      console.error("Erro ao ler usuario do localStorage:", error);
+      return false;
+    }
   }
 
   private static resolveEndpoint(path: string): string {

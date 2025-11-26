@@ -1,4 +1,4 @@
-const CADASTRO_PERMISSION_KEY = "permite_cadastros";
+const CADASTRO_PERMISSION_KEY = "user";
 export const CADASTRO_PERMISSION_UPDATED_EVENT =
   "cadastro_permission_updated";
 
@@ -12,7 +12,17 @@ export const setCadastroPermission = (value: boolean): void => {
   }
 
   try {
-    localStorage.setItem(CADASTRO_PERMISSION_KEY, value ? "true" : "false");
+    const rawUser = localStorage.getItem("user");
+    if (rawUser) {
+      const user = JSON.parse(rawUser);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...user,
+          permite_cadastros: value,
+        })
+      );
+    }
     window.dispatchEvent(new Event(CADASTRO_PERMISSION_UPDATED_EVENT));
   } catch (error) {
     console.error("Falha ao salvar permissao de cadastro:", error);
@@ -29,9 +39,12 @@ export const getCadastroPermission = (): boolean => {
   }
 
   try {
-    const storedValue = localStorage.getItem(CADASTRO_PERMISSION_KEY);
-    if (storedValue !== null) {
-      return storedValue === "true";
+    const rawUser = localStorage.getItem("user");
+    if (rawUser) {
+      const user = JSON.parse(rawUser);
+      if (typeof user?.permite_cadastros === "boolean") {
+        return user.permite_cadastros;
+      }
     }
 
     const perfilRaw = localStorage.getItem("perfil");
@@ -57,7 +70,12 @@ export const clearCadastroPermission = (): void => {
   }
 
   try {
-    localStorage.removeItem(CADASTRO_PERMISSION_KEY);
+    const rawUser = localStorage.getItem("user");
+    if (rawUser) {
+      const user = JSON.parse(rawUser);
+      const { permite_cadastros, ...rest } = user || {};
+      localStorage.setItem("user", JSON.stringify(rest));
+    }
     window.dispatchEvent(new Event(CADASTRO_PERMISSION_UPDATED_EVENT));
   } catch (error) {
     console.error("Falha ao limpar permissao de cadastro:", error);

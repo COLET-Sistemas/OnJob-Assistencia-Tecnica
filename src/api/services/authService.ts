@@ -57,7 +57,12 @@ class AuthService {
 
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        localStorage.removeItem("email");
+        localStorage.removeItem("id_usuario");
+        localStorage.removeItem("nome_usuario");
         localStorage.removeItem("super_admin");
+        localStorage.removeItem("permite_cadastros");
+        localStorage.removeItem("user_roles_state");
         this.clearActiveModule();
         this.clearRolesCookie();
         clearStoredRoles();
@@ -72,10 +77,6 @@ class AuthService {
   saveAuthData(authData: AuthResponse, module?: ModuleType): void {
     if (typeof window !== "undefined") {
       localStorage.setItem("user", JSON.stringify(authData.user));
-      localStorage.setItem(
-        "super_admin",
-        String(authData.user.super_admin || false)
-      );
       const permiteCadastros =
         typeof authData.user.permite_cadastros === "boolean"
           ? authData.user.permite_cadastros
@@ -116,8 +117,8 @@ class AuthService {
 
   isSuperAdmin(): boolean {
     if (typeof window !== "undefined") {
-      const superAdmin = localStorage.getItem("super_admin");
-      return superAdmin === "true";
+      const user = this.getUser();
+      return Boolean(user?.super_admin);
     }
     return false;
   }

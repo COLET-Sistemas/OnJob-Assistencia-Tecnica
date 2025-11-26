@@ -77,7 +77,8 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
     }
 
     const syncUserData = () => {
-      setNomeUsuario(localStorage.getItem("nome_usuario") || "Usuario");
+      const user = authService.getUser();
+      setNomeUsuario(user?.nome || "Usuario");
       setRoles(getStoredRoles());
     };
 
@@ -87,8 +88,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
     const handleStorage = (event: StorageEvent) => {
       if (
         !event.key ||
-        event.key === "user_roles_state" ||
-        event.key === "nome_usuario"
+        event.key === "user"
       ) {
         syncUserData();
       }

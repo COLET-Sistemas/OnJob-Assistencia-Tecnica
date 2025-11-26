@@ -573,8 +573,18 @@ class OrdensServicoService {
     qtde_registros: number;
     dados: OSItem[];
   }> {
-    // Recuperar o id_usuario do localStorage
-    const idUsuario = localStorage.getItem("id_usuario");
+    // Recuperar o id_usuario do objeto de usuário
+    const idUsuario = (() => {
+      try {
+        const rawUser = localStorage.getItem("user");
+        if (!rawUser) return null;
+        const user = JSON.parse(rawUser);
+        return user?.id ? String(user.id) : null;
+      } catch (error) {
+        console.error("Erro ao ler usuario do localStorage:", error);
+        return null;
+      }
+    })();
 
     const params: Record<string, string> = {
       resumido: "s",
@@ -801,7 +811,17 @@ class OrdensServicoService {
     }
   ): Promise<{ success: boolean; message: string; mensagem: string }> {
     // Obter ID do usuário atual do localStorage
-    const id_usuario_revisor = Number(localStorage.getItem("id_usuario"));
+    const id_usuario_revisor = (() => {
+      try {
+        const rawUser = localStorage.getItem("user");
+        if (!rawUser) return 0;
+        const user = JSON.parse(rawUser);
+        return Number(user?.id || user?.id_usuario || 0);
+      } catch (error) {
+        console.error("Erro ao ler usuario do localStorage:", error);
+        return 0;
+      }
+    })();
 
     // Formatar dados para envio à API
     const requestData = {

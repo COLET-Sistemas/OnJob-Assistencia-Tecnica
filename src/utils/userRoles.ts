@@ -8,8 +8,6 @@ interface SerializableUserRoles {
 
 export type UserRoleKey = keyof SerializableUserRoles;
 
-const ROLES_STORAGE_KEY = "user_roles_state";
-
 export const defaultRoles: SerializableUserRoles = {
   admin: false,
   gestor: false,
@@ -26,8 +24,9 @@ export const setStoredRoles = (roles: SerializableUserRoles): void => {
   }
 
   try {
-    localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(roles));
-    window.dispatchEvent(new Event(USER_ROLES_UPDATED_EVENT));
+    window.dispatchEvent(
+      new CustomEvent(USER_ROLES_UPDATED_EVENT, { detail: roles })
+    );
   } catch (error) {
     console.error("Falha ao salvar perfis do usuario:", error);
   }
@@ -39,22 +38,14 @@ export const getStoredRoles = (): SerializableUserRoles => {
   }
 
   try {
-    const raw = localStorage.getItem(ROLES_STORAGE_KEY);
-    if (!raw) {
-      return { ...defaultRoles };
-    }
-
-    const parsed = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null) {
-      return { ...defaultRoles };
-    }
-
+    const raw = localStorage.getItem("user");
+    const parsed = raw ? JSON.parse(raw) : null;
     return {
-      admin: !!parsed.admin,
-      gestor: !!parsed.gestor,
-      interno: !!parsed.interno,
-      tecnico_proprio: !!parsed.tecnico_proprio,
-      tecnico_terceirizado: !!parsed.tecnico_terceirizado,
+      admin: !!parsed?.administrador,
+      gestor: !!parsed?.perfil_gestor_assistencia,
+      interno: !!parsed?.perfil_interno,
+      tecnico_proprio: !!parsed?.perfil_tecnico_proprio,
+      tecnico_terceirizado: !!parsed?.perfil_tecnico_terceirizado,
     };
   } catch (error) {
     console.error("Falha ao ler perfis do usuario:", error);
@@ -68,7 +59,6 @@ export const clearStoredRoles = (): void => {
   }
 
   try {
-    localStorage.removeItem(ROLES_STORAGE_KEY);
     window.dispatchEvent(new Event(USER_ROLES_UPDATED_EVENT));
   } catch (error) {
     console.error("Falha ao limpar perfis do usuario:", error);

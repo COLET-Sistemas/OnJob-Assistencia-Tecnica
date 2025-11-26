@@ -27,9 +27,9 @@ export default function AlterarSenhaPage() {
     const verifySession = async () => {
       setIsMounted(true);
 
-      const nome = localStorage.getItem("nome_usuario");
-      if (nome) {
-        setNomeUsuario(nome);
+      const storedUser = authService.getUser();
+      if (storedUser?.nome) {
+        setNomeUsuario(storedUser.nome);
       }
 
       try {
@@ -99,7 +99,7 @@ export default function AlterarSenhaPage() {
     setLoading(true);
 
     try {
-      const userId = localStorage.getItem("id_usuario");
+      const userId = authService.getUser()?.id;
 
       if (!userId) {
         throw new Error("ID do usuário não encontrado.");
@@ -114,9 +114,6 @@ export default function AlterarSenhaPage() {
       setSuccess(true);
 
       setTimeout(async () => {
-        localStorage.removeItem("id_usuario");
-        localStorage.removeItem("nome_usuario");
-        localStorage.removeItem("perfil");
         await authService.logout();
         router.push("/");
       }, 2000);

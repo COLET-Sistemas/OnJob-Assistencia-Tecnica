@@ -200,7 +200,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
 
     window.addEventListener(USER_ROLES_UPDATED_EVENT, updateRolesFromStorage);
     window.addEventListener("storage", (event) => {
-      if (event.key === "user_roles_state") {
+      if (event.key === "user") {
         updateRolesFromStorage();
       }
     });

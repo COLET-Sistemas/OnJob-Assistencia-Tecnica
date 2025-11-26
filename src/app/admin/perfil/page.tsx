@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useTitle } from "@/context/TitleContext";
 import { usuariosService } from "@/api/services/usuariosService";
 import { useToast } from "@/components/admin/ui/ToastContainer";
+import { authService } from "@/api/services/authService";
 
 import LoadingButton from "@/components/admin/form/LoadingButton";
 import { Eye, EyeOff, Lock } from "lucide-react";
@@ -56,7 +57,7 @@ const PerfilPage = () => {
   const fetchUserData = useCallback(async () => {
     try {
       setLoading(true);
-      const userId = localStorage.getItem("id_usuario");
+      const userId = authService.getUser()?.id;
 
       if (!userId) {
         showError("Erro", "ID de usuário não encontrado");
@@ -64,7 +65,7 @@ const PerfilPage = () => {
       }
 
       // Utilizando a API com o endpoint /usuarios?id=
-      const response = await usuariosService.getById(userId);
+      const response = await usuariosService.getById(String(userId));
       setUserData(response);
       console.log(response);
     } catch (error) {

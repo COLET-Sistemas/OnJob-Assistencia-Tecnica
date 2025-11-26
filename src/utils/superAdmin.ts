@@ -9,8 +9,15 @@
 export const isSuperAdmin = (): boolean => {
   if (typeof window === "undefined") return false;
 
-  const superAdmin = localStorage.getItem("super_admin");
-  return superAdmin === "true";
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    return Boolean(parsed?.super_admin);
+  } catch (error) {
+    console.error("Erro ao ler super admin do usuario:", error);
+    return false;
+  }
 };
 
 /**
@@ -20,8 +27,15 @@ export const isSuperAdmin = (): boolean => {
 export const getSuperAdminStatus = (): boolean => {
   if (typeof window === "undefined") return false;
 
-  const superAdmin = localStorage.getItem("super_admin");
-  return superAdmin === "true";
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    return Boolean(parsed?.super_admin);
+  } catch (error) {
+    console.error("Erro ao ler super admin do usuario:", error);
+    return false;
+  }
 };
 
 /**
@@ -31,7 +45,20 @@ export const getSuperAdminStatus = (): boolean => {
 export const setSuperAdminStatus = (status: boolean): void => {
   if (typeof window === "undefined") return;
 
-  localStorage.setItem("super_admin", String(status));
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        ...parsed,
+        super_admin: status,
+      })
+    );
+  } catch (error) {
+    console.error("Erro ao atualizar status de super admin:", error);
+  }
 };
 
 /**
@@ -40,5 +67,13 @@ export const setSuperAdminStatus = (status: boolean): void => {
 export const clearSuperAdminStatus = (): void => {
   if (typeof window === "undefined") return;
 
-  localStorage.removeItem("super_admin");
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const { super_admin, ...rest } = parsed || {};
+    localStorage.setItem("user", JSON.stringify(rest));
+  } catch (error) {
+    console.error("Erro ao limpar status de super admin:", error);
+  }
 };
