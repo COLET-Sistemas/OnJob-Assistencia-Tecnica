@@ -318,11 +318,11 @@ const PlanosPage: React.FC = () => {
       <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-3">
-            <div className="w-11 h-11 rounded-full border border-sky-100 bg-sky-50 text-sky-700 flex items-center justify-center shadow-inner">
-              <CheckCircle2 size={22} className="text-sky-700" />
+            <div className="w-11 h-11 rounded-full border border-purple-100 bg-purple-50 text-sky-700 flex items-center justify-center shadow-inner">
+              <CheckCircle2 size={22} className="text-purple-700" />
             </div>
             <div className="space-y-2">
-              <span className="text-[11px] font-semibold text-sky-700 uppercase tracking-[0.2em]">
+              <span className="text-[11px] font-semibold text-purple-700 uppercase tracking-[0.2em]">
                 Plano atual
               </span>
               <div className="flex flex-wrap items-center gap-2">
