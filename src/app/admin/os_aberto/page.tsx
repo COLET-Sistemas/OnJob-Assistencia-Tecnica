@@ -90,6 +90,8 @@ const TelaOSAbertas: React.FC = () => {
   const [allOrdensServico, setAllOrdensServico] = useState<OrdemServico[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [orderField, setOrderField] = useState<"data" | "cliente">("data");
+  const [orderDirection, setOrderDirection] = useState<"asc" | "desc">("desc");
   const searchParams = useSearchParams();
   const osParam = searchParams.get("os");
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
@@ -154,6 +156,8 @@ const TelaOSAbertas: React.FC = () => {
       const response = await ordensServicoService.getAll({
         resumido: "S",
         situacao: situacoesParam,
+        campo_ordem: orderField,
+        tipo_ordem: orderDirection,
       });
 
       if (response && response.dados) {
@@ -195,7 +199,7 @@ const TelaOSAbertas: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [situacoes, showError, showInfo]);
+  }, [orderDirection, orderField, showError, showInfo]);
 
   const didFetch = useRef(false);
 
@@ -233,6 +237,12 @@ const TelaOSAbertas: React.FC = () => {
       didFetch.current = true;
     }
   }, [fetchData]);
+
+  useEffect(() => {
+    if (didFetch.current) {
+      fetchData();
+    }
+  }, [orderField, orderDirection, fetchData]);
 
   useEffect(() => {
     if (osParam) {
@@ -360,6 +370,8 @@ const TelaOSAbertas: React.FC = () => {
       indefinido: true,
     });
     setSearchTerm("");
+    setOrderField("data");
+    setOrderDirection("desc");
   }, []);
 
   // Funções para lidar com a liberação financeira
@@ -800,6 +812,10 @@ const TelaOSAbertas: React.FC = () => {
           setSituacoes={setSituacoes}
           tecnicoFiltros={tecnicoFiltros}
           setTecnicoFiltros={setTecnicoFiltros}
+          orderField={orderField}
+          setOrderField={setOrderField}
+          orderDirection={orderDirection}
+          setOrderDirection={setOrderDirection}
         />
       </div>
 

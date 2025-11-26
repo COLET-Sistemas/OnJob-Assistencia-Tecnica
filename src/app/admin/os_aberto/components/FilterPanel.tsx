@@ -22,6 +22,10 @@ interface FilterPanelProps {
   setSituacoes: React.Dispatch<React.SetStateAction<SituacoesState>>;
   tecnicoFiltros: TecnicoFiltrosState;
   setTecnicoFiltros: React.Dispatch<React.SetStateAction<TecnicoFiltrosState>>;
+  orderField: "data" | "cliente";
+  setOrderField: (value: "data" | "cliente") => void;
+  orderDirection: "asc" | "desc";
+  setOrderDirection: (value: "asc" | "desc") => void;
 }
 
 const FilterPanel: React.FC<FilterPanelProps> = ({
@@ -31,22 +35,27 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   setSituacoes,
   tecnicoFiltros,
   setTecnicoFiltros,
+  orderField,
+  setOrderField,
+  orderDirection,
+  setOrderDirection,
 }) => {
-  // Função para alternar filtros de situação
   const toggleSituacao = (key: keyof SituacoesState) => {
     setSituacoes((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Função para alternar filtros de técnico
   const toggleTecnicoFiltro = (key: keyof TecnicoFiltrosState) => {
     setTecnicoFiltros((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleOrderDirection = () => {
+    setOrderDirection(orderDirection === "asc" ? "desc" : "asc");
   };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 animate-fadeIn">
       <div className="p-4">
         <div className="flex flex-wrap gap-4 items-center">
-          {/* Campo de busca com animação de foco */}
           <div className="relative w-full sm:w-auto">
             <Search
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 transition-colors"
@@ -64,7 +73,29 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             />
           </div>
 
-          {/* Filtros de Situação */}
+          <div className="flex items-center gap-2">
+            <span className="text-md font-medium text-gray-700">Ordenar:</span>
+            <select
+              value={orderField}
+              onChange={(e) =>
+                setOrderField((e.target.value as "data" | "cliente") || "data")
+              }
+              className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              aria-label="Selecionar campo de ordenação"
+            >
+              <option value="data">Data</option>
+              <option value="cliente">Cliente</option>
+            </select>
+            <button
+              type="button"
+              onClick={toggleOrderDirection}
+              className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 shadow-sm hover:bg-gray-50 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              aria-label="Alternar direção da ordenação"
+            >
+              {orderDirection === "asc" ? "Ascendente" : "Descendente"}
+            </button>
+          </div>
+
           <div className="flex items-center flex-wrap gap-2">
             <span className="text-md font-medium text-gray-700">Situação:</span>
             <div className="flex flex-wrap gap-1">
@@ -106,13 +137,11 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             </div>
           </div>
 
-          {/* Linha divisória vertical */}
           <div
             className="h-6 border-l border-gray-200 mx-1 hidden lg:block"
             aria-hidden="true"
           ></div>
 
-          {/* Filtro de Técnico */}
           <div className="flex items-center flex-wrap gap-2">
             <span className="text-md font-medium text-gray-700">Técnicos:</span>
             <div className="flex flex-wrap gap-1">
@@ -142,7 +171,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   );
 };
 
-// Componente de botão de filtro reutilizável
 interface FilterButtonProps {
   active: boolean;
   onClick: () => void;
@@ -182,9 +210,7 @@ const FilterButton: React.FC<FilterButtonProps> = React.memo(
         aria-pressed={active}
       >
         {icon && (
-          <span className="w-4 h-4 flex items-center justify-center">
-            {icon}
-          </span>
+          <span className="w-4 h-4 flex items-center justify-center">{icon}</span>
         )}
         <span>{label}</span>
       </button>

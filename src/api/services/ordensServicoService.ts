@@ -432,6 +432,8 @@ interface OSFilterParams
   data_final?: string;
   numero_os?: string;
   em_garantia?: string;
+  campo_ordem?: "data" | "cliente";
+  tipo_ordem?: "asc" | "desc";
 }
 
 interface OSForm {
