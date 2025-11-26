@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { MapPin, AlertCircle, ExternalLink, RefreshCw } from "lucide-react";
 
 import {
-  isValidCoordinate,
+  isValidAddress,
   generateGoogleMapsIframeUrl,
   generateGoogleMapsUrl,
   getEmpresaFromStorage,
@@ -27,7 +27,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
 }) => {
   const [empresaData, setEmpresaData] = useState<EmpresaData | null>(null);
   const [mapUrl, setMapUrl] = useState<string>("");
-  const [hasValidCoords, setHasValidCoords] = useState<boolean>(false);
+  const [hasValidAddress, setHasValidAddress] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [mapError, setMapError] = useState<boolean>(false);
   const [retryCount, setRetryCount] = useState<number>(0);
@@ -41,18 +41,22 @@ const MapComponent: React.FC<MapComponentProps> = ({
     if (empresa) {
       setEmpresaData(empresa);
 
-      const lat = Number(empresa.latitude);
-      const lng = Number(empresa.longitude);
-
-      if (isValidCoordinate(lat, lng)) {
-        const url = generateGoogleMapsIframeUrl(lat, lng, zoom);
+      if (isValidAddress(empresa.endereco, empresa.cidade, empresa.uf)) {
+        const url = generateGoogleMapsIframeUrl(
+          empresa.endereco,
+          empresa.numero,
+          empresa.bairro,
+          empresa.cidade,
+          empresa.uf,
+          zoom
+        );
         setMapUrl(url);
-        setHasValidCoords(true);
+        setHasValidAddress(true);
       } else {
-        setHasValidCoords(false);
+        setHasValidAddress(false);
       }
     } else {
-      setHasValidCoords(false);
+      setHasValidAddress(false);
     }
 
     setIsLoading(false);
@@ -63,10 +67,13 @@ const MapComponent: React.FC<MapComponentProps> = ({
   }, [loadEmpresaData, retryCount]);
 
   const openInGoogleMaps = () => {
-    if (empresaData && hasValidCoords) {
+    if (empresaData && hasValidAddress) {
       const url = generateGoogleMapsUrl(
-        empresaData.latitude,
-        empresaData.longitude
+        empresaData.endereco,
+        empresaData.numero,
+        empresaData.bairro,
+        empresaData.cidade,
+        empresaData.uf
       );
       if (url) {
         window.open(url, "_blank");
@@ -96,7 +103,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     );
   }
 
-  if (!hasValidCoords || !empresaData) {
+  if (!hasValidAddress || !empresaData) {
     return (
       <div
         className={`w-full bg-gray-50 flex flex-col items-center justify-center rounded-lg border border-gray-200 ${className}`}
@@ -110,7 +117,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
           <p className="text-gray-500 text-sm mb-4">
             {!empresaData
               ? "Dados da empresa não encontrados"
-              : "Coordenadas inválidas ou não configuradas"}
+              : "Endereço inválido ou não configurado"}
           </p>
 
           <button
@@ -178,12 +185,10 @@ const MapComponent: React.FC<MapComponentProps> = ({
               <p className="text-sm text-gray-600 mb-2">
                 {formatEmpresaAddress(empresaData)}
               </p>
-              <div className="flex items-center space-x-4 text-xs text-gray-500">
-                <span>Lat: {empresaData.latitude.toFixed(6)}</span>
-                <span>Lng: {empresaData.longitude.toFixed(6)}</span>
+              <div className="flex items-center justify-start">
                 <button
                   onClick={openInGoogleMaps}
-                  className="inline-flex items-center space-x-1 text-[#7C54BD] hover:text-[#6B47A8] hover:underline transition-colors"
+                  className="inline-flex items-center space-x-1 text-xs text-[#7C54BD] hover:text-[#6B47A8] hover:underline transition-colors"
                 >
                   <ExternalLink className="w-3 h-3" />
                   <span>Abrir no Google Maps</span>

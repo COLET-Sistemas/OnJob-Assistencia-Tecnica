@@ -815,15 +815,15 @@ export default function OSRevisaoPage() {
                       const empresa = JSON.parse(
                         localStorage.getItem("empresa") || "{}"
                       );
-                      const lat = empresa.latitude;
-                      const lng = empresa.longitude;
+                      const origem = empresa.endereco && empresa.cidade && empresa.uf
+                        ? encodeURIComponent(`${empresa.endereco}, ${empresa.numero || ''}, ${empresa.cidade}, ${empresa.uf}`)
+                        : null;
                       const destino = encodeURIComponent(
                         `${os.cliente.cidade}, ${os.cliente.uf}`
                       );
-                      const url =
-                        lat && lng
-                          ? `https://www.google.com/maps/dir/?api=1&origin=${lat},${lng}&destination=${destino}`
-                          : `https://www.google.com/maps/search/?api=1&query=${destino}`;
+                      const url = origem
+                        ? `https://www.google.com/maps/dir/?api=1&origin=${origem}&destination=${destino}`
+                        : `https://www.google.com/maps/search/?api=1&query=${destino}`;
                       window.open(url, "_blank");
                     }}
                     title="Ver rota no Google Maps"

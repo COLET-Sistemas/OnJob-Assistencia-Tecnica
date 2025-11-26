@@ -157,8 +157,8 @@ const ConsultaEmpresa: React.FC = () => {
   return (
     <>
       <PageHeader
-        title="Informações da Empresa"
-        config={{ type: "form", backLink: "admin/dashboard" }}
+        title="Dados da Licença"
+        config={{ type: "form", backLink: "/admin/dashboard" }}
       />
 
       <div className="max-w-8l mx-auto space-y-6">

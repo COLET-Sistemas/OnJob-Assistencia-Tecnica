@@ -307,7 +307,7 @@ function NavbarComponent({ sidebarOpen, setSidebarOpen }: NavbarProps) {
                       size={18}
                       className="mr-3 text-gray-500 group-hover:text-[#7B54BE] transition-colors duration-150"
                     />
-                    <span className="font-medium">Perfil</span>
+                    <span className="font-medium">Meu Perfil</span>
                   </button>
 
                   {isAdmin && (

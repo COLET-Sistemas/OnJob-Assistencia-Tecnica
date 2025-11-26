@@ -225,7 +225,7 @@ const PerfilPage = () => {
     <>
       <PageHeader
         title="Meu Perfil"
-        config={{ type: "form", backLink: "admin/dashboard" }}
+        config={{ type: "form", backLink: "/admin/dashboard" }}
       />
 
       <div className="max-w-8l mx-auto space-y-6">
