@@ -54,8 +54,8 @@ const PlanUpgradeModal: React.FC<PlanUpgradeModalProps> = ({
   const computedHighlightNote =
     highlightNote ||
     (isPlatinumOnly
-      ? "Faca upgrade para o plano Platinum e liberar este recurso."
-      : "Faca upgrade para liberar este recurso nos planos Gold ou Platinum.");
+      ? "Faça upgrade para o plano Platinum e liberar este recurso."
+      : "Faça upgrade para liberar este recurso nos planos Gold ou Platinum.");
 
   const handleKnowPlans = () => {
     onClose();
@@ -130,15 +130,15 @@ const PlanUpgradeModal: React.FC<PlanUpgradeModalProps> = ({
               <div className="mt-4 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-violet-700">
                   <Star className="h-3 w-3 fill-violet-400 text-violet-400" />
-                  <span>Recursos avancados de gestao</span>
+                  <span>Recursos avançados de gestão</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-violet-700">
                   <Star className="h-3 w-3 fill-violet-400 text-violet-400" />
-                  <span>Suporte prioritario</span>
+                  <span>Suporte prioritário</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-violet-700">
                   <Star className="h-3 w-3 fill-violet-400 text-violet-400" />
-                  <span>Relatorios detalhados</span>
+                  <span>Relatórios detalhados</span>
                 </div>
               </div>
             </div>
