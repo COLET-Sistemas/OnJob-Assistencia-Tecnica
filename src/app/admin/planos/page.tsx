@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -6,9 +6,8 @@ import {
   ArrowUpRight,
   Check,
   CheckCircle2,
-  Info,
-  ShieldCheck,
   X,
+  ShieldCheck,
 } from "lucide-react";
 import { useTitle } from "@/context/TitleContext";
 import { useLicenca } from "@/hooks";
@@ -80,9 +79,9 @@ const featureSections: FeatureSection[] = [
         subItems: ["Fazer ajustes nas fotos", "Informar anotações do gestor"],
         values: { S: false, G: true, P: true },
         notes: {
-          S: "OS concluída pelo técnico é encerrada",
-          G: "OS concluída pelo técnico vai para revisão",
-          P: "OS concluída pelo técnico vai para revisão",
+          S: "OS concluí­da pelo técnico é encerrada",
+          G: "OS concluí­da pelo técnico vai para revisão",
+          P: "OS concluí­da pelo técnico vai para revisão",
         },
       },
       {
@@ -96,7 +95,7 @@ const featureSections: FeatureSection[] = [
         values: { S: false, G: false, P: true },
       },
       {
-        title: "Enviar automático aviso de OS concluída por WhatsApp",
+        title: "Enviar automático aviso de OS concluí­da por WhatsApp",
         values: { S: false, G: true, P: true },
       },
       {
@@ -123,9 +122,9 @@ const featureSections: FeatureSection[] = [
       {
         title: "Registrar peças consumidas nos atendimentos",
         values: {
-          S: "descrição e qtde",
-          G: "código ou descrição e qtde",
-          P: "código ou descrição e qtde",
+          S: "Descrição e qtde",
+          G: "Código ou descrição e qtde",
+          P: "Código ou descrição e qtde",
         },
       },
       {
@@ -173,10 +172,13 @@ const featureSections: FeatureSection[] = [
         title: "Treinamento online gravado",
         values: { S: true, G: true, P: true },
       },
-      { title: "Suporte prioritário", values: { S: false, G: false, P: true } },
+      {
+        title: "Suporte prioritário",
+        values: { S: false, G: false, P: true },
+      },
       {
         title: "Formas de suporte",
-        values: { S: "e-mail", G: "e-mail", P: "email e ticket" },
+        values: { S: "E-mail", G: "E-mail", P: "E-mail e ticket" },
       },
       {
         title: "SLA (tempo máximo de atendimento)",
@@ -193,11 +195,11 @@ const featureSections: FeatureSection[] = [
     items: [
       {
         title: "Importação de cadastros",
-        values: { S: "consultar", G: "consultar", P: "consultar" },
+        values: { S: "Consultar", G: "Consultar", P: "Consultar" },
       },
       {
         title: "Treinamento personalizado online",
-        values: { S: "consultar", G: "consultar", P: "consultar" },
+        values: { S: "Consultar", G: "Consultar", P: "Consultar" },
       },
     ],
   },
@@ -284,7 +286,7 @@ const PlanosPage: React.FC = () => {
           </div>
           <h1 className="text-xl font-bold text-gray-900 mb-2">
             Plano Platinum ativo
-            </h1>
+          </h1>
           <p className="text-sm text-gray-600 mb-6">
             Todos os recursos já estão liberados.
           </p>
@@ -314,47 +316,38 @@ const PlanosPage: React.FC = () => {
       />
 
       <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-        <div className="grid md:grid-cols-2 gap-6 items-start">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-2">
-              Upgrade
-            </p>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Comparativo de planos
-            </h1>
-            <p className="text-sm text-gray-600 max-w-2xl">
-              Veja o que muda quando sua empresa evolui de plano. Recursos
-              bloqueados aparecem com o ícone vermelho; os disponíveis, em verde.
-            </p>
-          </div>
-
-          <div className="mt-5 md:mt-0">
-            <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 h-full">
-              <p className="text-xs text-gray-500 mb-1">Plano atual</p>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-gray-800" />
-                <span className="text-base font-semibold text-gray-900">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="w-11 h-11 rounded-full border border-sky-100 bg-sky-50 text-sky-700 flex items-center justify-center shadow-inner">
+              <CheckCircle2 size={22} className="text-sky-700" />
+            </div>
+            <div className="space-y-2">
+              <span className="text-[11px] font-semibold text-sky-700 uppercase tracking-[0.2em]">
+                Plano atual
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xl font-bold text-gray-900">
                   {currentPlanLabel}
                 </span>
               </div>
+              <p className="text-sm text-gray-600 ">
+                Este é o plano ativo da sua empresa neste momento. Compare
+                abaixo para ver quais recursos adicionais você ganha ao evoluir.
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-5">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
-              Funcionalidades ou recursos
+              Funcionalidades e recursos
             </p>
             <h2 className="text-lg font-semibold text-gray-900">
               Matriz de comparação
             </h2>
-          </div>
-          <div className="hidden md:flex items-center gap-2 text-xs text-gray-500">
-            <Info size={14} />
-            <span>Módulo administrativo para computadores (web)</span>
           </div>
         </div>
 
@@ -380,7 +373,7 @@ const PlanosPage: React.FC = () => {
             <tbody>
               {featureSections.map((section) => (
                 <React.Fragment key={section.title}>
-                  <tr className="bg-gray-100 text-gray-900">
+                  <tr className="bg-gray-300 text-gray-900">
                     <td
                       colSpan={licencaTipo === "S" ? 4 : 3}
                       className="px-6 py-3 font-semibold uppercase text-xs tracking-wide"
@@ -398,7 +391,7 @@ const PlanosPage: React.FC = () => {
                           isEvenRow ? "bg-white" : "bg-gray-50"
                         }`}
                       >
-                        <td className="px-6 py-4 align-top">
+                        <td className="px-6 py-4 align-middle">
                           <div className="text-sm font-medium text-gray-900">
                             {row.title}
                           </div>
@@ -415,7 +408,7 @@ const PlanosPage: React.FC = () => {
                           .map((plan) => (
                             <td
                               key={plan}
-                              className="px-4 py-4 text-center align-top"
+                              className="px-4 py-4 text-center align-middle"
                             >
                               <StatusBadge
                                 value={row.values[plan]}

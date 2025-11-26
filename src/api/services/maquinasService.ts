@@ -124,14 +124,14 @@ class MaquinasService {
   }
 
   /** 🔍 Busca modelos de máquinas conforme o texto digitado */
-  async getModelos(modelo: string): Promise<string[]> {
+  async getModelos(modelo?: string): Promise<string[]> {
     const response = await api.get<
       | { data?: { dados?: { modelo: string }[] } }
       | { dados?: { modelo: string }[] }
       | { data?: { modelo: string }[] }
       | { modelo: string }[]
     >(`/modelos_maquinas`, {
-      params: { modelo },
+      params: modelo ? { modelo } : {},
     });
 
     type ModeloItem = string | { modelo?: string };

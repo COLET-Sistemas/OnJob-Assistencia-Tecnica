@@ -9,7 +9,6 @@ import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import Pagination from "@/components/admin/ui/Pagination";
-import useDebouncedCallback from "@/hooks/useDebouncedCallback";
 import { useFilters } from "@/hooks/useFilters";
 import { maquinasService } from "@/api/services/maquinasService";
 import { CircleCheck, CircleX } from "lucide-react";
@@ -77,16 +76,11 @@ const CadastroMaquinas = () => {
     registrosPorPagina: 25,
   });
 
-  // Função debounced para buscar modelos
-  const fetchModelosDebounced = useDebouncedCallback(async (valor: string) => {
-    if (valor.length < 3) {
-      setModelosOptions([]);
-      return;
-    }
-
+  // Busca lista de modelos para o filtro de modelo
+  const loadModelos = useCallback(async () => {
     setIsLoadingModelos(true);
     try {
-      const modelos = await maquinasService.getModelos(valor);
+      const modelos = await maquinasService.getModelos();
       setModelosOptions(modelos);
     } catch (err) {
       console.error("Erro ao buscar modelos:", err);
@@ -94,18 +88,11 @@ const CadastroMaquinas = () => {
     } finally {
       setIsLoadingModelos(false);
     }
-  }, 500);
+  }, []);
 
-  // Atualiza as opções conforme o valor digitado
   useEffect(() => {
-    const valor = filtrosPainel.modelo ?? "";
-
-    if (valor.length >= 3) {
-      fetchModelosDebounced(valor);
-    } else {
-      setModelosOptions([]);
-    }
-  }, [filtrosPainel.modelo, fetchModelosDebounced]);
+    loadModelos();
+  }, [loadModelos]);
 
   const handleApplyFilters = () => {
     const dataVendaIni = filtrosPainel.data_venda_ini?.trim();
@@ -129,7 +116,6 @@ const CadastroMaquinas = () => {
   const handleClearFilters = () => {
     setLocalShowFilters(false);
     isReloadingRef.current = true;
-    setModelosOptions([]);
     limparFiltros();
   };
 
@@ -356,12 +342,20 @@ const CadastroMaquinas = () => {
     {
       id: "modelo",
       label: "Modelo",
-      type: "autocomplete" as const,
+      type: "select" as const,
       placeholder: isLoadingModelos
-        ? "Buscando modelos..."
-        : "Digite ao menos 3 caracteres para buscar...",
-      autocompleteOptions: modelosOptions,
-      isLoadingAutocomplete: isLoadingModelos,
+        ? "Carregando modelos..."
+        : "Selecione o modelo",
+      options: [
+        {
+          value: "",
+          label: isLoadingModelos ? "Carregando modelos..." : "Todos",
+        },
+        ...modelosOptions.map((modelo) => ({
+          value: modelo,
+          label: modelo,
+        })),
+      ],
     },
     {
       id: "garantia",
