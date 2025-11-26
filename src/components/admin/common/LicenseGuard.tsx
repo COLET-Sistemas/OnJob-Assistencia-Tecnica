@@ -8,7 +8,7 @@ import { Lock, Crown } from "lucide-react";
 
 interface LicenseGuardProps {
   children: React.ReactNode;
-  feature: "pecas" | "tipos_pecas" | "os_retroativas";
+  feature: "pecas" | "tipos_pecas" | "os_retroativas" | "os_revisao";
   planScope?: "gold_platinum" | "platinum_only";
   fallback?: React.ReactNode;
 }

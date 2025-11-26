@@ -38,6 +38,7 @@ import DeslocamentosTab from "./components/DeslocamentosTab";
 import PecasTab from "./components/PecasTab";
 import FotosTab from "./components/FotosTab";
 import RevisaoTab from "./components/RevisaoTab";
+import LicenseGuard from "@/components/admin/common/LicenseGuard";
 import type {
   DeslocamentoOriginal,
   DeslocamentoRevisado,
@@ -46,6 +47,7 @@ import type {
   PecaCatalogo,
 } from "./types";
 import { useToast } from "@/components/admin/ui/ToastContainer";
+import { useLicenca } from "@/hooks";
 
 export default function OSRevisaoPage() {
   const params = useParams();
@@ -74,6 +76,8 @@ export default function OSRevisaoPage() {
     "save" | "conclude" | null
   >(null);
   const { showSuccess, showError } = useToast();
+  const { licencaTipo } = useLicenca();
+  const isDeslocamentoReadOnly = licencaTipo === "G";
 
   const loadFotosCount = useCallback(async (osId: number) => {
     if (!osId) {
@@ -228,12 +232,16 @@ export default function OSRevisaoPage() {
 
   // Manipuladores para deslocamentos
   const handleEditDeslocamento = (index: number) => {
+    if (isDeslocamentoReadOnly) return;
+
     setDeslocamentosRevisados((prev) =>
       prev.map((d, i) => (i === index ? { ...d, isEditing: true } : d))
     );
   };
 
   const handleSaveDeslocamento = (index: number) => {
+    if (isDeslocamentoReadOnly) return;
+
     setDeslocamentosRevisados((prev) => {
       const updated = prev.map((d, i) =>
         i === index ? { ...d, isEditing: false } : d
@@ -243,6 +251,8 @@ export default function OSRevisaoPage() {
   };
 
   const handleCancelDeslocamento = (index: number) => {
+    if (isDeslocamentoReadOnly) return;
+
     setDeslocamentosRevisados((prev) => {
       // Se for um novo deslocamento
       if (prev[index].isNew) {
@@ -256,6 +266,8 @@ export default function OSRevisaoPage() {
   };
 
   const handleDeleteDeslocamento = (index: number) => {
+    if (isDeslocamentoReadOnly) return;
+
     setDeslocamentosRevisados((prev) => {
       const updated = prev.map((d, i) =>
         i === index ? { ...d, isDeleted: true } : d
@@ -265,6 +277,8 @@ export default function OSRevisaoPage() {
   };
 
   const handleRestoreDeslocamento = (index: number) => {
+    if (isDeslocamentoReadOnly) return;
+
     setDeslocamentosRevisados((prev) => {
       const updated = prev.map((d, i) =>
         i === index ? { ...d, isDeleted: false } : d
@@ -274,6 +288,8 @@ export default function OSRevisaoPage() {
   };
 
   const handleAddDeslocamento = () => {
+    if (isDeslocamentoReadOnly) return;
+
     setDeslocamentosRevisados((prev) => {
       const newDeslocamento: DeslocamentoRevisado = {
         id_deslocamento: Math.floor(Math.random() * -1000),
@@ -290,6 +306,8 @@ export default function OSRevisaoPage() {
     field: keyof OSDeslocamento,
     value: number | string | undefined
   ) => {
+    if (isDeslocamentoReadOnly) return;
+
     setDeslocamentosRevisados((prev) => {
       const updated = prev.map((d, i) =>
         i === index ? { ...d, [field]: value } : d
@@ -321,6 +339,7 @@ export default function OSRevisaoPage() {
   };
 
   const handleAcceptDeslocamento = (deslocamento: DeslocamentoOriginal) => {
+    if (isDeslocamentoReadOnly) return;
     if (!deslocamento) return;
 
     setDeslocamentosRevisados((prev) => {
@@ -342,6 +361,8 @@ export default function OSRevisaoPage() {
   };
 
   const handleAcceptAllDeslocamentos = () => {
+    if (isDeslocamentoReadOnly) return;
+
     setDeslocamentosRevisados((prev) => {
       const existingIds = new Set(
         prev
@@ -713,40 +734,45 @@ export default function OSRevisaoPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Loading />
-      </div>
+      <LicenseGuard feature="os_revisao">
+        <div className="flex justify-center items-center h-screen">
+          <Loading />
+        </div>
+      </LicenseGuard>
     );
   }
 
   if (error || !os) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <X className="h-5 w-5 text-red-500" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">
-                {error || "Ocorreu um erro ao carregar os dados da OS."}
-              </p>
+      <LicenseGuard feature="os_revisao">
+        <div className="container mx-auto px-4 py-8">
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <X className="h-5 w-5 text-red-500" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700">
+                  {error || "Ocorreu um erro ao carregar os dados da OS."}
+                </p>
+              </div>
             </div>
           </div>
+          <button
+            onClick={() => router.push("/admin/os_revisao")}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[var(--primary)] hover:bg-[var(--primary)]/90"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar para lista
+          </button>
         </div>
-        <button
-          onClick={() => router.push("/admin/os_revisao")}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[var(--primary)] hover:bg-[var(--primary)]/90"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar para lista
-        </button>
-      </div>
+      </LicenseGuard>
     );
   }
 
   return (
-    <>
+    <LicenseGuard feature="os_revisao">
+      <>
       <PageHeader
         title={`Revisão de OS #${os.id_os}`}
         config={{
@@ -1005,6 +1031,7 @@ export default function OSRevisaoPage() {
             onCancel={handleCancelDeslocamento}
             onDelete={handleDeleteDeslocamento}
             onRestore={handleRestoreDeslocamento}
+            readOnly={isDeslocamentoReadOnly}
           />
         )}
 
@@ -1050,6 +1077,7 @@ export default function OSRevisaoPage() {
           />
         )}
       </div>
-    </>
+      </>
+    </LicenseGuard>
   );
 }

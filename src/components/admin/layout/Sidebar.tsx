@@ -176,6 +176,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     canAccessPecasModule,
     canAccessTiposPecasModule,
     canAccessOsRetroativasModule,
+    canAccessOsRevisaoModule,
   } = useLicenca();
   const { openModal } = usePlanUpgradeModal();
   const showUpgradeLink =
@@ -289,11 +290,18 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           return !canAccessTiposPecasModule();
         case "os_retroativas":
           return !canAccessOsRetroativasModule();
+        case "revisao_os":
+          return !canAccessOsRevisaoModule();
         default:
           return false;
       }
     },
-    [canAccessPecasModule, canAccessTiposPecasModule, canAccessOsRetroativasModule]
+    [
+      canAccessPecasModule,
+      canAccessTiposPecasModule,
+      canAccessOsRetroativasModule,
+      canAccessOsRevisaoModule,
+    ]
   );
 
   const visibleMenuItems = useMemo(
@@ -380,14 +388,14 @@ export default function Sidebar({ isOpen }: SidebarProps) {
             </div>
           )}
           {isOpen && (
-            <div className="ml-3 flex items-center gap-2 flex-1">
+            <div className="ml-3 flex items-center gap-2 flex-1 relative pr-6">
               <span className="text-sm font-medium whitespace-nowrap">
                 {item.label}
               </span>
               {isLocked && (
                 <Lock
                   size={14}
-                  className="text-amber-400 hover:text-amber-300 cursor-pointer flex-shrink-0"
+                  className="text-amber-400 hover:text-amber-300 cursor-pointer flex-shrink-0 absolute right-0 -top-0.5"
                   strokeWidth={2}
                 />
               )}

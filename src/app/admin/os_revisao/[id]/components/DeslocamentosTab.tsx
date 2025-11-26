@@ -30,6 +30,7 @@ interface DeslocamentosTabProps {
   onCancel: (index: number) => void;
   onDelete: (index: number) => void;
   onRestore: (index: number) => void;
+  readOnly?: boolean;
 }
 
 const parseNumberInputValue = (value: string): number | undefined =>
@@ -47,6 +48,7 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
   onCancel,
   onDelete,
   onRestore,
+  readOnly = false,
 }) => {
   const revisadosIds = React.useMemo(() => {
     const ids = new Set<number>();
@@ -75,7 +77,7 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
         revisadosIds.has(deslocamento.id_deslocamento)
     );
 
-  const canAcceptAll = originais.length > 0 && !allOriginaisAccepted;
+  const canAcceptAll = !readOnly && originais.length > 0 && !allOriginaisAccepted;
 
   return (
     <div className="p-6 space-y-8">
@@ -189,14 +191,16 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                           className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border transition ${
                             isAccepted
                               ? "border-green-200 bg-green-50 text-green-700 cursor-default"
+                              : readOnly
+                              ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
                               : "border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white"
                           }`}
                           onClick={() => {
-                            if (!isAccepted) {
+                            if (!isAccepted && !readOnly) {
                               onAccept(deslocamento);
                             }
                           }}
-                          disabled={isAccepted}
+                          disabled={isAccepted || readOnly}
                         >
                           <Check className="h-4 w-4" />
                           {isAccepted ? "Aceito" : "Aceitar"}
@@ -225,8 +229,15 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
           </h3>
 
           <button
-            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[var(--primary)] hover:bg-[var(--primary)]/90"
-            onClick={onAdd}
+            className={`inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[var(--primary)] hover:bg-[var(--primary)]/90 ${
+              readOnly ? "opacity-50 cursor-not-allowed hover:bg-[var(--primary)]" : ""
+            }`}
+            onClick={() => {
+              if (!readOnly) {
+                onAdd();
+              }
+            }}
+            disabled={readOnly}
           >
             <Plus className="h-4 w-4 mr-1" />
             Adicionar
@@ -287,7 +298,9 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                     className={deslocamento.isDeleted ? "bg-red-50" : ""}
                   >
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                      {deslocamento.isEditing ? (
+                      {readOnly || !deslocamento.isEditing ? (
+                        deslocamento.km_ida ?? "-"
+                      ) : (
                         <input
                           type="number"
                           className="w-20 border border-gray-300 rounded-md px-2 py-1"
@@ -300,12 +313,12 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                             )
                           }
                         />
-                      ) : (
-                        deslocamento.km_ida ?? "-"
                       )}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                      {deslocamento.isEditing ? (
+                      {readOnly || !deslocamento.isEditing ? (
+                        deslocamento.km_volta ?? "-"
+                      ) : (
                         <input
                           type="number"
                           className="w-20 border border-gray-300 rounded-md px-2 py-1"
@@ -318,12 +331,16 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                             )
                           }
                         />
-                      ) : (
-                        deslocamento.km_volta ?? "-"
                       )}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                      {deslocamento.isEditing ? (
+                      {readOnly || !deslocamento.isEditing ? (
+                        <span>
+                          {deslocamento.tempo_ida_min != null
+                            ? `${deslocamento.tempo_ida_min} min`
+                            : "-"}
+                        </span>
+                      ) : (
                         <input
                           type="number"
                           className="w-20 border border-gray-300 rounded-md px-2 py-1"
@@ -336,16 +353,16 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                             )
                           }
                         />
-                      ) : (
-                        <span>
-                          {deslocamento.tempo_ida_min != null
-                            ? `${deslocamento.tempo_ida_min} min`
-                            : "-"}
-                        </span>
                       )}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                      {deslocamento.isEditing ? (
+                      {readOnly || !deslocamento.isEditing ? (
+                        <span>
+                          {deslocamento.tempo_volta_min != null
+                            ? `${deslocamento.tempo_volta_min} min`
+                            : "-"}
+                        </span>
+                      ) : (
                         <input
                           type="number"
                           className="w-20 border border-gray-300 rounded-md px-2 py-1"
@@ -358,16 +375,12 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                             )
                           }
                         />
-                      ) : (
-                        <span>
-                          {deslocamento.tempo_volta_min != null
-                            ? `${deslocamento.tempo_volta_min} min`
-                            : "-"}
-                        </span>
                       )}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                      {deslocamento.isEditing ? (
+                      {readOnly || !deslocamento.isEditing ? (
+                        deslocamento.observacoes || "-"
+                      ) : (
                         <input
                           type="text"
                           className="w-full border border-gray-300 rounded-md px-2 py-1"
@@ -376,12 +389,14 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                             onChange(index, "observacoes", e.target.value)
                           }
                         />
-                      ) : (
-                        deslocamento.observacoes || "-"
                       )}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
-                      {deslocamento.isDeleted ? (
+                      {readOnly ? (
+                        <span className="text-xs text-gray-400">
+                          Somente visualiza��o
+                        </span>
+                      ) : deslocamento.isDeleted ? (
                         <button
                           className="text-green-600 hover:text-green-900"
                           onClick={() => onRestore(index)}
@@ -430,8 +445,15 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
             <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
             <p className="text-gray-500">Nenhum deslocamento revisado.</p>
             <button
-              className="mt-2 text-[var(--primary)] hover:underline text-sm"
-              onClick={onAdd}
+              className={`mt-2 text-[var(--primary)] hover:underline text-sm ${
+                readOnly ? "cursor-not-allowed text-gray-400 hover:no-underline" : ""
+              }`}
+              onClick={() => {
+                if (!readOnly) {
+                  onAdd();
+                }
+              }}
+              disabled={readOnly}
             >
               Adicionar deslocamento
             </button>

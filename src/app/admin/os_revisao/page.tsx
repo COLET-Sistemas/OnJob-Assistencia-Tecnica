@@ -9,6 +9,7 @@ import { LoadingSpinner as Loading } from "@/components/LoadingPersonalizado";
 import PageHeader from "@/components/admin/ui/PageHeaderSimple";
 import { AlertCircle, ShieldCheck, ShieldX, RefreshCcw } from "lucide-react";
 import Pagination from "@/components/admin/ui/Pagination";
+import LicenseGuard from "@/components/admin/common/LicenseGuard";
 
 // Componente para exibir badge de garantia
 const WarrantyBadge = ({ inWarranty }: { inWarranty: boolean }) => {
@@ -77,7 +78,8 @@ export default function RevisaoPage() {
   }, []);
 
   return (
-    <>
+    <LicenseGuard feature="os_revisao">
+      <>
       <PageHeader
         title="Ordens de Serviço para Revisão"
         config={{
@@ -216,6 +218,7 @@ export default function RevisaoPage() {
           </button>
         </div>
       )}
-    </>
+      </>
+    </LicenseGuard>
   );
 }

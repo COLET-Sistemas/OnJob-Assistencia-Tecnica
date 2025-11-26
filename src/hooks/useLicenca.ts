@@ -9,6 +9,7 @@ interface UseLicencaReturn {
   canAccessTiposPecasModule: () => boolean;
   canAccessLiberacaoFinanceira: () => boolean;
   canAccessOsRetroativasModule: () => boolean;
+  canAccessOsRevisaoModule: () => boolean;
 }
 
 const RESTRICTED_FEATURES = {
@@ -16,6 +17,7 @@ const RESTRICTED_FEATURES = {
   TIPOS_PECAS: "tipos_pecas",
   LIBERACAO_FINANCEIRA: "liberacao_financeira",
   OS_RETROATIVAS: "os_retroativas",
+  OS_REVISAO: "os_revisao",
 } as const;
 
 export function useLicenca(): UseLicencaReturn {
@@ -73,6 +75,7 @@ export function useLicenca(): UseLicencaReturn {
         RESTRICTED_FEATURES.TIPOS_PECAS,
         RESTRICTED_FEATURES.LIBERACAO_FINANCEIRA,
         RESTRICTED_FEATURES.OS_RETROATIVAS,
+        RESTRICTED_FEATURES.OS_REVISAO,
       ],
       G: [RESTRICTED_FEATURES.OS_RETROATIVAS],
       P: [],
@@ -88,6 +91,8 @@ export function useLicenca(): UseLicencaReturn {
     !isFeatureRestricted(RESTRICTED_FEATURES.LIBERACAO_FINANCEIRA);
   const canAccessOsRetroativasModule = (): boolean =>
     !isFeatureRestricted(RESTRICTED_FEATURES.OS_RETROATIVAS);
+  const canAccessOsRevisaoModule = (): boolean =>
+    !isFeatureRestricted(RESTRICTED_FEATURES.OS_REVISAO);
 
   return {
     licencaTipo,
@@ -97,5 +102,6 @@ export function useLicenca(): UseLicencaReturn {
     canAccessTiposPecasModule,
     canAccessLiberacaoFinanceira,
     canAccessOsRetroativasModule,
+    canAccessOsRevisaoModule,
   };
 }
