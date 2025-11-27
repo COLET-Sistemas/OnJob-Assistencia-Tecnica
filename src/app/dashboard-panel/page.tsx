@@ -81,8 +81,8 @@ export default function DashboardPainel() {
       setLastUpdated(new Date());
       setError(null);
     } catch (err) {
-      setError("Erro ao carregar as ordens de servi��o.");
-      console.error("Erro ao buscar ordens de servi��o:", err);
+      setError("Erro ao carregar as ordens de serviço.");
+      console.error("Erro ao buscar ordens de serviço:", err);
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +101,7 @@ export default function DashboardPainel() {
 
     fetchOrdens();
 
-    // Configura o intervalo de atualiza��ǜo
+    // Configura o intervalo de atualização
     const interval = setInterval(fetchOrdens, refreshInterval * 60 * 1000);
 
     return () => clearInterval(interval);
@@ -217,7 +217,7 @@ export default function DashboardPainel() {
         fullScreen={true}
         preventScroll={false}
         size="large"
-        text="Verificando licen��a..."
+        text="Verificando licença..."
       />
     );
   }
@@ -231,11 +231,11 @@ export default function DashboardPainel() {
               <MonitorDot className="h-7 w-7 text-[#7C54BD]" />
             </div>
             <h1 className="text-2xl font-semibold text-slate-900">
-              Dispon��vel no plano Platinum
+              Disponível no plano Platinum
             </h1>
             <p className="text-sm text-gray-600 leading-relaxed">
-              O painel de monitoramento est�� dispon��vel apenas para empresas com
-              plano <strong>PLATINUM</strong>. Conhe��a os planos para liberar este
+              O painel de monitoramento está disponível apenas para empresas com
+              plano <strong>PLATINUM</strong>. Conheça os planos para liberar este
               recurso.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -261,11 +261,11 @@ export default function DashboardPainel() {
           onClose={() => setShowPlanModal(false)}
           planScope="platinum_only"
           title="Painel de monitoramento"
-          badgeText="Dispon��vel no Plano Platinum"
+          badgeText="Disponível no Plano Platinum"
           allowedPlansMessage={
             <>
-              O painel de monitoramento est�� dispon��vel apenas para empresas no
-              plano <strong>PLATINUM</strong>. Conhe��a nossos planos.
+              O painel de monitoramento está disponível apenas para empresas no
+              plano <strong>PLATINUM</strong>. Conheça nossos planos.
             </>
           }
           highlightTitle="Liberar painel"
@@ -311,7 +311,7 @@ export default function DashboardPainel() {
               </span>
             </div>
             <p className="text-sm text-gray-500">
-              Atualizado ��s {lastUpdatedFormatted} �?� Atualiza a cada{" "}
+              Atualizado às {lastUpdatedFormatted}hrs - Atualiza a cada{" "}
               {refreshInterval} min
             </p>
           </div>
@@ -355,7 +355,7 @@ export default function DashboardPainel() {
         </div>
       </header>
 
-      {/* Conte��do principal */}
+      {/* Conteúdo principal */}
       <main className="flex-1 relative overflow-hidden px-3 pb-3 pt-3">
         <div
           ref={scrollContainerRef}
@@ -429,7 +429,7 @@ export default function DashboardPainel() {
                   Sem ordens para exibir
                 </p>
                 <p className="text-sm text-gray-500">
-                  Atualize para buscar as ��ltimas ordens de servi��o.
+                  Atualize para buscar as últimas ordens de serviço.
                 </p>
                 <button
                   onClick={fetchOrdens}
