@@ -229,9 +229,11 @@ export default function FATPecasPage() {
   const params = useParams<{ id: string }>();
 
   // Estados principais
+  const [mounted, setMounted] = useState(false);
   const [pecas, setPecas] = useState<FATPecaVinculada[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [licencaTipo, setLicencaTipo] = useState<string | null>(null);
 
   // Estados de expansão e edição
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -254,6 +256,16 @@ export default function FATPecasPage() {
 
   // Ref para o input de quantidade
   const quantidadeInputRef = React.useRef<HTMLInputElement>(null);
+  const isLicencaSimples = licencaTipo === "S";
+
+  useEffect(() => {
+    setMounted(true);
+    const tipo = window.localStorage.getItem("licenca_tipo");
+    setLicencaTipo(tipo);
+    if (tipo === "S") {
+      setModoSemCodigo(true);
+    }
+  }, []);
 
   // Função para buscar peças
   const fetchPecas = useCallback(async () => {
@@ -279,8 +291,6 @@ export default function FATPecasPage() {
   useEffect(() => {
     fetchPecas();
   }, [fetchPecas]);
-
-  // Handlers de edição
 
   // Expansão de card
   const handleExpand = useCallback((id: number) => {
@@ -373,7 +383,6 @@ export default function FATPecasPage() {
           ...prev,
           descricao_peca: peca.descricao,
         }));
-        // Foca no input de quantidade após encontrar a peça
         setTimeout(() => {
           quantidadeInputRef.current?.focus();
         }, 100);
@@ -455,7 +464,9 @@ export default function FATPecasPage() {
           unidade_medida: "",
         });
         setPecaEncontrada(null);
-        setModoSemCodigo(false);
+        if (mounted) {
+          setModoSemCodigo(isLicencaSimples);
+        }
         fetchPecas();
       } catch {
         setError("Erro ao vincular peça à FAT");
@@ -463,7 +474,15 @@ export default function FATPecasPage() {
         setSubmitting(false);
       }
     },
-    [form, pecaEncontrada, params.id, fetchPecas, modoSemCodigo]
+    [
+      form,
+      pecaEncontrada,
+      params.id,
+      fetchPecas,
+      modoSemCodigo,
+      isLicencaSimples,
+      mounted,
+    ]
   );
 
   const handleDelete = useCallback(
@@ -487,6 +506,7 @@ export default function FATPecasPage() {
   }, []);
 
   const handleVoltarComCodigo = useCallback(() => {
+    if (isLicencaSimples) return;
     setModoSemCodigo(false);
     setForm({
       codigo_peca: "",
@@ -497,13 +517,29 @@ export default function FATPecasPage() {
     });
     setPecaEncontrada(null);
     setError("");
-  }, []);
+  }, [isLicencaSimples]);
 
   const pecasCount = useMemo(() => pecas.length, [pecas]);
 
   const handleBackToFat = useCallback(() => {
     router.push(`/tecnico/os/fat/${params.id}`);
   }, [router, params.id]);
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <MobileHeader
+          title="Peças Utilizadas"
+          onAddClick={() => {}}
+          leftVariant="back"
+        />
+        <div className="flex items-center justify-center py-12">
+          <div className="w-6 h-6 border-2 border-slate-200 border-t-emerald-500 rounded-full animate-spin"></div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -539,7 +575,7 @@ export default function FATPecasPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Campo de código - só aparece se não estiver no modo sem código */}
-            {!modoSemCodigo && (
+            {!modoSemCodigo && !isLicencaSimples && (
               <>
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
@@ -581,7 +617,7 @@ export default function FATPecasPage() {
             )}
 
             {/* Peça encontrada */}
-            {pecaEncontrada && !modoSemCodigo && (
+            {pecaEncontrada && !modoSemCodigo && !isLicencaSimples && (
               <PecaEncontrada peca={pecaEncontrada} />
             )}
 
@@ -603,13 +639,15 @@ export default function FATPecasPage() {
                   />
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleVoltarComCodigo}
-                  className="w-full py-2 text-sm text-slate-600 hover:text-slate-800 underline transition-colors"
-                >
-                  Voltar para busca por código
-                </button>
+                {!isLicencaSimples && (
+                  <button
+                    type="button"
+                    onClick={handleVoltarComCodigo}
+                    className="w-full py-2 text-sm text-slate-600 hover:text-slate-800 underline transition-colors"
+                  >
+                    Voltar para busca por codigo
+                  </button>
+                )}
               </>
             )}
 

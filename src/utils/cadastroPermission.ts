@@ -1,6 +1,5 @@
 const CADASTRO_PERMISSION_KEY = "user";
-export const CADASTRO_PERMISSION_UPDATED_EVENT =
-  "cadastro_permission_updated";
+export const CADASTRO_PERMISSION_UPDATED_EVENT = "cadastro_permission_updated";
 
 /**
  * Persists the cadastro permission flag in localStorage.
@@ -73,6 +72,7 @@ export const clearCadastroPermission = (): void => {
     const rawUser = localStorage.getItem("user");
     if (rawUser) {
       const user = JSON.parse(rawUser);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { permite_cadastros, ...rest } = user || {};
       localStorage.setItem("user", JSON.stringify(rest));
     }

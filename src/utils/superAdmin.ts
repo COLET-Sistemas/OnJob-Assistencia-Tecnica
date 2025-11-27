@@ -71,8 +71,8 @@ export const clearSuperAdminStatus = (): void => {
     const raw = localStorage.getItem("user");
     if (!raw) return;
     const parsed = JSON.parse(raw);
-    const { super_admin, ...rest } = parsed || {};
-    localStorage.setItem("user", JSON.stringify(rest));
+    delete parsed.super_admin;
+    localStorage.setItem("user", JSON.stringify(parsed));
   } catch (error) {
     console.error("Erro ao limpar status de super admin:", error);
   }

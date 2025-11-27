@@ -28,12 +28,14 @@ import {
   Timer,
   History,
   ImageOff,
+  Lock,
 } from "lucide-react";
 import { fatService, type FATDetalhada } from "@/api/services/fatService";
 import { fatFotosService } from "@/api/services/fatFotosService";
 import { Loading } from "@/components/LoadingPersonalizado";
 import Toast from "@/components/tecnico/Toast";
 import StatusBadge from "@/components/tecnico/StatusBadge";
+import { useLicenca } from "@/hooks";
 
 // Lazy load components para melhor performance
 const FloatingActionMenuFat = dynamic(
@@ -52,23 +54,33 @@ type SectionActionButtonProps = {
   label: string;
   icon: React.ReactNode;
   onClick: () => void;
+  disabled?: boolean;
+  rightIcon?: React.ReactNode;
 };
 
 function SectionActionButton({
   label,
   icon,
   onClick,
+  disabled = false,
+  rightIcon,
 }: SectionActionButtonProps) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
-      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#7B54BE] bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 active:scale-95 active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 touch-manipulation"
+      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#7B54BE] bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 active:scale-95 active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 touch-manipulation disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-[#7B54BE] disabled:active:scale-100"
     >
       <span className="flex items-center justify-center text-slate-500">
         {icon}
       </span>
       <span>{label}</span>
+      {rightIcon && (
+        <span className="flex items-center justify-center text-slate-400 ml-1 -mt-0.5">
+          {rightIcon}
+        </span>
+      )}
     </button>
   );
 }
@@ -190,10 +202,12 @@ const DeslocamentosSectionContent = React.memo(
     deslocamentos,
     formatTime,
     onNavigate,
+    disabled = false,
   }: {
     deslocamentos: FATDeslocamento[];
     formatTime: (minutes: number | null | undefined) => string | null;
     onNavigate: () => void;
+    disabled?: boolean;
   }) => {
     const hasDeslocamentos = deslocamentos.length > 0;
 
@@ -250,9 +264,17 @@ const DeslocamentosSectionContent = React.memo(
         )}
         <div className="mt-4">
           <SectionActionButton
-            label="Ir para Deslocamento"
-            icon={<Car className="w-4 h-4" />}
+            label={"Ir para Deslocamento"}
+            icon={
+              disabled ? (
+                <Lock className="w-4 h-4" />
+              ) : (
+                <Camera className="w-4 h-4" />
+              )
+            }
+            
             onClick={onNavigate}
+            disabled={disabled}
           />
         </div>
       </>
@@ -328,6 +350,7 @@ const FotosSectionContent = React.memo(
     formatPhotoDate,
     onOpen,
     onNavigate,
+    disabled = false,
   }: {
     fotos: FATFoto[];
     photoPreviews: Record<number, string>;
@@ -336,6 +359,7 @@ const FotosSectionContent = React.memo(
     formatPhotoDate: (value: string | Date | null | undefined) => string;
     onOpen: (index: number) => void;
     onNavigate: () => void;
+    disabled?: boolean;
   }) => {
     const hasPhotos = fotos.length > 0;
 
@@ -400,9 +424,16 @@ const FotosSectionContent = React.memo(
         )}
         <div className="mt-4">
           <SectionActionButton
-            label="Ir para Fotos"
-            icon={<Camera className="w-4 h-4" />}
+            label={"Ir para Fotos"}
+            icon={
+              disabled ? (
+                <Lock className="w-3.5 h-3.5" />
+              ) : (
+                <Camera className="w-4 h-4" />
+              )
+            }
             onClick={onNavigate}
+            disabled={disabled}
           />
         </div>
       </>
@@ -415,6 +446,7 @@ FotosSectionContent.displayName = "FotosSectionContent";
 export default function FATDetalheMobile() {
   const router = useRouter();
   const params = useParams();
+  const { licencaTipo, loading: licencaLoading } = useLicenca();
   const [fat, setFat] = useState<FATDetalhada | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -573,10 +605,23 @@ export default function FATDetalheMobile() {
     [params?.id, router]
   );
 
-  const goToDeslocamento = useCallback(
-    () => debouncedNavigate(() => handleNavigateToSection("deslocamento")),
-    [handleNavigateToSection, debouncedNavigate]
-  );
+  const deslocamentoBloqueado =
+    !licencaLoading && (licencaTipo === "S" || licencaTipo === "G");
+  const fotosBloqueadas = !licencaLoading && licencaTipo === "S";
+
+  const goToDeslocamento = useCallback(() => {
+    if (deslocamentoBloqueado) {
+      showToast("Deslocamentos indisponíveis para o seu plano atual.", "error");
+      return;
+    }
+
+    debouncedNavigate(() => handleNavigateToSection("deslocamento"));
+  }, [
+    debouncedNavigate,
+    handleNavigateToSection,
+    deslocamentoBloqueado,
+    showToast,
+  ]);
 
   const goToAtendimento = useCallback(
     () => debouncedNavigate(() => handleNavigateToSection("atendimento")),
@@ -588,10 +633,14 @@ export default function FATDetalheMobile() {
     [handleNavigateToSection, debouncedNavigate]
   );
 
-  const goToFotos = useCallback(
-    () => debouncedNavigate(() => handleNavigateToSection("fotos")),
-    [handleNavigateToSection, debouncedNavigate]
-  );
+  const goToFotos = useCallback(() => {
+    if (fotosBloqueadas) {
+      showToast("Fotos indisponíveis para o seu plano atual.", "error");
+      return;
+    }
+
+    debouncedNavigate(() => handleNavigateToSection("fotos"));
+  }, [debouncedNavigate, fotosBloqueadas, handleNavigateToSection, showToast]);
 
   // Função para extrair mensagem de erro da API
   const extractErrorMessage = useCallback((error: unknown): string => {
@@ -1341,6 +1390,7 @@ export default function FATDetalheMobile() {
               deslocamentos={deslocamentos}
               formatTime={formatTime}
               onNavigate={goToDeslocamento}
+              disabled={deslocamentoBloqueado || licencaLoading}
             />
           </Section>
 
@@ -1368,6 +1418,7 @@ export default function FATDetalheMobile() {
               formatPhotoDate={formatPhotoDate}
               onOpen={openPhotoViewer}
               onNavigate={goToFotos}
+              disabled={fotosBloqueadas || licencaLoading}
             />
           </Section>
 

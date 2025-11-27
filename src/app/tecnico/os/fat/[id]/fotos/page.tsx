@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { useLicenca } from "@/hooks";
 
 const formatDateTime = (value?: string) => {
   if (!value) return "";
@@ -57,6 +58,7 @@ const Spinner = () => (
 export default function FATFotosPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
+  const { licencaTipo, loading: licencaLoading } = useLicenca();
 
   const [fat, setFat] = useState<FATDetalhada | null>(null);
   const [idOs, setIdOs] = useState<number | null>(null);
@@ -81,6 +83,7 @@ export default function FATFotosPage() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const objectUrlsRef = useRef<Map<number, string>>(new Map());
+  const fotosBloqueadas = !licencaLoading && licencaTipo === "S";
 
   const fatIdFromRoute = useMemo(
     () => (params?.id ? Number(params.id) : null),
@@ -196,7 +199,7 @@ export default function FATFotosPage() {
         setOtherFatPhotos([]);
         setPhotos([]);
         setPhotoPreviews({});
-        setError("Nǜo foi poss��vel carregar as fotos. Tente novamente.");
+        setError("Não foi possível carregar as fotos. Tente novamente.");
       } finally {
         setLoadingPhotos(false);
         setLoadingPreviews(false);
@@ -206,6 +209,13 @@ export default function FATFotosPage() {
   );
 
   useEffect(() => {
+    if (licencaLoading || fotosBloqueadas) {
+      if (fotosBloqueadas) {
+        setInitialLoading(false);
+        setError(null);
+      }
+      return;
+    }
     if (!resolvedFatId) return;
     let active = true;
 
@@ -237,7 +247,7 @@ export default function FATFotosPage() {
     return () => {
       active = false;
     };
-  }, [resolvedFatId, fetchPhotos]);
+  }, [resolvedFatId, fetchPhotos, licencaLoading, fotosBloqueadas]);
 
   const handleBackToFat = useCallback(() => {
     if (resolvedFatId) {
@@ -389,6 +399,40 @@ export default function FATFotosPage() {
   const currentPhotoPosition =
     selectedPhotoIndex !== null ? selectedPhotoIndex + 1 : 0;
   const canUpload = resolvedFatId !== null;
+
+  if (licencaLoading) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <MobileHeader
+          title="Fotos das FATs"
+          onAddClick={handleBackToFat}
+          leftVariant="back"
+        />
+        <div className="px-4 pt-5">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <Spinner />
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (fotosBloqueadas) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <MobileHeader
+          title="Fotos das FATs"
+          onAddClick={handleBackToFat}
+          leftVariant="back"
+        />
+        <div className="px-4 pt-5">
+          <div className="rounded-xl border border-amber-200 bg-white p-6 shadow-sm text-amber-700">
+            Fotos não estão disponíveis para o seu plano atual.
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-50">

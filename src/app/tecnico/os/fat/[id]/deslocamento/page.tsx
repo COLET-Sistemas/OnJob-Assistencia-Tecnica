@@ -4,6 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import { fatService, type FATDeslocamento } from "@/api/services/fatService";
 import api from "@/api/api";
 import MobileHeader from "@/components/tecnico/MobileHeader";
+import { useLicenca } from "@/hooks";
 import {
   ArrowRight,
   ArrowLeft,
@@ -129,6 +130,7 @@ DeslocamentoItem.displayName = "DeslocamentoItem";
 export default function FATDeslocamentoPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
+  const { licencaTipo, loading: licencaLoading } = useLicenca();
   const [deslocamentos, setDeslocamentos] = useState<FATDeslocamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -150,6 +152,8 @@ export default function FATDeslocamentoPage() {
     tempo_volta_min: "",
     observacoes: "",
   });
+  const deslocamentoBloqueado =
+    !licencaLoading && (licencaTipo === "S" || licencaTipo === "G");
 
   // Buscar deslocamentos existentes
   const fetchDeslocamentos = useCallback(async () => {
@@ -162,15 +166,21 @@ export default function FATDeslocamentoPage() {
       setDeslocamentos(Array.isArray(response) ? response : []);
     } catch {
       setError("Erro ao carregar deslocamentos");
-      setDeslocamentos([]); // Garante array mesmo em erro
+      setDeslocamentos([]);
     } finally {
       setLoading(false);
     }
   }, [params.id]);
 
   useEffect(() => {
+    if (licencaLoading) return;
+    if (deslocamentoBloqueado) {
+      setLoading(false);
+      setDeslocamentos([]);
+      return;
+    }
     fetchDeslocamentos();
-  }, [fetchDeslocamentos]);
+  }, [deslocamentoBloqueado, fetchDeslocamentos, licencaLoading]);
 
   // Handlers de formulário
   const handleChange = (
@@ -270,6 +280,40 @@ export default function FATDeslocamentoPage() {
   const handleBackToFat = useCallback(() => {
     router.push(`/tecnico/os/fat/${params.id}`);
   }, [router, params.id]);
+
+  if (licencaLoading) {
+    return (
+      <main className="min-h-screen bg-slate-50">
+        <MobileHeader
+          title="Deslocamentos"
+          onAddClick={handleBackToFat}
+          leftVariant="back"
+        />
+        <div className="p-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <LoadingSpinner />
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (deslocamentoBloqueado) {
+    return (
+      <main className="min-h-screen bg-slate-50">
+        <MobileHeader
+          title="Deslocamentos"
+          onAddClick={handleBackToFat}
+          leftVariant="back"
+        />
+        <div className="p-4">
+          <div className="bg-white rounded-xl border border-amber-200 p-6 shadow-sm text-amber-700">
+            Deslocamentos não estão disponíveis para o seu plano atual.
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">

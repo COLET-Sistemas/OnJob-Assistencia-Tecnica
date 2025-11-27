@@ -597,7 +597,7 @@ const PlanosPage: React.FC = () => {
         }}
       />
 
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-3">
             <div className="w-11 h-11 rounded-full border border-purple-100 bg-purple-50 text-sky-700 flex items-center justify-center shadow-inner">
