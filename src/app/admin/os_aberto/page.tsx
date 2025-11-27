@@ -784,7 +784,7 @@ const TelaOSAbertas: React.FC = () => {
 
         {/* Skeleton para o painel de filtros */}
         <div className="flex-shrink-0 mb-4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden p-4 animate-pulse">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden p-4">
             <div className="flex flex-wrap gap-4 items-center">
               <div className="w-full sm:w-64 h-10 bg-gray-200 rounded-lg"></div>
               <div className="flex items-center gap-2">

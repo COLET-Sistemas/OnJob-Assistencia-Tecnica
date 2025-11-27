@@ -2,7 +2,7 @@ import React from "react";
 
 const SkeletonCard: React.FC = () => {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="p-5">
         <div className="flex items-center justify-between">
           {/* Left side - Main info */}

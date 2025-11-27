@@ -445,22 +445,16 @@ const ConsultaOSPage: React.FC = () => {
       }
     }, 0);
 
-    // Reset pagination to first page
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [limparFiltros, setShowFilters, clearPersistedState]);
 
-  // Função para buscar dados com filtros
   const handleSearch = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    // Get current panel filters (not yet applied)
     const currentFilters = { ...filtrosPainel };
-
-    // Apply filters and close filter panel
     aplicarFiltros();
 
-    // Scroll para os resultados suavemente
     window.scrollTo({
       top: document.querySelector(".page-header")?.clientHeight || 0,
       behavior: "smooth",
@@ -479,7 +473,6 @@ const ConsultaOSPage: React.FC = () => {
         if (key === "campo_data") return;
 
         if (value && value.trim() !== "") {
-          // Verifica se são os parâmetros de data e apenas os adiciona se o campo_data estiver preenchido
           if (
             (key === "data_ini" || key === "data_fim") &&
             currentFilters.campo_data
@@ -512,7 +505,6 @@ const ConsultaOSPage: React.FC = () => {
 
       const result = await ordensServicoService.getAll(params);
 
-      // Handle both formats: array response or object with dados property
       let responseData;
       let total = 0;
       let totalPages = 1;
@@ -621,21 +613,15 @@ const ConsultaOSPage: React.FC = () => {
     }
   }, [filtrosPainel.status]);
 
-  // Removed unused row click handler
-
-  // Adicionar suporte a navegação por teclado para acessibilidade
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Fechar o filtro com ESC
       if (e.key === "Escape" && showFilters) {
         toggleFilters();
       }
-      // Abrir o filtro com F3
       if (e.key === "F3" && !showFilters) {
         e.preventDefault();
         toggleFilters();
       }
-      // Pesquisar com Ctrl+Enter quando o filtro estiver aberto
       if (e.key === "Enter" && e.ctrlKey && showFilters) {
         e.preventDefault();
         handleSearch();
@@ -649,12 +635,9 @@ const ConsultaOSPage: React.FC = () => {
   // Pagination handlers
   const handlePageChange = useCallback(
     (novaPagina: number) => {
-      // First update state with the new page number
       setPaginacao((prev) => ({ ...prev, paginaAtual: novaPagina }));
-
-      // Create a function to manually trigger search with the new page number
       const searchWithCorrectPage = async () => {
-        // Get current filters from filtrosPainel to ensure we're using the latest values
+
         const currentFilters = { ...filtrosPainel };
 
         // Execute search with the new page number explicitly set
