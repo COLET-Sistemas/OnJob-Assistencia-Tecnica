@@ -74,6 +74,7 @@ const EditarMaquina = () => {
     null
   );
   const [isSearchingModelo, setIsSearchingModelo] = useState(false);
+  const [isNovoModelo, setIsNovoModelo] = useState(false);
 
   // Estados para o cliente
   const [clienteInput, setClienteInput] = useState("");
@@ -236,21 +237,23 @@ const EditarMaquina = () => {
     >
   ) => {
     const { name, value } = e.target;
+    const normalizedValue =
+      name === "modelo" && isNovoModelo ? value.toUpperCase() : value;
 
     // Se o campo alterado for data_1a_venda, calcular data_final_garantia mantendo dia e mês
     if (name === "data_1a_venda") {
       let dataFinalGarantia = "";
-      if (value) {
+      if (normalizedValue) {
         let dia, mes, ano;
-        if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+        if (/^\d{4}-\d{2}-\d{2}/.test(normalizedValue)) {
           // ISO: yyyy-mm-dd
-          [ano, mes, dia] = value.split("-");
-        } else if (/^\d{2}\/\d{2}\/\d{4}/.test(value)) {
+          [ano, mes, dia] = normalizedValue.split("-");
+        } else if (/^\d{2}\/\d{2}\/\d{4}/.test(normalizedValue)) {
           // BR: dd/mm/yyyy
-          [dia, mes, ano] = value.split("/");
+          [dia, mes, ano] = normalizedValue.split("/");
         } else {
           // Tenta extrair do Date
-          const d = new Date(value);
+          const d = new Date(normalizedValue);
           if (!isNaN(d.getTime())) {
             dia = String(d.getDate()).padStart(2, "0");
             mes = String(d.getMonth() + 1).padStart(2, "0");
@@ -265,13 +268,13 @@ const EditarMaquina = () => {
       }
       setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: normalizedValue,
         data_final_garantia: dataFinalGarantia,
       }));
     } else {
       setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: normalizedValue,
       }));
     }
 
@@ -366,6 +369,44 @@ const EditarMaquina = () => {
     [formErrors.modelo]
   );
 
+  const handleNovoModeloToggle = (checked: boolean) => {
+    const modeloBase =
+      (formData.modelo || selectedModelo?.value || "").toString();
+    const modeloUpper = modeloBase.toUpperCase();
+
+    setIsNovoModelo(checked);
+    setModeloInput("");
+    setModeloOptions([]);
+    setIsSearchingModelo(false);
+
+    if (checked) {
+      setFormData((prev) => ({
+        ...prev,
+        modelo: modeloUpper,
+      }));
+    } else if (modeloUpper) {
+      const modeloOption: ModeloOption = {
+        value: modeloUpper,
+        label: modeloUpper,
+      };
+      setSelectedModelo(modeloOption);
+      setFormData((prev) => ({
+        ...prev,
+        modelo: modeloUpper,
+      }));
+    } else {
+      setSelectedModelo(null);
+    }
+
+    if (formErrors.modelo) {
+      setFormErrors((prev) => {
+        const updated = { ...prev };
+        delete updated.modelo;
+        return updated;
+      });
+    }
+  };
+
   const searchClientes = useCallback(
     async (term: string) => {
       if (!term || term.length < 3) return;
@@ -457,7 +498,7 @@ const EditarMaquina = () => {
     const errors: Record<string, string> = {};
     if (!formData.numero_serie) errors.numero_serie = "Campo obrigatório";
     if (!formData.descricao) errors.descricao = "Campo obrigatório";
-    if (!formData.modelo) errors.modelo = "Campo obrigatório";
+    if (!formData.modelo.trim()) errors.modelo = "Campo obrigatório";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -474,10 +515,12 @@ const EditarMaquina = () => {
     setSavingData(true);
 
     try {
+      const modeloNormalizado = formData.modelo.trim().toUpperCase();
+
       await maquinasService.update(maquinaId, {
         numero_serie: formData.numero_serie,
         descricao: formData.descricao,
-        modelo: formData.modelo,
+        modelo: modeloNormalizado,
         id_cliente_atual: formData.id_cliente_atual ?? undefined,
         situacao: formData.situacao,
         data_1a_venda: formData.data_1a_venda || undefined,
@@ -543,32 +586,66 @@ const EditarMaquina = () => {
 
                   {/* Modelo */}
                   <div>
-                    <CustomSelect
-                      id="modelo"
-                      label="Modelo"
-                      required
-                      placeholder="Digite pelo menos 3 caracteres para buscar o modelo..."
-                      inputValue={modeloInput}
-                      onInputChange={handleModeloInputChange}
-                      onChange={handleModeloChange}
-                      options={
-                        selectedModelo &&
-                        !modeloOptions.find(
-                          (option) => option.value === selectedModelo.value
-                        )
-                          ? [selectedModelo, ...modeloOptions]
-                          : modeloOptions
-                      }
-                      value={selectedModelo}
-                      isLoading={isSearchingModelo}
-                      error={formErrors.modelo}
-                      minCharsToSearch={3}
-                      noOptionsMessageFn={({ inputValue }) =>
-                        inputValue.length < 3
-                          ? "Digite pelo menos 3 caracteres para buscar..."
-                          : "Nenhum modelo encontrado"
-                      }
-                    />
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-md font-medium text-slate-700">
+                        Modelo
+                        <span
+                          className="text-red-500 ml-1"
+                          aria-label="obrigatório"
+                        >
+                          *
+                        </span>
+                      </span>
+                      <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={isNovoModelo}
+                          onChange={(event) =>
+                            handleNovoModeloToggle(event.target.checked)
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+                        />
+                        <span>Novo modelo</span>
+                      </label>
+                    </div>
+
+                    {isNovoModelo ? (
+                      <InputField
+                        label=""
+                        name="modelo"
+                        value={formData.modelo}
+                        error={formErrors.modelo}
+                        placeholder="Digite o modelo em letras maiúsculas"
+                        onChange={handleInputChange}
+                        className="uppercase"
+                      />
+                    ) : (
+                      <CustomSelect
+                        id="modelo"
+                        label=""
+                        placeholder="Digite pelo menos 3 caracteres para buscar o modelo..."
+                        inputValue={modeloInput}
+                        onInputChange={handleModeloInputChange}
+                        onChange={handleModeloChange}
+                        options={
+                          selectedModelo &&
+                          !modeloOptions.find(
+                            (option) => option.value === selectedModelo.value
+                          )
+                            ? [selectedModelo, ...modeloOptions]
+                            : modeloOptions
+                        }
+                        value={selectedModelo}
+                        isLoading={isSearchingModelo}
+                        error={formErrors.modelo}
+                        minCharsToSearch={3}
+                        noOptionsMessageFn={({ inputValue }) =>
+                          inputValue.length < 3
+                            ? "Digite pelo menos 3 caracteres para buscar..."
+                            : "Nenhum modelo encontrado"
+                        }
+                      />
+                    )}
                   </div>
                 </div>
 
