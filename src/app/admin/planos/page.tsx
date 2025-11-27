@@ -87,7 +87,7 @@ const Tooltip = ({
               transform: "translate(-50%, -100%)",
             }}
           >
-            <div className="relative px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg pointer-events-none whitespace-nowrap">
+            <div className="relative px-2.5 py-1.5 bg-gray-800 text-white text-xs rounded-lg shadow-lg pointer-events-none max-w-xs text-left whitespace-normal break-words leading-snug">
               {content}
               <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
             </div>
