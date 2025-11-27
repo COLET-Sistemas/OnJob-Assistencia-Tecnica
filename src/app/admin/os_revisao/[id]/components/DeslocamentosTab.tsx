@@ -79,6 +79,102 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
 
   const canAcceptAll = !readOnly && originais.length > 0 && !allOriginaisAccepted;
 
+  if (readOnly) {
+    return (
+      <div className="p-6 space-y-8">
+        <section>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Deslocamentos informados pelo Técnico
+            </h3>
+          </div>
+
+          {originais.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      FAT
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      KM Ida
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      KM Volta
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Tempo Ida
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Tempo Volta
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Observações
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {originais.map((deslocamento) => (
+                    <tr key={deslocamento.id_deslocamento}>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                        #{deslocamento.id_fat || "-"}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                        {deslocamento.km_ida ?? "-"}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                        {deslocamento.km_volta ?? "-"}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                        {deslocamento.tempo_ida_min != null
+                          ? `${deslocamento.tempo_ida_min} min`
+                          : "-"}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                        {deslocamento.tempo_volta_min != null
+                          ? `${deslocamento.tempo_volta_min} min`
+                          : "-"}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                        {deslocamento.observacoes || "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-6 bg-gray-50 rounded-md">
+              <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-500">
+                Nenhum deslocamento informado pelo ténico.
+              </p>
+            </div>
+          )}
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-8">
       <section>
@@ -87,7 +183,7 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
             Deslocamentos informados pelo Técnico
           </h3>
 
-          {originais.length > 0 && (
+          {originais.length > 0 && !readOnly && (
             <button
               className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md border transition ${
                 canAcceptAll

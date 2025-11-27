@@ -148,25 +148,30 @@ const TelaOSAbertas: React.FC = () => {
     atendimentoInterrompido: true,
   });
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const situacoesParam = "1,2,3,4,5";
+  const hasFetchedOnce = useRef(false);
+  const lastFetchKey = useRef<string | null>(null);
 
-      const response = await ordensServicoService.getAll({
-        resumido: "S",
-        situacao: situacoesParam,
-        campo_ordem: orderField,
-        tipo_ordem: orderDirection,
-      });
+  const fetchData = useCallback(
+    async (field: "data" | "cliente", direction: "asc" | "desc") => {
+      hasFetchedOnce.current = true;
+      try {
+        setLoading(true);
+        const situacoesParam = "1,2,3,4,5";
 
-      if (response && response.dados) {
-        const ordens = response.dados as unknown as OrdemServico[];
-        setAllOrdensServico(ordens);
+        const response = await ordensServicoService.getAll({
+          resumido: "S",
+          situacao: situacoesParam,
+          campo_ordem: field,
+          tipo_ordem: direction,
+          });
 
-        const filteredOrdens = ordens.filter((os) => {
-          const situacaoCodigo = os.situacao_os.codigo;
-          return (
+        if (response && response.dados) {
+          const ordens = response.dados as unknown as OrdemServico[];
+          setAllOrdensServico(ordens);
+
+          const filteredOrdens = ordens.filter((os) => {
+            const situacaoCodigo = os.situacao_os.codigo;
+            return (
             (situacaoCodigo === CODIGO_SITUACAO.PENDENTE &&
               situacoes.pendente) ||
             (situacaoCodigo === CODIGO_SITUACAO.A_ATENDER &&
@@ -177,31 +182,39 @@ const TelaOSAbertas: React.FC = () => {
               situacoes.emAtendimento) ||
             (situacaoCodigo === CODIGO_SITUACAO.ATENDIMENTO_INTERROMPIDO &&
               situacoes.atendimentoInterrompido)
-          );
+            );
         });
 
-        setOrdensServico(filteredOrdens);
-      } else {
-        console.warn("Resposta inesperada da API:", response);
-        setAllOrdensServico([]);
-        setOrdensServico([]);
-        if (didFetch.current) {
-          showInfo("Nenhuma ordem de serviÃ§o encontrada");
+          setOrdensServico(filteredOrdens);
+        } else {
+          console.warn("Resposta inesperada da API:", response);
+          setAllOrdensServico([]);
+          setOrdensServico([]);
+          if (hasFetchedOnce.current) {
+            showInfo("Nenhuma ordem de servico encontrada");
+          }
         }
-      }
     } catch (error) {
       console.error("Erro ao buscar ordens de serviÃ§o:", error);
       setAllOrdensServico([]);
       setOrdensServico([]);
-      if (didFetch.current) {
+      if (hasFetchedOnce.current) {
         showError("Erro ao atualizar a lista");
       }
     } finally {
       setLoading(false);
     }
-  }, [orderDirection, orderField, showError, showInfo]);
-
-  const didFetch = useRef(false);
+  },
+  [
+    showError,
+    showInfo,
+    situacoes.aAtender,
+    situacoes.atendimentoInterrompido,
+    situacoes.emAtendimento,
+    situacoes.emDeslocamento,
+    situacoes.pendente,
+  ]
+  );
 
   // Check for update or create message from OS screens
   useEffect(() => {
@@ -232,17 +245,14 @@ const TelaOSAbertas: React.FC = () => {
   }, [showSuccess]);
 
   useEffect(() => {
-    if (!didFetch.current) {
-      fetchData();
-      didFetch.current = true;
+    const fetchKey = `${orderField}-${orderDirection}`;
+    if (lastFetchKey.current === fetchKey) {
+      return;
     }
-  }, [fetchData]);
 
-  useEffect(() => {
-    if (didFetch.current) {
-      fetchData();
-    }
-  }, [orderField, orderDirection, fetchData]);
+    lastFetchKey.current = fetchKey;
+    fetchData(orderField, orderDirection);
+  }, [orderDirection, orderField, fetchData]);
 
   useEffect(() => {
     if (osParam) {
@@ -280,7 +290,7 @@ const TelaOSAbertas: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (didFetch.current && allOrdensServico.length > 0) {
+    if (hasFetchedOnce.current && allOrdensServico.length > 0) {
       const filteredOrdens = allOrdensServico.filter((os) => {
         const situacaoCodigo = os.situacao_os.codigo;
         return (
@@ -395,7 +405,7 @@ const TelaOSAbertas: React.FC = () => {
         await ordensServicoService.liberarFinanceiramente(osId);
 
         // Atualiza os dados apÃ³s a liberação
-        await fetchData();
+        await fetchData(orderField, orderDirection);
         showSuccess("OS liberada com sucesso");
         handleCloseLiberacaoModal();
         return Promise.resolve();
@@ -405,7 +415,14 @@ const TelaOSAbertas: React.FC = () => {
         return Promise.reject(error);
       }
     },
-    [fetchData, handleCloseLiberacaoModal, showError, showSuccess]
+    [
+      fetchData,
+      handleCloseLiberacaoModal,
+      orderDirection,
+      orderField,
+      showError,
+      showSuccess,
+    ]
   );
 
   // Funções para lidar com a alteração de pendência
@@ -436,7 +453,7 @@ const TelaOSAbertas: React.FC = () => {
         await ordensServicoService.alterarMotivoPendencia(osId, motivoId);
 
         // Atualiza os dados apÃ³s a alteração
-        await fetchData();
+        await fetchData(orderField, orderDirection);
 
         if (motivoId === null) {
           showSuccess("Pendência removida com sucesso");
@@ -452,7 +469,14 @@ const TelaOSAbertas: React.FC = () => {
         return Promise.reject(error);
       }
     },
-    [fetchData, handleClosePendenciaModal, showError, showSuccess]
+    [
+      fetchData,
+      handleClosePendenciaModal,
+      orderDirection,
+      orderField,
+      showError,
+      showSuccess,
+    ]
   );
 
   // Funções para lidar com o gerenciamento de técnicos
@@ -579,7 +603,7 @@ const TelaOSAbertas: React.FC = () => {
         });
 
         // Atualiza os dados apÃ³s o cancelamento
-        await fetchData();
+        await fetchData(orderField, orderDirection);
         showSuccess("OS cancelada com sucesso");
         handleCloseCancelamentoModal();
         return Promise.resolve();
@@ -589,7 +613,14 @@ const TelaOSAbertas: React.FC = () => {
         return Promise.reject(error);
       }
     },
-    [fetchData, handleCloseCancelamentoModal, showError, showSuccess]
+    [
+      fetchData,
+      handleCloseCancelamentoModal,
+      orderDirection,
+      orderField,
+      showError,
+      showSuccess,
+    ]
   );
 
   const handleOpenHistoricoCliente = useCallback(
@@ -653,7 +684,7 @@ const TelaOSAbertas: React.FC = () => {
         console.log("Definir técnico:", { osId, tecnicoId, tecnicoNome });
 
         // Atualiza os dados apÃ³s a alteração
-        await fetchData();
+        await fetchData(orderField, orderDirection);
 
         if (modalTecnico.mode === "add") {
           showSuccess("Técnico adicionado com sucesso");
@@ -673,6 +704,8 @@ const TelaOSAbertas: React.FC = () => {
       fetchData,
       handleCloseTecnicoModal,
       modalTecnico.mode,
+      orderDirection,
+      orderField,
       showError,
       showSuccess,
     ]
@@ -793,7 +826,7 @@ const TelaOSAbertas: React.FC = () => {
             type: "list",
             itemCount: filteredOrdens.length,
             refreshButton: {
-              onClick: fetchData,
+              onClick: () => fetchData(orderField, orderDirection),
             },
             newButton: {
               label: "Nova OS",

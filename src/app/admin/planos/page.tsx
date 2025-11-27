@@ -80,11 +80,17 @@ const Tooltip = ({
         visible &&
         createPortal(
           <div
-            className="fixed z-[9999] -translate-x-1/2 -translate-y-full px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg pointer-events-none whitespace-nowrap relative"
-            style={{ top: position.top, left: position.left }}
+            className="fixed z-[9999]"
+            style={{
+              top: position.top,
+              left: position.left,
+              transform: "translate(-50%, -100%)",
+            }}
           >
-            {content}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+            <div className="relative px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg pointer-events-none whitespace-nowrap">
+              {content}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+            </div>
           </div>,
           document.body
         )}
@@ -103,7 +109,7 @@ const featureSections: FeatureSection[] = [
         title: (
           <div className="flex items-center gap-2">
             <span>Cadastrar regiões</span>
-            <Tooltip content="Permite registrar as regiões de cada cliente e os técnicos que atendem cada região">
+            <Tooltip content="Permite registrar as regiões de cada cliente e os técnicos que atendem cada região.">
               <CircleHelp
                 size={16}
                 className="text-gray-500 hover:text-gray-600 cursor-help"
@@ -118,61 +124,197 @@ const featureSections: FeatureSection[] = [
         values: { S: true, G: true, P: true },
       },
       {
-        title: "Cadastrar técnicos terceirizados",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Cadastrar técnicos terceirizados</span>
+            <Tooltip content="Permite diferenciar técnicos próprios de técnicos terceirizados.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: false, G: true, P: true },
       },
-      { title: "Gerenciar OSs", values: { S: true, G: true, P: true } },
+      {
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Gerenciar OSs</span>
+            <Tooltip content="Criar, alterar, liberar, reter e agendar atendimento referente aos chamados dos clientes (Ordens de Serviço).">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
+        values: { S: true, G: true, P: true },
+      },
       {
         title: "Consultar OSs por diversos critérios",
         values: { S: true, G: true, P: true },
       },
-      { title: "Visualizar dashboard", values: { S: true, G: true, P: true } },
       {
-        title: "Consultar histórico de atendimentos por cliente",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Visualizar dashboard</span>
+            <Tooltip content="Tela com gráficos e indicadores diversos.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: true, G: true, P: true },
       },
       {
-        title: "Consultar histórico de atendimentos por máquina",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Consultar histórico de atendimentos por cliente</span>
+            <Tooltip content="Visualizar OSs antigas de um cliente para analisar problemas recorrentes ou máquinas com maior incidência de problemas.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: true, G: true, P: true },
       },
       {
-        title: "Cadastrar peças e tipos de peças",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Consultar histórico de atendimentos por máquina</span>
+            <Tooltip content="Visualizar OSs antigas de uma máquina para analisar problemas recorrentes ou maiores motivos de problema.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
+        values: { S: true, G: true, P: true },
+      },
+      {
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Cadastrar peças e tipos de peças</span>
+            <Tooltip content="Permite manter um cadastro de peças a serem consumidas nos atendimentos às OSs.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: false, G: true, P: true },
       },
       {
-        title: "Controlar liberação financeira",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Controlar liberação financeira</span>
+            <Tooltip content="Permite indicar que as OSs estão liberadas para atendimento por questão financeira.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: false, G: true, P: true },
       },
       {
-        title: "Revisar OSs (gestor)",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Revisar OSs (gestor)</span>
+            <Tooltip content="Revisão da OS pelo gestor permite ajustar as informações fornecidas pelos técnicos em campo.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         subItems: ["Fazer ajustes nas fotos", "Informar anotações do gestor"],
         values: { S: false, G: true, P: true },
         notes: {
-          S: "OS concluí­da pelo técnico é encerrada",
-          G: "OS concluí­da pelo técnico vai para revisão",
-          P: "OS concluí­da pelo técnico vai para revisão",
+          S: "OS concluída pelo técnico é encerrada",
+          G: "OS concluída pelo técnico vai para revisão",
+          P: "OS concluída pelo técnico vai para revisão",
         },
       },
       {
-        title: "Revisar OSs (gestor)",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Revisar OSs (gestor)</span>
+            <Tooltip content="Permite informar os códigos das peças consumidas, aceitar ou rejeitar as peças informadas pelos técnicos.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         subItems: ["Fazer ajustes nas peças"],
         values: { S: false, G: true, P: true },
       },
       {
-        title: "Revisar OSs (gestor)",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Revisar OSs (gestor)</span>
+            <Tooltip content="Permite ajustar os deslocamentos informados pelos técnicos, corrigir distâncias ou tempos, aceitar ou rejeitar as informações prestadas pelos técnicos.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         subItems: ["Fazer ajustes nos deslocamentos"],
         values: { S: false, G: false, P: true },
       },
       {
-        title: "Enviar automático aviso de OS concluí­da por WhatsApp",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Enviar automático aviso de OS concluída por WhatsApp</span>
+            <Tooltip content="Envio de mensagens sobre OSs concluídas para o(s) contato(s) dos clientes que estejam configurados para isso.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: false, G: true, P: true },
       },
       {
-        title: "Visualizar painel de monitoramento",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Visualizar painel de monitoramento</span>
+            <Tooltip content="Painel para sala de controle das OSs, em tela separada (monitor), com atualização automática da situação das OSs em aberto.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: false, G: false, P: true },
       },
       {
-        title: "Registrar OSs retroativas (antigas)",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Registrar OSs retroativas (antigas)</span>
+            <Tooltip content="Permite registrar OSs antigas para manter os históricos de atendimento a máquinas e clientes.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: false, G: false, P: true },
       },
     ],
@@ -197,28 +339,88 @@ const featureSections: FeatureSection[] = [
         },
       },
       {
-        title: "Consultar histórico da máquina da OS em atendimento",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Consultar histórico da máquina da OS em atendimento</span>
+            <Tooltip content="Consulta do histórico de atendimentos da máquina vinculada à OS que o técnico está atendendo.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: true, G: true, P: true },
       },
       {
-        title: "Consultar histórico do cliente da OS em atendimento",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Consultar histórico do cliente da OS em atendimento</span>
+            <Tooltip content="Consulta de histórico de atendimentos ao cliente vinculado à OS que o técnico está atendendo.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: false, G: true, P: true },
       },
       {
-        title: "Consultar histórico de atendimentos de clientes sem OS",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Consultar histórico de atendimentos de clientes sem OS</span>
+            <Tooltip content="Consulta de histórico de atendimentos de qualquer máquina.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: false, G: false, P: true },
       },
       {
-        title: "Consultar histórico de atendimentos de máquinas sem OS",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Consultar histórico de atendimentos de máquinas sem OS</span>
+            <Tooltip content="Consulta de histórico de atendimentos de qualquer cliente.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: false, G: false, P: true },
       },
 
       {
-        title: "Registrar deslocamentos",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Registrar deslocamentos</span>
+            <Tooltip content="Registro dos tempos e distâncias de deslocamentos feitos pelos técnicos para atendimento de OSs.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: false, G: false, P: true },
       },
       {
-        title: "Abrir nova OS (técnico)",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Abrir nova OS (técnico)</span>
+            <Tooltip content="Permite que o técnico abra OS em campo, para atendimentos solicitados diretamente a ele (gestor recebe notificação).">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: false, G: false, P: true },
       },
       {
@@ -264,7 +466,17 @@ const featureSections: FeatureSection[] = [
     title: "Serviços adicionais",
     items: [
       {
-        title: "Importação de cadastros",
+        title: (
+          <div className="flex items-center gap-2">
+            <span>Importação de cadastros</span>
+            <Tooltip content="Possibilidade de importação de cadastros de máquinas, clientes e peças.">
+              <CircleHelp
+                size={16}
+                className="text-gray-500 hover:text-gray-600 cursor-help"
+              />
+            </Tooltip>
+          </div>
+        ),
         values: { S: "Consultar", G: "Consultar", P: "Consultar" },
       },
       {

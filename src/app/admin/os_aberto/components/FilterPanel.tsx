@@ -1,5 +1,13 @@
-import React from "react";
-import { Search, Clock, Bell, Car, Wrench, PauseCircle } from "lucide-react";
+﻿import React from "react";
+import {
+  Search,
+  Clock,
+  Bell,
+  Car,
+  Wrench,
+  PauseCircle,
+  ArrowUpDown,
+} from "lucide-react";
 
 interface SituacoesState {
   pendente: boolean;
@@ -80,20 +88,21 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
               onChange={(e) =>
                 setOrderField((e.target.value as "data" | "cliente") || "data")
               }
-              className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="h-8 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
               aria-label="Selecionar campo de ordenação"
             >
               <option value="data">Data</option>
               <option value="cliente">Cliente</option>
             </select>
-            <button
-              type="button"
+            <FilterButton
+              active
               onClick={toggleOrderDirection}
-              className="h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 shadow-sm hover:bg-gray-50 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              aria-label="Alternar direção da ordenação"
-            >
-              {orderDirection === "asc" ? "Ascendente" : "Descendente"}
-            </button>
+              colorScheme="gray"
+              label={orderDirection === "asc" ? "Asc" : "Desc"}
+              icon={
+                <ArrowUpDown className="w-3 h-3 text-gray-700 transition-transform" />
+              }
+            />
           </div>
 
           <div className="flex items-center flex-wrap gap-2">
