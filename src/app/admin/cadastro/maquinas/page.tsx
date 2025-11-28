@@ -5,13 +5,14 @@ import { useToast } from "@/components/admin/ui/ToastContainer";
 import { useDataFetch } from "@/hooks";
 import type { Maquina } from "@/types/admin/cadastro/maquinas";
 import { useCallback, useEffect, useState, useRef } from "react";
+import Link from "next/link";
 import { DeleteButton } from "@/components/admin/ui/DeleteButton";
 import { EditButton } from "@/components/admin/ui/EditButton";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import Pagination from "@/components/admin/ui/Pagination";
 import { useFilters } from "@/hooks/useFilters";
 import { maquinasService } from "@/api/services/maquinasService";
-import { CircleCheck, CircleX } from "lucide-react";
+import { CircleCheck, CircleX, Eye } from "lucide-react";
 
 interface MaquinasFilters {
   numero_serie: string;
@@ -234,7 +235,17 @@ const CadastroMaquinas = () => {
             <div className="text-gray-900">
               <span className="font-bold text-sm">{maquina.numero_serie}</span>
               {" - "}
-              <span className="text-xs">{maquina.modelo}</span>
+              <span className="text-xs inline-flex items-center gap-2">
+                {maquina.modelo}
+                <Link
+                  href={`/admin/maquinas_detalhes/${maquina.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  title="Abrir detalhes da maquina"
+                  className="inline-flex items-center p-1 rounded-full hover:bg-slate-100 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                >
+                  <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 hover:opacity-100 transition relative -top-1" />
+                </Link>
+              </span>
             </div>
           </div>
           <div className="text-sm font-bold text-gray-600 mt-1 line-clamp-1">

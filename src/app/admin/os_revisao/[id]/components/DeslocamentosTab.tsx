@@ -36,6 +36,34 @@ interface DeslocamentosTabProps {
 const parseNumberInputValue = (value: string): number | undefined =>
   value === "" ? undefined : Number(value);
 
+const minutesToTimeString = (value?: number): string => {
+  if (value == null || Number.isNaN(value)) {
+    return "";
+  }
+
+  const totalMinutes = Math.max(0, value);
+  const hours = Math.floor(totalMinutes / 60)
+    .toString()
+    .padStart(2, "0");
+  const minutes = (totalMinutes % 60).toString().padStart(2, "0");
+
+  return `${hours}:${minutes}`;
+};
+
+const timeStringToMinutes = (value: string): number | undefined => {
+  if (!value) return undefined;
+
+  const [hoursString, minutesString] = value.split(":");
+  const hours = Number(hoursString);
+  const minutes = Number(minutesString);
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return undefined;
+  }
+
+  return hours * 60 + minutes;
+};
+
 const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
   originais,
   revisados,
@@ -146,12 +174,12 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                         {deslocamento.tempo_ida_min != null
-                          ? `${deslocamento.tempo_ida_min} min`
+                          ? minutesToTimeString(deslocamento.tempo_ida_min)
                           : "-"}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                         {deslocamento.tempo_volta_min != null
-                          ? `${deslocamento.tempo_volta_min} min`
+                          ? minutesToTimeString(deslocamento.tempo_volta_min)
                           : "-"}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
@@ -271,12 +299,12 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                         {deslocamento.tempo_ida_min != null
-                          ? `${deslocamento.tempo_ida_min} min`
+                          ? minutesToTimeString(deslocamento.tempo_ida_min)
                           : "-"}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                         {deslocamento.tempo_volta_min != null
-                          ? `${deslocamento.tempo_volta_min} min`
+                          ? minutesToTimeString(deslocamento.tempo_volta_min)
                           : "-"}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
@@ -433,19 +461,22 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                       {readOnly || !deslocamento.isEditing ? (
                         <span>
                           {deslocamento.tempo_ida_min != null
-                            ? `${deslocamento.tempo_ida_min} min`
+                            ? minutesToTimeString(deslocamento.tempo_ida_min)
                             : "-"}
                         </span>
                       ) : (
                         <input
-                          type="number"
-                          className="w-20 border border-gray-300 rounded-md px-2 py-1"
-                          value={deslocamento.tempo_ida_min ?? ""}
+                          type="time"
+                          step={60}
+                          className="w-24 border border-gray-300 rounded-md px-2 py-1"
+                          value={minutesToTimeString(
+                            deslocamento.tempo_ida_min
+                          )}
                           onChange={(e) =>
                             onChange(
                               index,
                               "tempo_ida_min",
-                              parseNumberInputValue(e.target.value)
+                              timeStringToMinutes(e.target.value)
                             )
                           }
                         />
@@ -455,19 +486,22 @@ const DeslocamentosTab: React.FC<DeslocamentosTabProps> = ({
                       {readOnly || !deslocamento.isEditing ? (
                         <span>
                           {deslocamento.tempo_volta_min != null
-                            ? `${deslocamento.tempo_volta_min} min`
+                            ? minutesToTimeString(deslocamento.tempo_volta_min)
                             : "-"}
                         </span>
                       ) : (
                         <input
-                          type="number"
-                          className="w-20 border border-gray-300 rounded-md px-2 py-1"
-                          value={deslocamento.tempo_volta_min ?? ""}
+                          type="time"
+                          step={60}
+                          className="w-24 border border-gray-300 rounded-md px-2 py-1"
+                          value={minutesToTimeString(
+                            deslocamento.tempo_volta_min
+                          )}
                           onChange={(e) =>
                             onChange(
                               index,
                               "tempo_volta_min",
-                              parseNumberInputValue(e.target.value)
+                              timeStringToMinutes(e.target.value)
                             )
                           }
                         />

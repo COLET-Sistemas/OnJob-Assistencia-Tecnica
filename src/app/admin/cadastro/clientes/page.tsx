@@ -8,6 +8,7 @@ import {
   Filter,
   Trash2,
   Pencil,
+  Eye,
 } from "lucide-react";
 import { TableList, TableStatusColumn } from "@/components/admin/common";
 import { useTitle } from "@/context/TitleContext";
@@ -648,12 +649,20 @@ const CadastroClientes = () => {
       header: "Cliente",
       accessor: "nome_fantasia" as keyof Cliente,
       render: (cliente: Cliente) => (
-        <div className="text-sm text-gray-900 flex items-center gap-2">
-          <div>
-            <div className="font-semibold">{cliente.nome_fantasia}</div>
-            <div className="text-xs text-gray-500 mt-0.5">
-              {cliente.razao_social}
-            </div>
+        <div className="text-sm text-gray-900">
+          <div className="font-semibold flex items-center gap-2">
+            {cliente.nome_fantasia}
+            <Link
+              href={`/admin/clientes_detalhes/${getClienteId(cliente)}?tab=historico`}
+              onClick={(e) => e.stopPropagation()}
+              title="Abrir detalhes do cliente"
+              className="inline-flex items-center p-1 rounded-full hover:bg-slate-100 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+            >
+              <Eye className="w-4 h-4 text-[var(--primary)] opacity-80 hover:opacity-100 transition relative -top-1" />
+            </Link>
+          </div>
+          <div className="text-xs text-gray-500 mt-0.5">
+            {cliente.razao_social}
           </div>
         </div>
       ),

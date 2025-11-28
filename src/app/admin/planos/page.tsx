@@ -2,14 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowUpRight,
-  Check,
-  CheckCircle2,
-  X,
-  ShieldCheck,
-  CircleHelp,
-} from "lucide-react";
+import { ArrowUpRight, Check, X, ShieldCheck, CircleHelp } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useTitle } from "@/context/TitleContext";
 import { useLicenca } from "@/hooks";
@@ -370,7 +363,7 @@ const featureSections: FeatureSection[] = [
         title: (
           <div className="flex items-center gap-2">
             <span>Consultar histórico de atendimentos de clientes sem OS</span>
-            <Tooltip content="Consulta de histórico de atendimentos de qualquer máquina.">
+            <Tooltip content="Consulta de histórico de atendimentos de qualquer cliente.">
               <CircleHelp
                 size={16}
                 className="text-gray-500 hover:text-gray-600 cursor-help"
@@ -384,7 +377,7 @@ const featureSections: FeatureSection[] = [
         title: (
           <div className="flex items-center gap-2">
             <span>Consultar histórico de atendimentos de máquinas sem OS</span>
-            <Tooltip content="Consulta de histórico de atendimentos de qualquer cliente.">
+            <Tooltip content="Consulta de histórico de atendimentos de qualquer máquina.">
               <CircleHelp
                 size={16}
                 className="text-gray-500 hover:text-gray-600 cursor-help"
@@ -594,32 +587,18 @@ const PlanosPage: React.FC = () => {
           type: "form",
           useBackNavigation: true,
           backLabel: "Voltar para tela anterior",
+          actions: (
+            <div className="flex items-center gap-3 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                Plano Atual:
+              </span>
+              <span className="text-sm font-semibold text-gray-900">
+                {currentPlanLabel}
+              </span>
+            </div>
+          ),
         }}
       />
-
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-start gap-3">
-            <div className="w-11 h-11 rounded-full border border-purple-100 bg-purple-50 text-sky-700 flex items-center justify-center shadow-inner">
-              <CheckCircle2 size={22} className="text-purple-700" />
-            </div>
-            <div className="space-y-2">
-              <span className="text-[11px] font-semibold text-purple-700 uppercase tracking-[0.2em]">
-                Plano atual
-              </span>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xl font-bold text-gray-900">
-                  {currentPlanLabel}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 ">
-                Este é o plano ativo da sua empresa neste momento. Compare
-                abaixo para ver quais recursos adicionais você ganha ao evoluir.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-5">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">

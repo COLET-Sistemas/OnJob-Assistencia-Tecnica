@@ -17,6 +17,26 @@ import {
   FileText,
   AlertCircle,
 } from "lucide-react";
+
+const minutesToHHMM = (minutes?: number | null) => {
+  if (minutes === null || minutes === undefined) return "";
+  const safeMinutes = Math.max(0, Math.floor(minutes));
+  const hours = Math.floor(safeMinutes / 60);
+  const remainingMinutes = safeMinutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(remainingMinutes).padStart(
+    2,
+    "0"
+  )}`;
+};
+
+const hhmmToMinutes = (value: string) => {
+  if (!value) return 0;
+  const [hoursStr = "0", minutesStr = "0"] = value.split(":");
+  const hours = Number(hoursStr);
+  const minutes = Number(minutesStr);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return 0;
+  return hours * 60 + minutes;
+};
 // Componente de loading minimalista
 const LoadingSpinner = memo(() => (
   <div className="flex items-center justify-center py-12">
@@ -67,7 +87,7 @@ const DeslocamentoItem = memo(
             </span>
             <Clock className="w-3.5 h-3.5 text-slate-500 ml-1" />
             <span className="text-xs text-slate-500">
-              {desloc.tempo_ida_min}min
+              {minutesToHHMM(desloc.tempo_ida_min) || "00:00"}
             </span>
           </span>
         </div>
@@ -80,7 +100,7 @@ const DeslocamentoItem = memo(
             </span>
             <Clock className="w-3.5 h-3.5 text-slate-500 ml-1" />
             <span className="text-xs text-slate-500">
-              {desloc.tempo_volta_min}min
+              {minutesToHHMM(desloc.tempo_volta_min) || "00:00"}
             </span>
           </span>
         </div>
@@ -141,8 +161,8 @@ export default function FATDeslocamentoPage() {
     id_fat: number;
     km_ida: number | "";
     km_volta: number | "";
-    tempo_ida_min: number | "";
-    tempo_volta_min: number | "";
+    tempo_ida_min: string;
+    tempo_volta_min: string;
     observacoes?: string;
   }>({
     id_fat: Number(params.id),
@@ -187,6 +207,10 @@ export default function FATDeslocamentoPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+    if (name === "tempo_ida_min" || name === "tempo_volta_min") {
+      setForm((prev) => ({ ...prev, [name]: value }));
+      return;
+    }
     setForm((prev) => ({
       ...prev,
       [name]:
@@ -207,10 +231,8 @@ export default function FATDeslocamentoPage() {
         id_fat: Number(params.id),
         km_ida: form.km_ida === "" ? 0 : Number(form.km_ida),
         km_volta: form.km_volta === "" ? 0 : Number(form.km_volta),
-        tempo_ida_min:
-          form.tempo_ida_min === "" ? 0 : Number(form.tempo_ida_min),
-        tempo_volta_min:
-          form.tempo_volta_min === "" ? 0 : Number(form.tempo_volta_min),
+        tempo_ida_min: hhmmToMinutes(form.tempo_ida_min),
+        tempo_volta_min: hhmmToMinutes(form.tempo_volta_min),
       };
       if (editing && form.id_deslocamento) {
         await fatService.updateDeslocamento({
@@ -246,8 +268,8 @@ export default function FATDeslocamentoPage() {
       id_fat: Number(params.id),
       km_ida: desloc.km_ida,
       km_volta: desloc.km_volta,
-      tempo_ida_min: desloc.tempo_ida_min ?? "",
-      tempo_volta_min: desloc.tempo_volta_min ?? "",
+      tempo_ida_min: minutesToHHMM(desloc.tempo_ida_min),
+      tempo_volta_min: minutesToHHMM(desloc.tempo_volta_min),
       observacoes: desloc.observacoes || "",
     });
     setExpandedId(desloc.id_deslocamento);
@@ -393,34 +415,36 @@ export default function FATDeslocamentoPage() {
               <div className="space-y-1">
                 <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
                   <Clock className="w-3.5 h-3.5" />
-                  Tempo Ida (min)
+                  Tempo Ida (hh:mm)
                 </label>
                 <input
-                  type="number"
+                  type="time"
                   name="tempo_ida_min"
                   value={form.tempo_ida_min}
                   onChange={handleChange}
                   className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all outline-none bg-white/70 text-slate-800 placeholder-slate-500"
                   required
-                  min={0}
-                  placeholder="Min"
+                  min="00:00"
+                  step={60}
+                  placeholder="hh:mm"
                 />
               </div>
 
               <div className="space-y-1">
                 <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
                   <Clock className="w-3.5 h-3.5" />
-                  Tempo Volta (min)
+                  Tempo Volta (hh:mm)
                 </label>
                 <input
-                  type="number"
+                  type="time"
                   name="tempo_volta_min"
                   value={form.tempo_volta_min}
                   onChange={handleChange}
                   className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all outline-none bg-white/70 text-slate-800 placeholder-slate-500"
                   required
-                  min={0}
-                  placeholder="Min"
+                  min="00:00"
+                  step={60}
+                  placeholder="hh:mm"
                 />
               </div>
             </div>
