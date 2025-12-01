@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, {
   useEffect,
   useState,
@@ -31,6 +31,7 @@ import {
   Lock,
 } from "lucide-react";
 import { fatService, type FATDetalhada } from "@/api/services/fatService";
+import { ocorrenciasOSService } from "@/api/services/ocorrenciaOSService";
 import { fatFotosService } from "@/api/services/fatFotosService";
 import { Loading } from "@/components/LoadingPersonalizado";
 import Toast from "@/components/tecnico/Toast";
@@ -305,7 +306,7 @@ const PecasSectionContent = React.memo(
                   </div>
                   {peca.codigo_peca && (
                     <p className="text-xs text-slate-600">
-                      Código: {peca.codigo_peca}
+                      CÃ³digo: {peca.codigo_peca}
                     </p>
                   )}
                   {peca.observacoes && (
@@ -469,6 +470,13 @@ export default function FATDetalheMobile() {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(
     null
   );
+  const [isPausaModalOpen, setIsPausaModalOpen] = useState(false);
+  const [pausaForm, setPausaForm] = useState({
+    hora_inicio: "",
+    hora_fim: "",
+    observacao: "",
+  });
+  const [pausaSubmitting, setPausaSubmitting] = useState(false);
 
   // Estados para controle de gestos touch
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -499,7 +507,7 @@ export default function FATDetalheMobile() {
 
   // Prevenção de scroll body quando modal está aberto
   useEffect(() => {
-    if (isPhotoModalOpen) {
+    if (isPhotoModalOpen || isPausaModalOpen) {
       document.body.style.overflow = "hidden";
       document.body.style.position = "fixed";
       document.body.style.width = "100%";
@@ -514,7 +522,7 @@ export default function FATDetalheMobile() {
       document.body.style.position = "";
       document.body.style.width = "";
     };
-  }, [isPhotoModalOpen]);
+  }, [isPhotoModalOpen, isPausaModalOpen]);
   // Função auxiliar para mostrar toast com auto-hide
   const showToast = useCallback(
     (message: string, type: "success" | "error" = "success") => {
@@ -611,7 +619,7 @@ export default function FATDetalheMobile() {
 
   const goToDeslocamento = useCallback(() => {
     if (deslocamentoBloqueado) {
-      showToast("Deslocamentos indisponíveis para o seu plano atual.", "error");
+      showToast("Deslocamentos indisponÃ­veis para o seu plano atual.", "error");
       return;
     }
 
@@ -635,7 +643,7 @@ export default function FATDetalheMobile() {
 
   const goToFotos = useCallback(() => {
     if (fotosBloqueadas) {
-      showToast("Fotos indisponíveis para o seu plano atual.", "error");
+      showToast("Fotos indisponÃ­veis para o seu plano atual.", "error");
       return;
     }
 
@@ -643,7 +651,26 @@ export default function FATDetalheMobile() {
   }, [debouncedNavigate, fotosBloqueadas, handleNavigateToSection, showToast]);
 
   // Função para extrair mensagem de erro da API
-  const extractErrorMessage = useCallback((error: unknown): string => {
+    const extractErrorMessage = useCallback((error: unknown): string => {
+    const sanitize = (value: string): string => {
+      const trimmed = value.trim();
+      const regexMatch = trimmed.match(/["']?erro["']?\s*:\s*["']([^"']+)["']/i);
+      if (regexMatch?.[1]) {
+        return regexMatch[1];
+      }
+
+      if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        const inner = trimmed.slice(1, -1).trim();
+        const colonIndex = inner.indexOf(":");
+        if (colonIndex !== -1) {
+          const content = inner.slice(colonIndex + 1).trim();
+          return content.replace(/^["']|["']$/g, "");
+        }
+      }
+
+      return trimmed.replace(/^["']|["']$/g, "");
+    };
+
     let errorMessage = "Ocorreu um erro durante a operação";
 
     if (error && typeof error === "object") {
@@ -658,7 +685,14 @@ export default function FATDetalheMobile() {
         typeof error.response.data === "object" &&
         "erro" in error.response.data
       ) {
-        errorMessage = String(error.response.data.erro);
+        errorMessage = sanitize(String(error.response.data.erro));
+      } else if ("message" in error && typeof error.message === "string") {
+        errorMessage = sanitize(error.message);
+      }
+    }
+
+    return errorMessage;
+  }, []);
       } else if ("message" in error && typeof error.message === "string") {
         errorMessage = error.message;
       }
@@ -746,7 +780,7 @@ export default function FATDetalheMobile() {
   }, [fetchFAT]);
 
   useEffect(() => {
-    // ðŸ‘‡ Capture a snapshot of the ref's current value
+    // Ã°Å¸â€˜â€¡ Capture a snapshot of the ref's current value
     const photoUrlsSnapshot = photoObjectUrlsRef.current;
 
     return () => {
@@ -883,6 +917,87 @@ export default function FATDetalheMobile() {
     };
   }, [fat?.fotos]);
 
+  const handleOpenPausaModal = useCallback(() => {
+    setPausaForm({
+      hora_inicio: "",
+      hora_fim: "",
+      observacao: "",
+    });
+    setIsPausaModalOpen(true);
+  }, []);
+
+  const handleClosePausaModal = useCallback(() => {
+    setIsPausaModalOpen(false);
+    setPausaSubmitting(false);
+    setPausaForm({
+      hora_inicio: "",
+      hora_fim: "",
+      observacao: "",
+    });
+  }, []);
+
+  const handleRegistrarPausaManual = useCallback(async () => {
+    if (!fat?.id_fat) {
+      showToast("FAT n\u00e3o encontrada para registrar pausa.", "error");
+      return;
+    }
+
+    const horaInicio = pausaForm.hora_inicio.trim();
+    const horaFim = pausaForm.hora_fim.trim();
+
+    if (!horaInicio || !horaFim) {
+      showToast("Informe hora de in\u00edcio e fim da pausa.", "error");
+      return;
+    }
+
+    const parseTimeToMinutes = (value: string) => {
+      const [hours, minutes] = value.split(":").map(Number);
+      if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+      return hours * 60 + minutes;
+    };
+
+    const inicioMinutes = parseTimeToMinutes(horaInicio);
+    const fimMinutes = parseTimeToMinutes(horaFim);
+
+    if (
+      inicioMinutes !== null &&
+      fimMinutes !== null &&
+      fimMinutes <= inicioMinutes
+    ) {
+      showToast("A hora fim deve ser maior que a hora in\u00edcio.", "error");
+      return;
+    }
+
+    setPausaSubmitting(true);
+    try {
+      await ocorrenciasOSService.registrarPausaManual({
+        id_fat: fat.id_fat,
+        hora_inicio: horaInicio,
+        hora_fim: horaFim,
+        observacao: pausaForm.observacao.trim() || undefined,
+      });
+      showToast("Pausa registrada com sucesso!", "success");
+      handleClosePausaModal();
+      await fetchFAT(true);
+    } catch (error) {
+      console.error("Erro ao registrar pausa manual:", error);
+
+      const errorMessage = extractErrorMessage(error);
+      showToast(errorMessage, "error");
+    } finally {
+      setPausaSubmitting(false);
+    }
+  }, [
+    fat?.id_fat,
+    pausaForm.hora_inicio,
+    pausaForm.hora_fim,
+    pausaForm.observacao,
+    fetchFAT,
+    extractErrorMessage,
+    showToast,
+    handleClosePausaModal,
+  ]);
+
   const handleIniciarAtendimento = useCallback(async () => {
     try {
       setLoading(true);
@@ -1015,7 +1130,7 @@ export default function FATDetalheMobile() {
     try {
       setLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      const responseMessage = "Atendimento concluí­do com sucesso!";
+      const responseMessage = "Atendimento concluÃ­Â­do com sucesso!";
       showToast(responseMessage, "success");
 
       setTimeout(() => {
@@ -1079,7 +1194,7 @@ export default function FATDetalheMobile() {
     });
   }, [fotos.length, hasMultiplePhotos]);
 
-  // Distância mínima para swipe
+  // DistÃ¢ncia mÃ­nima para swipe
   const minSwipeDistance = 50;
 
   // Handlers para gestos touch
@@ -1421,16 +1536,15 @@ export default function FATDetalheMobile() {
               disabled={fotosBloqueadas || licencaLoading}
             />
           </Section>
-
-          {fat.ocorrencias && fat.ocorrencias.length > 0 && (
-            <Section
-              title={`Ocorrências (${fat.ocorrencias.length})`}
-              icon={<History className="w-4 h-4" />}
-              collapsible={true}
-              defaultExpanded={false}
-            >
-              <div className="space-y-3">
-                {fat.ocorrencias.map((ocorrencia, index) => (
+          <Section
+            title={`Ocorrências (${fat.ocorrencias?.length ?? 0})`}
+            icon={<History className="w-4 h-4" />}
+            collapsible={true}
+            defaultExpanded={false}
+          >
+            <div className="space-y-3">
+              {fat.ocorrencias && fat.ocorrencias.length > 0 ? (
+                fat.ocorrencias.map((ocorrencia, index) => (
                   <div
                     key={ocorrencia.id_ocorrencia || index}
                     className="border-l-2 border-blue-200 pl-3"
@@ -1454,11 +1568,157 @@ export default function FATDetalheMobile() {
                       />
                     </div>
                   </div>
-                ))}
+                ))
+              ) : (
+                <p className="text-sm text-slate-500 italic">
+                  Nenhuma ocorrência registrada
+                </p>
+              )}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleOpenPausaModal}
+                  disabled={!fat.id_fat || pausaSubmitting}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#7B54BE] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#6841b1] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B54BE]/50 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-[#7B54BE]"
+                >
+                  <Timer className="w-4 h-4" />
+                  Registrar Pausa
+                </button>
               </div>
-            </Section>
-          )}
+            </div>
+          </Section>
+
         </div>
+
+        {isPausaModalOpen && (
+          <div
+            className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/60 px-4 py-6"
+            role="dialog"
+            aria-modal="true"
+            onClick={handleClosePausaModal}
+          >
+            <div
+              className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Registrar Pausa
+                  </h3>
+                  <p className="text-sm text-slate-600 mt-1">
+                    Informe a pausa manualmente.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClosePausaModal}
+                  className="rounded-full p-2 text-slate-500 hover:bg-slate-100 transition-colors"
+                  aria-label="Fechar modal"
+                  disabled={pausaSubmitting}
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">
+                      Hora início
+                    </label>
+                    <input
+                      type="time"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-700 shadow-sm focus:border-[#7B54BE] focus:outline-none focus:ring-2 focus:ring-[#7B54BE]/30 disabled:bg-slate-50"
+                      value={pausaForm.hora_inicio}
+                      required
+                      onChange={(e) =>
+                        setPausaForm((prev) => ({
+                          ...prev,
+                          hora_inicio: e.target.value,
+                        }))
+                      }
+                      disabled={pausaSubmitting}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">
+                      Hora fim
+                    </label>
+                    <input
+                      type="time"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-700 shadow-sm focus:border-[#7B54BE] focus:outline-none focus:ring-2 focus:ring-[#7B54BE]/30 disabled:bg-slate-50"
+                      value={pausaForm.hora_fim}
+                      required
+                      onChange={(e) =>
+                        setPausaForm((prev) => ({
+                          ...prev,
+                          hora_fim: e.target.value,
+                        }))
+                      }
+                      disabled={pausaSubmitting}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Observação (opcional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-700 shadow-sm focus:border-[#7B54BE] focus:outline-none focus:ring-2 focus:ring-[#7B54BE]/30 disabled:bg-slate-50"
+                    placeholder="Descreva o motivo da pausa"
+                    value={pausaForm.observacao}
+                    onChange={(e) =>
+                      setPausaForm((prev) => ({
+                        ...prev,
+                        observacao: e.target.value,
+                      }))
+                    }
+                    disabled={pausaSubmitting}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={handleClosePausaModal}
+                  disabled={pausaSubmitting}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg bg-[#7B54BE] px-4 py-2 font-semibold text-white transition hover:bg-[#6841b1] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B54BE]/50 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={handleRegistrarPausaManual}
+                  disabled={
+                    pausaSubmitting ||
+                    !pausaForm.hora_inicio.trim() ||
+                    !pausaForm.hora_fim.trim()
+                  }
+                >
+                  {pausaSubmitting ? "Registrando..." : "Registrar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {isPhotoModalOpen && selectedPhoto && (
           <div
@@ -1501,7 +1761,7 @@ export default function FATDetalheMobile() {
                   <div className="flex flex-col items-center gap-3 text-slate-200">
                     <ImageOff className="h-8 w-8" />
                     <span className="text-xs uppercase tracking-wide">
-                      Visualização indisponível
+                      Visualização indisponí­vel
                     </span>
                   </div>
                 )}
@@ -1573,3 +1833,6 @@ export default function FATDetalheMobile() {
     </>
   );
 }
+
+
+
