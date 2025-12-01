@@ -1,4 +1,5 @@
 import api from "../api";
+import type { OcorrenciaOSDetalhe } from "./ocorrenciaOSService";
 
 export type HistoricoTipo = "cliente" | "maquina";
 
@@ -20,6 +21,7 @@ export interface HistoricoRegistro {
   observacoes_tecnico: string;
   observacoes_revisao: string;
   numero_ciclos: number;
+  ocorrencias?: OcorrenciaOSDetalhe[];
 }
 
 export interface HistoricoResponse {

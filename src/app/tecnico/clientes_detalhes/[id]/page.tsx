@@ -21,12 +21,19 @@ import {
   AlertTriangle,
   Building,
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CircleCheck,
   CircleX,
+  History,
 } from "lucide-react";
 import { useLicenca } from "@/hooks";
+import {
+  ocorrenciasOSService,
+  type OcorrenciaOSDetalhe,
+} from "@/api/services/ocorrenciaOSService";
+import StatusBadge from "@/components/tecnico/StatusBadge";
 
 type SectionCardProps = {
   title: string;
@@ -116,6 +123,18 @@ export default function ClienteDetalheTecnicoPage() {
   const [historicoError, setHistoricoError] = useState<string | null>(null);
   const [historicoTotalRegistros, setHistoricoTotalRegistros] = useState(0);
   const [historicoPagina, setHistoricoPagina] = useState(1);
+  const [ocorrenciasPorOs, setOcorrenciasPorOs] = useState<
+    Record<number, OcorrenciaOSDetalhe[]>
+  >({});
+  const [ocorrenciasLoading, setOcorrenciasLoading] = useState<
+    Record<number, boolean>
+  >({});
+  const [ocorrenciasError, setOcorrenciasError] = useState<
+    Record<number, string | null>
+  >({});
+  const [ocorrenciasExpanded, setOcorrenciasExpanded] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     let active = true;
@@ -200,6 +219,146 @@ export default function ClienteDetalheTecnicoPage() {
   useEffect(() => {
     setHistoricoPagina(1);
   }, [clienteId]);
+
+  useEffect(() => {
+    setOcorrenciasPorOs({});
+    setOcorrenciasLoading({});
+    setOcorrenciasError({});
+    setOcorrenciasExpanded({});
+  }, [clienteId]);
+
+  useEffect(() => {
+    setOcorrenciasPorOs((prev) => {
+      const next = { ...prev };
+
+      historicoRegistros.forEach((registro) => {
+        const numeroOs = Number(registro.numero_os);
+        if (
+          Number.isFinite(numeroOs) &&
+          Array.isArray(registro.ocorrencias) &&
+          registro.ocorrencias.length > 0
+        ) {
+          next[numeroOs] = registro.ocorrencias;
+        }
+      });
+
+      return next;
+    });
+  }, [historicoRegistros]);
+
+  const getOcorrenciaStatusInfo = useCallback(
+    (ocorrencia: OcorrenciaOSDetalhe) => {
+      const statusSource =
+        ocorrencia.nova_situacao ??
+        ocorrencia.situacao ??
+        ocorrencia.situacao_atual;
+
+      const codigo =
+        typeof statusSource === "object" && statusSource?.codigo !== undefined
+          ? statusSource.codigo
+          : typeof statusSource === "number" || typeof statusSource === "string"
+          ? statusSource
+          : null;
+
+      const descricao =
+        (typeof statusSource === "object" && statusSource?.descricao) ||
+        ocorrencia.descricao_situacao ||
+        undefined;
+
+      return {
+        codigo:
+          codigo !== null && codigo !== undefined ? String(codigo) : null,
+        descricao,
+      };
+    },
+    []
+  );
+
+  const getOcorrenciaUsuario = useCallback(
+    (ocorrencia: OcorrenciaOSDetalhe) => {
+      if (ocorrencia.usuario?.nome) {
+        return ocorrencia.usuario.nome;
+      }
+      if (ocorrencia.usuario_nome) {
+        return ocorrencia.usuario_nome;
+      }
+      if (
+        typeof ocorrencia.id_usuario === "number" &&
+        Number.isFinite(ocorrencia.id_usuario)
+      ) {
+        return `Usuario #${ocorrencia.id_usuario}`;
+      }
+      return "Sistema";
+    },
+    []
+  );
+
+  const carregarOcorrencias = useCallback(
+    async (numeroOs: number, idFat?: number | null) => {
+      if (!Number.isFinite(numeroOs)) return;
+
+      setOcorrenciasLoading((prev) => ({ ...prev, [numeroOs]: true }));
+      setOcorrenciasError((prev) => ({ ...prev, [numeroOs]: null }));
+
+      try {
+        const response = await ocorrenciasOSService.listarPorOS(
+          numeroOs,
+          idFat ?? -1
+        );
+
+        setOcorrenciasPorOs((prev) => ({
+          ...prev,
+          [numeroOs]: response ?? [],
+        }));
+      } catch (fetchError) {
+        console.error("Erro ao carregar ocorrencias da OS:", fetchError);
+        setOcorrenciasPorOs((prev) => ({ ...prev, [numeroOs]: [] }));
+        setOcorrenciasError((prev) => ({
+          ...prev,
+          [numeroOs]: "Nao foi possivel carregar as ocorrencias.",
+        }));
+      } finally {
+        setOcorrenciasLoading((prev) => ({ ...prev, [numeroOs]: false }));
+      }
+    },
+    []
+  );
+
+  const toggleOcorrencias = useCallback(
+    (
+      expandKey: string,
+      numeroOs: number,
+      idFat?: number | null,
+      inlineOcorrencias?: OcorrenciaOSDetalhe[]
+    ) => {
+      setOcorrenciasExpanded((prev) => {
+        const willExpand = !prev[expandKey];
+        const nextExpanded: Record<string, boolean> = {};
+
+        if (willExpand) {
+          if (
+            inlineOcorrencias &&
+            Array.isArray(inlineOcorrencias) &&
+            inlineOcorrencias.length > 0
+          ) {
+            setOcorrenciasPorOs((current) => ({
+              ...current,
+              [numeroOs]: inlineOcorrencias,
+            }));
+          } else if (!ocorrenciasPorOs[numeroOs]) {
+            void carregarOcorrencias(numeroOs, idFat);
+          }
+
+          nextExpanded[expandKey] = true;
+        } else {
+          nextExpanded[expandKey] = false;
+        }
+
+        return nextExpanded;
+      });
+    },
+    [carregarOcorrencias, ocorrenciasPorOs]
+  );
 
   const documentoFormatado = cliente?.cnpj
     ? formatDocumento(cliente.cnpj)
@@ -330,86 +489,201 @@ export default function ClienteDetalheTecnicoPage() {
               ) : (
                 <>
                   <div className="space-y-0">
-                    {historicoRegistros.map((registro) => (
-                      <article
-                        key={`${registro.id_fat}-${registro.numero_os}-${registro.data_atendimento}`}
-                        className="mb-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm
-             grid gap-4 md:grid-cols-2"
-                      >
-                        {/* COLUNA ESQUERDA */}
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3 text-sm text-slate-700">
-                            <span className="font-semibold text-slate-900">
-                              OS #{registro.numero_os ?? "-"}
-                            </span>
-                            <span className="font-semibold text-slate-900">
-                              FAT #{registro.id_fat ?? "-"}
-                            </span>
-                            <span className="ml-auto font-semibold text-slate-900">
-                              {registro.data_atendimento}
-                            </span>
-                          </div>
+                    {historicoRegistros.map((registro) => {
+                      const numeroOs = Number(registro.numero_os);
+                      const inlineOcorrencias = registro.ocorrencias;
+                      const expandKey = `${numeroOs || "os"}-${
+                        registro.id_fat ?? "fat"
+                      }`;
+                      const ocorrencias =
+                        (Array.isArray(inlineOcorrencias) &&
+                        inlineOcorrencias.length > 0
+                          ? inlineOcorrencias
+                          : null) ??
+                        (Number.isFinite(numeroOs) &&
+                        ocorrenciasPorOs[numeroOs]
+                          ? ocorrenciasPorOs[numeroOs]
+                          : []);
+                      const ocorrenciasCount = ocorrencias.length;
+                      const expanded = ocorrenciasExpanded[expandKey] ?? false;
+                      const ocorrenciaCarregando =
+                        ocorrenciasLoading[numeroOs] ?? false;
+                      const ocorrenciaErro =
+                        ocorrenciasError[numeroOs] ?? null;
 
-                          <div className="space-y-1 pt-2 text-sm text-slate-600">
-                            <div className="flex items-center gap-2">
-                              {registro.em_garantia ? (
-                                <CircleCheck className="w-4 h-4 text-emerald-500" />
-                              ) : (
-                                <CircleX className="w-4 h-4 text-amber-500" />
-                              )}
-                              <p className="text-xs font-semibold text-slate-900">
-                                {registro.descricao_maquina ||
-                                  "Máquina não informada"}
-                              </p>
-                            </div>
-                            <div className="flex flex-wrap gap-3 text-xs text-slate-500">
-                              {registro.numero_serie && (
-                                <span>{registro.numero_serie}</span>
-                              )}
-                              {"-"}
-                              <span>
-                                Ciclos: {registro.numero_ciclos ?? "-"}
+                      return (
+                        <article
+                          key={`${registro.id_fat}-${registro.numero_os}-${registro.data_atendimento}`}
+                          className="mb-3 grid gap-4 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm md:grid-cols-2"
+                        >
+                          {/* COLUNA ESQUERDA */}
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3 text-sm text-slate-700">
+                              <span className="font-semibold text-slate-900">
+                                OS #{registro.numero_os ?? "-"}
                               </span>
-                              {"-"}
-                              <span>
-                                {registro.nome_tecnico ||
-                                  "Tecnico nao informado"}
+                              <span className="font-semibold text-slate-900">
+                                FAT #{registro.id_fat ?? "-"}
+                              </span>
+                              <span className="ml-auto font-semibold text-slate-900">
+                                {registro.data_atendimento}
                               </span>
                             </div>
-                          </div>
-                        </div>
 
-                        {/* COLUNA DIREITA */}
-                        <div className="grid gap-3">
-                          {renderHistoricoField(
-                            `Motivo do atendimento: ${
-                              registro.motivo_atendimento ?? "-"
-                            }`,
-                            registro.descricao_problema
-                          )}
-                          {renderHistoricoField(
-                            "Solução encontrada",
-                            registro.solucao_encontrada
-                          )}
-                          {renderHistoricoField(
-                            "Testes realizados",
-                            registro.testes_realizados
-                          )}
-                          {renderHistoricoField(
-                            "Sugestões",
-                            registro.sugestoes
-                          )}
-                          {renderHistoricoField(
-                            "Observações",
-                            registro.observacoes
-                          )}
-                          {renderHistoricoField(
-                            "Observações do técnico",
-                            registro.observacoes_tecnico
-                          )}
-                        </div>
-                      </article>
-                    ))}
+                            <div className="space-y-1 pt-2 text-sm text-slate-600">
+                              <div className="flex items-center gap-2">
+                                {registro.em_garantia ? (
+                                  <CircleCheck className="h-4 w-4 text-emerald-500" />
+                                ) : (
+                                  <CircleX className="h-4 w-4 text-amber-500" />
+                                )}
+                                <p className="text-xs font-semibold text-slate-900">
+                                  {registro.descricao_maquina ||
+                                    "M?quina n?o informada"}
+                                </p>
+                              </div>
+                              <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+                                {registro.numero_serie && (
+                                  <span>{registro.numero_serie}</span>
+                                )}
+                                {"-"}
+                                <span>
+                                  Ciclos: {registro.numero_ciclos ?? "-"}
+                                </span>
+                                {"-"}
+                                <span>
+                                  {registro.nome_tecnico ||
+                                    "Tecnico nao informado"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* COLUNA DIREITA */}
+                          <div className="grid gap-3">
+                            {renderHistoricoField(
+                              `Motivo do atendimento: ${
+                                registro.motivo_atendimento ?? "-"
+                              }`,
+                              registro.descricao_problema
+                            )}
+                            {renderHistoricoField(
+                              "Solu??o encontrada",
+                              registro.solucao_encontrada
+                            )}
+                            {renderHistoricoField(
+                              "Testes realizados",
+                              registro.testes_realizados
+                            )}
+                            {renderHistoricoField(
+                              "Sugest?es",
+                              registro.sugestoes
+                            )}
+                            {renderHistoricoField(
+                              "Observa??es",
+                              registro.observacoes
+                            )}
+                            {renderHistoricoField(
+                              "Observa??es do t?cnico",
+                              registro.observacoes_tecnico
+                            )}
+                          </div>
+
+                          <div className="border-t border-slate-100 pt-3 md:col-span-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                toggleOcorrencias(
+                                  expandKey,
+                                  numeroOs,
+                                  registro.id_fat,
+                                  inlineOcorrencias
+                                )
+                              }
+                              disabled={!Number.isFinite(numeroOs)}
+                              className="flex w-full items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              aria-expanded={expanded}
+                            >
+                              <span className="flex items-center gap-2">
+                                <History className="h-4 w-4 text-slate-500" />
+                                <span>
+                                  Ocorrencias ({ocorrenciasCount})
+                                </span>
+                              </span>
+                              <ChevronDown
+                                className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
+                                  expanded ? "rotate-180" : ""
+                                }`}
+                              />
+                            </button>
+
+                            {expanded && (
+                              <div className="mt-3 space-y-3">
+                                {ocorrenciaCarregando ? (
+                                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-slate-500" />
+                                    Carregando ocorrencias...
+                                  </div>
+                                ) : ocorrenciaErro ? (
+                                  <div className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                                    {ocorrenciaErro}
+                                  </div>
+                                ) : ocorrenciasCount === 0 ? (
+                                  <p className="text-xs text-slate-500">
+                                    Nenhuma ocorrencia registrada para esta OS.
+                                  </p>
+                                ) : (
+                                  ocorrencias.map((ocorrencia, index) => {
+                                    const statusInfo =
+                                      getOcorrenciaStatusInfo(ocorrencia);
+                                    const dataOcorrencia = 
+                                      ocorrencia.data_ocorrencia ;
+                                    const usuarioNome = getOcorrenciaUsuario(
+                                      ocorrencia
+                                    );
+                                    const descricaoOcorrencia =
+                                      ocorrencia.descricao_ocorrencia?.trim() ||
+                                      ocorrencia.ocorrencia ||
+                                      "Ocorrencia sem descricao.";
+
+                                    return (
+                                      <div
+                                        key={
+                                          ocorrencia.id_ocorrencia ??
+                                          `ocorrencia-${numeroOs}-${index}`
+                                        }
+                                        className="border-l-2 border-blue-200 pl-3"
+                                      >
+                                        <div className="flex justify-end">
+                                          <span className="text-xs text-slate-500">
+                                            {dataOcorrencia ||
+                                              "Data indisponivel"}
+                                          </span>
+                                        </div>
+                                        <p className="text-sm font-medium text-slate-900 leading-snug">
+                                          {descricaoOcorrencia}
+                                        </p>
+                                        <p className="text-xs text-slate-500 mt-1">
+                                          Por: {usuarioNome}
+                                        </p>
+                                        {statusInfo.codigo && (
+                                          <div className="mt-2">
+                                            <StatusBadge
+                                              status={statusInfo.codigo}
+                                              descricao={statusInfo.descricao}
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
                   {historicoTotalRegistros > 0 && (
                     <div className="mt-5 rounded-2xl border border-slate-100 bg-gradient-to-r from-white via-slate-50 to-white p-4 shadow-sm">
