@@ -87,6 +87,11 @@ const OSCard = memo(({ os }: { os: OSItem }) => {
       <div className="flex items-center gap-2 text-sm text-gray-700 mb-3">
         <Settings className="w-3 h-3 text-gray-500 flex-shrink-0" />
         <span className="font-medium truncate">{os.maquina?.modelo}</span>
+        {os.maquina?.numero_serie && (
+          <span className="font-medium text-gray-500 truncate">
+            | {os.maquina.numero_serie}
+          </span>
+        )}
         {os.em_garantia ? (
           <CircleCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
         ) : (

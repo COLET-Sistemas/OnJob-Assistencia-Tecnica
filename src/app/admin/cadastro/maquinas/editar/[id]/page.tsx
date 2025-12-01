@@ -1,21 +1,15 @@
 "use client";
 
 import { Loading } from "@/components/LoadingPersonalizado";
-
-interface ClienteAPIResult {
-  id_cliente: number;
-  nome_fantasia: string;
-  razao_social: string;
-  codigo_erp?: string;
-}
-
 import { maquinasService } from "@/api/services/maquinasService";
 import { clientesService } from "@/api/services/clientesService";
+import { clienteSelectComponents } from "@/app/admin/os_aberto/novo/components/ClienteItem";
 import { useTitle } from "@/context/TitleContext";
 import { useToast } from "@/components/admin/ui/ToastContainer";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { Cliente } from "@/types/admin/cadastro/clientes";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import {
   InputField,
@@ -40,6 +34,10 @@ interface FormData {
 interface ClienteOption extends Omit<OptionType, "value"> {
   value: number;
   razao_social?: string;
+  nome_fantasia?: string;
+  cidade?: string;
+  uf?: string;
+  codigo_erp?: string;
 }
 
 interface ModeloOption extends Omit<OptionType, "value"> {
@@ -159,14 +157,27 @@ const EditarMaquina = () => {
 
       if (maquinaData.cliente_atual) {
         const clienteId = maquinaData.cliente_atual.id_cliente;
-        const clienteNome = maquinaData.cliente_atual.razao_social || "";
+        const clienteRazaoSocial =
+          maquinaData.cliente_atual.razao_social ||
+          maquinaData.cliente_atual.nome_fantasia ||
+          "";
+        const clienteCodigoErp =
+          maquinaData.cliente_atual.codigo_erp &&
+          maquinaData.cliente_atual.codigo_erp.trim().length > 0
+            ? ` (${maquinaData.cliente_atual.codigo_erp})`
+            : " (-)";
+        const clienteLabel = `${clienteRazaoSocial}${clienteCodigoErp}`;
 
-        setClienteInput(clienteNome);
+        setClienteInput(clienteLabel);
 
-        const clienteOption = {
-          value: clienteId,
-          label: clienteNome,
+        const clienteOption: ClienteOption = {
+          value: clienteId ?? 0,
+          label: clienteLabel,
           razao_social: maquinaData.cliente_atual.razao_social || "",
+          nome_fantasia: maquinaData.cliente_atual.nome_fantasia,
+          cidade: maquinaData.cliente_atual.cidade,
+          uf: maquinaData.cliente_atual.uf,
+          codigo_erp: maquinaData.cliente_atual.codigo_erp,
         };
 
         setSelectedCliente(clienteOption);
@@ -188,15 +199,27 @@ const EditarMaquina = () => {
             clienteData.dados.length > 0
           ) {
             const cliente = clienteData.dados[0];
-            const clienteNome = cliente.razao_social || "";
+            const clienteRazaoSocial =
+              cliente.razao_social ||
+              cliente.nome_fantasia ||
+              "Cliente sem razao social";
+            const clienteCodigoErp =
+              cliente.codigo_erp && cliente.codigo_erp.trim().length > 0
+                ? ` (${cliente.codigo_erp})`
+                : " (-)";
+            const clienteLabel = `${clienteRazaoSocial}${clienteCodigoErp}`;
 
-            setClienteInput(clienteNome);
+            setClienteInput(clienteLabel);
 
             // Criar o objeto do cliente, garantindo que o id_cliente nunca seja undefined
             const clienteOption: ClienteOption = {
               value: cliente.id_cliente ?? 0,
-              label: clienteNome,
+              label: clienteLabel,
               razao_social: cliente.razao_social || "",
+              nome_fantasia: cliente.nome_fantasia,
+              cidade: cliente.cidade,
+              uf: cliente.uf,
+              codigo_erp: cliente.codigo_erp,
             };
 
             setSelectedCliente(clienteOption);
@@ -409,60 +432,72 @@ const EditarMaquina = () => {
 
   const searchClientes = useCallback(
     async (term: string) => {
-      if (!term || term.length < 3) return;
+      if (term.length < 3) return;
 
       try {
         setIsSearchingCliente(true);
-        // Utiliza clientesService.getAll para buscar clientes por nome com parâmetro resumido=S
-        const data = await clientesService.getAll({
-          nome: term,
-          resumido: "S",
-          qtde_registros: 15,
-          nro_pagina: 1,
-        });
+        const response = await clientesService.search(term);
 
-        const options = Array.isArray(data?.dados)
-          ? (data.dados as ClienteAPIResult[]).map((c) => ({
-              value: c.id_cliente,
-              label: c.razao_social,
-              razao_social: c.razao_social,
-            }))
+        const options = Array.isArray(response?.dados)
+          ? response.dados.map((cliente: Cliente) => {
+              const razaoSocial =
+                cliente.razao_social && cliente.razao_social.trim().length > 0
+                  ? cliente.razao_social
+                  : cliente.nome_fantasia || "Cliente sem razao social";
+              const nomeFantasia =
+                cliente.nome_fantasia && cliente.nome_fantasia.trim().length > 0
+                  ? cliente.nome_fantasia
+                  : undefined;
+              const codigoErp =
+                cliente.codigo_erp && cliente.codigo_erp.trim().length > 0
+                  ? ` (${cliente.codigo_erp})`
+                  : " (-)";
+
+              return {
+                value: cliente.id_cliente || cliente.id || 0,
+                label: `${razaoSocial}${codigoErp}`,
+                cidade: cliente.cidade,
+                uf: cliente.uf,
+                nome_fantasia: nomeFantasia,
+                razao_social: cliente.razao_social || "",
+                codigo_erp: cliente.codigo_erp || "",
+              };
+            })
           : [];
 
         setClienteOptions(options);
       } catch (error) {
         console.error("Erro ao buscar clientes:", error);
         setClienteOptions([]);
-        showError("Erro ao buscar clientes", "Tente novamente mais tarde.");
       } finally {
         setIsSearchingCliente(false);
       }
     },
-    [showError]
+    []
   );
 
   // Função debounced para buscar clientes quando o input tiver pelo menos 3 caracteres
-  const debouncedSearchClientes = useCallback(
-    (term: string) => {
-      // Implementação inline do debounce para evitar problemas com o ESLint
-      if (term.length >= 3 && !isSearchingCliente) {
-        // Usar um timeout para debounce
-        const timeoutId = setTimeout(() => {
-          searchClientes(term);
-        }, 300);
-
-        // Retornar uma função que limpa o timeout se chamada antes da execução
-        return () => clearTimeout(timeoutId);
-      }
-    },
-    [searchClientes, isSearchingCliente]
-  );
+  const debouncedSearchClientes = useDebouncedCallback((term: string) => {
+    if (term.length >= 3) {
+      searchClientes(term);
+    } else {
+      setClienteOptions([]);
+      setIsSearchingCliente(false);
+    }
+  }, 500);
 
   // Função para lidar com a mudança no input do cliente
   const handleClienteInputChange = useCallback(
     (inputValue: string) => {
       setClienteInput(inputValue);
-      debouncedSearchClientes(inputValue);
+
+      if (inputValue.length >= 3) {
+        setIsSearchingCliente(true);
+        debouncedSearchClientes(inputValue);
+      } else {
+        setClienteOptions([]);
+        setIsSearchingCliente(false);
+      }
     },
     [debouncedSearchClientes]
   );
@@ -489,6 +524,9 @@ const EditarMaquina = () => {
         setFormErrors((prev) => ({ ...prev, id_cliente_atual: "" }));
       }
     } else {
+      setSelectedCliente(null);
+      setClienteInput("");
+      setClienteOptions([]);
       setFormData((prev) => ({ ...prev, id_cliente_atual: null }));
     }
   };
@@ -669,7 +707,7 @@ const EditarMaquina = () => {
                     <CustomSelect
                       id="cliente_atual"
                       label="Cliente Atual"
-                      placeholder="Digite pelo menos 3 caracteres para buscar o cliente..."
+                      placeholder="Digite pelo menos 3 caracteres para buscar..."
                       inputValue={clienteInput}
                       onInputChange={handleClienteInputChange}
                       onChange={handleClienteChange}
@@ -685,6 +723,9 @@ const EditarMaquina = () => {
                       isLoading={isSearchingCliente}
                       error={formErrors.id_cliente_atual}
                       minCharsToSearch={3}
+                      filterOption={() => true}
+                      // @ts-expect-error - Custom option renderers usam campos extras de ClienteOption
+                      components={clienteSelectComponents}
                       noOptionsMessageFn={({ inputValue }) =>
                         inputValue.length < 3
                           ? "Digite pelo menos 3 caracteres para buscar..."
