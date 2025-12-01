@@ -1,26 +1,164 @@
 import React from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, PauseCircle, X } from "lucide-react";
 import type { OSDetalhadaV2 } from "@/api/services/ordensServicoService";
 import type { OcorrenciaOSDetalhe } from "@/api/services/ocorrenciaOSService";
+import { ocorrenciasOSService } from "@/api/services/ocorrenciaOSService";
+import { useToast } from "@/components/admin/ui/ToastContainer";
 import { getStatusInfo } from "@/utils/statusMapping";
 
 interface InfoTabProps {
   os: OSDetalhadaV2;
   machineObservations: string;
+  onRefresh?: () => Promise<void> | void;
 }
 
-const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
+const InfoTab: React.FC<InfoTabProps> = ({
+  os,
+  machineObservations,
+  onRefresh,
+}) => {
   const [expandedFatId, setExpandedFatId] = React.useState<number | null>(null);
+  const [isPausaModalOpen, setIsPausaModalOpen] = React.useState(false);
+  const [pausaSubmitting, setPausaSubmitting] = React.useState(false);
+  const [selectedFatId, setSelectedFatId] = React.useState<number | null>(null);
+  const [pausaForm, setPausaForm] = React.useState({
+    hora_inicio: "",
+    hora_fim: "",
+    observacao: "",
+  });
+  const { showSuccess, showError } = useToast();
   const machineNotes =
     machineObservations.trim().length > 0
       ? machineObservations
       : os.maquina?.observacoes?.trim() ?? "";
+
+  React.useEffect(() => {
+    if (os?.fats && os.fats.length > 0) {
+      setSelectedFatId(os.fats[0].id_fat ?? null);
+    } else {
+      setSelectedFatId(null);
+    }
+  }, [os?.fats]);
 
   const handleRowClick = (fatId: number, canExpand: boolean) => {
     if (!canExpand) {
       return;
     }
     setExpandedFatId((prev) => (prev === fatId ? null : fatId));
+  };
+
+  const handleOpenPausaModal = () => {
+    setPausaForm({
+      hora_inicio: "",
+      hora_fim: "",
+      observacao: "",
+    });
+    if (!selectedFatId && os?.fats?.length) {
+      setSelectedFatId(os.fats[0].id_fat ?? null);
+    }
+    setIsPausaModalOpen(true);
+  };
+
+  const handleClosePausaModal = () => {
+    setIsPausaModalOpen(false);
+    setPausaSubmitting(false);
+    setPausaForm({
+      hora_inicio: "",
+      hora_fim: "",
+      observacao: "",
+    });
+  };
+
+  const parseTimeToMinutes = (value: string) => {
+    const [hours, minutes] = value.split(":").map(Number);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+    return hours * 60 + minutes;
+  };
+
+  const getErrorMessage = (error: unknown) => {
+    const extractMessage = (payload: unknown): string | undefined => {
+      if (!payload) return undefined;
+      if (typeof payload === "string") {
+        // Try parsing JSON strings like {"erro":"..."} to avoid showing raw JSON
+        try {
+          const parsed = JSON.parse(payload);
+          return extractMessage(parsed);
+        } catch {
+          return payload;
+        }
+      }
+      if (typeof payload === "object") {
+        const obj = payload as Record<string, unknown>;
+        return (
+          extractMessage(obj.mensagem) ||
+          extractMessage(obj.message) ||
+          extractMessage(obj.erro) ||
+          extractMessage(obj.error)
+        );
+      }
+      return undefined;
+    };
+
+    if (!error) return "Nao foi possivel registrar a pausa.";
+
+    const anyErr = error as { response?: { data?: unknown }; message?: string };
+    const dataMessage = extractMessage(anyErr.response?.data);
+    const genericMessage = extractMessage(anyErr.message);
+
+    return dataMessage || genericMessage || "Nao foi possivel registrar a pausa.";
+  };
+
+  const handleRegistrarPausaManual = async () => {
+    if (!selectedFatId) {
+      showError("Selecione uma FAT para registrar a pausa.");
+      return;
+    }
+
+    const horaInicio = pausaForm.hora_inicio.trim();
+    const horaFim = pausaForm.hora_fim.trim();
+
+    if (!horaInicio || !horaFim) {
+      showError("Informe hora de inicio e fim da pausa.");
+      return;
+    }
+
+    const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (!timeRegex.test(horaInicio) || !timeRegex.test(horaFim)) {
+      showError("Use o formato hh:mm para os horarios.");
+      return;
+    }
+
+    const inicioMinutes = parseTimeToMinutes(horaInicio);
+    const fimMinutes = parseTimeToMinutes(horaFim);
+
+    if (
+      inicioMinutes !== null &&
+      fimMinutes !== null &&
+      fimMinutes <= inicioMinutes
+    ) {
+      showError("A hora fim deve ser maior que a hora inicio.");
+      return;
+    }
+
+    setPausaSubmitting(true);
+    try {
+      const response = await ocorrenciasOSService.registrarPausaManual({
+        id_fat: selectedFatId,
+        hora_inicio: horaInicio,
+        hora_fim: horaFim,
+        observacao: pausaForm.observacao.trim() || undefined,
+      });
+      showSuccess(
+        response?.mensagem || "Pausa manual registrada com sucesso."
+      );
+      handleClosePausaModal();
+      await onRefresh?.();
+    } catch (error) {
+      console.error("Erro ao registrar pausa manual:", error);
+      showError(getErrorMessage(error));
+    } finally {
+      setPausaSubmitting(false);
+    }
   };
 
   const renderOccurrences = (ocorrencias: OcorrenciaOSDetalhe[]) => {
@@ -31,7 +169,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
     return (
       <div className="mt-4 pt-4 border-t border-gray-200">
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
-          Ocorrências ({ocorrencias.length})
+          Ocorrencias ({ocorrencias.length})
         </p>
         <div className="space-y-2">
           {ocorrencias.map((ocorrencia, index) => {
@@ -96,7 +234,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
   return (
     <div className="p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Informações da Ordem de Serviço
+        Informacoes da Ordem de Servico
       </h3>
 
       <div className="mb-6">
@@ -109,9 +247,18 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
       </div>
 
       <div className="mb-6">
-        <h4 className="text-sm font-medium text-gray-700 mb-2">
-          FATs Associadas
-        </h4>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h4 className="text-sm font-medium text-gray-700">FATs Associadas</h4>
+          <button
+            type="button"
+            onClick={handleOpenPausaModal}
+            disabled={!os.fats || os.fats.length === 0}
+            className="inline-flex items-center gap-2 self-start rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <PauseCircle className="h-4 w-4" />
+            Registrar pausa manual
+          </button>
+        </div>
 
         {os.fats && os.fats.length > 0 ? (
           <div className="overflow-x-auto">
@@ -134,7 +281,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
                     scope="col"
                     className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Técnico
+                    Tecnico
                   </th>
                   <th
                     scope="col"
@@ -160,7 +307,7 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
                 {os.fats.map((fat) => {
                   const detailItems = [
                     {
-                      label: "Solução encontrada",
+                      label: "Solucao encontrada",
                       value: fat.solucao_encontrada,
                     },
                     {
@@ -168,15 +315,15 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
                       value: fat.testes_realizados,
                     },
                     {
-                      label: "Sugestões",
+                      label: "Sugestoes",
                       value: fat.sugestoes,
                     },
                     {
-                      label: "Observações",
+                      label: "Observacoes",
                       value: fat.observacoes,
                     },
                     {
-                      label: "Número de ciclos",
+                      label: "Numero de ciclos",
                       value:
                         typeof fat.numero_ciclos === "number" &&
                         !Number.isNaN(fat.numero_ciclos)
@@ -276,14 +423,148 @@ const InfoTab: React.FC<InfoTabProps> = ({ os, machineObservations }) => {
 
       <div>
         <h4 className="text-sm font-medium text-gray-700 mb-2">
-          Observação da máquina
+          Observacao da maquina
         </h4>
         <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-700 whitespace-pre-line">
           {machineNotes.length > 0
             ? machineNotes
-            : "Nenhuma observação cadastrada para a máquina."}
+            : "Nenhuma observacao cadastrada para a maquina."}
         </div>
       </div>
+
+      {isPausaModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-lg bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Registrar pausa manual
+                </p>
+                <p className="text-sm text-gray-600">
+                  Escolha a FAT e informe os horarios.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleClosePausaModal}
+                className="rounded-full p-1 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="px-4 py-4 space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  FAT
+                </label>
+                <select
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-gray-100"
+                  value={selectedFatId ?? ""}
+                  onChange={(e) =>
+                    setSelectedFatId(
+                      e.target.value ? Number(e.target.value) : null
+                    )
+                  }
+                  disabled={pausaSubmitting || !os.fats || os.fats.length === 0}
+                >
+                  <option value="">Selecione uma FAT</option>
+                  {os.fats?.map((fat) => (
+                    <option key={fat.id_fat} value={fat.id_fat}>
+                      FAT #{fat.id_fat}
+                      {fat.data_atendimento
+                        ? ` - ${fat.data_atendimento}`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Hora inicio
+                  </label>
+                  <input
+                    type="time"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-gray-100"
+                    value={pausaForm.hora_inicio}
+                    required
+                    onChange={(e) =>
+                      setPausaForm((prev) => ({
+                        ...prev,
+                        hora_inicio: e.target.value,
+                      }))
+                    }
+                    disabled={pausaSubmitting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Hora fim
+                  </label>
+                  <input
+                    type="time"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-gray-100"
+                    value={pausaForm.hora_fim}
+                    required
+                    onChange={(e) =>
+                      setPausaForm((prev) => ({
+                        ...prev,
+                        hora_fim: e.target.value,
+                      }))
+                    }
+                    disabled={pausaSubmitting}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Observacao (opcional)
+                </label>
+                <textarea
+                  rows={3}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-gray-100"
+                  placeholder="Descreva o motivo da pausa"
+                  value={pausaForm.observacao}
+                  onChange={(e) =>
+                    setPausaForm((prev) => ({
+                      ...prev,
+                      observacao: e.target.value,
+                    }))
+                  }
+                  disabled={pausaSubmitting}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-4 py-3">
+              <button
+                type="button"
+                onClick={handleClosePausaModal}
+                disabled={pausaSubmitting}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleRegistrarPausaManual}
+                disabled={
+                  pausaSubmitting ||
+                  !pausaForm.hora_inicio.trim() ||
+                  !pausaForm.hora_fim.trim() ||
+                  !selectedFatId
+                }
+                className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {pausaSubmitting ? "Registrando..." : "Registrar pausa"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

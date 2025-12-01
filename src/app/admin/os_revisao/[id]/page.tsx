@@ -1024,7 +1024,11 @@ export default function OSRevisaoPage() {
 
         <div className="bg-white rounded-lg shadow mb-6">
           {activeTab === "info" && (
-            <InfoTab os={os} machineObservations={observacoesMaquina} />
+            <InfoTab
+              os={os}
+              machineObservations={observacoesMaquina}
+              onRefresh={fetchOS}
+            />
           )}
 
           {activeTab === "deslocamentos" && (

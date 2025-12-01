@@ -204,7 +204,7 @@ export default function ClienteDetalheTecnicoPage() {
       console.error("Erro ao carregar historico do cliente:", fetchError);
       setHistoricoRegistros([]);
       setHistoricoTotalRegistros(0);
-      setHistoricoError("Nao foi possivel carregar o historico do cliente.");
+      setHistoricoError("Não foi possível carregar o histórico do cliente.");
     } finally {
       setHistoricoLoading(false);
     }
@@ -266,8 +266,7 @@ export default function ClienteDetalheTecnicoPage() {
         undefined;
 
       return {
-        codigo:
-          codigo !== null && codigo !== undefined ? String(codigo) : null,
+        codigo: codigo !== null && codigo !== undefined ? String(codigo) : null,
         descricao,
       };
     },
@@ -311,11 +310,11 @@ export default function ClienteDetalheTecnicoPage() {
           [numeroOs]: response ?? [],
         }));
       } catch (fetchError) {
-        console.error("Erro ao carregar ocorrencias da OS:", fetchError);
+        console.error("Erro ao carregar ocorrências da OS:", fetchError);
         setOcorrenciasPorOs((prev) => ({ ...prev, [numeroOs]: [] }));
         setOcorrenciasError((prev) => ({
           ...prev,
-          [numeroOs]: "Nao foi possivel carregar as ocorrencias.",
+          [numeroOs]: "Não foi possível carregar as ocorrências.",
         }));
       } finally {
         setOcorrenciasLoading((prev) => ({ ...prev, [numeroOs]: false }));
@@ -358,6 +357,18 @@ export default function ClienteDetalheTecnicoPage() {
       });
     },
     [carregarOcorrencias, ocorrenciasPorOs]
+  );
+
+  const handleAbrirOsFat = useCallback(
+    (numeroOs?: number, idFat?: number | null) => {
+      if (!clienteId || !Number.isFinite(numeroOs)) return;
+
+      const query = idFat ? `?fat=${idFat}` : "";
+      router.push(
+        `/tecnico/clientes_detalhes/${clienteId}/os/${numeroOs}${query}`
+      );
+    },
+    [clienteId, router]
   );
 
   const documentoFormatado = cliente?.cnpj
@@ -500,16 +511,14 @@ export default function ClienteDetalheTecnicoPage() {
                         inlineOcorrencias.length > 0
                           ? inlineOcorrencias
                           : null) ??
-                        (Number.isFinite(numeroOs) &&
-                        ocorrenciasPorOs[numeroOs]
+                        (Number.isFinite(numeroOs) && ocorrenciasPorOs[numeroOs]
                           ? ocorrenciasPorOs[numeroOs]
                           : []);
                       const ocorrenciasCount = ocorrencias.length;
                       const expanded = ocorrenciasExpanded[expandKey] ?? false;
                       const ocorrenciaCarregando =
                         ocorrenciasLoading[numeroOs] ?? false;
-                      const ocorrenciaErro =
-                        ocorrenciasError[numeroOs] ?? null;
+                      const ocorrenciaErro = ocorrenciasError[numeroOs] ?? null;
 
                       return (
                         <article
@@ -518,7 +527,16 @@ export default function ClienteDetalheTecnicoPage() {
                         >
                           {/* COLUNA ESQUERDA */}
                           <div>
-                            <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3 text-sm text-slate-700">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleAbrirOsFat(numeroOs, registro.id_fat)
+                              }
+                              disabled={
+                                !clienteId || !Number.isFinite(numeroOs)
+                              }
+                              className="flex w-full flex-wrap items-center gap-2 border-b border-slate-100 pb-3 text-sm text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
                               <span className="font-semibold text-slate-900">
                                 OS #{registro.numero_os ?? "-"}
                               </span>
@@ -528,7 +546,7 @@ export default function ClienteDetalheTecnicoPage() {
                               <span className="ml-auto font-semibold text-slate-900">
                                 {registro.data_atendimento}
                               </span>
-                            </div>
+                            </button>
 
                             <div className="space-y-1 pt-2 text-sm text-slate-600">
                               <div className="flex items-center gap-2">
@@ -568,7 +586,7 @@ export default function ClienteDetalheTecnicoPage() {
                               registro.descricao_problema
                             )}
                             {renderHistoricoField(
-                              "Solu??o encontrada",
+                              "Solução encontrada",
                               registro.solucao_encontrada
                             )}
                             {renderHistoricoField(
@@ -576,15 +594,15 @@ export default function ClienteDetalheTecnicoPage() {
                               registro.testes_realizados
                             )}
                             {renderHistoricoField(
-                              "Sugest?es",
+                              "Sugestões",
                               registro.sugestoes
                             )}
                             {renderHistoricoField(
-                              "Observa??es",
+                              "Observações",
                               registro.observacoes
                             )}
                             {renderHistoricoField(
-                              "Observa??es do t?cnico",
+                              "Observações do técnico",
                               registro.observacoes_tecnico
                             )}
                           </div>
@@ -606,9 +624,7 @@ export default function ClienteDetalheTecnicoPage() {
                             >
                               <span className="flex items-center gap-2">
                                 <History className="h-4 w-4 text-slate-500" />
-                                <span>
-                                  Ocorrencias ({ocorrenciasCount})
-                                </span>
+                                <span>Ocorrências ({ocorrenciasCount})</span>
                               </span>
                               <ChevronDown
                                 className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
@@ -636,11 +652,10 @@ export default function ClienteDetalheTecnicoPage() {
                                   ocorrencias.map((ocorrencia, index) => {
                                     const statusInfo =
                                       getOcorrenciaStatusInfo(ocorrencia);
-                                    const dataOcorrencia = 
-                                      ocorrencia.data_ocorrencia ;
-                                    const usuarioNome = getOcorrenciaUsuario(
-                                      ocorrencia
-                                    );
+                                    const dataOcorrencia =
+                                      ocorrencia.data_ocorrencia;
+                                    const usuarioNome =
+                                      getOcorrenciaUsuario(ocorrencia);
                                     const descricaoOcorrencia =
                                       ocorrencia.descricao_ocorrencia?.trim() ||
                                       ocorrencia.ocorrencia ||

@@ -14,12 +14,15 @@ import type { Cliente, ClienteContato } from "@/types/admin/cadastro/clientes";
 import StatusBadge from "@/components/tecnico/StatusBadge";
 import {
   AlertTriangle,
-  CalendarDays,
   History,
   Image as ImageIcon,
   MapPin,
   MessageCircle,
   Package,
+  CircleCheck,
+  CircleX,
+  ShieldCheck,
+  ShieldX,
   User,
   Wrench,
   X,
@@ -329,22 +332,24 @@ export default function ClienteOsFatDetalhePage() {
       <main className="px-4 py-4 space-y-4">
         <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="text-sm font-semibold text-slate-900">
-                OS #{osData.id_os}
-              </p>
-              {osData.abertura?.motivo_atendimento && (
-                <span className="text-sm text-slate-600">
-                  {osData.abertura.motivo_atendimento}
-                </span>
-              )}
-            </div>
-
-            <p className="text-sm text-slate-700 leading-relaxed">
-              {osData.descricao_problema}
-            </p>
-
-            <div className="flex flex-wrap gap-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-slate-900">
+                  OS #{osData.id_os}
+                </p>
+                {osData.em_garantia !== undefined &&
+                  (osData.em_garantia ? (
+                    <ShieldCheck
+                      className="h-4 w-4 text-emerald-500"
+                      aria-label="Em garantia"
+                    />
+                  ) : (
+                    <ShieldX
+                      className="h-4 w-4 text-amber-500"
+                      aria-label="Fora da garantia"
+                    />
+                  ))}
+              </div>
               {osStatus?.codigo !== undefined && (
                 <StatusBadge
                   status={String(osStatus.codigo)}
@@ -352,6 +357,12 @@ export default function ClienteOsFatDetalhePage() {
                 />
               )}
             </div>
+
+            <p className="text-sm text-slate-700 leading-relaxed">
+              {osData.abertura?.motivo_atendimento
+                ? `${osData.abertura.motivo_atendimento}: ${osData.descricao_problema}`
+                : osData.descricao_problema}
+            </p>
 
             <div className="grid grid-cols-1 gap-2 text-sm text-slate-700">
               <div className="space-y-0.5">
@@ -363,7 +374,7 @@ export default function ClienteOsFatDetalhePage() {
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
                 {osData.cliente?.cidade && (
                   <span className="flex items-center gap-1">
                     <MapPin className="h-3.5 w-3.5 text-slate-400" />
@@ -371,10 +382,41 @@ export default function ClienteOsFatDetalhePage() {
                   </span>
                 )}
                 {osData.contato?.nome && (
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 ml-auto">
                     <User className="h-3.5 w-3.5 text-slate-400" />
                     {osData.contato.nome}
                   </span>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-slate-400">
+                  Máquina
+                </p>
+
+                {/* Descrição + ícone ao lado */}
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {osData.maquina?.descricao || "Máquina não informada"}
+                  </p>
+
+                  {osData.maquina?.em_garantia ?? osData.em_garantia ? (
+                    <CircleCheck
+                      className="h-4 w-4 text-emerald-500 shrink-0"
+                      aria-label="Em garantia"
+                    />
+                  ) : (
+                    <CircleX
+                      className="h-4 w-4 text-amber-500 shrink-0"
+                      aria-label="Fora da garantia"
+                    />
+                  )}
+                </div>
+
+                {osData.maquina?.numero_serie && (
+                  <p className="text-xs text-slate-600">
+                    Número de Série: {osData.maquina.numero_serie}
+                  </p>
                 )}
               </div>
             </div>
@@ -487,26 +529,22 @@ export default function ClienteOsFatDetalhePage() {
                 return (
                   <div
                     key={key}
-                    className="flex items-start justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2"
+                    className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2"
                   >
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">
-                        {descricao}
-                      </p>
-                      {codigo && (
-                        <p className="text-xs text-slate-500">
-                          Código: {codigo}
-                        </p>
-                      )}
-                      {observacoes && (
-                        <p className="text-xs text-slate-500 mt-1">
-                          Obs: {observacoes}
-                        </p>
-                      )}
+                    <div className="flex items-center justify-between gap-2 text-xs text-slate-600">
+                      <span>Código: {codigo || "-"}</span>
+                      <span className="text-xs font-semibold text-slate-700">
+                        Qtd: {quantidade}
+                      </span>
                     </div>
-                    <span className="text-xs font-semibold text-slate-700">
-                      Qtd: {quantidade}
-                    </span>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {descricao}
+                    </p>
+                    {observacoes && (
+                      <p className="text-xs text-slate-500 mt-1">
+                        Obs: {observacoes}
+                      </p>
+                    )}
                   </div>
                 );
               })}
@@ -539,9 +577,9 @@ export default function ClienteOsFatDetalhePage() {
                 return (
                   <div
                     key={item.id_deslocamento ?? index}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm"
                   >
-                    <div className="grid grid-cols-2 gap-3 text-sm text-slate-800">
+                    <div className="grid grid-cols-2 gap-1 text-sm text-slate-800">
                       <div className="space-y-1">
                         <p className="text-[11px] uppercase tracking-wide text-slate-400">
                           KM ida
@@ -578,7 +616,7 @@ export default function ClienteOsFatDetalhePage() {
                       </div>
                     </div>
                     {item.observacoes && (
-                      <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                      <p className="mt-2  text-xs text-slate-600">
                         {item.observacoes}
                       </p>
                     )}
@@ -646,32 +684,27 @@ export default function ClienteOsFatDetalhePage() {
                 return (
                   <div
                     key={item.id_ocorrencia ?? index}
-                    className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2"
+                    className="border-l-2 border-blue-200 pl-3"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-slate-900">
-                        {item.descricao_ocorrencia || "Ocorrência"}
-                      </p>
-                      {item.nova_situacao?.codigo && (
+                    <div className="flex justify-end">
+                      <span className="text-xs text-slate-500">
+                        {item.data_ocorrencia || "Data indisponível"}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-slate-900 leading-snug">
+                      {item.descricao_ocorrencia || "Ocorrência sem descrição."}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Por: {item.usuario?.nome || "Sistema"}
+                    </p>
+                    {item.nova_situacao?.codigo && (
+                      <div className="mt-2">
                         <StatusBadge
                           status={String(item.nova_situacao.codigo)}
                           descricao={item.nova_situacao.descricao}
                         />
-                      )}
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      {item.data_ocorrencia && (
-                        <span>
-                          <CalendarDays className="mr-1 inline h-3 w-3" />
-                          {item.data_ocorrencia}
-                        </span>
-                      )}
-                      {item.usuario?.nome && (
-                        <span>
-                          Usuário: <strong>{item.usuario.nome}</strong>
-                        </span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -686,20 +719,20 @@ export default function ClienteOsFatDetalhePage() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowContacts(false)}
           />
-          <div className="relative w-full max-w-md rounded-2xl bg-white p-5 shadow-xl mx-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-400">
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-5 shadow-xl mx-4 border border-emerald-600">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-wide text-emerald-700">
                   Enviar por WhatsApp
                 </p>
-                <p className="text-sm font-semibold text-slate-900">
+                <p className="text-sm font-semibold text-emerald-900">
                   Contatos do cliente
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowContacts(false)}
-                className="text-slate-500 hover:text-slate-700"
+                className="text-emerald-700 hover:text-emerald-900"
                 aria-label="Fechar lista de contatos"
               >
                 <X className="h-5 w-5" />
@@ -717,7 +750,7 @@ export default function ClienteOsFatDetalhePage() {
                     key={contato.id ?? contato.id_contato ?? contato.whatsapp}
                     type="button"
                     onClick={() => handleSendWhatsapp(contato)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left transition hover:border-[#7B54BE]/60 hover:bg-white"
+                    className="w-full rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-left transition hover:border-emerald-500 hover:bg-white"
                   >
                     <p className="text-sm font-semibold text-slate-900">
                       {contato.nome || contato.nome_completo || "Contato"}

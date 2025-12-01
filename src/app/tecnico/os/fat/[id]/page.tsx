@@ -273,7 +273,6 @@ const DeslocamentosSectionContent = React.memo(
                 <Camera className="w-4 h-4" />
               )
             }
-            
             onClick={onNavigate}
             disabled={disabled}
           />
@@ -619,7 +618,10 @@ export default function FATDetalheMobile() {
 
   const goToDeslocamento = useCallback(() => {
     if (deslocamentoBloqueado) {
-      showToast("Deslocamentos indisponÃ­veis para o seu plano atual.", "error");
+      showToast(
+        "Deslocamentos indisponÃ­veis para o seu plano atual.",
+        "error"
+      );
       return;
     }
 
@@ -651,54 +653,104 @@ export default function FATDetalheMobile() {
   }, [debouncedNavigate, fotosBloqueadas, handleNavigateToSection, showToast]);
 
   // Função para extrair mensagem de erro da API
-    const extractErrorMessage = useCallback((error: unknown): string => {
-    const sanitize = (value: string): string => {
-      const trimmed = value.trim();
-      const regexMatch = trimmed.match(/["']?erro["']?\s*:\s*["']([^"']+)["']/i);
-      if (regexMatch?.[1]) {
-        return regexMatch[1];
+  const extractErrorMessage = useCallback((error: unknown): string => {
+    let errorMessage = "Ocorreu um erro durante a operação";
+
+    const cleanErrorText = (text: string): string => {
+      const trimmed = text.trim();
+      const cleaned = trimmed
+        .replace(/^\s*\{\s*"erro"\s*:\s*/i, "")
+        .replace(/^\s*"erro"\s*:\s*/i, "")
+        .replace(/\}\s*$/, "")
+        .replace(/^"(.*)"$/, "$1")
+        .trim();
+
+      return cleaned || trimmed || "Ocorreu um erro durante a operação";
+    };
+
+    const parseErrorPayload = (payload: unknown): string | null => {
+      if (!payload) return null;
+
+      if (typeof payload === "string") {
+        const trimmed = payload.trim();
+
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (parsed && typeof parsed === "object") {
+            const parsedMessage = parseErrorPayload(parsed);
+            if (parsedMessage) return parsedMessage;
+          }
+        } catch {
+          // Se não for um JSON válido, tenta extrair via regex
+          const match = trimmed.match(/erro["']?\s*:\s*["']?([^"'}]+)["'}]?/i);
+          if (match?.[1]) {
+            return match[1].trim();
+          }
+        }
+
+        return cleanErrorText(trimmed);
       }
 
-      if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-        const inner = trimmed.slice(1, -1).trim();
-        const colonIndex = inner.indexOf(":");
-        if (colonIndex !== -1) {
-          const content = inner.slice(colonIndex + 1).trim();
-          return content.replace(/^["']|["']$/g, "");
+      if (typeof payload === "object") {
+        const payloadObject = payload as Record<string, unknown>;
+
+        if ("erro" in payloadObject) {
+          const erroValue = payloadObject.erro;
+          if (typeof erroValue === "string") {
+            return erroValue;
+          }
+          if (erroValue && typeof erroValue === "object") {
+            const erroString = JSON.stringify(erroValue);
+            return erroString
+              .replace(/^\{"|"\}$/g, "")
+              .replace(/^"|"$/g, "")
+              .replace(/\\"/g, '"')
+              .replace(/","?/g, ". ")
+              .replace(/":"/g, ": ")
+              .replace(/\{|\}/g, "")
+              .trim();
+          }
+        }
+
+        if (
+          "message" in payloadObject &&
+          typeof payloadObject.message === "string"
+        ) {
+          return cleanErrorText(payloadObject.message);
+        }
+
+        if (
+          "error" in payloadObject &&
+          typeof payloadObject.error === "string"
+        ) {
+          return cleanErrorText(payloadObject.error);
         }
       }
 
-      return trimmed.replace(/^["']|["']$/g, "");
+      return null;
     };
-
-    let errorMessage = "Ocorreu um erro durante a operação";
 
     if (error && typeof error === "object") {
       if (
         "response" in error &&
         error.response &&
         typeof error.response === "object" &&
-        "status" in error.response &&
-        error.response.status === 409 &&
         "data" in error.response &&
         error.response.data &&
-        typeof error.response.data === "object" &&
-        "erro" in error.response.data
+        (typeof error.response.data === "object" ||
+          typeof error.response.data === "string")
       ) {
-        errorMessage = sanitize(String(error.response.data.erro));
-      } else if ("message" in error && typeof error.message === "string") {
-        errorMessage = sanitize(error.message);
-      }
-    }
-
-    return errorMessage;
-  }, []);
+        const responseData = error.response.data;
+        const parsedError = parseErrorPayload(responseData);
+        if (parsedError) {
+          return cleanErrorText(parsedError);
+        }
       } else if ("message" in error && typeof error.message === "string") {
         errorMessage = error.message;
       }
     }
 
-    return errorMessage;
+    return cleanErrorText(errorMessage);
   }, []);
 
   // Função para buscar dados da FAT
@@ -1587,7 +1639,6 @@ export default function FATDetalheMobile() {
               </div>
             </div>
           </Section>
-
         </div>
 
         {isPausaModalOpen && (
@@ -1833,6 +1884,3 @@ export default function FATDetalheMobile() {
     </>
   );
 }
-
-
-

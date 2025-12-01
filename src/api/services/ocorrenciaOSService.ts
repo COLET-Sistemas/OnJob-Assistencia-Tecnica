@@ -11,6 +11,13 @@ export interface OcorrenciaResponse {
   id_fat?: number | null;
 }
 
+export type OcorrenciaPausaManualPayload = {
+  id_fat: number;
+  hora_inicio: string;
+  hora_fim: string;
+  observacao?: string;
+};
+
 type OcorrenciaSituacao = {
   codigo: number | string;
   descricao: string;
@@ -41,6 +48,12 @@ class OcorrenciasOSService {
 
   async registrarOcorrencia(data: OcorrenciaOS): Promise<OcorrenciaResponse> {
     return api.post<OcorrenciaResponse>(this.baseUrl, data);
+  }
+
+  async registrarPausaManual(
+    data: OcorrenciaPausaManualPayload
+  ): Promise<OcorrenciaResponse> {
+    return api.post<OcorrenciaResponse>(`${this.baseUrl}/pausa_manual`, data);
   }
 
   async listarPorOS(
