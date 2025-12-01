@@ -24,31 +24,6 @@ import {
 } from "lucide-react";
 import { useLicenca } from "@/hooks";
 
-const formatDateTime = (value?: string) => {
-  if (!value) return "";
-  try {
-    return new Intl.DateTimeFormat("pt-BR", {
-      dateStyle: "short",
-      timeStyle: "short",
-    }).format(new Date(value));
-  } catch {
-    return value;
-  }
-};
-
-const formatDate = (value?: string) => {
-  if (!value) return "";
-  try {
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(new Date(value));
-  } catch {
-    return value;
-  }
-};
-
 const Spinner = () => (
   <div className="flex items-center justify-center py-10">
     <div className="w-6 h-6 border-2 border-slate-200 border-t-[#7B54BE] rounded-full animate-spin" />
@@ -654,7 +629,7 @@ export default function FATFotosPage() {
                                 {photo.descricao || photo.nome_arquivo}
                               </p>
                               <p className="text-xs text-slate-500 mt-1">
-                                {formatDate(photo.data_cadastro)}
+                                {photo.data_cadastro}
                               </p>
                             </div>
                           </button>
@@ -707,7 +682,7 @@ export default function FATFotosPage() {
                                 </p>
                               ) : null}
                               <p className="mt-1 text-xs text-slate-500">
-                                {formatDate(photo.data_cadastro)}
+                                {photo.data_cadastro}
                               </p>
                             </div>
                           </button>
@@ -781,7 +756,7 @@ export default function FATFotosPage() {
                 {selectedPhoto.descricao || selectedPhoto.nome_arquivo}
               </p>
               <p className="text-xs text-slate-500">
-                Enviada em {formatDateTime(selectedPhoto.data_cadastro)}
+                Enviada em {selectedPhoto.data_cadastro}
               </p>
             </div>
           </div>

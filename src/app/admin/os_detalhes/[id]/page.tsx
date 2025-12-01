@@ -809,7 +809,7 @@ const OSDetalhesPage: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 py-4 px-6 hover:shadow-md transition-shadow duration-300 animate-fadeIn">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex flex-col w-full lg:w-auto">
-              <h2 className="text-lg md:text-xl text-gray-800">
+              <h2 className="text-lg md:text-xl text-gray-800 whitespace-pre-line">
                 <span className="font-semibold">
                   {osData.abertura.motivo_atendimento}
                 </span>
