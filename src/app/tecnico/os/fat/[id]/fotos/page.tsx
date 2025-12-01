@@ -583,8 +583,7 @@ export default function FATFotosPage() {
                 </button>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Confirme se a imagem e a descrição correspondem antes de
-                salvar.
+                Confirme se a imagem e a descrição correspondem antes de salvar.
               </p>
             </div>
           ) : (

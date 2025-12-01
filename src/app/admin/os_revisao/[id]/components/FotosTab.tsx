@@ -15,6 +15,7 @@ import {
   Pencil,
   Trash2,
   X,
+  Upload,
 } from "lucide-react";
 import type { OSDetalhadaV2 } from "@/api/services/ordensServicoService";
 import {
@@ -36,15 +37,21 @@ type FotoState = FATFotoItem & {
 };
 
 const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [photos, setPhotos] = useState<FotoState[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [uploading, setUploading] = useState<boolean>(false);
+  const [selectedFatId, setSelectedFatId] = useState<number | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
+  const [descricao, setDescricao] = useState("");
 
   const { showSuccess, showError } = useToast();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const objectUrlsRef = useRef<Map<number, string>>(new Map());
 
   useEffect(() => {
@@ -58,23 +65,6 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
     });
     return map;
   }, [fats]);
-
-  const formatDateTime = useCallback((value?: string | null) => {
-    if (!value) {
-      return "-";
-    }
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return value;
-    }
-    return date.toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }, []);
 
   const loadPhotos = useCallback(async () => {
     if (!osId) {
@@ -143,7 +133,7 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
       );
 
       if (hadPreviewErrors) {
-        setWarning("Algumas imagens não puderam ser exibidas.");
+        setWarning("Algumas imagens nao puderam ser exibidas.");
       }
     } catch (err) {
       console.error("Erro ao carregar fotos da OS:", err);
@@ -165,11 +155,20 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
   }, [loadPhotos]);
 
   useEffect(() => {
+    if (!selectedFatId && fats.length > 0) {
+      setSelectedFatId(fats[0].id_fat);
+    }
+  }, [fats, selectedFatId]);
+
+  useEffect(() => {
     return () => {
       objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
       objectUrlsRef.current.clear();
+      if (pendingPreview) {
+        URL.revokeObjectURL(pendingPreview);
+      }
     };
-  }, []);
+  }, [pendingPreview]);
 
   const handleStartEditing = (id: number) => {
     setError(null);
@@ -221,7 +220,7 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
 
     const trimmed = currentPhoto.tempDescricao.trim();
     if (!trimmed) {
-      setError("Informe uma descrição para a foto.");
+      setError("Informe uma descricao para a foto.");
       return;
     }
 
@@ -279,7 +278,7 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
 
   const handleDelete = async (id: number) => {
     const confirmDelete = window.confirm(
-      "Tem certeza que deseja excluir a foto? Esta operação não pode ser desfeita"
+      "Tem certeza que deseja excluir a foto? Esta operacao nao pode ser desfeita"
     );
 
     if (!confirmDelete) {
@@ -323,9 +322,7 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
     } catch (err) {
       console.error("Erro ao excluir foto:", err);
       const message =
-        err instanceof Error
-          ? err.message
-          : "Nao foi possivel excluir a foto.";
+        err instanceof Error ? err.message : "Nao foi possivel excluir a foto.";
       setError(message);
       showError("Erro ao excluir foto", message);
     } finally {
@@ -386,6 +383,77 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
     selectedIndex !== null && photos[selectedIndex]
       ? photos[selectedIndex]
       : null;
+  const descricaoValida = descricao.trim().length > 0;
+
+  const handleOpenPicker = () => {
+    setError(null);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    setError(null);
+    const previewUrl = URL.createObjectURL(file);
+    setPendingPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return previewUrl;
+    });
+    setPendingFile(file);
+    setDescricao("");
+  };
+
+  const handleClearSelection = () => {
+    setPendingFile(null);
+    setDescricao("");
+    setPendingPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
+
+  const handleUpload = async () => {
+    if (uploading) return;
+
+    if (!selectedFatId) {
+      setError("Selecione uma FAT para vincular a foto.");
+      return;
+    }
+
+    if (!pendingFile) {
+      setError("Escolha uma imagem para enviar.");
+      return;
+    }
+
+    if (!descricaoValida) {
+      setError("Informe uma descricao para a foto.");
+      return;
+    }
+
+    setError(null);
+    setWarning(null);
+    setUploading(true);
+
+    try {
+      await fatFotosService.upload(selectedFatId, pendingFile, descricao);
+      handleClearSelection();
+      await loadPhotos();
+      showSuccess("Foto enviada", "Foto enviada com sucesso.");
+    } catch (err) {
+      console.error("Erro ao enviar foto:", err);
+      const message =
+        err instanceof Error ? err.message : "Nao foi possivel enviar a foto.";
+      setError(message);
+      showError("Erro ao enviar foto", message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="p-6">
@@ -395,6 +463,126 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
           <span className="text-sm text-gray-500">
             {photos.length} {photos.length === 1 ? "foto" : "fotos"}
           </span>
+        )}
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple={false}
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700">
+              FAT para vincular
+            </label>
+            <select
+              value={selectedFatId ?? ""}
+              onChange={(event) =>
+                setSelectedFatId(
+                  event.target.value ? Number(event.target.value) : null
+                )
+              }
+              className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+            >
+              <option value="">Selecione a FAT</option>
+              {fats.map((fat) => (
+                <option key={fat.id_fat} value={fat.id_fat}>
+                  FAT {fat.id_fat} - {fat.data_atendimento}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleOpenPicker}
+            disabled={uploading}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary)]/90 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {uploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
+            {uploading ? "Processando..." : "Selecionar imagem"}
+          </button>
+        </div>
+
+        {pendingPreview ? (
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+              <div className="flex flex-col items-center gap-2">
+                <div className="relative h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={pendingPreview}
+                    alt={pendingFile?.name || "Pre-visualizacao"}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                {pendingFile && (
+                  <p className="text-xs text-gray-600 text-center break-words max-w-[9rem]">
+                    {pendingFile.name}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex-1 space-y-3">
+                <div>
+                  <label className="text-xs font-semibold uppercase text-gray-600 tracking-wide">
+                    Descricao da foto*
+                  </label>
+                  <input
+                    type="text"
+                    value={descricao}
+                    onChange={(event) => setDescricao(event.target.value)}
+                    placeholder="Descreva o que a imagem exibe..."
+                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                  <button
+                    type="button"
+                    onClick={handleUpload}
+                    disabled={uploading || !pendingFile || !descricaoValida}
+                    className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                    {uploading ? "Enviando..." : "Salvar foto"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleClearSelection}
+                    disabled={uploading}
+                    className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+
+                <p className="text-xs text-gray-500">
+                  Confirme a imagem e a descricao antes de salvar.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-xs text-gray-600">
+            Selecione uma imagem para pre-visualizar aqui. Depois informe uma
+            descricao obrigatoria e salve.
+          </div>
         )}
       </div>
 
@@ -421,11 +609,11 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
             Nenhuma foto encontrada para esta OS.
           </p>
           <p className="mt-1 text-xs text-gray-500">
-            Nenhuma foto foi registrada até o momento.
+            Nenhuma foto foi registrada ate o momento.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="flex flex-wrap gap-3 justify-start">
           {photos.map((foto, index) => {
             const fatInfo = foto.id_fat
               ? fatInfoMap.get(foto.id_fat)
@@ -437,12 +625,12 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
             return (
               <div
                 key={foto.id_fat_foto}
-                className="relative flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md"
+                className="relative flex w-full sm:w-[calc(50%-6px)] lg:w-[calc(33.333%-8px)] xl:w-[calc(25%-9px)] max-w-[280px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md"
               >
                 <button
                   type="button"
                   onClick={() => openViewer(index)}
-                  className="group relative block h-48 w-full overflow-hidden bg-gray-100"
+                  className="group relative block h-40 w-full overflow-hidden bg-gray-100"
                   title="Ampliar imagem"
                 >
                   {foto.previewUrl ? (
@@ -450,7 +638,7 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
                       src={foto.previewUrl}
                       alt={foto.descricao || foto.nome_arquivo}
                       fill
-                      className="object-cover transition-transform duration-200 group-hover:scale-105"
+                      className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
                       sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
                       priority={index < 2}
                       unoptimized
@@ -464,15 +652,21 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
 
                 <div className="flex flex-1 flex-col gap-3 p-4">
                   <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span className="font-medium text-gray-700">
-                      {foto.id_fat ? `FAT ${foto.id_fat}` : "FAT não informada"}
+                    <span className="font-semibold text-gray-800">
+                      {foto.id_fat ? (
+                        <>
+                          FAT <span className="font-bold">#{foto.id_fat}</span>
+                        </>
+                      ) : (
+                        "FAT nao informada"
+                      )}
                     </span>
-                    <span>{formatDateTime(foto.data_cadastro)}</span>
+                    <span>{foto.data_cadastro}</span>
                   </div>
 
                   {fatInfo?.dataAtendimento && (
                     <p className="text-xs text-gray-500">
-                      Atendimento: {formatDateTime(fatInfo.dataAtendimento)}
+                      Atendimento: {fatInfo.dataAtendimento}
                     </p>
                   )}
 
@@ -481,15 +675,28 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
                       <p className="flex-1 text-sm text-gray-700">
                         {foto.descricao?.trim()
                           ? foto.descricao
-                          : "Descrição não informada"}
+                          : "Descricao nao informada"}
                       </p>
                       <button
                         type="button"
                         onClick={() => handleStartEditing(foto.id_fat_foto)}
-                        className="rounded-full p-1 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
-                        title="Editar descrição"
+                        className="rounded-full p-1 text-blue-500 transition hover:bg-blue-50 hover:text-blue-600"
+                        title="Editar descricao"
                       >
                         <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(foto.id_fat_foto)}
+                        disabled={isDeleting}
+                        className="rounded-full p-1 text-red-500 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-70"
+                        title="Excluir foto"
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
 
@@ -535,22 +742,6 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
                         </div>
                       </div>
                     )}
-                  </div>
-
-                  <div className="mt-auto flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(foto.id_fat_foto)}
-                      disabled={isDeleting}
-                      className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      {isDeleting ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                      Excluir
-                    </button>
                   </div>
                 </div>
               </div>
@@ -598,7 +789,7 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
                     showNext();
                   }}
                   className="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-gray-800 shadow transition hover:bg-white"
-                  title="Próxima foto"
+                  title="Proxima foto"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
@@ -619,7 +810,7 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
                 <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-gray-200">
                   <ImageOff className="h-10 w-10" />
                   <span className="text-sm">
-                    Pré-visualização indisponível para esta imagem.
+                    Pre-visualizacao indisponivel para esta imagem.
                   </span>
                 </div>
               )}
@@ -635,11 +826,9 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
                 <span>
                   {selectedPhoto.id_fat
                     ? `FAT ${selectedPhoto.id_fat}`
-                    : "FAT não informada"}
+                    : "FAT nao informada"}
                 </span>
-                <span>
-                  Registro: {formatDateTime(selectedPhoto.data_cadastro)}
-                </span>
+                <span>Registro: {selectedPhoto.data_cadastro}</span>
               </div>
             </div>
           </div>
