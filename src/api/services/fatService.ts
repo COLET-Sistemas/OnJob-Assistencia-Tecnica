@@ -40,6 +40,8 @@ export interface FATDeslocamento {
   km_volta: number;
   tempo_ida_min: number | null;
   tempo_volta_min: number | null;
+  tempo_ida_horas?: string | null;
+  tempo_volta_horas?: string | null;
   observacoes?: string;
 }
 

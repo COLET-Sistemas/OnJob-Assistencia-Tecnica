@@ -206,7 +206,10 @@ const DeslocamentosSectionContent = React.memo(
     disabled = false,
   }: {
     deslocamentos: FATDeslocamento[];
-    formatTime: (minutes: number | null | undefined) => string | null;
+    formatTime: (
+      hoursText?: string | null,
+      minutes?: number | null | undefined
+    ) => string | null;
     onNavigate: () => void;
     disabled?: boolean;
   }) => {
@@ -237,13 +240,17 @@ const DeslocamentosSectionContent = React.memo(
                   <div>
                     <span className="text-slate-500">Tempo Ida:</span>
                     <span className="ml-1 text-slate-900">
-                      {formatTime(desloc.tempo_ida_min) || "N/A"}
+                      {formatTime(desloc.tempo_ida_horas, desloc.tempo_ida_min) ||
+                        "N/A"}
                     </span>
                   </div>
                   <div>
                     <span className="text-slate-500">Tempo Volta:</span>
                     <span className="ml-1 text-slate-900">
-                      {formatTime(desloc.tempo_volta_min) || "N/A"}
+                      {formatTime(
+                        desloc.tempo_volta_horas,
+                        desloc.tempo_volta_min
+                      ) || "N/A"}
                     </span>
                   </div>
                 </div>
@@ -584,12 +591,20 @@ export default function FATDetalheMobile() {
     []
   );
 
-  const formatTime = useCallback((minutes: number | null | undefined) => {
-    if (!minutes) return null;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}min`;
-  }, []);
+  const formatTime = useCallback(
+    (rawHours?: string | null, minutes?: number | null | undefined) => {
+      if (rawHours && rawHours.trim()) {
+        return rawHours.trim();
+      }
+      if (minutes === null || minutes === undefined) return null;
+      const numericMinutes = Number(minutes);
+      if (!Number.isFinite(numericMinutes) || numericMinutes <= 0) return null;
+      const hours = Math.floor(numericMinutes / 60);
+      const mins = numericMinutes % 60;
+      return `${hours}h ${mins}min`;
+    },
+    []
+  );
 
   const handleNavigateToOS = useCallback(() => {
     const paramId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
