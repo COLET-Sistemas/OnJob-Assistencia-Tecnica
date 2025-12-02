@@ -124,7 +124,7 @@ const InfoTab: React.FC<InfoTabProps> = ({
 
     const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
     if (!timeRegex.test(horaInicio) || !timeRegex.test(horaFim)) {
-      showError("Use o formato hh:mm para os horarios.");
+      showError("Use o formato hh:mm para os horários.");
       return;
     }
 
@@ -521,7 +521,7 @@ const InfoTab: React.FC<InfoTabProps> = ({
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">
-                  Observacao (opcional)
+                  Observação (opcional)
                 </label>
                 <textarea
                   rows={3}
