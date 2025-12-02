@@ -573,15 +573,15 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
                 </div>
 
                 <p className="text-xs text-gray-500">
-                  Confirme a imagem e a descricao antes de salvar.
+                  Confirme a imagem e a descrição antes de salvar.
                 </p>
               </div>
             </div>
           </div>
         ) : (
           <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-xs text-gray-600">
-            Selecione uma imagem para pre-visualizar aqui. Depois informe uma
-            descricao obrigatoria e salve.
+            Selecione uma imagem para pré-visualizar aqui. Depois informe uma
+            descrição obrigatória e salve.
           </div>
         )}
       </div>
@@ -675,13 +675,13 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
                       <p className="flex-1 text-sm text-gray-700">
                         {foto.descricao?.trim()
                           ? foto.descricao
-                          : "Descricao nao informada"}
+                          : "Descrição não informada"}
                       </p>
                       <button
                         type="button"
                         onClick={() => handleStartEditing(foto.id_fat_foto)}
                         className="rounded-full p-1 text-blue-500 transition hover:bg-blue-50 hover:text-blue-600"
-                        title="Editar descricao"
+                        title="Editar descrição"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
@@ -789,7 +789,7 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
                     showNext();
                   }}
                   className="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-gray-800 shadow transition hover:bg-white"
-                  title="Proxima foto"
+                  title="Próxima foto"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
@@ -810,7 +810,7 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
                 <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-gray-200">
                   <ImageOff className="h-10 w-10" />
                   <span className="text-sm">
-                    Pre-visualizacao indisponivel para esta imagem.
+                    Pré-visualização indisponível para esta imagem.
                   </span>
                 </div>
               )}
