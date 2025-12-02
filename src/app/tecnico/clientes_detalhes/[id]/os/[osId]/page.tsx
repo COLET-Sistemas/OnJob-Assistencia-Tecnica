@@ -80,9 +80,6 @@ const InfoRow = ({
   );
 };
 
-const WHATSAPP_MESSAGE =
-  "Teste de envio por WhatsApp.\nOnJob Assistência Técnica.";
-
 const formatDuration = (
   rawHours?: string | null,
   rawMinutes?: number | null | undefined
@@ -95,6 +92,155 @@ const formatDuration = (
   return `${rawMinutes} min`;
 };
 
+const DEFAULT_WHATSAPP_MESSAGE =
+  "Teste de envio por WhatsApp.\nOnJob Assistência Técnica.";
+
+const formatQuantidade = (value: unknown) => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return null;
+  return Number.isInteger(numericValue)
+    ? numericValue.toString()
+    : numericValue.toFixed(2);
+};
+
+const getFatPecas = (fat: OSFatDetalhado) => {
+  const raw =
+    (fat as { pecas?: unknown[] }).pecas ?? fat.pecas_utilizadas ?? [];
+  return Array.isArray(raw) ? raw : [];
+};
+
+const buildWhatsappMessage = (
+  os: OSDetalhadaV2,
+  selectedFat?: OSFatDetalhado | null
+) => {
+  const lines: string[] = [];
+  const osIdentifier = os.numero_os || os.id_os;
+  const tecnicoName =
+    selectedFat?.tecnico?.nome ||
+    selectedFat?.nome_atendente ||
+    os.tecnico?.nome ||
+    os.abertura?.nome_usuario;
+  const dataConclusao =
+    selectedFat?.data_atendimento ||
+    os.data_fechamento ||
+    os.situacao_os?.data_situacao ||
+    os.data_agendada;
+
+  lines.push("*Conclusão de Ordem de Serviço:*");
+  const resumoParts = [`Informamos que a OS nº *${osIdentifier}*`];
+  if (tecnicoName) {
+    resumoParts.push(`foi concluída pelo técnico *${tecnicoName}*`);
+  }
+  if (dataConclusao) {
+    resumoParts.push(`em ${dataConclusao}`);
+  }
+  lines.push(`${resumoParts.join(" ")}.`);
+
+  const revisorName = os.revisao_os?.nome;
+  const dataRevisao = os.revisao_os?.data;
+  lines.push(
+    revisorName
+      ? `Foi revisada por *${revisorName}*${
+          dataRevisao ? ` em ${dataRevisao}` : ""
+        }.`
+      : "Ainda não foi revisada."
+  );
+
+  const equipamento = [os.maquina?.numero_serie, os.maquina?.descricao]
+    .map((value) => (value ? String(value).trim() : ""))
+    .filter(Boolean)
+    .join(" - ");
+  if (equipamento) {
+    lines.push(`*Equipamento:* ${equipamento}`);
+  }
+
+  const motivoAtendimento = selectedFat?.motivo_atendimento?.trim();
+  const problemaDescricao =
+    selectedFat?.descricao_problema?.trim() ||
+    os.descricao_problema?.trim() ||
+    "";
+  if (motivoAtendimento || problemaDescricao) {
+
+    const problema = [
+      motivoAtendimento ? `${motivoAtendimento}` : "",
+      problemaDescricao,
+    ]
+      .filter(Boolean)
+      .join(" - ");
+    lines.push(`*Problema apresentado:* ${problema}`);
+  }
+
+  const fats =
+    (os.fats ?? []).length > 0 ? os.fats : selectedFat ? [selectedFat] : [];
+
+  if (fats.length) {
+    lines.push("");
+  }
+
+  fats.forEach((fat, index) => {
+    const fatLines: string[] = [];
+    const headerParts = [`*— FAT ${fat.id_fat}:*`];
+    if (fat.data_atendimento) headerParts.push(String(fat.data_atendimento));
+    fatLines.push(headerParts.join(" ").trim());
+
+    const addSection = (label: string, value?: string | null) => {
+      if (value && value.toString().trim()) {
+        fatLines.push(`*${label}:* ${value.toString().trim()}`);
+      }
+    };
+
+    addSection("Solução encontrada", fat.solucao_encontrada);
+    addSection("Testes realizados", fat.testes_realizados);
+    addSection("Observações", fat.observacoes);
+
+    const horaInicio = (fat as { hora_inicio?: string }).hora_inicio?.trim();
+    if (horaInicio) fatLines.push(`${horaInicio} Início do atendimento`);
+    const horaFim = (fat as { hora_fim?: string }).hora_fim?.trim();
+    if (horaFim) fatLines.push(`${horaFim} Término do atendimento`);
+
+    const pecas = getFatPecas(fat);
+    if (pecas.length) {
+      fatLines.push("*Lista de Peças consumidas:*");
+      pecas.forEach((peca) => {
+        const quantidade = formatQuantidade(
+          (peca as { quantidade?: unknown }).quantidade
+        );
+        const unidade =
+          (peca as { unidade?: string }).unidade ||
+          (peca as { unidade_medida?: string }).unidade_medida ||
+          "UN";
+        const descricao =
+          (peca as { descricao_peca?: string }).descricao_peca ||
+          (peca as { descricao?: string }).descricao ||
+          (peca as { nome?: string }).nome ||
+          "Peça";
+        const codigo =
+          (peca as { codigo_peca?: string }).codigo_peca ||
+          (peca as { codigo?: string }).codigo;
+        const observacoes = (
+          peca as { observacoes?: string }
+        ).observacoes?.trim();
+
+        const base = [
+          quantidade ? `${quantidade} ${unidade}` : null,
+          descricao,
+          codigo ? `(${codigo})` : null,
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        fatLines.push(observacoes ? `${base} - ${observacoes}` : base);
+      });
+    }
+
+    lines.push(...fatLines);
+    if (index < fats.length - 1) {
+      lines.push("");
+    }
+  });
+
+  return lines.join("\n").trim() || DEFAULT_WHATSAPP_MESSAGE;
+};
 export default function ClienteOsFatDetalhePage() {
   const router = useRouter();
   const params = useParams();
@@ -242,31 +388,39 @@ export default function ClienteOsFatDetalhePage() {
     return Array.isArray(raw) ? raw : [];
   }, [selectedFat]);
 
+  const whatsappMessage = useMemo(() => {
+    if (!osData) return DEFAULT_WHATSAPP_MESSAGE;
+    return buildWhatsappMessage(osData, selectedFat);
+  }, [osData, selectedFat]);
+
   const handleRetry = useCallback(() => {
     setRefreshKey((value) => value + 1);
   }, []);
 
-  const handleSendWhatsapp = useCallback((contato: ClienteContato) => {
-    const numeroLimpo = (contato.whatsapp || contato.telefone || "")
-      .replace(/\D/g, "")
-      .trim();
+  const handleSendWhatsapp = useCallback(
+    (contato: ClienteContato) => {
+      const numeroLimpo = (contato.whatsapp || contato.telefone || "")
+        .replace(/\D/g, "")
+        .trim();
 
-    if (!numeroLimpo) {
-      window.alert("Contato selecionado não possui número de WhatsApp.");
-      return;
-    }
+      if (!numeroLimpo) {
+        window.alert("Contato selecionado não possui número de WhatsApp.");
+        return;
+      }
 
-    const numeroComDdi = numeroLimpo.startsWith("55")
-      ? numeroLimpo
-      : `55${numeroLimpo}`;
+      const numeroComDdi = numeroLimpo.startsWith("55")
+        ? numeroLimpo
+        : `55${numeroLimpo}`;
 
-    const url = `https://wa.me/${numeroComDdi}?text=${encodeURIComponent(
-      WHATSAPP_MESSAGE
-    )}`;
+      const url = `https://wa.me/${numeroComDdi}?text=${encodeURIComponent(
+        whatsappMessage || DEFAULT_WHATSAPP_MESSAGE
+      )}`;
 
-    window.open(url, "_blank");
-    setShowContacts(false);
-  }, []);
+      window.open(url, "_blank");
+      setShowContacts(false);
+    },
+    [whatsappMessage]
+  );
 
   const osStatus = osData?.situacao_os;
 

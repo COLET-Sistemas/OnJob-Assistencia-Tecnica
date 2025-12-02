@@ -208,6 +208,7 @@ export default function MaquinaDetalheTecnicoPage() {
   }, [maquinaId]);
 
   const maquinaParaExibir = maquina ?? prefetchedMaquina;
+  const clienteIdAtual = maquinaParaExibir?.cliente_atual?.id_cliente;
 
   const situacaoLabel =
     maquinaParaExibir?.situacao === "A"
@@ -222,6 +223,19 @@ export default function MaquinaDetalheTecnicoPage() {
     Math.ceil(historicoTotalRegistros / HISTORICO_PAGE_SIZE)
   );
   const historicoTemMultiplasPaginas = historicoTotalPaginas > 1;
+
+  const handleAbrirOsFat = useCallback(
+    (numeroOs?: number | null, idFat?: number | null) => {
+      const numeroOsValue = Number(numeroOs);
+      if (!clienteIdAtual || !Number.isFinite(numeroOsValue)) return;
+
+      const query = idFat ? `?fat=${idFat}` : "";
+      router.push(
+        `/tecnico/clientes_detalhes/${clienteIdAtual}/os/${numeroOsValue}${query}`
+      );
+    },
+    [clienteIdAtual, router]
+  );
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -377,15 +391,26 @@ export default function MaquinaDetalheTecnicoPage() {
               ) : (
                 <>
                   <div className="space-y-0">
-                    {historicoRegistros.map((registro) => (
-                      <article
-                        key={`${registro.id_fat}-${registro.numero_os}-${registro.data_atendimento}`}
-                        className="mb-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm
-             grid gap-4 md:grid-cols-2"
-                      >
-                        {/* COLUNA ESQUERDA */}
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3 text-sm text-slate-700">
+                    {historicoRegistros.map((registro) => {
+                      const numeroOsValue = Number(registro.numero_os);
+                      const podeAbrirOsFat =
+                        !!clienteIdAtual && Number.isFinite(numeroOsValue);
+
+                      return (
+                        <article
+                          key={`${registro.id_fat}-${registro.numero_os}-${registro.data_atendimento}`}
+                          className="mb-3 grid gap-4 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm md:grid-cols-2"
+                        >
+                          {/* COLUNA ESQUERDA */}
+                          <div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleAbrirOsFat(numeroOsValue, registro.id_fat)
+                            }
+                            disabled={!podeAbrirOsFat}
+                            className="flex w-full flex-wrap items-center gap-2 border-b border-slate-100 pb-3 text-left text-sm text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
                             <span className="font-semibold text-slate-900">
                               OS #{registro.numero_os ?? "-"}
                             </span>
@@ -395,7 +420,7 @@ export default function MaquinaDetalheTecnicoPage() {
                             <span className="ml-auto font-semibold text-slate-900">
                               {registro.data_atendimento}
                             </span>
-                          </div>
+                          </button>
 
                           <div className="pt-2 text-sm text-slate-600">
                             <div className="flex items-center justify-between text-xs text-slate-500">
@@ -454,8 +479,9 @@ export default function MaquinaDetalheTecnicoPage() {
                             registro.observacoes
                           )}
                         </div>
-                      </article>
-                    ))}
+                        </article>
+                      );
+                    })}
                   </div>
                   {historicoTotalRegistros > 0 && (
                     <div className="mt-5 rounded-2xl border border-slate-100 bg-gradient-to-r from-white via-slate-50 to-white p-4 shadow-sm">
