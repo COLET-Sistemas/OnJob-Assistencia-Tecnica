@@ -234,7 +234,7 @@ const InfoTab: React.FC<InfoTabProps> = ({
   return (
     <div className="p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Informacoes da Ordem de Servico
+        Informações da Ordem de Serviço
       </h3>
 
       <div className="mb-6">
@@ -242,7 +242,7 @@ const InfoTab: React.FC<InfoTabProps> = ({
           Problema Relatado
         </h4>
         <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-700">
-          {os.descricao_problema || "Nenhuma descricao fornecida."}
+          {os.descricao_problema || "Nenhuma descriço fornecida."}
         </div>
       </div>
 
@@ -281,7 +281,7 @@ const InfoTab: React.FC<InfoTabProps> = ({
                     scope="col"
                     className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Tecnico
+                    Técnico
                   </th>
                   <th
                     scope="col"
@@ -423,7 +423,7 @@ const InfoTab: React.FC<InfoTabProps> = ({
 
       <div>
         <h4 className="text-sm font-medium text-gray-700 mb-2">
-          Observacao da maquina
+          Observaço da máquina
         </h4>
         <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-700 whitespace-pre-line">
           {machineNotes.length > 0
@@ -441,7 +441,7 @@ const InfoTab: React.FC<InfoTabProps> = ({
                   Registrar pausa manual
                 </p>
                 <p className="text-sm text-gray-600">
-                  Escolha a FAT e informe os horarios.
+                  Escolha a FAT e informe os horários.
                 </p>
               </div>
               <button
