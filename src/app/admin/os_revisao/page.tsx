@@ -62,12 +62,11 @@ export default function RevisaoPage() {
     }
   };
 
-  // Navegar para a página de detalhes
   const handleViewDetails = (id: number) => {
     router.push(`/admin/os_revisao/${id}`);
   };
 
-  // Efetuar a paginação
+
   const handlePageChange = (page: number) => {
     fetchOrdens(page);
   };

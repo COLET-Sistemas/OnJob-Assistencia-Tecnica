@@ -823,7 +823,6 @@ const OSDetalhesPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Coluna Esquerda - Cliente e Máquina */}
           <div className="lg:col-span-1">
-            {/* Card Cliente */}
             <div
               className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 hover:shadow-md transition-shadow duration-300 animate-fadeIn"
               style={{ animationDelay: "0.1s" }}
@@ -837,7 +836,6 @@ const OSDetalhesPage: React.FC = () => {
                     </h3>
                   </div>
 
-                  {/* Botões de Ação */}
                   <div className="flex items-center gap-2 ">
                     {contatoData?.email && (
                       <a

@@ -1392,7 +1392,7 @@ const ConsultaOSPage: React.FC = () => {
                           handleFilterChange("id_tecnico", "");
                           handleFilterChange("tipo_tecnico", e.target.value);
                         } else {
-                          // Se for seleção por ID, limpa tipo_tecnico
+                        
                           handleFilterChange("tipo_tecnico", "");
                           handleFilterChange("id_tecnico", e.target.value);
                         }
