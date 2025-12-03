@@ -466,126 +466,6 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
         )}
       </div>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple={false}
-        className="hidden"
-        onChange={handleFileChange}
-      />
-
-      <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700">
-              FAT para vincular
-            </label>
-            <select
-              value={selectedFatId ?? ""}
-              onChange={(event) =>
-                setSelectedFatId(
-                  event.target.value ? Number(event.target.value) : null
-                )
-              }
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-            >
-              <option value="">Selecione a FAT</option>
-              {fats.map((fat) => (
-                <option key={fat.id_fat} value={fat.id_fat}>
-                  FAT {fat.id_fat} - {fat.data_atendimento}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleOpenPicker}
-            disabled={uploading}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary)]/90 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {uploading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Upload className="h-4 w-4" />
-            )}
-            {uploading ? "Processando..." : "Selecionar imagem"}
-          </button>
-        </div>
-
-        {pendingPreview ? (
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-              <div className="flex flex-col items-center gap-2">
-                <div className="relative h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={pendingPreview}
-                    alt={pendingFile?.name || "Pre-visualizacao"}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                {pendingFile && (
-                  <p className="text-xs text-gray-600 text-center break-words max-w-[9rem]">
-                    {pendingFile.name}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex-1 space-y-3">
-                <div>
-                  <label className="text-xs font-semibold uppercase text-gray-600 tracking-wide">
-                    Descricao da foto*
-                  </label>
-                  <input
-                    type="text"
-                    value={descricao}
-                    onChange={(event) => setDescricao(event.target.value)}
-                    placeholder="Descreva o que a imagem exibe..."
-                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                  <button
-                    type="button"
-                    onClick={handleUpload}
-                    disabled={uploading || !pendingFile || !descricaoValida}
-                    className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {uploading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="h-4 w-4" />
-                    )}
-                    {uploading ? "Enviando..." : "Salvar foto"}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleClearSelection}
-                    disabled={uploading}
-                    className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-
-                <p className="text-xs text-gray-500">
-                  Confirme a imagem e a descrição antes de salvar.
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-xs text-gray-600">
-            Selecione uma imagem para pré-visualizar aqui. Depois informe uma
-            descrição obrigatória e salve.
-          </div>
-        )}
-      </div>
-
       {error && (
         <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -749,6 +629,131 @@ const FotosTab: React.FC<FotosTabProps> = ({ osId, fats, onCountChange }) => {
           })}
         </div>
       )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple={false}
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      <div className="mt-6">
+        <h4 className="mb-3 text-md font-semibold text-gray-900">
+          Adicionar foto na OS
+        </h4>
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700">
+                FAT para vincular
+              </label>
+              <select
+                value={selectedFatId ?? ""}
+                onChange={(event) =>
+                  setSelectedFatId(
+                    event.target.value ? Number(event.target.value) : null
+                  )
+                }
+                className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+              >
+                <option value="">Selecione a FAT</option>
+                {fats.map((fat) => (
+                  <option key={fat.id_fat} value={fat.id_fat}>
+                    FAT {fat.id_fat} - {fat.data_atendimento}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleOpenPicker}
+              disabled={uploading}
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary)]/90 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
+              {uploading ? "Processando..." : "Selecionar imagem"}
+            </button>
+          </div>
+
+          {pendingPreview ? (
+            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="relative h-32 w-32 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={pendingPreview}
+                      alt={pendingFile?.name || "Pre-visualizacao"}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  {pendingFile && (
+                    <p className="text-xs text-gray-600 text-center break-words max-w-[9rem]">
+                      {pendingFile.name}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold uppercase text-gray-600 tracking-wide">
+                      Descricao da foto*
+                    </label>
+                    <input
+                      type="text"
+                      value={descricao}
+                      onChange={(event) => setDescricao(event.target.value)}
+                      placeholder="Descreva o que a imagem exibe..."
+                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={handleUpload}
+                      disabled={uploading || !pendingFile || !descricaoValida}
+                      className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {uploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
+                      {uploading ? "Enviando..." : "Salvar foto"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleClearSelection}
+                      disabled={uploading}
+                      className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-gray-500">
+                    Confirme a imagem e a descrio antes de salvar.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-xs text-gray-600">
+              Selecione uma imagem para pré-visualizar aqui. Depois informe uma
+              descrição obrigatória e salve.
+            </div>
+          )}
+        </div>
+      </div>
 
       {selectedPhoto && (
         <div

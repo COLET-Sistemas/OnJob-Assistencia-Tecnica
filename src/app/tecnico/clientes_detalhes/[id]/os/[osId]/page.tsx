@@ -357,10 +357,13 @@ export default function ClienteOsFatDetalhePage() {
   const contatosWhatsapp = useMemo(
     () =>
       (cliente?.contatos ?? []).filter((contato) => {
-        const numeroLimpo = (contato.whatsapp || contato.telefone || "")
-          .replace(/\D/g, "")
-          .trim();
-        return numeroLimpo.length >= 10;
+        const numeroLimpo = (contato.whatsapp ?? "").replace(/\D/g, "").trim();
+        const situacaoAtiva =
+          typeof contato.situacao === "string" &&
+          contato.situacao.toUpperCase() === "A";
+        const recebeAvisoOs = contato.recebe_aviso_os === true;
+
+        return numeroLimpo.length >= 10 && situacaoAtiva && recebeAvisoOs;
       }),
     [cliente?.contatos]
   );

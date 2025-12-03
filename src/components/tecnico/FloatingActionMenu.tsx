@@ -91,7 +91,7 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
         icon: cancelLoading ? Loader2 : XCircle,
         iconClass: cancelLoading ? "animate-spin text-red-600" : "text-red-600",
         onClick: buildAction(handleCancelarOS),
-        disabled: cancelLoading,
+        disabled: cancelLoading || modalOpen !== null,
       },
       {
         key: "concluir",
@@ -155,7 +155,7 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
         <button
           className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#7B54BE] text-white shadow-xl transition hover:scale-105 hover:shadow-2xl active:scale-95"
           onClick={() => setOpen((prev) => !prev)}
-          aria-label={open ? "Fechar acoes" : "Abrir acoes"}
+          aria-label={open ? "Fechar ações" : "Abrir ações"}
         >
           {open ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
         </button>
@@ -169,9 +169,20 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
         title={
           modalOpen === "deslocamento"
             ? "Iniciar Deslocamento"
-            : "Iniciar Atendimento"
+            : modalOpen === "atendimento"
+            ? "Iniciar Atendimento"
+            : modalOpen === "cancelar"
+            ? "Cancelar OS"
+            : "Concluir OS"
         }
-        label="Descricao da ocorrencia (opcional)"
+        label={
+          modalOpen === "cancelar"
+            ? "Motivo do cancelamento (obrigatório)"
+            : modalOpen === "concluir"
+            ? "Descricao da conclusao (obrigatório)"
+            : "Descricao da ocorrencia (opcional)"
+        }
+        required={modalOpen === "cancelar" || modalOpen === "concluir"}
       />
     </>
   );

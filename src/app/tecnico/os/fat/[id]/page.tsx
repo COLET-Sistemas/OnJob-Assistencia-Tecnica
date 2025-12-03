@@ -1005,7 +1005,7 @@ export default function FATDetalheMobile() {
 
   const handleRegistrarPausaManual = useCallback(async () => {
     if (!fat?.id_fat) {
-      showToast("FAT n\u00e3o encontrada para registrar pausa.", "error");
+      showToast("FAT não encontrada para registrar pausa.", "error");
       return;
     }
 
@@ -1013,7 +1013,7 @@ export default function FATDetalheMobile() {
     const horaFim = pausaForm.hora_fim.trim();
 
     if (!horaInicio || !horaFim) {
-      showToast("Informe hora de in\u00edcio e fim da pausa.", "error");
+      showToast("Informe hora de início e fim da pausa.", "error");
       return;
     }
 
@@ -1031,7 +1031,7 @@ export default function FATDetalheMobile() {
       fimMinutes !== null &&
       fimMinutes <= inicioMinutes
     ) {
-      showToast("A hora fim deve ser maior que a hora in\u00edcio.", "error");
+      showToast("A hora fim deve ser maior que a hora início.", "error");
       return;
     }
 
@@ -1068,13 +1068,9 @@ export default function FATDetalheMobile() {
   const handleIniciarAtendimento = useCallback(async () => {
     try {
       setLoading(true);
-      // TODO: implementar API call para iniciar atendimento
-      // Exemplo: const response = await fatService.iniciarAtendimento(fat?.id_fat);
-
       try {
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        // Simulando sucesso da API
         const responseMessage = "Atendimento iniciado com sucesso!";
         showToast(responseMessage, "success");
 
@@ -1095,9 +1091,6 @@ export default function FATDetalheMobile() {
     console.log("Pausar atendimento");
     try {
       setLoading(true);
-      // TODO: implementar API call para pausar atendimento
-      // Exemplo: const response = await fatService.pausarAtendimento(fat?.id_fat);
-
       try {
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -1123,9 +1116,6 @@ export default function FATDetalheMobile() {
     console.log("Retomar atendimento");
     try {
       setLoading(true);
-      // TODO: implementar API call para retomar atendimento
-      // Exemplo: const response = await fatService.retomarAtendimento(fat?.id_fat);
-
       try {
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -1649,7 +1639,7 @@ export default function FATDetalheMobile() {
                   className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#7B54BE] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#6841b1] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7B54BE]/50 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-[#7B54BE]"
                 >
                   <Timer className="w-4 h-4" />
-                  Registrar Pausa
+                  Registrar Pausa Anterior
                 </button>
               </div>
             </div>

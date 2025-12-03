@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { ocorrenciasOSService } from "@/api/services/ocorrenciaOSService";
 
-type ModalType = null | "deslocamento" | "atendimento";
+type ModalType = null | "deslocamento" | "atendimento" | "cancelar" | "concluir";
 type MessageType = "success" | "error" | null;
 
 export type ActionSuccessType =
@@ -133,27 +133,64 @@ export const useOsActions = ({
     setModalOpen("atendimento");
   }, []);
 
+  const handleCancelarOS = useCallback(() => {
+    setModalOpen("cancelar");
+  }, []);
+
+  const handleConcluirOS = useCallback(() => {
+    setModalOpen("concluir");
+  }, []);
+
   const handleSaveOcorrencia = useCallback(
     async (descricao: string) => {
-      if (!id_os || !modalOpen) return;
+      if (!id_os || !modalOpen) {
+        setMessage("Dados incompletos para registrar a ocorrencia.");
+        setMessageType("error");
+        return;
+      }
+
+      const actionMap: Record<Exclude<ModalType, null>, string> = {
+        deslocamento: "iniciar deslocamento",
+        atendimento: "iniciar atendimento",
+        cancelar: "cancelar os",
+        concluir: "concluir os",
+      };
+
+      const actionSuccessMap: Record<Exclude<ModalType, null>, ActionSuccessType> =
+        {
+          deslocamento: "deslocamento",
+          atendimento: "atendimento",
+          cancelar: "cancelar_os",
+          concluir: "concluir_os",
+        };
+
+      const loadingSetterMap: Partial<
+        Record<Exclude<ModalType, null>, (value: boolean) => void>
+      > = {
+        cancelar: setCancelLoading,
+        concluir: setConcluirLoading,
+      };
+
+      const currentAction = modalOpen;
+      const ocorrencia = actionMap[currentAction];
+      const successAction = actionSuccessMap[currentAction];
+      const setSpecificLoading = loadingSetterMap[currentAction];
 
       setModalLoading(true);
+      setSpecificLoading?.(true);
       setMessage(null);
       setMessageType(null);
 
       try {
         const response = await ocorrenciasOSService.registrarOcorrencia({
           id_os,
-          ocorrencia:
-            modalOpen === "deslocamento"
-              ? "iniciar deslocamento"
-              : "iniciar atendimento",
+          ocorrencia,
           descricao_ocorrencia: descricao,
         });
 
-        const actionOnSuccess = modalOpen;
         const idFat =
-          typeof response?.id_fat === "number" && Number.isFinite(response.id_fat)
+          typeof response?.id_fat === "number" &&
+          Number.isFinite(response.id_fat)
             ? response.id_fat
             : undefined;
 
@@ -163,10 +200,10 @@ export const useOsActions = ({
         );
         setMessageType("success");
 
-        if (onActionSuccess && actionOnSuccess) {
+        if (onActionSuccess && successAction) {
           setTimeout(() => {
             onActionSuccess({
-              action: actionOnSuccess,
+              action: successAction,
               idFat,
             });
           }, 1000);
@@ -177,86 +214,11 @@ export const useOsActions = ({
         setMessageType("error");
       } finally {
         setModalLoading(false);
+        setSpecificLoading?.(false);
       }
     },
     [id_os, modalOpen, onActionSuccess]
   );
-
-  const handleCancelarOS = useCallback(async () => {
-    if (!id_os) {
-      setMessage("Dados incompletos para cancelar a OS.");
-      setMessageType("error");
-      return;
-    }
-
-    setCancelLoading(true);
-    setMessage(null);
-    setMessageType(null);
-
-    try {
-      const response = await ocorrenciasOSService.registrarOcorrencia({
-        id_os,
-        ocorrencia: "cancelar os",
-      });
-
-      setMessage(
-        sanitizeMessage(response?.mensagem) || "OS cancelada com sucesso!"
-      );
-      setMessageType("success");
-
-      if (onActionSuccess) {
-        setTimeout(() => {
-          onActionSuccess({
-            action: "cancelar_os",
-          });
-        }, 1000);
-      }
-    } catch (error) {
-      console.error("Erro ao cancelar OS:", error);
-      setMessage(getErrorMessage(error));
-      setMessageType("error");
-    } finally {
-      setCancelLoading(false);
-    }
-  }, [id_os, onActionSuccess]);
-
-  const handleConcluirOS = useCallback(async () => {
-    if (!id_os) {
-      setMessage("Dados incompletos para concluir a OS.");
-      setMessageType("error");
-      return;
-    }
-
-    setConcluirLoading(true);
-    setMessage(null);
-    setMessageType(null);
-
-    try {
-      const response = await ocorrenciasOSService.registrarOcorrencia({
-        id_os,
-        ocorrencia: "concluir os",
-      });
-
-      setMessage(
-        sanitizeMessage(response?.mensagem) || "OS concluida com sucesso!"
-      );
-      setMessageType("success");
-
-      if (onActionSuccess) {
-        setTimeout(() => {
-          onActionSuccess({
-            action: "concluir_os",
-          });
-        }, 1000);
-      }
-    } catch (error) {
-      console.error("Erro ao concluir OS:", error);
-      setMessage(getErrorMessage(error));
-      setMessageType("error");
-    } finally {
-      setConcluirLoading(false);
-    }
-  }, [id_os, onActionSuccess]);
 
   const closeModal = useCallback(() => {
     setModalOpen(null);

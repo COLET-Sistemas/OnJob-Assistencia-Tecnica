@@ -47,15 +47,19 @@ const InfoTab: React.FC<InfoTabProps> = ({
     setExpandedFatId((prev) => (prev === fatId ? null : fatId));
   };
 
-  const handleOpenPausaModal = () => {
+  const resolveFatId = (fatId?: number | null) => {
+    if (fatId) return fatId;
+    if (selectedFatId) return selectedFatId;
+    return os?.fats?.[0]?.id_fat ?? null;
+  };
+
+  const handleOpenPausaModal = (fatId?: number | null) => {
     setPausaForm({
       hora_inicio: "",
       hora_fim: "",
       observacao: "",
     });
-    if (!selectedFatId && os?.fats?.length) {
-      setSelectedFatId(os.fats[0].id_fat ?? null);
-    }
+    setSelectedFatId(resolveFatId(fatId));
     setIsPausaModalOpen(true);
   };
 
@@ -105,7 +109,9 @@ const InfoTab: React.FC<InfoTabProps> = ({
     const dataMessage = extractMessage(anyErr.response?.data);
     const genericMessage = extractMessage(anyErr.message);
 
-    return dataMessage || genericMessage || "Nao foi possivel registrar a pausa.";
+    return (
+      dataMessage || genericMessage || "Nao foi possivel registrar a pausa."
+    );
   };
 
   const handleRegistrarPausaManual = async () => {
@@ -148,9 +154,7 @@ const InfoTab: React.FC<InfoTabProps> = ({
         hora_fim: horaFim,
         observacao: pausaForm.observacao.trim() || undefined,
       });
-      showSuccess(
-        response?.mensagem || "Pausa manual registrada com sucesso."
-      );
+      showSuccess(response?.mensagem || "Pausa manual registrada com sucesso.");
       handleClosePausaModal();
       await onRefresh?.();
     } catch (error) {
@@ -161,72 +165,89 @@ const InfoTab: React.FC<InfoTabProps> = ({
     }
   };
 
-  const renderOccurrences = (ocorrencias: OcorrenciaOSDetalhe[]) => {
-    if (!ocorrencias || ocorrencias.length === 0) {
-      return null;
-    }
-
+  const renderOccurrences = (
+    ocorrencias: OcorrenciaOSDetalhe[] | undefined,
+    fatId: number
+  ) => {
+    const totalOcorrencias = ocorrencias?.length ?? 0;
     return (
       <div className="mt-4 pt-4 border-t border-gray-200">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
-          Ocorrencias ({ocorrencias.length})
-        </p>
-        <div className="space-y-2">
-          {ocorrencias.map((ocorrencia, index) => {
-            // Extract status code from different possible formats
-            let statusCode: number | undefined;
-            if (
-              typeof ocorrencia.nova_situacao === "object" &&
-              ocorrencia.nova_situacao?.codigo !== undefined
-            ) {
-              statusCode = Number(ocorrencia.nova_situacao.codigo);
-            } else if (
-              typeof ocorrencia.situacao === "object" &&
-              ocorrencia.situacao?.codigo !== undefined
-            ) {
-              statusCode = Number(ocorrencia.situacao.codigo);
-            } else if (typeof ocorrencia.nova_situacao === "number") {
-              statusCode = ocorrencia.nova_situacao;
-            } else if (typeof ocorrencia.nova_situacao === "string") {
-              statusCode = Number(ocorrencia.nova_situacao);
-            }
-
-            const statusInfo = getStatusInfo(statusCode || 1);
-            const situacaoDescricao =
-              (typeof ocorrencia.nova_situacao === "object" &&
-                ocorrencia.nova_situacao?.descricao) ||
-              (typeof ocorrencia.situacao === "object" &&
-                ocorrencia.situacao?.descricao) ||
-              statusInfo.label;
-            const descricaoOcorrencia = ocorrencia.descricao_ocorrencia?.trim();
-            const dataOcorrencia =
-              ocorrencia.data_ocorrencia || ocorrencia.data || "N/A";
-
-            return (
-              <div
-                key={ocorrencia.id_ocorrencia || index}
-                className="flex items-center gap-2"
-              >
-                <div
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs border w-40 ${statusInfo.className}`}
-                >
-                  {statusInfo.icon}
-                  <span className="font-medium whitespace-nowrap">
-                    {situacaoDescricao}
-                  </span>
-                </div>
-                <span className="text-xs text-gray-500 font-mono">
-                  {dataOcorrencia}
-                </span>
-                {descricaoOcorrencia && (
-                  <span className="text-xs text-gray-600">
-                    {descricaoOcorrencia}
-                  </span>
-                )}
-              </div>
-            );
-          })}
+        <div className="mb-3 flex items-center gap-3">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            Ocorrências ({totalOcorrencias})
+          </p>
+          <button
+            type="button"
+            onClick={() => handleOpenPausaModal(fatId)}
+            className="inline-flex items-center gap-1.5 cursor-pointer rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200"
+          >
+            <PauseCircle className="h-4 w-4" />
+            Registrar pausa
+          </button>
         </div>
+        {totalOcorrencias > 0 ? (
+          <div className="space-y-2">
+            {ocorrencias?.map((ocorrencia, index) => {
+              // Extract status code from different possible formats
+              let statusCode: number | undefined;
+              if (
+                typeof ocorrencia.nova_situacao === "object" &&
+                ocorrencia.nova_situacao?.codigo !== undefined
+              ) {
+                statusCode = Number(ocorrencia.nova_situacao.codigo);
+              } else if (
+                typeof ocorrencia.situacao === "object" &&
+                ocorrencia.situacao?.codigo !== undefined
+              ) {
+                statusCode = Number(ocorrencia.situacao.codigo);
+              } else if (typeof ocorrencia.nova_situacao === "number") {
+                statusCode = ocorrencia.nova_situacao;
+              } else if (typeof ocorrencia.nova_situacao === "string") {
+                statusCode = Number(ocorrencia.nova_situacao);
+              }
+
+              const statusInfo = getStatusInfo(statusCode || 1);
+              const situacaoDescricao =
+                (typeof ocorrencia.nova_situacao === "object" &&
+                  ocorrencia.nova_situacao?.descricao) ||
+                (typeof ocorrencia.situacao === "object" &&
+                  ocorrencia.situacao?.descricao) ||
+                statusInfo.label;
+              const descricaoOcorrencia =
+                ocorrencia.descricao_ocorrencia?.trim();
+              const dataOcorrencia =
+                ocorrencia.data_ocorrencia || ocorrencia.data || "N/A";
+
+              return (
+                <div
+                  key={ocorrencia.id_ocorrencia || index}
+                  className="flex items-center gap-2"
+                >
+                  <div
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs border w-40 ${statusInfo.className}`}
+                  >
+                    {statusInfo.icon}
+                    <span className="font-medium whitespace-nowrap">
+                      {situacaoDescricao}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-500 font-mono">
+                    {dataOcorrencia}
+                  </span>
+                  {descricaoOcorrencia && (
+                    <span className="text-xs text-gray-600">
+                      {descricaoOcorrencia}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">
+            Nenhuma ocorrencia registrada.
+          </p>
+        )}
       </div>
     );
   };
@@ -247,19 +268,9 @@ const InfoTab: React.FC<InfoTabProps> = ({
       </div>
 
       <div className="mb-6">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h4 className="text-sm font-medium text-gray-700">FATs Associadas</h4>
-          <button
-            type="button"
-            onClick={handleOpenPausaModal}
-            disabled={!os.fats || os.fats.length === 0}
-            className="inline-flex items-center gap-2 self-start rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <PauseCircle className="h-4 w-4" />
-            Registrar pausa manual
-          </button>
-        </div>
-
+        <h4 className="text-sm font-medium text-gray-700 mb-2">
+          FATs Associadas
+        </h4>
         {os.fats && os.fats.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -307,7 +318,7 @@ const InfoTab: React.FC<InfoTabProps> = ({
                 {os.fats.map((fat) => {
                   const detailItems = [
                     {
-                      label: "Solucao encontrada",
+                      label: "Solução encontrada",
                       value: fat.solucao_encontrada,
                     },
                     {
@@ -315,15 +326,15 @@ const InfoTab: React.FC<InfoTabProps> = ({
                       value: fat.testes_realizados,
                     },
                     {
-                      label: "Sugestoes",
+                      label: "Sugestões",
                       value: fat.sugestoes,
                     },
                     {
-                      label: "Observacoes",
+                      label: "Observações",
                       value: fat.observacoes,
                     },
                     {
-                      label: "Numero de ciclos",
+                      label: "Número de ciclos",
                       value:
                         typeof fat.numero_ciclos === "number" &&
                         !Number.isNaN(fat.numero_ciclos)
@@ -404,7 +415,7 @@ const InfoTab: React.FC<InfoTabProps> = ({
                                 </div>
                               ))}
                             </div>
-                            {renderOccurrences(fat.ocorrencias || [])}
+                            {renderOccurrences(fat.ocorrencias, fat.id_fat)}
                           </td>
                         </tr>
                       )}
@@ -423,12 +434,12 @@ const InfoTab: React.FC<InfoTabProps> = ({
 
       <div>
         <h4 className="text-sm font-medium text-gray-700 mb-2">
-          Observaço da máquina
+          Observação da máquina
         </h4>
         <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-700 whitespace-pre-line">
           {machineNotes.length > 0
             ? machineNotes
-            : "Nenhuma observacao cadastrada para a maquina."}
+            : "Nenhuma observação cadastrada para a máquina."}
         </div>
       </div>
 
@@ -441,8 +452,13 @@ const InfoTab: React.FC<InfoTabProps> = ({
                   Registrar pausa manual
                 </p>
                 <p className="text-sm text-gray-600">
-                  Escolha a FAT e informe os horários.
+                  Informe os horários da pausa.
                 </p>
+                {selectedFatId && (
+                  <p className="text-xs font-semibold text-gray-700">
+                    FAT selecionada: #{selectedFatId}
+                  </p>
+                )}
               </div>
               <button
                 type="button"
@@ -454,32 +470,6 @@ const InfoTab: React.FC<InfoTabProps> = ({
             </div>
 
             <div className="px-4 py-4 space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  FAT
-                </label>
-                <select
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-gray-100"
-                  value={selectedFatId ?? ""}
-                  onChange={(e) =>
-                    setSelectedFatId(
-                      e.target.value ? Number(e.target.value) : null
-                    )
-                  }
-                  disabled={pausaSubmitting || !os.fats || os.fats.length === 0}
-                >
-                  <option value="">Selecione uma FAT</option>
-                  {os.fats?.map((fat) => (
-                    <option key={fat.id_fat} value={fat.id_fat}>
-                      FAT #{fat.id_fat}
-                      {fat.data_atendimento
-                        ? ` - ${fat.data_atendimento}`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">
