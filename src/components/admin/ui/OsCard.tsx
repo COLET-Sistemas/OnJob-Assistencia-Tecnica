@@ -62,7 +62,7 @@ interface OsCardProps {
 
 const OsCard: React.FC<OsCardProps> = ({ os }) => {
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100 h-full flex flex-col">
+    <div className="rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 h-full flex flex-col">
       {/* Cabeçalho com informações principais */}
       <div className="p-3 relative border-b border-gray-200">
         <div className="flex justify-between items-center">

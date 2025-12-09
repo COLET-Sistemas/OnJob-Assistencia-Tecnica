@@ -70,11 +70,79 @@ export default function DashboardPainel() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const { licencaTipo, loading: licenseLoading } = useLicenca();
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [campoOrdem, setCampoOrdem] = useState<string>("data");
+  const [tipoOrdem, setTipoOrdem] = useState<string>("desc");
+
+  // Função para converter data brasileira (dd/MM/yyyy) para objeto Date
+  const parseDataBrasileira = (dataStr: string): Date | null => {
+    if (!dataStr) return null;
+
+    // Verifica se já está no formato ISO (yyyy-MM-dd)
+    if (dataStr.includes("-") && dataStr.length === 10) {
+      return new Date(dataStr);
+    }
+
+    // Converte formato brasileiro dd/MM/yyyy
+    const parts = dataStr.split("/");
+    if (parts.length === 3) {
+      const dia = parseInt(parts[0], 10);
+      const mes = parseInt(parts[1], 10) - 1; // JavaScript usa mês 0-indexed
+      const ano = parseInt(parts[2], 10);
+      return new Date(ano, mes, dia);
+    }
+
+    return null;
+  };
+
+  // Função para determinar a cor do card baseada nas regras de negócio
+  const getCardBackgroundColor = (os: OrdemServico) => {
+    // Amarelo para pendentes (situacao_os.codigo === 1)
+    if (os.situacao_os.codigo === 1) {
+      return "bg-yellow-100 border-yellow-300";
+    }
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const dataAbertura = parseDataBrasileira(os.abertura.data_abertura);
+    if (!dataAbertura) return "bg-white border-gray-100";
+
+    dataAbertura.setHours(0, 0, 0, 0);
+
+    // Calcular diferença em dias
+    const diferencaDias = Math.floor(
+      (hoje.getTime() - dataAbertura.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    // Se tem data agendada
+    if (os.data_agendada) {
+      const dataAgendada = parseDataBrasileira(os.data_agendada);
+      if (dataAgendada) {
+        dataAgendada.setHours(0, 0, 0, 0);
+
+        // Vermelho se a data agendada já passou
+        if (dataAgendada < hoje) {
+          return "bg-red-100 border-red-300";
+        }
+      }
+    } else {
+      // Vermelho se não tem data agendada e já se passaram 7 dias da abertura
+      if (diferencaDias >= 7) {
+        return "bg-red-100 border-red-300";
+      }
+    }
+
+    // Cor padrão
+    return "bg-white border-gray-100";
+  };
 
   const fetchOrdens = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await ordensServicoService.getDashboard();
+      const response = await ordensServicoService.getDashboard({
+        campo_ordem: campoOrdem,
+        tipo_ordem: tipoOrdem,
+      });
       // Converte os dados para o tipo OrdemServico
       const ordensData = response.dados as unknown as OrdemServico[];
       setOrdens(ordensData);
@@ -86,7 +154,7 @@ export default function DashboardPainel() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [campoOrdem, tipoOrdem]);
 
   useEffect(() => {
     if (licenseLoading) {
@@ -235,8 +303,8 @@ export default function DashboardPainel() {
             </h1>
             <p className="text-sm text-gray-600 leading-relaxed">
               O painel de monitoramento está disponível apenas para empresas com
-              plano <strong>PLATINUM</strong>. Conheça os planos para liberar este
-              recurso.
+              plano <strong>PLATINUM</strong>. Conheça os planos para liberar
+              este recurso.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
@@ -316,6 +384,28 @@ export default function DashboardPainel() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 justify-end">
+            <label className="flex flex-col text-[9px] uppercase tracking-[0.4em] text-[#7C54BD]/70">
+              Ordenar por
+              <select
+                value={campoOrdem}
+                onChange={(event) => setCampoOrdem(event.target.value)}
+                className="mt-1 w-32 rounded-full border border-[#7C54BD]/40 bg-white/80 px-3 py-1 text-xs font-semibold text-[#4d1e9b] focus:border-[#7C54BD] focus:outline-none focus:ring-1 focus:ring-[#7C54BD]/50"
+              >
+                <option value="data">Data</option>
+                <option value="cliente">Cliente</option>
+              </select>
+            </label>
+            <label className="flex flex-col text-[9px] uppercase tracking-[0.4em] text-[#7C54BD]/70">
+              Ordem
+              <select
+                value={tipoOrdem}
+                onChange={(event) => setTipoOrdem(event.target.value)}
+                className="mt-1 w-28 rounded-full border border-[#7C54BD]/40 bg-white/80 px-3 py-1 text-xs font-semibold text-[#4d1e9b] focus:border-[#7C54BD] focus:outline-none focus:ring-1 focus:ring-[#7C54BD]/50"
+              >
+                <option value="desc">Decrescente</option>
+                <option value="asc">Crescente</option>
+              </select>
+            </label>
             <label className="flex flex-col text-[9px] uppercase tracking-[0.4em] text-[#7C54BD]/70">
               Intervalo (min)
               <select
@@ -445,7 +535,9 @@ export default function DashboardPainel() {
               {ordens.map((os) => (
                 <div
                   key={os.id_os}
-                  className="transform hover:-translate-y-1 transition-all duration-200 h-full"
+                  className={`transform hover:-translate-y-1 transition-all duration-200 h-full rounded-lg ${getCardBackgroundColor(
+                    os
+                  )}`}
                 >
                   <OsCard os={os} />
                 </div>
