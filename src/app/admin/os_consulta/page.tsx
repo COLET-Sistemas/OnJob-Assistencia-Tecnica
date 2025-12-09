@@ -5,6 +5,8 @@ import PageHeader from "@/components/admin/ui/PageHeader";
 import { StatusBadge } from "@/components/admin/common";
 import { ordensServicoService } from "@/api/services/ordensServicoService";
 import { usuariosService } from "@/api/services/usuariosService";
+import { motivosAtendimentoService } from "@/api/services/motivosAtendimentoService";
+import { MotivoAtendimento } from "@/types/admin/cadastro/motivos_atendimento";
 import { LoadingSpinner } from "@/components/LoadingPersonalizado";
 import Pagination from "@/components/admin/ui/Pagination";
 import TecnicoBadge from "@/components/admin/ui/TecnicoBadge";
@@ -133,6 +135,7 @@ const INITIAL_OS_FILTERS: Record<string, string> = {
   id_tecnico: "",
   tipo_tecnico: "",
   em_garantia: "",
+  id_motivo_atendimento: "",
 };
 
 const INITIAL_PAGINATION_STATE: {
@@ -167,6 +170,8 @@ const ConsultaOSPage: React.FC = () => {
 
   const [tecnicos, setTecnicos] = useState<TecnicoType[]>([]);
   const [loadingTecnicos, setLoadingTecnicos] = useState<boolean>(false);
+  const [motivos, setMotivos] = useState<MotivoAtendimento[]>([]);
+  const [loadingMotivos, setLoadingMotivos] = useState<boolean>(false);
   const [hasSearch, setHasSearch] = useState<boolean>(false);
   const hasSearchRef = useRef<boolean>(false);
   const [hasRestoredState, setHasRestoredState] = useState<boolean>(false);
@@ -361,6 +366,32 @@ const ConsultaOSPage: React.FC = () => {
     fetchTecnicos();
   }, []);
 
+  useEffect(() => {
+    const fetchMotivos = async () => {
+      try {
+        setLoadingMotivos(true);
+        const response = await motivosAtendimentoService.getAll();
+
+        if (response && Array.isArray(response)) {
+          // Filter only active motivos
+          const motivosAtivos = response.filter(
+            (motivo) => motivo && motivo.situacao === "A"
+          );
+          setMotivos(motivosAtivos);
+        } else {
+          setMotivos([]);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar motivos de atendimento:", err);
+        setMotivos([]);
+      } finally {
+        setLoadingMotivos(false);
+      }
+    };
+
+    fetchMotivos();
+  }, []);
+
   // Use the shared status mapping
   const statusMapping = STATUS_MAPPING;
 
@@ -415,6 +446,8 @@ const ConsultaOSPage: React.FC = () => {
       } else if (key === "id_tecnico" || key === "tipo_tecnico") {
         handleFiltroChange("id_tecnico", "");
         handleFiltroChange("tipo_tecnico", "");
+      } else if (key === "id_motivo_atendimento") {
+        handleFiltroChange("id_motivo_atendimento", "");
       } else {
         handleFiltroChange(key, "");
       }
@@ -523,6 +556,8 @@ const ConsultaOSPage: React.FC = () => {
             params["tipo_tecnico"] = value.trim();
           } else if (key === "numero_interno") {
             params["numero_interno"] = value.trim();
+          } else if (key === "id_motivo_atendimento") {
+            params["id_motivo_atendimento"] = value.trim();
           }
 
           // Tratar o status selecionado
@@ -708,6 +743,8 @@ const ConsultaOSPage: React.FC = () => {
                 params["id_tecnico"] = value.trim();
               } else if (key === "tipo_tecnico") {
                 params["tipo_tecnico"] = value.trim();
+              } else if (key === "id_motivo_atendimento") {
+                params["id_motivo_atendimento"] = value.trim();
               } else if (key === "status") {
                 params["situacao"] = value.trim();
               } else {
@@ -807,9 +844,19 @@ const ConsultaOSPage: React.FC = () => {
           setLoading(false);
         }
       };
-      searchWithCorrectPage();
+
+      // Execute search with new page if there has been a previous search
+      if (hasSearch) {
+        searchWithCorrectPage();
+      }
     },
-    [filtrosPainel, paginacao.registrosPorPagina, campoOrdem, tipoOrdem]
+    [
+      filtrosPainel,
+      paginacao.registrosPorPagina,
+      campoOrdem,
+      tipoOrdem,
+      hasSearch,
+    ]
   );
 
   const handleRecordsPerPageChange = useCallback(
@@ -849,6 +896,8 @@ const ConsultaOSPage: React.FC = () => {
                 params["id_tecnico"] = value.trim();
               } else if (key === "tipo_tecnico") {
                 params["tipo_tecnico"] = value.trim();
+              } else if (key === "id_motivo_atendimento") {
+                params["id_motivo_atendimento"] = value.trim();
               } else if (key === "status") {
                 params["situacao"] = value.trim();
               } else {
@@ -947,10 +996,12 @@ const ConsultaOSPage: React.FC = () => {
         }
       };
 
-      // Execute the search immediately with the new value
-      searchWithNewRecordsPerPage();
+      // Execute search with new records per page if there has been a previous search
+      if (hasSearch) {
+        searchWithNewRecordsPerPage();
+      }
     },
-    [aplicarFiltros, filtrosPainel, campoOrdem, tipoOrdem]
+    [aplicarFiltros, filtrosPainel, campoOrdem, tipoOrdem, hasSearch]
   );
 
   // Reset to first page when filters change
@@ -958,16 +1009,12 @@ const ConsultaOSPage: React.FC = () => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [filtrosPainel]);
 
-  // Execute search when ordering changes (only if search has been performed)
-  useEffect(() => {
-    if (hasSearch && hasRestoredState) {
-      handleSearch();
-    }
-  }, [campoOrdem, tipoOrdem, hasSearch, hasRestoredState, handleSearch]);
+  // Note: Search is now only executed manually via the search button
+  // Removed automatic search execution when ordering changes
 
   useEffect(() => {
     // Restore saved filters unless a sidebar navigation demanded a clean slate
-    let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+    const searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const shouldResetFromSidebar =
       typeof window !== "undefined" &&
@@ -1030,11 +1077,8 @@ const ConsultaOSPage: React.FC = () => {
         hasSearchRef.current = parsedHasSearch;
         setHasSearch(parsedHasSearch);
 
-        if (parsedHasSearch) {
-          searchTimeout = setTimeout(() => {
-            handleSearchRef.current?.();
-          }, 200);
-        }
+        // Note: Removed automatic search execution on state restoration
+        // Search is now only executed manually via the search button
       } catch (error) {
         console.error("Erro ao restaurar estado dos filtros:", error);
         clearPersistedState();
@@ -1388,7 +1432,7 @@ const ConsultaOSPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Status, Técnico, Número Interno e Garantia */}
+              {/* Status, Técnico, Número Interno e Motivo Atendimento */}
               <div className="md:col-span-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Status */}
                 <div className="space-y-2">
@@ -1519,35 +1563,56 @@ const ConsultaOSPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Garantia */}
+                {/* Motivo de Atendimento */}
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700">
-                    Garantia
+                    Motivo de Atendimento
                   </label>
                   <div className="relative">
                     <select
                       className="w-full px-3 py-3 appearance-none border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 bg-white transition-all duration-200"
-                      value={filtrosPainel.em_garantia || ""}
+                      value={filtrosPainel.id_motivo_atendimento || ""}
                       onChange={(e) =>
-                        handleFilterChange("em_garantia", e.target.value)
+                        handleFilterChange(
+                          "id_motivo_atendimento",
+                          e.target.value
+                        )
                       }
                     >
-                      <option value="">Listar Todas</option>
-                      <option value="S">Em garantia</option>
-                      <option value="N">Fora de garantia</option>
+                      <option value="">Todos os Motivos</option>
+                      {motivos.map((motivo) => (
+                        <option key={motivo.id} value={motivo.id.toString()}>
+                          {motivo.descricao}
+                        </option>
+                      ))}
                     </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <span className="text-gray-400">
-                        <ChevronDown className="h-5 w-5" />
-                      </span>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      {loadingMotivos ? (
+                        <div className="h-4 w-4 border-2 border-t-[var(--primary)] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin pointer-events-none" />
+                      ) : filtrosPainel.id_motivo_atendimento ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleClearField("id_motivo_atendimento")
+                          }
+                          className="text-gray-400 hover:text-gray-600 focus:outline-none mr-5"
+                          aria-label="Limpar motivo de atendimento"
+                        >
+                          <X size={16} />
+                        </button>
+                      ) : (
+                        <span className="text-gray-400 pointer-events-none">
+                          <ChevronDown className="h-5 w-5" />
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Tipo de Data, Data Inicial e Data Final em uma linha */}
+              {/* Tipo de Data, Data Inicial, Data Final e Garantia em uma linha */}
               <div className="col-span-1 lg:col-span-3">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {/* Tipo de Data */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
@@ -1638,6 +1703,31 @@ const ConsultaOSPage: React.FC = () => {
                           disableDateFields || !filtrosPainel.campo_data
                         }
                       />
+                    </div>
+                  </div>
+
+                  {/* Garantia */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Garantia
+                    </label>
+                    <div className="relative">
+                      <select
+                        className="w-full px-3 py-3 appearance-none border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-gray-800 bg-white transition-all duration-200"
+                        value={filtrosPainel.em_garantia || ""}
+                        onChange={(e) =>
+                          handleFilterChange("em_garantia", e.target.value)
+                        }
+                      >
+                        <option value="">Listar Todas</option>
+                        <option value="S">Em garantia</option>
+                        <option value="N">Fora de garantia</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span className="text-gray-400">
+                          <ChevronDown className="h-5 w-5" />
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
