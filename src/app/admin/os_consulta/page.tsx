@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { StatusBadge } from "@/components/admin/common";
 import { ordensServicoService } from "@/api/services/ordensServicoService";
+import { useSearchParams } from "next/navigation";
 import { usuariosService } from "@/api/services/usuariosService";
 import { motivosAtendimentoService } from "@/api/services/motivosAtendimentoService";
 import { MotivoAtendimento } from "@/types/admin/cadastro/motivos_atendimento";
@@ -152,6 +153,7 @@ const INITIAL_PAGINATION_STATE: {
 
 const ConsultaOSPage: React.FC = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState(INITIAL_DATA_STATE);
@@ -205,10 +207,14 @@ const ConsultaOSPage: React.FC = () => {
   } = useFilters(INITIAL_OS_FILTERS, "os_consulta_filters");
 
   const handleFiltroChangeRef = useRef(handleFiltroChange);
+  const limparFiltrosRef = useRef(limparFiltros);
+  const aplicarFiltrosRef = useRef(aplicarFiltros);
 
   useEffect(() => {
     handleFiltroChangeRef.current = handleFiltroChange;
-  }, [handleFiltroChange]);
+    limparFiltrosRef.current = limparFiltros;
+    aplicarFiltrosRef.current = aplicarFiltros;
+  }, [handleFiltroChange, limparFiltros, aplicarFiltros]);
 
   const clearPersistedState = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -1104,6 +1110,80 @@ const ConsultaOSPage: React.FC = () => {
     if (!hasRestoredState) return;
     persistState();
   }, [persistState, hasRestoredState]);
+
+  // Handle URL parameters from dashboard navigation
+  useEffect(() => {
+    if (!hasRestoredState) return;
+
+    const urlParams = new URLSearchParams(searchParams.toString());
+    const hasUrlParams = urlParams.size > 0;
+
+    // Check if this is a navigation from dashboard (with or without parameters)
+    const isDashboardNavigation =
+      (typeof window !== "undefined" &&
+        document.referrer.includes("/admin/dashboard")) ||
+      sessionStorage.getItem("dashboard_navigation") === "true";
+
+    // Always clear filters first when coming from dashboard
+    if (isDashboardNavigation) {
+      // STEP 1: Always clear existing filters first
+      limparFiltrosRef.current();
+
+      if (hasUrlParams) {
+        // STEP 2: Apply URL parameters to filters (specific button filters)
+        for (const [key, value] of urlParams.entries()) {
+          if (value && value.trim() !== "") {
+            // Map dashboard parameter names to filter names
+            const filterKey = key;
+
+            // Handle special mappings
+            if (key === "data_abertura_inicio") {
+              handleFiltroChangeRef.current("campo_data", "abertura");
+              handleFiltroChangeRef.current("data_ini", value);
+            } else if (key === "data_abertura_fim") {
+              handleFiltroChangeRef.current("data_fim", value);
+            } else if (key === "data_conclusao_inicio") {
+              handleFiltroChangeRef.current("campo_data", "fechamento");
+              handleFiltroChangeRef.current("data_ini", value);
+            } else if (key === "data_conclusao_fim") {
+              handleFiltroChangeRef.current("data_fim", value);
+            } else if (key === "status") {
+              // Map status values
+              let statusValue = value;
+              if (value === "concluida") {
+                statusValue = "6,7"; // Concluída status codes
+              } else if (value === "aberta") {
+                statusValue = "1,2,3,4,5"; // Aberta status codes
+              } else if (value === "pendente") {
+                statusValue = "1"; // Pendentes status code
+              }
+              handleFiltroChangeRef.current("status", statusValue);
+            } else if (key === "tipo_servico" && value === "garantia") {
+              handleFiltroChangeRef.current("em_garantia", "S");
+            } else {
+              // Apply other parameters directly
+              handleFiltroChangeRef.current(filterKey, value);
+            }
+          }
+        }
+
+        // Clear URL parameters after applying (optional - keeps URL clean)
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
+      }
+
+      // STEP 3: Apply filters and trigger search automatically
+      setTimeout(() => {
+        aplicarFiltrosRef.current();
+        setTimeout(() => {
+          handleSearchRef.current();
+        }, 100);
+      }, 200);
+
+      // Clean up navigation flag
+      sessionStorage.removeItem("dashboard_navigation");
+    }
+  }, [hasRestoredState, searchParams]);
 
   // Função para salvar o estado atual dos filtros e paginação
   const saveCurrentState = useCallback(() => {

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { dashboardService } from "@/api/services/dashboardService";
 import { LoadingSpinner } from "@/components/LoadingPersonalizado";
+import { useRouter } from "next/navigation";
 import {
   RefreshCcw,
   PieChart,
@@ -9,6 +10,7 @@ import {
   BarChartHorizontal,
   Filter,
   AlertCircle,
+  HelpCircle,
 } from "lucide-react";
 import {
   Chart as ChartJS,
@@ -75,6 +77,7 @@ const periodOptions = [
 ];
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("30"); // Valor padrão conforme API
@@ -92,6 +95,88 @@ export default function DashboardPage() {
     setSelectedPeriod("");
     setTimeout(() => setSelectedPeriod(currentPeriod), 10);
   }, [selectedPeriod]);
+
+  // Handle card navigation with filters
+  const handleCardNavigation = useCallback(
+    (cardIndex: number) => {
+      const today = new Date();
+      const firstDayOfMonth = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        1
+      );
+      const formatDate = (date: Date) => {
+        return date.toISOString().split("T")[0]; // Format: YYYY-MM-DD
+      };
+
+      let filters: Record<string, string> = {};
+
+      switch (cardIndex) {
+        case 0: // OSs abertas até hoje
+          // Sem filtro algum - todas as OSs
+          break;
+        case 1: // OSs abertas no mês
+          filters = {
+            data_abertura_inicio: formatDate(firstDayOfMonth),
+            data_abertura_fim: formatDate(today),
+          };
+          break;
+        case 2: // OSs abertas hoje
+          filters = {
+            data_abertura_inicio: formatDate(today),
+            data_abertura_fim: formatDate(today),
+          };
+          break;
+        case 3: // OSs atendidas até hoje
+          filters = {
+            status: "concluida",
+          };
+          break;
+        case 4: // OSs atendidas no mês
+          filters = {
+            status: "concluida",
+            data_conclusao_inicio: formatDate(firstDayOfMonth),
+            data_conclusao_fim: formatDate(today),
+          };
+          break;
+        case 5: // OSs atendidas hoje
+          filters = {
+            status: "concluida",
+            data_conclusao_inicio: formatDate(today),
+            data_conclusao_fim: formatDate(today),
+          };
+          break;
+        case 6: // OSs em aberto agora
+          filters = {
+            status: "aberta",
+          };
+          break;
+        case 7: // OSs em aberto em garantia
+          filters = {
+            status: "aberta",
+            tipo_servico: "garantia",
+          };
+          break;
+        case 8: // OSs pendentes agora
+          filters = {
+            status: "pendente",
+          };
+          break;
+      }
+
+      // Set flag to indicate navigation from dashboard
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("dashboard_navigation", "true");
+      }
+
+      // Build query string
+      const queryParams = new URLSearchParams(filters).toString();
+      const url = `/admin/os_consulta${queryParams ? `?${queryParams}` : ""}`;
+
+      router.push(url);
+    },
+    [router]
+  );
 
   // Color palettes - Cores mais vibrantes para gráficos coloridos
   const chartColors = useMemo(
@@ -554,7 +639,7 @@ export default function DashboardPage() {
               {cards.slice(0, 3).map((card, index) => (
                 <div
                   key={index}
-                  className="rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn"
+                  className="rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn relative"
                   style={{
                     backgroundColor: card.bgColor,
                     animationDelay: `${index * 50}ms`,
@@ -568,6 +653,17 @@ export default function DashboardPage() {
                       {card.title}
                     </p>
                   </div>
+                  <button
+                    onClick={() => handleCardNavigation(index)}
+                    className="absolute bottom-2 right-2 w-6 h-6 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer"
+                    title="Ver detalhes das OSs"
+                  >
+                    <HelpCircle
+                      size={14}
+                      strokeWidth={2}
+                      className="text-white"
+                    />
+                  </button>
                 </div>
               ))}
             </div>
@@ -577,7 +673,7 @@ export default function DashboardPage() {
               {cards.slice(3, 6).map((card, index) => (
                 <div
                   key={index + 3}
-                  className="rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn"
+                  className="rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn relative"
                   style={{
                     backgroundColor: card.bgColor,
                     animationDelay: `${(index + 3) * 50}ms`,
@@ -591,6 +687,17 @@ export default function DashboardPage() {
                       {card.title}
                     </p>
                   </div>
+                  <button
+                    onClick={() => handleCardNavigation(index + 3)}
+                    className="absolute bottom-2 right-2 w-6 h-6 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer"
+                    title="Ver detalhes das OSs"
+                  >
+                    <HelpCircle
+                      size={14}
+                      strokeWidth={2}
+                      className="text-white"
+                    />
+                  </button>
                 </div>
               ))}
             </div>
@@ -600,7 +707,7 @@ export default function DashboardPage() {
               {cards.slice(6, 9).map((card, index) => (
                 <div
                   key={index + 6}
-                  className="rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn"
+                  className="rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-2px] animate-fadeIn relative"
                   style={{
                     backgroundColor: card.bgColor,
                     animationDelay: `${(index + 6) * 50}ms`,
@@ -614,6 +721,17 @@ export default function DashboardPage() {
                       {card.title}
                     </p>
                   </div>
+                  <button
+                    onClick={() => handleCardNavigation(index + 6)}
+                    className="absolute bottom-2 right-2 w-6 h-6 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer"
+                    title="Ver detalhes das OSs"
+                  >
+                    <HelpCircle
+                      size={14}
+                      strokeWidth={2}
+                      className="text-white"
+                    />
+                  </button>
                 </div>
               ))}
             </div>
@@ -870,4 +988,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
