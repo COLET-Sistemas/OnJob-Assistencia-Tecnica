@@ -18,6 +18,9 @@ import {
   ShieldX,
   FileSearch,
   XCircle,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { STATUS_MAPPING } from "@/utils/statusMapping";
@@ -167,6 +170,10 @@ const ConsultaOSPage: React.FC = () => {
   const [hasSearch, setHasSearch] = useState<boolean>(false);
   const hasSearchRef = useRef<boolean>(false);
   const [hasRestoredState, setHasRestoredState] = useState<boolean>(false);
+
+  // Ordenação state
+  const [campoOrdem, setCampoOrdem] = useState<string>("data");
+  const [tipoOrdem, setTipoOrdem] = useState<"asc" | "desc">("asc");
 
   if (
     typeof window !== "undefined" &&
@@ -415,6 +422,36 @@ const ConsultaOSPage: React.FC = () => {
     [handleFiltroChange]
   );
 
+  // Função para alternar ordenação
+  const handleSortToggle = useCallback(
+    (campo: string) => {
+      if (campoOrdem === campo) {
+        // Se já está ordenando por este campo, alterna entre asc/desc
+        setTipoOrdem(tipoOrdem === "asc" ? "desc" : "asc");
+      } else {
+        // Se mudou o campo, define como asc
+        setCampoOrdem(campo);
+        setTipoOrdem("asc");
+      }
+    },
+    [campoOrdem, tipoOrdem]
+  );
+
+  // Função para retornar o ícone correto de ordenação
+  const getSortIcon = useCallback(
+    (campo: string) => {
+      if (campoOrdem === campo) {
+        return tipoOrdem === "asc" ? (
+          <ArrowUp size={14} className="text-[var(--primary)]" />
+        ) : (
+          <ArrowDown size={14} className="text-[var(--primary)]" />
+        );
+      }
+      return <ArrowUpDown size={14} className="text-gray-400" />;
+    },
+    [campoOrdem, tipoOrdem]
+  );
+
   const handleClearFiltersCustom = useCallback(() => {
     // First, use limparFiltros to reset all filter values
     limparFiltros();
@@ -465,6 +502,8 @@ const ConsultaOSPage: React.FC = () => {
         resumido: "s",
         nro_pagina: paginacao.paginaAtual,
         qtde_registros: paginacao.registrosPorPagina,
+        campo_ordem: campoOrdem,
+        tipo_ordem: tipoOrdem,
       };
 
       // Adicionar filtros válidos usando os valores atuais do filtrosPainel
@@ -585,6 +624,8 @@ const ConsultaOSPage: React.FC = () => {
     aplicarFiltros,
     paginacao.paginaAtual,
     paginacao.registrosPorPagina,
+    campoOrdem,
+    tipoOrdem,
   ]);
 
   const handleSearchRef = useRef(handleSearch);
@@ -637,7 +678,6 @@ const ConsultaOSPage: React.FC = () => {
     (novaPagina: number) => {
       setPaginacao((prev) => ({ ...prev, paginaAtual: novaPagina }));
       const searchWithCorrectPage = async () => {
-
         const currentFilters = { ...filtrosPainel };
 
         // Execute search with the new page number explicitly set
@@ -650,6 +690,8 @@ const ConsultaOSPage: React.FC = () => {
             resumido: "s",
             nro_pagina: novaPagina, // Use the new page number directly
             qtde_registros: paginacao.registrosPorPagina,
+            campo_ordem: campoOrdem,
+            tipo_ordem: tipoOrdem,
           };
 
           // Add valid filters
@@ -767,7 +809,7 @@ const ConsultaOSPage: React.FC = () => {
       };
       searchWithCorrectPage();
     },
-    [filtrosPainel, paginacao.registrosPorPagina]
+    [filtrosPainel, paginacao.registrosPorPagina, campoOrdem, tipoOrdem]
   );
 
   const handleRecordsPerPageChange = useCallback(
@@ -790,6 +832,8 @@ const ConsultaOSPage: React.FC = () => {
             resumido: "s",
             nro_pagina: 1,
             qtde_registros: novoValor,
+            campo_ordem: campoOrdem,
+            tipo_ordem: tipoOrdem,
           };
 
           Object.entries(currentFilters).forEach(([key, value]) => {
@@ -906,13 +950,20 @@ const ConsultaOSPage: React.FC = () => {
       // Execute the search immediately with the new value
       searchWithNewRecordsPerPage();
     },
-    [aplicarFiltros, filtrosPainel]
+    [aplicarFiltros, filtrosPainel, campoOrdem, tipoOrdem]
   );
 
   // Reset to first page when filters change
   useEffect(() => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [filtrosPainel]);
+
+  // Execute search when ordering changes (only if search has been performed)
+  useEffect(() => {
+    if (hasSearch && hasRestoredState) {
+      handleSearch();
+    }
+  }, [campoOrdem, tipoOrdem, hasSearch, hasRestoredState, handleSearch]);
 
   useEffect(() => {
     // Restore saved filters unless a sidebar navigation demanded a clean slate
@@ -1392,7 +1443,6 @@ const ConsultaOSPage: React.FC = () => {
                           handleFilterChange("id_tecnico", "");
                           handleFilterChange("tipo_tecnico", e.target.value);
                         } else {
-                        
                           handleFilterChange("tipo_tecnico", "");
                           handleFilterChange("id_tecnico", e.target.value);
                         }
@@ -1657,12 +1707,24 @@ const ConsultaOSPage: React.FC = () => {
           {/* Cabeçalhos */}
           <div className="grid grid-cols-12 gap-x-1 px-3 py-2 bg-gray-50 rounded-md text-xs font-semibold text-gray-600 mb-0 shadow-sm">
             <div className="col-span-1">OS</div>
-            <div className="col-span-3 md:col-span-2">Cliente / Cidade</div>
+            <div
+              className="col-span-3 md:col-span-2 flex items-center gap-1 cursor-pointer hover:text-[var(--primary)] transition-colors"
+              onClick={() => handleSortToggle("cliente")}
+              title="Clique para ordenar por cliente"
+            >
+              Cliente / Cidade
+              {getSortIcon("cliente")}
+            </div>
             <div className="col-span-4 md:col-span-4 lg:col-span-3">
               Descrição / Série
             </div>
-            <div className="hidden md:block md:col-span-2 text-center">
+            <div
+              className="hidden md:flex md:col-span-2 text-center items-center justify-center gap-1 cursor-pointer hover:text-[var(--primary)] transition-colors"
+              onClick={() => handleSortToggle("data")}
+              title="Clique para ordenar por data"
+            >
               Data
+              {getSortIcon("data")}
             </div>
             <div className="col-span-3 md:col-span-2">Técnico</div>
             <div className="col-span-1 md:col-span-1 lg:col-span-2 text-right">
