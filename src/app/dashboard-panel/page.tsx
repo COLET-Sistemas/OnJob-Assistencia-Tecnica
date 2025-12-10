@@ -378,10 +378,26 @@ export default function DashboardPainel() {
                 {ordens.length} cards
               </span>
             </div>
-            <p className="text-sm text-gray-500">
-              Atualizado às {lastUpdatedFormatted}hrs - Atualiza a cada{" "}
-              {refreshInterval} min
-            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              <p className="text-sm text-gray-500">
+                Atualizado às {lastUpdatedFormatted}hrs - Atualiza a cada{" "}
+                {refreshInterval} min
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-yellow-100 border border-yellow-300"></div>
+                  <span className="text-xs text-gray-600">
+                    OS&#39;s Pendentes
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-red-100 border border-red-300"></div>
+                  <span className="text-xs text-gray-600">
+                    OS&#39;s Atrasadas
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 justify-end">
             <label className="flex flex-col text-[9px] uppercase tracking-[0.4em] text-[#7C54BD]/70">
