@@ -1010,20 +1010,39 @@ const ConsultaOSPage: React.FC = () => {
     [aplicarFiltros, filtrosPainel, campoOrdem, tipoOrdem, hasSearch]
   );
 
-  // Reset to first page when filters change
+  // Reset to first page when filters change (but not pagination)
+  const previousFilters = useRef(filtrosPainel);
   useEffect(() => {
-    setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
+    // Only reset page if actual filter values changed, not pagination
+    const filtersChanged = Object.keys(filtrosPainel).some(
+      key => key !== 'paginaAtual' && filtrosPainel[key] !== previousFilters.current[key]
+    );
+    
+    if (filtersChanged) {
+      setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
+    }
+    
+    previousFilters.current = filtrosPainel;
   }, [filtrosPainel]);
 
   // Execute search automatically when ordering changes (if there was a previous search)
+  const previousOrdem = useRef({ campo: campoOrdem, tipo: tipoOrdem });
   useEffect(() => {
     if (hasSearch && hasRestoredState) {
-      setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
+      const ordemChanged = 
+        previousOrdem.current.campo !== campoOrdem || 
+        previousOrdem.current.tipo !== tipoOrdem;
+        
+      if (ordemChanged) {
+        setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
 
-      const timer = setTimeout(() => {
-        handleSearch();
-      }, 100);
-      return () => clearTimeout(timer);
+        const timer = setTimeout(() => {
+          handleSearch();
+        }, 100);
+        
+        previousOrdem.current = { campo: campoOrdem, tipo: tipoOrdem };
+        return () => clearTimeout(timer);
+      }
     }
   }, [campoOrdem, tipoOrdem, hasSearch, hasRestoredState, handleSearch]);
 
