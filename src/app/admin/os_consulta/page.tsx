@@ -1015,8 +1015,17 @@ const ConsultaOSPage: React.FC = () => {
     setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
   }, [filtrosPainel]);
 
-  // Note: Search is now only executed manually via the search button
-  // Removed automatic search execution when ordering changes
+  // Execute search automatically when ordering changes (if there was a previous search)
+  useEffect(() => {
+    if (hasSearch && hasRestoredState) {
+      setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
+      
+      const timer = setTimeout(() => {
+        handleSearch();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [campoOrdem, tipoOrdem, hasSearch, hasRestoredState, handleSearch]);
 
   useEffect(() => {
     // Restore saved filters unless a sidebar navigation demanded a clean slate
