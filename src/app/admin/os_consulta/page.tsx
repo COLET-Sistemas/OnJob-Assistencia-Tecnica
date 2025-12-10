@@ -1015,13 +1015,15 @@ const ConsultaOSPage: React.FC = () => {
   useEffect(() => {
     // Only reset page if actual filter values changed, not pagination
     const filtersChanged = Object.keys(filtrosPainel).some(
-      key => key !== 'paginaAtual' && filtrosPainel[key] !== previousFilters.current[key]
+      (key) =>
+        key !== "paginaAtual" &&
+        filtrosPainel[key] !== previousFilters.current[key]
     );
-    
+
     if (filtersChanged) {
       setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
     }
-    
+
     previousFilters.current = filtrosPainel;
   }, [filtrosPainel]);
 
@@ -1029,17 +1031,17 @@ const ConsultaOSPage: React.FC = () => {
   const previousOrdem = useRef({ campo: campoOrdem, tipo: tipoOrdem });
   useEffect(() => {
     if (hasSearch && hasRestoredState) {
-      const ordemChanged = 
-        previousOrdem.current.campo !== campoOrdem || 
+      const ordemChanged =
+        previousOrdem.current.campo !== campoOrdem ||
         previousOrdem.current.tipo !== tipoOrdem;
-        
+
       if (ordemChanged) {
         setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
 
         const timer = setTimeout(() => {
           handleSearch();
         }, 100);
-        
+
         previousOrdem.current = { campo: campoOrdem, tipo: tipoOrdem };
         return () => clearTimeout(timer);
       }
