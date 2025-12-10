@@ -1019,7 +1019,7 @@ const ConsultaOSPage: React.FC = () => {
   useEffect(() => {
     if (hasSearch && hasRestoredState) {
       setPaginacao((prev) => ({ ...prev, paginaAtual: 1 }));
-      
+
       const timer = setTimeout(() => {
         handleSearch();
       }, 100);
@@ -1902,7 +1902,7 @@ const ConsultaOSPage: React.FC = () => {
               onClick={() => handleSortToggle("data")}
               title="Clique para ordenar por data"
             >
-              Data
+              Abertura / Agendamento
               {getSortIcon("data")}
             </div>
             <div className="col-span-3 md:col-span-2">Técnico</div>
@@ -1979,13 +1979,18 @@ const ConsultaOSPage: React.FC = () => {
 
                   {/* Data (só md+) */}
                   <div className="hidden md:block md:col-span-2 text-center">
-                    <span className="text-xs text-gray-700 whitespace-nowrap">
-                      {item.abertura?.data_abertura
-                        ? item.abertura.data_abertura
-                        : item.data_abertura
-                        ? item.data_abertura
-                        : "-"}
-                    </span>
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs text-gray-700 whitespace-nowrap">
+                        {item.abertura?.data_abertura
+                          ? item.abertura.data_abertura
+                          : item.data_abertura
+                          ? item.data_abertura
+                          : "-"}
+                      </span>
+                      <span className="text-xs text-gray-700 whitespace-nowrap mt-0.5">
+                        {item.data_agendada || "-"}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Técnico */}
