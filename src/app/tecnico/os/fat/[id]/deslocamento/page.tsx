@@ -353,6 +353,48 @@ export default function FATDeslocamentoPage() {
         .animate-slideInUp {
           animation: slideInUp 0.2s ease-out forwards;
         }
+
+        /* Correções para inputs de tempo */
+        input[type="time"] {
+          -webkit-appearance: none;
+          appearance: none;
+          position: relative;
+          z-index: 1;
+        }
+
+        /* Remove o botão de limpar no Android */
+        input[type="time"]::-webkit-clear-button,
+        input[type="time"]::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          display: none;
+        }
+
+        /* Correções específicas para iOS */
+        @media screen and (-webkit-min-device-pixel-ratio: 2) {
+          input[type="time"] {
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+          }
+        }
+
+        /* Garante que os inputs não se sobreponham */
+        .time-input-container {
+          position: relative;
+          z-index: auto;
+        }
+
+        .time-input-container input {
+          position: relative;
+          z-index: 1;
+        }
+
+        /* Previne problemas de viewport no iOS */
+        @supports (-webkit-touch-callout: none) {
+          .time-input-container {
+            -webkit-transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0);
+          }
+        }
       `}</style>
       <MobileHeader
         title="Deslocamentos"
@@ -412,7 +454,7 @@ export default function FATDeslocamentoPage() {
 
             {/* Grid de tempos */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
+              <div className="space-y-1 time-input-container">
                 <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
                   <Clock className="w-3.5 h-3.5" />
                   Tempo Ida (hh:mm)
@@ -430,7 +472,7 @@ export default function FATDeslocamentoPage() {
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 time-input-container">
                 <label className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
                   <Clock className="w-3.5 h-3.5" />
                   Tempo Volta (hh:mm)
