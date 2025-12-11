@@ -37,6 +37,47 @@ const hhmmToMinutes = (value: string) => {
   if (Number.isNaN(hours) || Number.isNaN(minutes)) return 0;
   return hours * 60 + minutes;
 };
+
+// Função para detectar se é Android
+const isAndroid = () => {
+  if (typeof window === "undefined") return false;
+  return /Android/i.test(navigator.userAgent);
+};
+
+// Função para aplicar máscara HH:MM
+const applyTimeMask = (value: string) => {
+  // Remove tudo que não for número
+  const numbers = value.replace(/\D/g, "");
+
+  // Aplica a máscara HH:MM
+  if (numbers.length <= 2) {
+    return numbers;
+  } else if (numbers.length <= 4) {
+    return `${numbers.slice(0, 2)}:${numbers.slice(2)}`;
+  } else {
+    return `${numbers.slice(0, 2)}:${numbers.slice(2, 4)}`;
+  }
+};
+
+// Função para validar e corrigir tempo
+const validateAndCorrectTime = (value: string) => {
+  const [hoursStr, minutesStr] = value.split(":");
+  let hours = parseInt(hoursStr || "0", 10);
+  let minutes = parseInt(minutesStr || "0", 10);
+
+  // Corrige horas (máximo 23)
+  if (hours > 23) hours = 23;
+  if (hours < 0) hours = 0;
+
+  // Corrige minutos (máximo 59)
+  if (minutes > 59) minutes = 59;
+  if (minutes < 0) minutes = 0;
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+    2,
+    "0"
+  )}`;
+};
 // Componente de loading minimalista
 const LoadingSpinner = memo(() => (
   <div className="flex items-center justify-center py-12">
@@ -156,6 +197,7 @@ export default function FATDeslocamentoPage() {
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<FATDeslocamento | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [isAndroidDevice, setIsAndroidDevice] = useState(false);
   const [form, setForm] = useState<{
     id_deslocamento?: number;
     id_fat: number;
@@ -174,6 +216,11 @@ export default function FATDeslocamentoPage() {
   });
   const deslocamentoBloqueado =
     !licencaLoading && (licencaTipo === "S" || licencaTipo === "G");
+
+  // Detectar Android no carregamento
+  useEffect(() => {
+    setIsAndroidDevice(isAndroid());
+  }, []);
 
   // Buscar deslocamentos existentes
   const fetchDeslocamentos = useCallback(async () => {
@@ -208,7 +255,14 @@ export default function FATDeslocamentoPage() {
   ) => {
     const { name, value } = e.target;
     if (name === "tempo_ida_min" || name === "tempo_volta_min") {
-      setForm((prev) => ({ ...prev, [name]: value }));
+      if (isAndroidDevice) {
+        // Aplica máscara para Android
+        const maskedValue = applyTimeMask(value);
+        setForm((prev) => ({ ...prev, [name]: maskedValue }));
+      } else {
+        // Comportamento normal para outros dispositivos
+        setForm((prev) => ({ ...prev, [name]: value }));
+      }
       return;
     }
     setForm((prev) => ({
@@ -220,6 +274,19 @@ export default function FATDeslocamentoPage() {
             : Number(value)
           : value,
     }));
+  };
+
+  // Handler para blur nos campos de tempo (validação final)
+  const handleTimeBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (
+      (name === "tempo_ida_min" || name === "tempo_volta_min") &&
+      isAndroidDevice &&
+      value
+    ) {
+      const correctedValue = validateAndCorrectTime(value);
+      setForm((prev) => ({ ...prev, [name]: correctedValue }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -460,15 +527,18 @@ export default function FATDeslocamentoPage() {
                   Tempo Ida (hh:mm)
                 </label>
                 <input
-                  type="time"
+                  type={isAndroidDevice ? "text" : "time"}
                   name="tempo_ida_min"
                   value={form.tempo_ida_min}
                   onChange={handleChange}
+                  onBlur={handleTimeBlur}
                   className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all outline-none bg-white/70 text-slate-800 placeholder-slate-500"
                   required
-                  min="00:00"
-                  step={60}
+                  min={isAndroidDevice ? undefined : "00:00"}
+                  step={isAndroidDevice ? undefined : 60}
                   placeholder="hh:mm"
+                  maxLength={isAndroidDevice ? 5 : undefined}
+                  inputMode={isAndroidDevice ? "numeric" : undefined}
                 />
               </div>
 
@@ -478,15 +548,18 @@ export default function FATDeslocamentoPage() {
                   Tempo Volta (hh:mm)
                 </label>
                 <input
-                  type="time"
+                  type={isAndroidDevice ? "text" : "time"}
                   name="tempo_volta_min"
                   value={form.tempo_volta_min}
                   onChange={handleChange}
+                  onBlur={handleTimeBlur}
                   className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all outline-none bg-white/70 text-slate-800 placeholder-slate-500"
                   required
-                  min="00:00"
-                  step={60}
+                  min={isAndroidDevice ? undefined : "00:00"}
+                  step={isAndroidDevice ? undefined : 60}
                   placeholder="hh:mm"
+                  maxLength={isAndroidDevice ? 5 : undefined}
+                  inputMode={isAndroidDevice ? "numeric" : undefined}
                 />
               </div>
             </div>
