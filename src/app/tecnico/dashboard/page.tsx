@@ -23,23 +23,6 @@ import { motion, AnimatePresence } from "framer-motion";
 const OSCard = memo(({ os }: { os: OSItem }) => {
   const router = useRouter();
 
-  const formatDate = useCallback((dateStr: string | null) => {
-    if (!dateStr || dateStr.trim() === "") return "Não";
-    try {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return dateStr;
-      return date.toLocaleString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return dateStr;
-    }
-  }, []);
-
   const borderColor = useMemo(() => {
     const map: Record<string, string> = {
       pendente: "border-l-gray-400",
@@ -101,7 +84,7 @@ const OSCard = memo(({ os }: { os: OSItem }) => {
 
       <div className="pt-2 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-600">
         <Clock className="w-3 h-3 text-gray-500" />
-        <span>Agendado: {formatDate(os.data_agendada)}</span>
+        <span>Agendado: {os.data_agendada}</span>
       </div>
     </motion.article>
   );
